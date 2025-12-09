@@ -3,23 +3,22 @@ from typing import no_type_check
 
 from guppylang import guppy, qubit
 from guppylang.std.builtins import result
-from guppylang.std.quantum import h, measure
+from guppylang.std.mem import mem_swap
+from guppylang.std.quantum import measure, x
 
 
-@guppy
+@guppy.comptime
 @no_type_check
 def main() -> None:
     q0 = qubit()
     q1 = qubit()
-
-    h(q0)
-    h(q1)
-
+    x(q1)
+    mem_swap(q0, q1)
     b0 = measure(q0)
     b1 = measure(q1)
-    b2 = b0 ^ b1
 
-    result("0", b2)
+    result("0", b0)
+    result("1", b1)
 
 
 if __name__ == "__main__":
