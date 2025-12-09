@@ -10,10 +10,10 @@ use hugr_llvm::sum::LLVMSumValue;
 use hugr_llvm::types::TypingSession;
 use tket::extension::bool::{BOOL_EXTENSION_ID, BoolOp, ConstBool};
 
-// This is copied from https://github.com/CQCL/guppylang/blob/main/execute_llvm/src/bool.rs
+// This is copied from https://github.com/Quantinuum/guppylang/blob/main/execute_llvm/src/bool.rs
 // And is a workaround until the below issues are resolved
-// https://github.com/CQCL/tket2/issues/909
-// https://github.com/CQCL/tket2/issues/910
+// https://github.com/Quantinuum/tket2/issues/909
+// https://github.com/Quantinuum/tket2/issues/910
 
 #[allow(dead_code)]
 const BOOL_TYPE_ID: TypeName = TypeName::new_inline("bool");

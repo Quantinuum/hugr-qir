@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.18
+
+- update github links
+
 ### v0.0.17
 
 - fix error messages

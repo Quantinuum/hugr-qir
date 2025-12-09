@@ -152,7 +152,7 @@ impl CompileArgs {
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
 
-        // This is a workaround to an issue in hugr-llvm: https://github.com/CQCL/hugr/issues/2615
+        // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
         set_explicit_entrypoint_linkage(&namer, hugr, &module)?;
 
