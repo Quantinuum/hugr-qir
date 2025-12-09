@@ -116,5 +116,5 @@ jobs:
         run: |
           uv run guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
           uv run hugr-qir ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
-          cargo install --git https://github.com/CQCL/qir-runner runner
+          cargo install --git https://github.com/Quantinuum/qir-runner runner
           qir-runner --file ${{ matrix.guppy-file }}.ll
