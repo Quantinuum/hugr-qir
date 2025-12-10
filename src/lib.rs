@@ -69,7 +69,9 @@ impl CompileArgs {
             .add_conversion_extensions()
             .add_logic_extensions()
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
-            .add_extension(QirCodegenExtension)
+            .add_extension(QirCodegenExtension {
+                target: self.target,
+            })
             .add_extension(RandomCodegenExtension)
             .finish()
     }
