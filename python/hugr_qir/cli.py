@@ -139,11 +139,17 @@ which is not supported in QIR."
         try:
             qircheck(qir)
         except ValidationError as e:
-            msg = f"{failedqirmsg} The failure occurred in the validity check of the \
+            error_message = e.error_message
+            if "__quantum__rt__qubit_release" in error_message and target == "native":
+                pass
+            else:
+                msg = (
+                    f"{failedqirmsg} The failure occurred in the validity check of the \
 generated QIR. This check can be disabled by setting `--no-validate-qir`\
 on the cli or passing `validate_qir=False` for library calls. Error \
-details: {e.error_message}"
-            raise ValueError(msg) from e
+details: {error_message}"
+                )
+                raise ValueError(msg) from e
 
     llvm_write_mode = get_write_mode(output_format)
     qir_out = ir_string_to_output_format(qir, output_format)

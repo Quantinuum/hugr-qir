@@ -69,7 +69,9 @@ impl CompileArgs {
             .add_conversion_extensions()
             .add_logic_extensions()
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
-            .add_extension(QirCodegenExtension)
+            .add_extension(QirCodegenExtension {
+                target: self.target,
+            })
             .add_extension(RandomCodegenExtension)
             .finish()
     }
@@ -150,7 +152,7 @@ impl CompileArgs {
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
 
-        // This is a workaround to an issue in hugr-llvm: https://github.com/CQCL/hugr/issues/2615
+        // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
         set_explicit_entrypoint_linkage(&namer, hugr, &module)?;
 

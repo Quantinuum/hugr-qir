@@ -1,6 +1,6 @@
 [project]
 name = "hugr-qir"
-version = "0.0.17"
+version = "0.0.18"
 description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -67,7 +67,7 @@ before-all = [
 ]
 repair-wheel-command = [
     'auditwheel repair -w {dest_dir} {wheel}',
-    'pipx run abi3audit --strict --report {wheel}',
+    'uvx abi3audit --strict --report {wheel}',
 ]
 
 [tool.cibuildwheel.macos.environment]
@@ -83,8 +83,8 @@ before-all = [
     'tar xf clang+llvm-14.0.6-$ARCH_PREFIX.tar.xz -C /tmp/llvm --strip-components=1',
 ]
 repair-wheel-command = [
-    'DYLD_LIBRARY_PATH=/tmp/llvm/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}',
-    'pipx run abi3audit --strict --report {wheel}',
+    'DYLD_FALLBACK_LIBRARY_PATH=/tmp/llvm/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}',
+    'uvx abi3audit --strict --report {wheel}',
 ]
 
 [tool.cibuildwheel.windows.environment]
@@ -99,7 +99,7 @@ before-all = [
 before-build = ['pip install delvewheel']
 repair-wheel-command = [
     'delvewheel repair -w {dest_dir} {wheel}',
-    'pipx run abi3audit --strict --report {wheel}',
+    'uvx abi3audit --strict --report {wheel}',
 ]
 test-groups = []
 before-test = [
