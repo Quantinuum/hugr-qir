@@ -83,3 +83,16 @@ def test_guppy_files_options(
         snapshot.assert_match(
             qir, str(Path(snapshot_filename).with_suffix(file_suffix))
         )
+
+
+@pytest.mark.parametrize(
+    "target",
+    list(compile_target_choices()),
+)
+def test_qircheck_is_happy_with_discard_for_all_compilation_targets(
+    tmp_path: Path, target: str
+) -> None:
+    guppy_file = Path(GUPPY_EXAMPLES_DIR_GENERAL) / Path("uses-discard.py")
+    out_file = tmp_path / "out.ll"
+    extra_args = ["-t", target]
+    cli_on_guppy(guppy_file, tmp_path, "-o", str(out_file), *extra_args)

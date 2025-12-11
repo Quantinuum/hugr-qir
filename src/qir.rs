@@ -21,6 +21,7 @@ use inkwell::{context::Context, types::BasicType};
 use itertools::Itertools;
 use tket_qsystem::extension::futures;
 
+use crate::target::CompileTarget;
 use hugr_llvm::{
     emit::{EmitFuncContext, emit_value},
     types::TypingSession,
@@ -204,7 +205,9 @@ fn emit_qis_qalloc<'c, H: HugrView<Node = Node>>(
 }
 
 #[derive(Clone, Debug)]
-pub struct QirCodegenExtension;
+pub struct QirCodegenExtension {
+    pub target: CompileTarget,
+}
 
 impl CodegenExtension for QirCodegenExtension {
     fn add_extension<'a, H: HugrView<Node = Node> + 'a>(

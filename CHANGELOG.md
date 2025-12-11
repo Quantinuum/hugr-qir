@@ -3,6 +3,7 @@
 ### v0.0.18
 
 - update github links
+- fix lowering of discard/QFree for quantinuum-hardware targets
 
 ### v0.0.17
 
