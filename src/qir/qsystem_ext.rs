@@ -1,7 +1,9 @@
+use super::QirCodegenExtension;
 use crate::qir::{
     emit_qis_gate, emit_qis_gate_finish, emit_qis_measure_to_result, emit_qis_qalloc,
     emit_qis_qfree, emit_qis_read_result,
 };
+use crate::target::CompileTarget;
 use anyhow::Result;
 use hugr::{
     HugrView, Node,
@@ -14,8 +16,6 @@ use hugr_llvm::{
     types::HugrSumType,
 };
 use tket_qsystem::extension::qsystem::QSystemOp;
-
-use super::QirCodegenExtension;
 
 impl QirCodegenExtension {
     pub fn emit_qsystem_op<'c, H: HugrView<Node = Node>>(
@@ -102,7 +102,10 @@ impl QirCodegenExtension {
                 let qb = option_ty.build_tag(context.builder(), 1, vec![qb])?.into();
                 args.outputs.finish(context.builder(), [qb])
             }
-            QFree => emit_qis_qfree(context, args.inputs[0]),
+            QFree => match self.target {
+                CompileTarget::Native => emit_qis_qfree(context, args.inputs[0]),
+                CompileTarget::QuantinuumHardware => Ok(()),
+            },
             Reset => emit_qis_gate_finish(
                 context,
                 "__quantum__qis__reset__body",
@@ -128,13 +131,16 @@ mod test {
     use tket_qsystem::extension::qsystem::QSystemOp;
 
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
+    use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
 
     #[rstest::fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension)
+                .add_extension(QirCodegenExtension {
+                    target: CompileTarget::Native,
+                })
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_default_int_extensions()
                 .add_float_extensions()

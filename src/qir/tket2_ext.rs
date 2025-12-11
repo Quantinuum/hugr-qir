@@ -1,12 +1,12 @@
+use super::QirCodegenExtension;
 use crate::qir::{
     emit_qis_gate_finish, emit_qis_measure_to_result, emit_qis_qalloc, emit_qis_qfree,
     emit_qis_read_result,
 };
+use crate::target::CompileTarget;
 use anyhow::{Result, bail};
 use hugr::{HugrView, Node, ops::ExtensionOp};
 use hugr_llvm::emit::{EmitFuncContext, EmitOpArgs};
-
-use super::QirCodegenExtension;
 
 impl QirCodegenExtension {
     #[allow(non_snake_case)]
@@ -143,7 +143,10 @@ impl QirCodegenExtension {
                 let qb = emit_qis_qalloc(context)?;
                 args.outputs.finish(context.builder(), [qb])
             }
-            QFree => emit_qis_qfree(context, args.inputs[0]),
+            QFree => match self.target {
+                CompileTarget::Native => emit_qis_qfree(context, args.inputs[0]),
+                CompileTarget::QuantinuumHardware => Ok(()),
+            },
             _ => bail!("Unknown op: {op:?}"),
         }
     }
@@ -160,6 +163,7 @@ mod test {
     use tket::TketOp;
 
     use crate::qir::boolcodegenextension_workaround::BoolCodegenExtension;
+    use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
     use crate::{
         qir::{QirCodegenExtension, QirPreludeCodegen},
@@ -170,7 +174,9 @@ mod test {
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension)
+                .add_extension(QirCodegenExtension {
+                    target: CompileTarget::Native,
+                })
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
                 .add_extension(BoolCodegenExtension)

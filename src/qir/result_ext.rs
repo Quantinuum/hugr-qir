@@ -137,13 +137,16 @@ mod test {
     use tket_qsystem::extension::result::ResultOpDef;
 
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
+    use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
 
     #[rstest::fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension)
+                .add_extension(QirCodegenExtension {
+                    target: CompileTarget::Native,
+                })
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_default_int_extensions()
                 .add_float_extensions()
