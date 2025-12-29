@@ -1,13 +1,13 @@
 //! LLVM codegen for the `tket.qsystem.utils` extension.
 use tket::hugr::{self};
 
-use tket_qsystem::extension::utils::UtilsOp;
 use anyhow::Result;
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
 use tket::hugr::ops::ExtensionOp;
 use tket::hugr::{HugrView, Node};
+use tket_qsystem::extension::utils::UtilsOp;
 
 /// Codegen extension for `tket_qsystem` `utils` extension.
 pub struct UtilsCodegenExtension;
@@ -53,13 +53,13 @@ fn emit_utils_op<H: HugrView<Node = Node>>(
 
 #[cfg(test)]
 mod test {
-    use tket_qsystem::extension::utils::UtilsOp;
     use hugr::extension::simple_op::MakeRegisteredOp;
     use hugr::llvm::check_emission;
     use hugr::llvm::test::TestContext;
     use hugr::llvm::test::llvm_ctx;
     use hugr::llvm::test::single_op_hugr;
     use rstest::rstest;
+    use tket_qsystem::extension::utils::UtilsOp;
 
     use super::*;
 
