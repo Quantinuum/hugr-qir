@@ -25,6 +25,7 @@ pub mod qir;
 pub mod target;
 use crate::cli::CliOptimizationLevel;
 use crate::qir::random_ext::RandomCodegenExtension;
+use crate::qir::utils_ext::UtilsCodegenExtension;
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -73,6 +74,7 @@ impl CompileArgs {
                 target: self.target,
             })
             .add_extension(RandomCodegenExtension)
+            .add_extension(UtilsCodegenExtension)
             .finish()
     }
 

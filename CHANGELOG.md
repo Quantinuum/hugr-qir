@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.19
+
+- add support for get_current_shot
+
 ### v0.0.18
 
 - update github links

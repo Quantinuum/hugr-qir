@@ -2,6 +2,7 @@ mod boolcodegenextension_workaround;
 pub mod futures_ext;
 pub mod qsystem_ext;
 pub mod random_ext;
+pub mod utils_ext;
 pub mod result_ext;
 pub mod tket2_ext;
 
