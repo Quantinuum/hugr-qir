@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.20
+
+- add compile_qir function
+
 ### v0.0.19
 
 - add support for get_current_shot
