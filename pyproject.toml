@@ -1,13 +1,13 @@
 [project]
 name = "hugr-qir"
-version = "0.0.19"
+version = "0.0.20"
 description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "click~=8.3.0",
     "quantinuum-qircheck~=0.4.0",
-    "llvmlite~=0.45.1",
+    "llvmlite~=0.44.0",
     "hugr>=0.13.1,<0.15.0",
     "guppylang~=0.21.5"
 ]
