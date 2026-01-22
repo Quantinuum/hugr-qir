@@ -6,5 +6,6 @@ See the [hugr-qir section](https://github.com/Quantinuum/hugr-qir) of the docume
 
 ```{eval-rst}
 .. automodule:: hugr_qir.output.OutputFormat
+.. automodule:: hugr_qir.hugr_to_qir.hugr_to_qir
 
 ```
