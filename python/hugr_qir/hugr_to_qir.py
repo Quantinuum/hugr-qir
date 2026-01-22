@@ -1,4 +1,5 @@
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 from hugr.package import Package
@@ -59,3 +60,12 @@ def hugr_to_qir(  # noqa: PLR0913
             qir_ir = cli_output.read()
 
         return ir_string_to_output_format(qir_ir, output_format)
+
+
+def compile_qir(guppy_main: Callable) -> bytes:
+    """A function for converting a guppy function directly to qir (llvm bitcode)
+
+    :param guppy_main: guppy entry point function
+    :returns: QIR corresponding to the given guppy function input
+    """
+    return hugr_to_qir(guppy_main.compile(), output_format=OutputFormat.BITCODE)  # type: ignore[attr-defined, arg-type, return-value]

@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.21
+
+- add compile_qir function
+
 ### v0.0.20
 
 - update llvmlite version requirement to 0.44.0
