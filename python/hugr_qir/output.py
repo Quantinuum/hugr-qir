@@ -8,6 +8,11 @@ from llvmlite.binding import (  # type: ignore[import-untyped]
 
 
 class OutputFormat(Enum):
+    """
+    LLVM_IR = "llvm-ir"
+    BITCODE = "bitcode"
+    BASE64 = "base64"
+    """
     LLVM_IR = "llvm-ir"
     BITCODE = "bitcode"
     BASE64 = "base64"
