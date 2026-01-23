@@ -696,7 +696,7 @@ wheels = [
 
 [[package]]
 name = "hugr-qir"
-version = "0.0.20"
+version = "0.0.21rc0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
@@ -727,7 +727,7 @@ requires-dist = [
     { name = "click", specifier = "~=8.3.0" },
     { name = "guppylang", specifier = "~=0.21.5" },
     { name = "hugr", specifier = ">=0.13.1,<0.15.0" },
-    { name = "llvmlite", specifier = "~=0.45.1" },
+    { name = "llvmlite", specifier = "~=0.44.0" },
     { name = "quantinuum-qircheck", specifier = "~=0.4.0" },
 ]
 

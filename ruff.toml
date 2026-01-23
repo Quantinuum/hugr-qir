@@ -3,7 +3,7 @@ target-version = "py312"
 
 line-length = 88
 
-extend-exclude = ["submit-guppy-h1-h2-via-qir.ipynb"]
+extend-exclude = ["submit-guppy-h2-via-qir.ipynb"]
 
 lint.select = [
   "E",    # pycodestyle Errors
