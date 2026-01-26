@@ -945,7 +945,7 @@ dependencies = [
  "delegate",
  "derive_more 2.1.1",
  "hugr-core",
- "inkwell",
+ "inkwell 0.6.0",
  "insta",
  "itertools 0.14.0",
  "petgraph 0.8.3",
@@ -1005,7 +1005,7 @@ dependencies = [
  "hugr-cli",
  "hugr-core",
  "hugr-llvm",
- "inkwell",
+ "inkwell 0.8.0",
  "insta",
  "itertools 0.14.0",
  "lazy_static",
@@ -1087,7 +1087,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e67349bd7578d4afebbe15eaa642a80b884e8623db74b1716611b131feb1deef"
 dependencies = [
  "either",
- "inkwell_internals",
+ "inkwell_internals 0.11.0",
  "libc",
  "llvm-sys",
  "once_cell",
@@ -1095,10 +1095,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "inkwell"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1def4112dfb2ce2993db7027f7acdb43c1f4ee1c70a082a2eef306ed5d0df365"
+dependencies = [
+ "inkwell_internals 0.13.0",
+ "libc",
+ "llvm-sys",
+ "once_cell",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "inkwell_internals"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f365c8de536236cfdebd0ba2130de22acefed18b1fb99c32783b3840aec5fb46"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "inkwell_internals"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63736175c9a30ea123f7018de9f26163e0b39cd6978990ae486b510c4f3bad69"
 dependencies = [
  "proc-macro2",
  "quote",
