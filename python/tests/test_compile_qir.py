@@ -22,6 +22,6 @@ def main() -> None:
     result("0", b2)
 
 
-qir = main.compile().to_qir_str()
-
-assert len(qir) > 10  # noqa: PLR2004
+def test_compile_and_convert():
+    qir = main.compile().to_qir_str()
+    assert len(qir) > 10
