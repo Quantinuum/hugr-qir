@@ -1,12 +1,8 @@
 import sys
-from typing import no_type_check
 
-from guppylang import guppy, qubit
-from guppylang.std.builtins import result
-from guppylang.std.qsystem.utils import get_current_shot
-from guppylang.std.quantum import h, measure
-from guppylang_internals.decorator import wasm, wasm_module
+from guppylang import guppy
 from guppylang.std.qsystem.wasm import spawn_wasm_contexts
+from guppylang_internals.decorator import wasm, wasm_module
 
 
 @wasm_module("testfile.wasm")
@@ -27,6 +23,7 @@ def main() -> int:
     two = mod.add_one(1)
     mod.discard()
     return two
+
 
 if __name__ == "__main__":
     sys.stdout.buffer.write(main.compile().to_bytes())
