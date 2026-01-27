@@ -5,8 +5,6 @@ use clap::Parser;
 use clap_verbosity_flag::log::Level;
 use hugr::llvm::inkwell;
 use hugr::package::PackageValidationError;
-use std::path::PathBuf;
-use std::borrow::Cow;
 
 use crate::CompileArgs;
 
@@ -57,10 +55,6 @@ pub struct Cli {
 
     #[arg(value_parser, short = 'l', long, help = "LLVM optimization level")]
     pub optimization_level: Option<CliOptimizationLevel>,
-
-    // todo wasm
-    #[arg(long, short = 'w', long, help = "wasm file", default_value_t = None)]
-    pub wasm_file: PathBuf,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
@@ -98,7 +92,6 @@ impl Cli {
         context: &'c inkwell::context::Context,
     ) -> Result<inkwell::module::Module<'c>> {
         let (desc, package) = self.input_args.get_described_package()?;
-        let wasm = self.get_wasm()?; // todo
         let generator = desc.generator();
 
         package
@@ -106,7 +99,13 @@ impl Cli {
             .map_err(|val_err| Self::wrap_generator(generator, val_err))?;
         let mut hugr = package.modules[0].clone();
 
-        let args = self.compile_args(wasm);
+        let args = self.compile_args();
+        // let wasm_bytes = get_wasm(wasm_path)
+        //, wasm_path: PathBuf
+         //           wasm_bytes: wasm_bytes
+
+        // args.
+
         args.compile(&mut hugr, context)
     }
 
@@ -142,7 +141,7 @@ impl Cli {
         })
     }
 
-    pub fn compile_args(&self, ) -> CompileArgs {
+    pub fn compile_args(&self) -> CompileArgs {
         let default_args = CompileArgs::default();
         CompileArgs {
             debug: self.debug,
@@ -151,8 +150,8 @@ impl Cli {
             qsystem_pass: self.qsystem_pass,
             target: self.target.unwrap_or(default_args.target),
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
-            // todo add wasm
         }
+
     }
 
     // TODO: Replace with `CliError::validation` in `hugr-cli >= 0.22.2`.
