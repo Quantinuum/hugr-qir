@@ -69,11 +69,18 @@ impl CodegenExtension for WasmCodegen {
 
 fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
     ctx: &EmitFuncContext<'c, '_, H>,
-    op: EmitOpArgs<'c, '_, ExtensionOp, H>,
+    args: EmitOpArgs<'c, '_, ExtensionOp, H>,
 ) -> Result<()> {
-    match wasm::WasmOp::from_extension_op(&op.node())?.into() {
-        wasm::WasmOp::GetContext => todo!(),
-        wasm::WasmOp::DisposeContext => todo!(),
+    match wasm::WasmOp::from_extension_op(&args.node())?.into() {
+        wasm::WasmOp::GetContext => {
+            let r = ctx.iw_context().struct_type(&[], false).get_undef().into();
+            let builder = ctx.builder();
+            args.outputs.finish(builder, [r])
+        }
+        wasm::WasmOp::DisposeContext => {
+            let builder = ctx.builder();
+            args.outputs.finish(builder, [])
+        }
         wasm::WasmOp::LookupById { id, .. } => todo!(),
         wasm::WasmOp::LookupByName { name, .. } => todo!(),
         wasm::WasmOp::Call { outputs, .. } => todo!(),
