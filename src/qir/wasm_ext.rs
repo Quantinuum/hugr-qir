@@ -1,7 +1,8 @@
-use hugr::{HugrView, Node};
-use hugr_llvm::{CodegenExtension, CodegenExtsBuilder};
+use hugr::{extension::simple_op::MakeExtensionOp as _, ops::ExtensionOp, HugrView, Node};
+use hugr_llvm::{emit::{EmitFuncContext, EmitOpArgs}, CodegenExtension, CodegenExtsBuilder};
 
-use tket_qsystem::extension::classical_compute::wasm;
+use tket_qsystem::extension::classical_compute::{wasm, ComputeOp};
+use anyhow::{bail,Result};
 
 pub struct WasmCodegen {}
 
@@ -56,11 +57,27 @@ impl CodegenExtension for WasmCodegen {
                 ),
                 |session, hugr_type| session.llvm_type(&Type::new_extension(hugr_type.clone())),
             )
-            // .simple_extension_op::<T>(move |context, args, _| self.emit_op(context, args))
+            .simple_extension_op(move |context, args, _| emit_wasm_op(context, args))
             .custom_const({
                 move |ctx, _mod: &wasm::ConstWasmModule| {
                     Ok(ctx.iw_context().const_struct(&[], false).into())
                 }
             })
+    }
+}
+
+
+fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
+    ctx: &EmitFuncContext<'c, '_, H>,
+    op: EmitOpArgs<'c, '_, ExtensionOp, H>,
+) -> Result<()> {
+    match wasm::WasmOp::from_extension_op(&op.node())?.into() {
+        wasm::WasmOp::GetContext => todo!(),
+        wasm::WasmOp::DisposeContext => todo!(),
+        wasm::WasmOp::LookupById { id, .. } => todo!(),
+        wasm::WasmOp::LookupByName { name, .. } => todo!(),
+        wasm::WasmOp::Call { outputs, .. } => todo!(),
+        wasm::WasmOp::ReadResult { outputs } => todo!(),
+        op => bail!("Unknown op: {op:?}")
     }
 }
