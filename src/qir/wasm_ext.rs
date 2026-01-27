@@ -84,7 +84,13 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
         wasm::WasmOp::LookupById { id, .. } => todo!(),
         wasm::WasmOp::LookupByName { name, .. } => todo!(),
         wasm::WasmOp::Call { outputs, .. } => todo!(),
-        wasm::WasmOp::ReadResult { outputs } => todo!(),
+        wasm::WasmOp::ReadResult { outputs } => {
+            let [r] = args.inputs.as_slice() else {
+                bail!("expected 1 input")
+            };
+            let builder = ctx.builder();
+            args.outputs.finish(builder, [*r])
+        }
         op => bail!("Unknown op: {op:?}")
     }
 }
