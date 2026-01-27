@@ -57,7 +57,7 @@ impl CodegenExtension for WasmCodegen {
                     let func_type = session.llvm_func_type(&Signature::new(inputs, outputs))?;
                     // TODO func_type has only allowed types in signature
                     Ok(func_type.ptr_type(Default::default()).into())
-                }
+                },
             )
             .custom_type(
                 (
@@ -107,14 +107,15 @@ fn result_type<'c>(
     session.llvm_type(&Type::new_extension(hugr_type.clone()))
 }
 
-fn insert_func<'c, H: HugrView>(
+fn insert_func<'c, H: HugrView<Node = Node>>(
     ctx: &EmitFuncContext<'c, '_, H>,
     name: &str,
     func_type: FunctionType<'c>,
-    wasm_id: u64
+    _wasm_id: u64,
 ) -> Result<FunctionValue<'c>> {
-    ctx.g
-
+    let func = ctx.get_extern_func(name, func_type)?;
+    // TODO set attributes
+    Ok(func)
 }
 
 fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
@@ -132,8 +133,24 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let builder = ctx.builder();
             args.outputs.finish(builder, [])
         }
-        wasm::WasmOp::LookupById { id, .. } => todo!(),
-        wasm::WasmOp::LookupByName { name, .. } => todo!(),
+        wasm::WasmOp::LookupById {
+            id,
+            inputs,
+            outputs,
+        } => {
+            let name = format!("wasm_func_{id}");
+            let inputs: TypeRow = inputs.try_into()?;
+            let outputs: TypeRow = outputs.try_into()?;
+            let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
+            let func = insert_func(ctx, &name, llvm_func_ty, id)?;
+            let builder = ctx.builder();
+            args.outputs
+                .finish(builder, [func.as_global_value().as_pointer_value().into()])
+        }
+        wasm::WasmOp::LookupByName { name, .. } => {
+            // TODO convert to id and reuse LookupById
+            todo!()
+        }
         wasm::WasmOp::Call { outputs, .. } => {
             let func: CallableValue<'c> = args.inputs[1].into_pointer_value().try_into().unwrap();
             let call_args = args.inputs[2..]
