@@ -80,7 +80,7 @@ def hugr_to_qir_str(self: Package, *, validate_qir: bool = True) -> str:
     return qir_str
 
 
-def to_qir_bytes(self: Package, *, validate_qir: bool = True) -> bytes:
+def hugr_to_qir_bytes(self: Package, *, validate_qir: bool = True) -> bytes:
     """
     Converts hugr package to qir bytes
 
