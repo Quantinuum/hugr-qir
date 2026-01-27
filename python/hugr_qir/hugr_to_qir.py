@@ -61,7 +61,7 @@ def hugr_to_qir(  # noqa: PLR0913
         return ir_string_to_output_format(qir_ir, output_format)
 
 
-def to_qir_str(self: Package, *, validate_qir: bool = True) -> str:
+def hugr_to_qir_str(self: Package, *, validate_qir: bool = True) -> str:
     """
     Converts hugr package to qir str
 
