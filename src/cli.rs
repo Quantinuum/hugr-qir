@@ -100,6 +100,12 @@ impl Cli {
         let mut hugr = package.modules[0].clone();
 
         let args = self.compile_args();
+        // let wasm_bytes = get_wasm(wasm_path)
+        //, wasm_path: PathBuf
+         //           wasm_bytes: wasm_bytes
+
+        // args.
+
         args.compile(&mut hugr, context)
     }
 
@@ -145,6 +151,7 @@ impl Cli {
             target: self.target.unwrap_or(default_args.target),
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
         }
+
     }
 
     // TODO: Replace with `CliError::validation` in `hugr-cli >= 0.22.2`.
