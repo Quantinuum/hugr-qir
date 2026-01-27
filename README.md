@@ -17,7 +17,7 @@ You can install from pypi via `pip install hugr-qir`.
 
 Use the function `hugr_to_qir` from the `hugr_to_qir` module to convert hugr to qir. By default, some basic validity checks will be run on the generated QIR. These checks can be turned off by passing `validate_qir = False`.
 
-You can find an example notebook at `examples/submit-guppy-h1-h2-via-qir.ipynb` showing the conversion and the submission to H1/H2.
+You can find an example notebook at `examples/submit-guppy-h2-via-qir.ipynb` showing the conversion and the submission to H1/H2.
 
 ### CLI
 

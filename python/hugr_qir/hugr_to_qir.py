@@ -59,3 +59,45 @@ def hugr_to_qir(  # noqa: PLR0913
             qir_ir = cli_output.read()
 
         return ir_string_to_output_format(qir_ir, output_format)
+
+
+def hugr_to_qir_str(self: Package, *, validate_qir: bool = True) -> str:
+    """
+    Converts hugr package to qir str
+
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as str
+    :rtype: str
+    """
+
+    qir_str = hugr_to_qir(
+        self, output_format=OutputFormat.LLVM_IR, validate_qir=validate_qir
+    )
+    assert isinstance(qir_str, str)  # noqa: S101
+    return qir_str
+
+
+def hugr_to_qir_bytes(self: Package, *, validate_qir: bool = True) -> bytes:
+    """
+    Converts hugr package to qir bytes
+
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as bytes
+    :rtype: bytes
+    """
+
+    qir_bytes = hugr_to_qir(
+        self, output_format=OutputFormat.BITCODE, validate_qir=validate_qir
+    )
+    assert isinstance(qir_bytes, bytes)  # noqa: S101
+    return qir_bytes
+
+
+setattr(Package, "to_qir_str", hugr_to_qir_str)  # noqa: B010
+setattr(Package, "to_qir_bytes", hugr_to_qir_bytes)  # noqa: B010
