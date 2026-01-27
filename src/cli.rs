@@ -5,8 +5,6 @@ use clap::Parser;
 use clap_verbosity_flag::log::Level;
 use hugr::llvm::inkwell;
 use hugr::package::PackageValidationError;
-use std::path::PathBuf;
-use std::borrow::Cow;
 
 use crate::CompileArgs;
 
@@ -57,10 +55,6 @@ pub struct Cli {
 
     #[arg(value_parser, short = 'l', long, help = "LLVM optimization level")]
     pub optimization_level: Option<CliOptimizationLevel>,
-
-    // todo wasm
-    #[arg(long, short = 'w', long, help = "wasm file", default_value_t = None)]
-    pub wasm_file: PathBuf,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
@@ -98,7 +92,6 @@ impl Cli {
         context: &'c inkwell::context::Context,
     ) -> Result<inkwell::module::Module<'c>> {
         let (desc, package) = self.input_args.get_described_package()?;
-        let wasm = self.get_wasm()?; // todo
         let generator = desc.generator();
 
         package
@@ -107,9 +100,9 @@ impl Cli {
         let mut hugr = package.modules[0].clone();
 
         let args = self.compile_args();
-                let wasm_bytes = get_wasm(wasm_path)
-        , wasm_path: PathBuf
-                    wasm_bytes: wasm_bytes
+        // let wasm_bytes = get_wasm(wasm_path)
+        //, wasm_path: PathBuf
+         //           wasm_bytes: wasm_bytes
 
         // args.
 

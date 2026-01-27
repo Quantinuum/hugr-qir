@@ -42,16 +42,10 @@ pub struct CompileArgs {
 
     /// None means no output
     pub verbosity: Option<Level>,
-    ///
     pub validate: bool,
-    ///
     pub qsystem_pass: bool,
-    /// Target machine
     pub target: CompileTarget,
-    /// Optimization level
     pub opt_level: CliOptimizationLevel,
-    /// Optional Wasm module as bytes for Wasm codegen
-    wasm_bytes: Option<Cow<'a, [u8]>>,
 }
 
 impl Default for CompileArgs {
@@ -63,20 +57,14 @@ impl Default for CompileArgs {
             qsystem_pass: true,
             target: CompileTarget::QuantinuumHardware,
             opt_level: CliOptimizationLevel::Aggressive,
-            wasm_bytes: None,
         }
     }
 }
 
 impl CompileArgs {
-    pub fn codegen_extensions(&self, args: &CompileArgs) -> CodegenExtsMap<'static, Hugr> {
+    pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
-        //let wasm_cg = qir::wasm_ext::WasmCodegen::new();
-        let wasm_cg = args.wasm_bytes.as_ref().map_or_else(
-            || anyhow::Ok(WasmCodegen::default()),
-            |bytes| Ok(WasmCodegen::new(WasmModule::from_bytes(bytes)?)),
-        )?;
-
+        let wasm_cg = qir::wasm_ext::WasmCodegen::new();
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
@@ -156,11 +144,6 @@ impl CompileArgs {
         opt_str.push_str(",lowerswitch");
         let _ = module.run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create());
         Ok(())
-    }
-
-    pub fn wasm_module(mut self, wasm_bytes: Option<Cow<'a, [u8]>>) -> Self {
-        self.wasm_bytes = wasm_bytes;
-        self
     }
 
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
