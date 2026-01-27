@@ -44,14 +44,6 @@ impl CodegenExtension for WasmCodegen {
                     wasm::EXTENSION_ID.to_owned(),
                     wasm::FUNC_TYPE_NAME.to_owned(),
                 ),
-                // TODO we want the function type, not an int
-                |session, _hugr_type| Ok(session.iw_context().i64_type().into()),
-            )
-            .custom_type(
-                (
-                    wasm::EXTENSION_ID.to_owned(),
-                    wasm::MODULE_TYPE_NAME.to_owned(),
-                ),
                 |session, hugr_type| {
                     let wasm::WasmType::Func { inputs, outputs } =
                         wasm::WasmType::try_from(hugr_type.clone())?
@@ -64,7 +56,14 @@ impl CodegenExtension for WasmCodegen {
                     let func_type = session.llvm_func_type(&Signature::new(inputs, outputs))?;
                     // TODO func_type has only allowed types in signature
                     Ok(func_type.ptr_type(Default::default()).into())
-                },
+                }
+            )
+            .custom_type(
+                (
+                    wasm::EXTENSION_ID.to_owned(),
+                    wasm::MODULE_TYPE_NAME.to_owned(),
+                ),
+                |session, _hugr_type| Ok(empty_struct_type(session.iw_context()).into()),
             )
             .custom_type(
                 (
