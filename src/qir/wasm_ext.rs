@@ -185,3 +185,5 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
         op => bail!("Unknown op: {op:?}"),
     }
 }
+
+// TODO add test cases using simple_op_hugr
