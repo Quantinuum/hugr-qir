@@ -99,5 +99,5 @@ def hugr_to_qir_bytes(self: Package, *, validate_qir: bool = True) -> bytes:
     return qir_bytes
 
 
-setattr(Package, "to_qir_str", to_qir_str)  # noqa: B010
-setattr(Package, "to_qir_bytes", to_qir_bytes)  # noqa: B010
+setattr(Package, "to_qir_str", hugr_to_qir_str)  # noqa: B010
+setattr(Package, "to_qir_bytes", hugr_to_qir_bytes)  # noqa: B010
