@@ -26,6 +26,8 @@ pub mod target;
 use crate::cli::CliOptimizationLevel;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
+use crate::qir::wasm_ext::WasmCodegen;
+
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -62,6 +64,7 @@ impl Default for CompileArgs {
 impl CompileArgs {
     pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
+        let wasm_cg = qir::wasm_ext::WasmCodegen::new();
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
@@ -75,6 +78,7 @@ impl CompileArgs {
             })
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
+            .add_extension(wasm_cg)   // wasm todo         
             .finish()
     }
 
