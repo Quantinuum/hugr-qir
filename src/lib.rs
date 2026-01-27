@@ -62,6 +62,7 @@ impl Default for CompileArgs {
 impl CompileArgs {
     pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
+        let wasm_cg = crate::qir::wasm_ext::WasmCodegen::new();
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
