@@ -11,7 +11,8 @@ use hugr_llvm::{
     CodegenExtension, CodegenExtsBuilder,
 };
 
-use anyhow::{bail, Result};
+use anyhow::{bail, ensure, Result};
+use inkwell::types::FunctionType;
 use inkwell::{
     types::{BasicTypeEnum, StructType},
     values::{CallableValue, FunctionValue, PointerValue},
@@ -104,6 +105,16 @@ fn result_type<'c>(
     }
 
     session.llvm_type(&Type::new_extension(hugr_type.clone()))
+}
+
+fn insert_func<'c, H: HugrView>(
+    ctx: &EmitFuncContext<'c, '_, H>,
+    name: &str,
+    func_type: FunctionType<'c>,
+    wasm_id: u64
+) -> Result<FunctionValue<'c>> {
+    ctx.g
+
 }
 
 fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
