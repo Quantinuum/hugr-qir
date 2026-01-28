@@ -1,6 +1,6 @@
 [project]
 name = "hugr-qir"
-version = "0.0.20"
+version = "0.0.21rc0"
 description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -8,7 +8,7 @@ dependencies = [
     "click~=8.3.0",
     "quantinuum-qircheck~=0.4.0",
     "llvmlite~=0.44.0",
-    "hugr>=0.13.1,<0.15.0",
+    "hugr~=0.14.4",
     "guppylang~=0.21.5"
 ]
 
@@ -27,7 +27,7 @@ dev = [
     "pytest-cov>=5.0.0,<8",
 ]
 examples = [
-    "pytket-quantinuum>=0.45.0",
+    "qnexus>=0.39",
     "jupyterlab>=4.4.2",
 ]
 

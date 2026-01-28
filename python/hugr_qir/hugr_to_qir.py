@@ -1,4 +1,5 @@
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 from hugr.package import Package
@@ -9,7 +10,7 @@ from .output import OutputFormat, ir_string_to_output_format
 
 
 def hugr_to_qir(  # noqa: PLR0913
-    hugr: Package | bytes,
+    hugr: Package | bytes | Callable,
     *,
     validate_qir: bool = True,
     validate_hugr: bool = False,
@@ -37,7 +38,9 @@ def hugr_to_qir(  # noqa: PLR0913
         tmp_infile_path = Path(f"{tmp_dir}/tmp.hugr")  # noqa: S108
         tmp_outfile_path = Path(f"{tmp_dir}/tmp.ll")  # noqa: S108
 
-        if type(hugr) is bytes:
+        if hasattr(hugr, "compile"):
+            hugr_bytes = hugr.compile().to_bytes()  # type: ignore  # noqa: PGH003
+        elif type(hugr) is bytes:
             hugr_bytes = hugr
         else:
             assert type(hugr) is Package  # noqa: S101
@@ -59,3 +62,43 @@ def hugr_to_qir(  # noqa: PLR0913
             qir_ir = cli_output.read()
 
         return ir_string_to_output_format(qir_ir, output_format)
+
+
+def to_qir_str(hugr: Package | bytes | Callable, *, validate_qir: bool = True) -> str:
+    """
+    Converts hugr package to qir str
+
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as str
+    :rtype: str
+    """
+
+    qir_str = hugr_to_qir(
+        hugr, output_format=OutputFormat.LLVM_IR, validate_qir=validate_qir
+    )
+    assert isinstance(qir_str, str)  # noqa: S101
+    return qir_str
+
+
+def to_qir_bytes(
+    hugr: Package | bytes | Callable, *, validate_qir: bool = True
+) -> bytes:
+    """
+    Converts hugr package to qir bytes
+
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as bytes
+    :rtype: bytes
+    """
+
+    qir_bytes = hugr_to_qir(
+        hugr, output_format=OutputFormat.BITCODE, validate_qir=validate_qir
+    )
+    assert isinstance(qir_bytes, bytes)  # noqa: S101
+    return qir_bytes
