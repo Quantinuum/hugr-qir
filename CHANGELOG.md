@@ -2,8 +2,8 @@
 
 ### v0.0.21rc0
 
-- add hugrpackge.to_qir_str()
-- add hugrpackge.to_qir_bytes()
+- add to_qir_str()
+- add to_qir_bytes()
 
 ### v0.0.20
 
