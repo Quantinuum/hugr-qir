@@ -1,5 +1,4 @@
 import tempfile
-from collections.abc import Callable
 from pathlib import Path
 
 from hugr.package import Package
@@ -10,7 +9,7 @@ from .output import OutputFormat, ir_string_to_output_format
 
 
 def hugr_to_qir(  # noqa: PLR0913
-    hugr: Package | bytes | Callable,
+    hugr: Package | bytes,
     *,
     validate_qir: bool = True,
     validate_hugr: bool = False,
@@ -38,9 +37,7 @@ def hugr_to_qir(  # noqa: PLR0913
         tmp_infile_path = Path(f"{tmp_dir}/tmp.hugr")  # noqa: S108
         tmp_outfile_path = Path(f"{tmp_dir}/tmp.ll")  # noqa: S108
 
-        if hasattr(hugr, "compile"):
-            hugr_bytes = hugr.compile().to_bytes()  # type: ignore  # noqa: PGH003
-        elif type(hugr) is bytes:
+        if type(hugr) is bytes:
             hugr_bytes = hugr
         else:
             assert type(hugr) is Package  # noqa: S101
@@ -64,12 +61,12 @@ def hugr_to_qir(  # noqa: PLR0913
         return ir_string_to_output_format(qir_ir, output_format)
 
 
-def to_qir_str(hugr: Package | bytes | Callable, *, validate_qir: bool = True) -> str:
+def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
     """
     Converts hugr package to qir str
 
-    :param self: hugr package
-    :type self: Package
+    :param hugr: hugr package
+    :type hugr: Package
     :param validate_qir: Whether to validate the created QIR
     :type validate_qir: bool
     :return: QIR corresponding to the HUGR input as str
@@ -83,14 +80,12 @@ def to_qir_str(hugr: Package | bytes | Callable, *, validate_qir: bool = True) -
     return qir_str
 
 
-def to_qir_bytes(
-    hugr: Package | bytes | Callable, *, validate_qir: bool = True
-) -> bytes:
+def to_qir_bytes(hugr: Package | bytes, *, validate_qir: bool = True) -> bytes:
     """
     Converts hugr package to qir bytes
 
-    :param self: hugr package
-    :type self: Package
+    :param hugr: hugr package
+    :type hugr: Package
     :param validate_qir: Whether to validate the created QIR
     :type validate_qir: bool
     :return: QIR corresponding to the HUGR input as bytes
