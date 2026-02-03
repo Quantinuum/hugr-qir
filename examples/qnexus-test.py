@@ -4,7 +4,7 @@ qnx.login()
 
 import datetime  # noqa: E402
 
-project = qnx.projects.get_or_create(name="QIR-Demonstration")
+project = qnx.projects.get_or_create(name="QIR-Demonstration5")
 qnx.context.set_active_project(project)
 
 qir_name = "HUGR-QIR"
@@ -16,7 +16,7 @@ from typing import no_type_check  # noqa: E402
 from guppylang import guppy, qubit  # noqa: E402
 from guppylang.std.builtins import result  # noqa: E402
 from guppylang.std.quantum import h, measure  # noqa: E402
-from hugr_qir.hugr_to_qir import guppy_to_qir_bytes  # noqa: E402
+from hugr_qir.guppy_to_qir import guppy_to_qir_bytes  # noqa: E402
 
 
 @guppy
