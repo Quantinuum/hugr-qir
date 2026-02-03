@@ -27,7 +27,7 @@ dev = [
     "pytest-cov>=5.0.0,<8",
 ]
 examples = [
-    "qnexus>=0.39",
+    "qnexus==0.37.1",
     "jupyterlab>=4.4.2",
 ]
 
