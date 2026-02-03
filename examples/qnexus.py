@@ -16,7 +16,7 @@ from typing import no_type_check  # noqa: E402
 from guppylang import guppy, qubit  # noqa: E402
 from guppylang.std.builtins import result  # noqa: E402
 from guppylang.std.quantum import h, measure  # noqa: E402
-from hugr_qir.hugr_to_qir import to_qir_bytes  # noqa: E402
+from hugr_qir.hugr_to_qir import guppy_to_qir_bytes  # noqa: E402
 
 
 @guppy
@@ -35,7 +35,7 @@ def main() -> None:
     result("0", b2)
 
 
-qir_bitcode = to_qir_bytes(main)
+qir_bitcode = guppy_to_qir_bytes(main)
 
 qir_program_ref = qnx.qir.upload(qir=qir_bitcode, name=qir_name, project=project)
 
@@ -55,3 +55,4 @@ ref_execute_job = qnx.start_execute_job(
 )
 
 qnx.jobs.wait_for(ref_execute_job)
+
