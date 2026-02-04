@@ -1,10 +1,15 @@
 import qnexus as qnx  # type: ignore
 
-qnx.login()
-
 import datetime  # noqa: E402
 
-project = qnx.projects.get_or_create(name="QIR-Demonstration5")
+from qnexus.exceptions import AuthenticationError
+
+try:
+    project = qnx.projects.get_or_create(name="QIR-Demonstration5")
+except AuthenticationError:
+    qnx.login()
+    project = qnx.projects.get_or_create(name="QIR-Demonstration5")
+
 qnx.context.set_active_project(project)
 
 qir_name = "HUGR-QIR"
@@ -55,4 +60,3 @@ ref_execute_job = qnx.start_execute_job(
 )
 
 qnx.jobs.wait_for(ref_execute_job)
-
