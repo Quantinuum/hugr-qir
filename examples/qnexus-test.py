@@ -2,7 +2,7 @@ import qnexus as qnx  # type: ignore
 
 import datetime  # noqa: E402
 
-from qnexus.exceptions import AuthenticationError
+from qnexus.exceptions import AuthenticationError  # type: ignore [import-not-found]
 
 try:
     project = qnx.projects.get_or_create(name="QIR-Demonstration5")
