@@ -1,5 +1,14 @@
 ## Changelog
 
+### v0.0.21rc0
+
+- add to_qir_str()
+- add to_qir_bytes()
+
+### v0.0.20
+
+- update llvmlite version requirement to 0.44.0
+
 ### v0.0.19
 
 - add support for get_current_shot
