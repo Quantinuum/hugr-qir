@@ -35,18 +35,18 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 1. Add this to the end of your guppy file:
 
-```py
-if __name__ == "__main__":
-    sys.stdout.buffer.write(main.compile().to_bytes())
-    # Or to compile a non-main guppy function:
-    sys.stdout.buffer.write(guppy_func.compile_function().to_bytes())
-```
+    ```py
+    if __name__ == "__main__":
+        sys.stdout.buffer.write(main.compile().to_bytes())
+        # Or to compile a non-main guppy function:
+        sys.stdout.buffer.write(guppy_func.compile_function().to_bytes())
+    ```
 
 1. Generate the hugr file with:
 
-```sh
-python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
-```
+    ```sh
+    python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
+    ```
 
 ## Development
 

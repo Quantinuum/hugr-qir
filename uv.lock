@@ -857,7 +857,7 @@ dev = [
 ]
 examples = [
     { name = "jupyterlab", specifier = ">=4.5.3" },
-    { name = "qnexus", specifier = "~=0.39.0" },
+    { name = "qnexus", specifier = "~=0.37.1" },
 ]
 
 [[package]]
@@ -2350,15 +2350,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyjwt"
-version = "2.11.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5c/5a/b46fa56bf322901eee5b0454a34343cdbdae202cd421775a8ee4e42fd519/pyjwt-2.11.0.tar.gz", hash = "sha256:35f95c1f0fbe5d5ba6e43f00271c275f7a1a4db1dab27bf708073b75318ea623", size = 98019, upload-time = "2026-01-30T19:59:55.694Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/01/c26ce75ba460d5cd503da9e13b21a33804d38c2165dec7b716d06b13010c/pyjwt-2.11.0-py3-none-any.whl", hash = "sha256:94a6bde30eb5c8e04fee991062b534071fd1439ef58d2adc9ccb823e7bcd0469", size = 28224, upload-time = "2026-01-30T19:59:54.539Z" },
-]
-
-[[package]]
 name = "pyparsing"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2708,7 +2699,7 @@ wheels = [
 
 [[package]]
 name = "qnexus"
-version = "0.39.0"
+version = "0.37.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -2719,15 +2710,14 @@ dependencies = [
     { name = "pandas" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "pyjwt" },
     { name = "pytket" },
     { name = "quantinuum-schemas" },
     { name = "rich" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/8b/5dc780860bbf9cf535ac1d221b844f7e82977736a1cecccba501d175a6d4/qnexus-0.39.0.tar.gz", hash = "sha256:fea1cd6a9eec42e163cf3bd4fe3ba3433de2fc4d32a5ebf0a3cdbf9ca9877d4d", size = 433803, upload-time = "2026-01-09T14:04:16.872Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/2a/cf70afe05fc3fcc3b8b877a4434075a562e9618a7355955a57a4f4d1809f/qnexus-0.37.1.tar.gz", hash = "sha256:6b71988b971e637e444ffb6dda1c053c0ac120e3ad935db11f06b6ccf9c2ae3e", size = 431149, upload-time = "2025-11-19T11:38:13.322Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/61/3b3e97b39bc187a7253bc0f74d81f7c5e25e2e16c9190cef8aa6e68c6f80/qnexus-0.39.0-py3-none-any.whl", hash = "sha256:94dfbdb5c36a31e35a94c5996bf0add748e6268ac49d00f280455ed8a617922c", size = 73352, upload-time = "2026-01-09T14:04:15.592Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/84/becca04c2c60e08c3b4bdea92a4342bc76ac211e2f985b6eb18c32a78045/qnexus-0.37.1-py3-none-any.whl", hash = "sha256:c9575acef6221c610beeeaf9aa69d61cfeefa46b3554e0b2cf1ad2afc935eecc", size = 70756, upload-time = "2025-11-19T11:38:12.128Z" },
 ]
 
 [[package]]

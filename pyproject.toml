@@ -29,7 +29,7 @@ dev = [
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus~=0.39.0",
+    "qnexus~=0.37.1",
 ]
 
 [build-system]
