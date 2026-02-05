@@ -25,26 +25,28 @@ You can use the available cli after installing the python package.
 
 This will generate qir for a given hugr file:
 
-```
+```sh
 hugr-qir test-file.hugr
 ```
 
 Run `hugr-qir --help` to see the available options.
 
 If you want to generate a hugr file from guppy, you can do this in two steps:
+
 1. Add this to the end of your guppy file:
-```
+
+```py
 if __name__ == "__main__":
     sys.stdout.buffer.write(main.compile().to_bytes())
     # Or to compile a non-main guppy function:
     sys.stdout.buffer.write(guppy_func.compile_function().to_bytes())
 ```
 
-2. Generate the hugr file with:
-```
+1. Generate the hugr file with:
+
+```sh
 python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
 ```
-
 
 ## Development
 
@@ -86,7 +88,7 @@ pytest --snapshot-update
 
 ## License
 
-This project is licensed under Apache License, Version 2.0 ([LICENSE][] or http://www.apache.org/licenses/LICENSE-2.0).
+This project is licensed under Apache License, Version 2.0 ([LICENSE][] or <http://www.apache.org/licenses/LICENSE-2.0>).
 
 [build_status]: https://github.com/Quantinuum/hugr-qir/actions/workflows/ci-py.yml/badge.svg?branch=main
 [codecov]: https://img.shields.io/codecov/c/gh/Quantinuum/hugr-qir?logo=codecov
