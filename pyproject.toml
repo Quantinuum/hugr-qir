@@ -98,10 +98,10 @@ before-all = [
     'curl -LO https://github.com/PLC-lang/llvm-package-windows/releases/download/v14.0.6/LLVM-14.0.6-win64.7z',
     '7z x LLVM-14.0.6-win64.7z "-oC:\LLVM" -y',
 ]
-before-build = ['pip install delvewheel']
+before-build = ['uv pip install delvewheel']
 repair-wheel-command = [
     'delvewheel repair -w {dest_dir} {wheel}',
     'uvx abi3audit --strict --report {wheel}',
 ]
 test-groups = []
-before-test = ['pip install --group {project}/pyproject.toml:dev']
+before-test = ['uv pip install --group {project}/pyproject.toml:dev']
