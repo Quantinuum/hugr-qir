@@ -1,5 +1,4 @@
 import tempfile
-from collections.abc import Callable
 from pathlib import Path
 
 from hugr.package import Package
@@ -62,10 +61,38 @@ def hugr_to_qir(  # noqa: PLR0913
         return ir_string_to_output_format(qir_ir, output_format)
 
 
-def compile_qir(guppy_main: Callable) -> bytes:
-    """A function for converting a guppy function directly to qir (llvm bitcode)
-
-    :param guppy_main: guppy entry point function
-    :returns: QIR corresponding to the given guppy function input
+def to_qir_str(self: Package, *,     validate_qir: bool = True) -> str:
     """
-    return hugr_to_qir(guppy_main.compile(), output_format=OutputFormat.BITCODE)  # type: ignore[attr-defined, arg-type, return-value]
+    Converts hugr package to qir str
+    
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as str
+    :rtype: str
+    """
+
+    qir_str = hugr_to_qir(self, output_format=OutputFormat.LLVM_IR, validate_qir=validate_qir)
+    assert isinstance(qir_str, str)
+    return qir_str
+
+
+def to_qir_bytes(self: Package, *, validate_qir: bool = True) -> bytes:
+    """
+    Converts hugr package to qir bytes
+    
+    :param self: hugr package
+    :type self: Package
+    :param validate_qir: Whether to validate the created QIR
+    :type validate_qir: bool
+    :return: QIR corresponding to the HUGR input as bytes
+    :rtype: bytes
+    """
+
+    qir_bytes = hugr_to_qir(self, output_format=OutputFormat.BITCODE, validate_qir=validate_qir)
+    assert isinstance(qir_bytes, bytes)
+    return qir_bytes
+
+setattr(Package, "to_qir_str", to_qir_str)
+setattr(Package, "to_qir_bytes", to_qir_bytes)

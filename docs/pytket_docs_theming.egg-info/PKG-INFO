@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: pytket-docs-theming
+Version: 1.0.0
+Summary: Sphinx theming config for pytket
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: enum-tools[sphinx]>=0.13.0
+Requires-Dist: furo>=2024.8.6
+Requires-Dist: myst-nb>=1.2.0
+Requires-Dist: sphinx~=8.2.3
+Requires-Dist: sphinx-autodoc-typehints>=3.2.0
+Requires-Dist: sphinxcontrib-googleanalytics>=0.5
+Requires-Dist: sphinx-copybutton>=0.5.2
+Requires-Dist: quantinuum-sphinx~=0.6

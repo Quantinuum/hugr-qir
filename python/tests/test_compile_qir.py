@@ -3,7 +3,6 @@ from typing import no_type_check
 from guppylang import guppy, qubit
 from guppylang.std.builtins import result
 from guppylang.std.quantum import h, measure
-from hugr_qir.hugr_to_qir import compile_qir
 
 
 @guppy
@@ -22,6 +21,6 @@ def main() -> None:
     result("0", b2)
 
 
-qir = compile_qir(main)
+qir = main.compile().to_qir_str()
 
 assert len(qir) > 10  # noqa: PLR2004
