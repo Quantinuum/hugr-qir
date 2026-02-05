@@ -75,15 +75,17 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
         input_indices: &[usize],
     ) -> Result<()> {
         let inputs: Vec<_> = input_indices.iter().map(|&i| args.inputs[i]).collect();
-        let result = self
-            .builder()
-            .build_call(
-                func?,
-                &inputs.iter().map(|&v| v.into()).collect::<Vec<_>>(),
-                name,
-            )?
-            .try_as_basic_value()
-            .unwrap_left();
+        let call_site = self.builder().build_call(
+            func?,
+            &inputs.iter().map(|&v| v.into()).collect::<Vec<_>>(),
+            name,
+        )?;
+        let result = match call_site.try_as_basic_value() {
+            hugr_llvm::inkwell::values::ValueKind::Basic(v) => v,
+            hugr_llvm::inkwell::values::ValueKind::Instruction(_) => {
+                anyhow::bail!("Expected basic value from call")
+            }
+        };
         args.outputs
             .finish(self.builder(), [result, self.rng_context()])
     }

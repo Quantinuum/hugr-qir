@@ -125,12 +125,11 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
     let conv_t = res_t.fn_type(&[qb.get_type().into()], false);
     let conv_func = context.get_extern_func("__QIR__CONV_Qubit_TO_Result", conv_t)?;
 
-    let Some(result) = context
-        .builder()
-        .build_call(conv_func, &[qb.into()], "")?
-        .try_as_basic_value()
-        .left()
-    else {
+    let call_site = context.builder().build_call(conv_func, &[qb.into()], "")?;
+    let Some(result) = (match call_site.try_as_basic_value() {
+        hugr_llvm::inkwell::values::ValueKind::Basic(v) => Some(v),
+        hugr_llvm::inkwell::values::ValueKind::Instruction(_) => None,
+    }) else {
         bail!("expected a result from measure")
     };
 
@@ -141,9 +140,7 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
 
     context
         .builder()
-        .build_call(measure_func, &[qb.into(), result.into()], "")?
-        .try_as_basic_value()
-        .left();
+        .build_call(measure_func, &[qb.into(), result.into()], "")?;
 
     Ok(result)
 }
@@ -159,12 +156,13 @@ fn emit_qis_read_result<'c, H: HugrView<Node = Node>>(
         .fn_type(&[result.get_type().into()], false);
     let read_result_func =
         context.get_extern_func("__quantum__qis__read_result__body", read_result_t)?;
-    let Some(result_i1) = context
+    let call_site = context
         .builder()
-        .build_call(read_result_func, &[result.into()], "")?
-        .try_as_basic_value()
-        .left()
-    else {
+        .build_call(read_result_func, &[result.into()], "")?;
+    let Some(result_i1) = (match call_site.try_as_basic_value() {
+        hugr_llvm::inkwell::values::ValueKind::Basic(v) => Some(v),
+        hugr_llvm::inkwell::values::ValueKind::Instruction(_) => None,
+    }) else {
         bail!("expected a bool from read_result")
     };
     let true_val = emit_value(context, &Value::true_val())?;
@@ -194,12 +192,11 @@ fn emit_qis_qalloc<'c, H: HugrView<Node = Node>>(
     let qb_ty = context.llvm_type(&qb_t())?;
     let qalloc_t = qb_ty.fn_type(&[], false);
     let qalloc_func = context.get_extern_func("__quantum__rt__qubit_allocate", qalloc_t)?;
-    let Some(qb) = context
-        .builder()
-        .build_call(qalloc_func, &[], "")?
-        .try_as_basic_value()
-        .left()
-    else {
+    let call_site = context.builder().build_call(qalloc_func, &[], "")?;
+    let Some(qb) = (match call_site.try_as_basic_value() {
+        hugr_llvm::inkwell::values::ValueKind::Basic(v) => Some(v),
+        hugr_llvm::inkwell::values::ValueKind::Instruction(_) => None,
+    }) else {
         bail!("expected a qubit from qalloc")
     };
     Ok(qb)

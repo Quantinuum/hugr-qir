@@ -77,7 +77,7 @@ cargo test
 You can run the Python test with:
 
 ```bash
-pytest
+pytest -n auto
 ```
 
 If you want to update the snapshots you can do that via:
