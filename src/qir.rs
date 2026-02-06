@@ -129,7 +129,7 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
         .builder()
         .build_call(conv_func, &[qb.into()], "")?
         .try_as_basic_value()
-        .left()
+        .basic()
     else {
         bail!("expected a result from measure")
     };
@@ -141,9 +141,7 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
 
     context
         .builder()
-        .build_call(measure_func, &[qb.into(), result.into()], "")?
-        .try_as_basic_value()
-        .left();
+        .build_call(measure_func, &[qb.into(), result.into()], "")?;
 
     Ok(result)
 }
@@ -163,7 +161,7 @@ fn emit_qis_read_result<'c, H: HugrView<Node = Node>>(
         .builder()
         .build_call(read_result_func, &[result.into()], "")?
         .try_as_basic_value()
-        .left()
+        .basic()
     else {
         bail!("expected a bool from read_result")
     };
@@ -198,7 +196,7 @@ fn emit_qis_qalloc<'c, H: HugrView<Node = Node>>(
         .builder()
         .build_call(qalloc_func, &[], "")?
         .try_as_basic_value()
-        .left()
+        .basic()
     else {
         bail!("expected a qubit from qalloc")
     };
