@@ -10,6 +10,13 @@ jobs:
     name: Add issue to project
     runs-on: ubuntu-latest
     steps:
+      # New project
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: https://github.com/orgs/quantinuum/projects/23
+          github-token: ${{ secrets.HUGRBOT_PAT }}
+      # Old project
+      # TODO: Remove once no longer needed
       - uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/orgs/quantinuum-dev/projects/10
