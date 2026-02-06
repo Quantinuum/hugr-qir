@@ -20,6 +20,7 @@ def fun_func_2(q0: qubit, q1: qubit, i: int) -> None:
 
     fun_func(q1)
 
+
 @guppy
 @no_type_check
 def main() -> None:
