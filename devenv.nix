@@ -1,6 +1,6 @@
 { pkgs, lib, config, inputs, ... }: let
+  pkgs-stable = import inputs.nixpkgs-2505 { system = pkgs.stdenv.system; };
   cfg = config.hugr-qir;
-  libllvm = pkgs."llvmPackages_${cfg.llvmVersion}".libllvm;
 in {
   # set these options in devenv.local.nix
   options.hugr-qir = {
@@ -25,7 +25,7 @@ in {
 
     # https://devenv.sh/tasks/
     env = {
-      "LLVM_SYS_${cfg.llvmVersion}0_PREFIX" = "${libllvm.dev}";
+      "LLVM_SYS_${cfg.llvmVersion}0_PREFIX" = "${pkgs-stable."llvmPackages_${cfg.llvmVersion}".libllvm.dev}";
     };
 
     languages = {
@@ -38,8 +38,8 @@ in {
         enable = true;
         venv.enable = true;
         uv = {
-          enable = true;
-          sync.enable = true;
+          enable = false;
+          # sync.enable = true;
         };
       };
     };
