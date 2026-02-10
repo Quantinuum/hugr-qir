@@ -21,15 +21,15 @@ use inkwell::{
     values::{CallableValue, FunctionValue },
 };
 use inkwell::values::BasicValue;
-use tket_qsystem::extension::classical_compute::{wasm, };
+use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
 
 
-pub struct WasmCodegen {}
+pub struct WasmCodegen { funcs: BTreeMap<u64, String>}
 
 impl WasmCodegen {
     pub fn new() -> Self {
-        WasmCodegen {}
+        WasmCodegen { funcs: Default::default() }
     }
 }
 
@@ -80,7 +80,7 @@ impl CodegenExtension for WasmCodegen {
                 |session, hugr_type| result_type(session, hugr_type),
             )
             .simple_extension_op(move |context, args, _: wasm::WasmOpDef| {
-                emit_wasm_op(context, args)
+                emit_wasm_op(&self.funcs, context, args)
             })
             .custom_const({
                 move |ctx, _mod: &wasm::ConstWasmModule| {
@@ -123,7 +123,7 @@ fn insert_func<'c, H: HugrView<Node = Node>>(
 }
 
 fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
-    // wasm_module
+    wasm_module: &BTreeMap<u64, String>,
     ctx: &EmitFuncContext<'c, '_, H>,
     args: EmitOpArgs<'c, '_, ExtensionOp, H>,
 ) -> Result<()> {
