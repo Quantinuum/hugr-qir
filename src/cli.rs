@@ -132,10 +132,9 @@ impl Cli {
                 .path()
                 .file_name()
                 .and_then(|x| Path::new(x).extension()?.to_str())
+                && ["ll", "asm"].contains(&extension)
             {
-                if ["ll", "asm"].contains(&extension) {
-                    return OutputFormat::LlvmIr;
-                }
+                return OutputFormat::LlvmIr;
             }
             OutputFormat::Bitcode
         })
