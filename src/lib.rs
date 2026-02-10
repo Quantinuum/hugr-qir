@@ -64,7 +64,7 @@ impl Default for CompileArgs {
 impl CompileArgs {
     pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
-        let wasm_cg = qir::wasm_ext::WasmCodegen::new();
+        let wasm_cg = WasmCodegen::new();
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
@@ -78,7 +78,7 @@ impl CompileArgs {
             })
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
-            .add_extension(wasm_cg)   // wasm todo         
+            .add_extension(wasm_cg)   // wasm todo
             .finish()
     }
 

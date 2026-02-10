@@ -1,0 +1,16 @@
+---
+source: src/qir/wasm_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define private { {}, i32 } @_hl.main.1(i32 %0) {
+alloca_block:
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  %mrv = insertvalue { {}, i32 } undef, {} undef, 0
+  %mrv6 = insertvalue { {}, i32 } %mrv, i32 %0, 1
+  ret { {}, i32 } %mrv6
+}
