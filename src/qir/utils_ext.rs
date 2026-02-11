@@ -1,5 +1,5 @@
 //! LLVM codegen for the `tket.qsystem.utils` extension.
-use tket::hugr;
+use tket::hugr::{self};
 
 use anyhow::Result;
 use hugr::llvm::custom::CodegenExtension;
@@ -44,7 +44,7 @@ fn emit_utils_op<H: HugrView<Node = Node>>(
                 .builder()
                 .build_call(fn_get_cur_shot, &[], "shot")?
                 .try_as_basic_value()
-                .unwrap_basic();
+                .unwrap_left();
             args.outputs.finish(ctx.builder(), [result])
         }
         _ => anyhow::bail!("Unknown op: {op:?}"),
