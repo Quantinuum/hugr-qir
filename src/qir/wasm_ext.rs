@@ -181,7 +181,7 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let r = if outputs.len() == 0 {
                 empty_struct_type(ctx.iw_context()).get_undef().into()
             } else {
-                r.try_as_basic_value().basic().unwrap()
+                r.try_as_basic_value().left().unwrap()
             };
             args.outputs.finish(builder, [r])
         }
