@@ -20,8 +20,9 @@ from hugr_qir.output import OutputFormat, get_write_mode, ir_string_to_output_fo
 
 logger = logging.getLogger()
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.command(name="hugr-qir")
+@click.command(name="hugr-qir", context_settings=CONTEXT_SETTINGS)
 @click.argument("hugr_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
     "--validate-qir/--no-validate-qir",
@@ -70,6 +71,14 @@ logger = logging.getLogger()
     default=None,
     help="Name of output file (optional)",
 )
+@click.option(
+    "-w",
+    "--wasm-file",
+    "wasm_file",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Name of wasm binary file to link against (optional)",
+)
 @click.version_option(version=version("hugr_qir"))
 def hugr_qir(  # noqa: PLR0913
     validate_qir: bool,
@@ -79,6 +88,7 @@ def hugr_qir(  # noqa: PLR0913
     output_format: str,
     hugr_file: Path,
     outfile: Path | None,
+    wasm_file: Path | None,
 ) -> None:
     """Convert a HUGR file to QIR.
 
@@ -94,6 +104,7 @@ def hugr_qir(  # noqa: PLR0913
         OutputFormat(output_format),
         hugr_file,
         outfile,
+        wasm_file,
     )
 
 
@@ -105,10 +116,13 @@ def hugr_qir_impl(  # noqa: PLR0913
     output_format: OutputFormat,
     hugr_file: Path,
     outfile: Path | None,
+    wasm_file: Path | None,
 ) -> None:
     options = ["-q"]
     options.extend(["-t", target])
     options.extend(["-l", opt_level])
+    if wasm_file:
+        options.extend(["--wasm-file", str(wasm_file)])
     if opt_level == "none":
         logger.warning(
             "WARNING: Chosen optimization level"

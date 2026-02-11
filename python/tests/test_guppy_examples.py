@@ -24,11 +24,16 @@ guppy_files_xpass = list(guppy_files)
 )
 def test_guppy_files(tmp_path: Path, guppy_file: Path) -> None:
     out_file = tmp_path / "out.ll"
+    extra_options = []
+    if "wasm" in guppy_file.stem:
+        wasm_binary_filepath = str(guppy_file.parent / ".".join([guppy_file.stem, "wasm"]))
+        extra_options.extend(["--wasm-file", wasm_binary_filepath])
     cli_on_guppy(
         guppy_file,
         tmp_path,
         "-o",
         str(out_file),
+        *extra_options
     )
 
 
@@ -40,6 +45,10 @@ def test_guppy_file_snapshots(
 ) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
     out_file = tmp_path / "out.ll"
+    extra_options = []
+    if "wasm" in guppy_file.stem:
+        wasm_binary_filepath = str(guppy_file.parent / ".".join([guppy_file.stem, "wasm"]))
+        extra_options.extend(["--wasm-file", wasm_binary_filepath])
     cli_on_guppy(
         guppy_file,
         tmp_path,
@@ -47,6 +56,7 @@ def test_guppy_file_snapshots(
         str(out_file),
         "--no-validate-qir",
         "--validate-hugr",
+        *extra_options
     )
     with Path.open(out_file) as f:
         qir = f.read()

@@ -1,11 +1,12 @@
 import sys
 
 from guppylang import guppy
-from guppylang.std.qsystem.wasm import spawn_wasm_contexts
+from guppylang.std.platform import result
+from guppylang.std.qsystem.wasm import spawn_wasm_contexts, spawn_wasm_context
 from guppylang_internals.decorator import wasm, wasm_module
 
 
-@wasm_module("testfile.wasm")
+@wasm_module("wasm-quantum-1.wasm")
 class MyWasm:
     @wasm
     def add_one(self: "MyWasm", x: int) -> int: ...
@@ -17,12 +18,15 @@ class MyWasm:
     def init(self: "MyWasm") -> None: ...
 
 
-@guppy
-def main() -> int:
-    [mod] = spawn_wasm_contexts(1, MyWasm)
+
+
+@guppy.comptime
+def main() -> None:
+    mod = spawn_wasm_context(MyWasm)
     two = mod.add_one(1)
+    six = mod.multi(2,3)
     mod.discard()
-    return two
+    result("2 + 6", two + six)
 
 
 if __name__ == "__main__":
