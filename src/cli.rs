@@ -38,9 +38,6 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, help = "Turn debugging information on")]
     pub debug: u8,
 
-    #[arg(long, help = "Save transformed HUGR to a file")]
-    pub save_hugr: Option<String>,
-
     #[clap(value_parser, short = 'f', long)]
     pub output_format: Option<OutputFormat>,
 
@@ -55,6 +52,9 @@ pub struct Cli {
 
     #[arg(value_parser, short = 'l', long, help = "LLVM optimization level")]
     pub optimization_level: Option<CliOptimizationLevel>,
+
+    #[arg(long, help = "Optional path to WASM binary file")]
+    pub wasm_file: Option<String>,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
@@ -102,7 +102,7 @@ impl Cli {
         let args = self.compile_args();
         // let wasm_bytes = get_wasm(wasm_path)
         //, wasm_path: PathBuf
-         //           wasm_bytes: wasm_bytes
+        //           wasm_bytes: wasm_bytes
 
         // args.
 
@@ -150,8 +150,8 @@ impl Cli {
             qsystem_pass: self.qsystem_pass,
             target: self.target.unwrap_or(default_args.target),
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
+            wasm_file: self.wasm_file.clone(),
         }
-
     }
 
     // TODO: Replace with `CliError::validation` in `hugr-cli >= 0.22.2`.

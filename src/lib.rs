@@ -46,6 +46,7 @@ pub struct CompileArgs {
     pub qsystem_pass: bool,
     pub target: CompileTarget,
     pub opt_level: CliOptimizationLevel,
+    pub wasm_file: Option<String>,
 }
 
 impl Default for CompileArgs {
@@ -57,6 +58,7 @@ impl Default for CompileArgs {
             qsystem_pass: true,
             target: CompileTarget::QuantinuumHardware,
             opt_level: CliOptimizationLevel::Aggressive,
+            wasm_file: None,
         }
     }
 }
@@ -64,7 +66,7 @@ impl Default for CompileArgs {
 impl CompileArgs {
     pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
-        let wasm_cg = WasmCodegen::new();
+        let wasm_cg = WasmCodegen::new(&self.wasm_file);
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
@@ -78,7 +80,7 @@ impl CompileArgs {
             })
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
-            .add_extension(wasm_cg)   // wasm todo
+            .add_extension(wasm_cg) // wasm todo
             .finish()
     }
 

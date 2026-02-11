@@ -1,36 +1,65 @@
-use std::collections::BTreeMap;
 use hugr::types::{Signature, Type};
 use hugr::{
+    HugrView, Node,
     extension::simple_op::MakeExtensionOp as _,
     ops::ExtensionOp,
     types::{CustomType, TypeRow},
-    HugrView, Node,
 };
 use hugr_llvm::{
+    CodegenExtension, CodegenExtsBuilder,
     emit::{EmitFuncContext, EmitOpArgs},
     types::TypingSession,
-    CodegenExtension, CodegenExtsBuilder,
 };
+use std::collections::BTreeMap;
+use std::fs;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use hugr_core::extension::prelude::option_type;
-use hugr_core::std_extensions::arithmetic::int_types::int_type;
 use inkwell::types::FunctionType;
+use inkwell::values::BasicValue;
 use inkwell::{
     types::{BasicTypeEnum, StructType},
-    values::{CallableValue, FunctionValue },
+    values::{CallableValue, FunctionValue},
 };
-use inkwell::values::BasicValue;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
+use wasmparser::{Export, ExternalKind, Payload};
 
-
-pub struct WasmCodegen { funcs: BTreeMap<u64, String>}
+pub struct WasmCodegen {
+    funcs: BTreeMap<u64, String>,
+}
 
 impl WasmCodegen {
-    pub fn new() -> Self {
-        WasmCodegen { funcs: Default::default() }
+    pub fn new(wasm_file: &Option<String>) -> Self {
+        let mut funcs = BTreeMap::new();
+        if let Some(wasm_file) = wasm_file {
+            funcs = wasm_funcs_from_wasm_file(wasm_file).unwrap()
+        }
+        WasmCodegen { funcs }
     }
+}
+
+pub fn wasm_funcs_from_wasm_file(wasm_file_path: &String) -> Result<BTreeMap<u64, String>> {
+    let bytes = fs::read(wasm_file_path)?;
+    let mut funcs: BTreeMap<u64, String> = BTreeMap::new();
+    for payload in wasmparser::Parser::new(0).parse_all(&bytes) {
+        if let Payload::ExportSection(exports) = payload? {
+            for e in exports {
+                let Export {
+                    name,
+                    kind: ExternalKind::Func,
+                    index,
+                } = e?
+                else {
+                    continue;
+                };
+                let None = funcs.insert(index.into(), name.to_string()) else {
+                    bail!("Duplicate export found in wasm module: {name}");
+                };
+            }
+        }
+    }
+    Ok(funcs)
 }
 
 impl CodegenExtension for WasmCodegen {
@@ -90,8 +119,8 @@ impl CodegenExtension for WasmCodegen {
     }
 }
 
-fn empty_struct_type<'c>(context: &'c inkwell::context::Context) -> StructType<'c> {
-    context.struct_type(&[], false).into()
+fn empty_struct_type(context: &inkwell::context::Context) -> StructType {
+    context.struct_type(&[], false)
 }
 
 fn result_type<'c>(
@@ -102,14 +131,15 @@ fn result_type<'c>(
         anyhow::bail!("Expected WasmType::Result");
     };
 
-    if outputs.len() == 0 {
+    if outputs.is_empty() {
         return Ok(empty_struct_type(session.iw_context()).into());
     }
 
     if outputs.len() > 1 {
         bail!("Result type has more than one output value")
     }
-    session.llvm_type(&outputs[0].clone().try_into().unwrap())}
+    session.llvm_type(&outputs[0].clone().try_into().unwrap())
+}
 
 fn insert_func<'c, H: HugrView<Node = Node>>(
     ctx: &EmitFuncContext<'c, '_, H>,
@@ -126,11 +156,12 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
     ctx: &EmitFuncContext<'c, '_, H>,
     args: EmitOpArgs<'c, '_, ExtensionOp, H>,
 ) -> Result<()> {
-    match wasm::WasmOp::from_extension_op(&args.node())?.into() {
+    match wasm::WasmOp::from_extension_op(&args.node())? {
         wasm::WasmOp::GetContext => {
             let r = ctx.iw_context().struct_type(&[], false).get_undef().into();
             let builder = ctx.builder();
-            let result_t = ctx.llvm_sum_type(option_type(Type::new_extension(WasmType::Context.into())))?;
+            let result_t =
+                ctx.llvm_sum_type(option_type(Type::new_extension(WasmType::Context.into())))?;
             // Although the result is an option type, we always return true
             // in this lowering: failure is already handled.
             let pair = result_t.build_tag(builder, 1, vec![r])?;
@@ -152,12 +183,16 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let inputs: TypeRow = inputs.try_into()?;
             let outputs: TypeRow = outputs.try_into()?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
-            let func = insert_func(ctx, &name, llvm_func_ty)?;
+            let func = insert_func(ctx, name, llvm_func_ty)?;
             let builder = ctx.builder();
             args.outputs
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])
         }
-        wasm::WasmOp::LookupByName { name, inputs, outputs } => {
+        wasm::WasmOp::LookupByName {
+            name,
+            inputs,
+            outputs,
+        } => {
             let inputs: TypeRow = inputs.try_into()?;
             let outputs: TypeRow = outputs.try_into()?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
@@ -178,7 +213,7 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
 
             // if no outputs, return a placeholder empty struct.
             // if one output, return that output directly.
-            let r = if outputs.len() == 0 {
+            let r = if outputs.is_empty() {
                 empty_struct_type(ctx.iw_context()).get_undef().into()
             } else {
                 r.try_as_basic_value().left().unwrap()
@@ -191,7 +226,7 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             };
             let builder = ctx.builder();
             let ctx_out = empty_struct_type(ctx.iw_context()).get_undef().into();
-            if outputs.len() == 0 {
+            if outputs.is_empty() {
                 args.outputs.finish(builder, [ctx_out])
             } else {
                 args.outputs.finish(builder, [ctx_out, *r])
@@ -204,18 +239,16 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
 // TODO add test cases using simple_op_hugr
 #[cfg(test)]
 mod test {
+    use super::*;
+    use crate::WasmCodegen;
+    use crate::qir::utils_ext::UtilsCodegenExtension;
     use hugr::llvm::check_emission;
     use hugr::llvm::test::{TestContext, llvm_ctx, single_op_hugr};
     use rstest::Context;
     use tket::circuit::TypeRow;
-    use tket::hugr::extension::prelude::{bool_t, usize_t};
-    use tket::hugr::std_extensions::arithmetic::float_types::float64_type;
     use tket::hugr::std_extensions::arithmetic::int_types::INT_TYPES;
     use tket::hugr::type_row;
     use tket_qsystem::extension::wasm::WasmOp;
-    use crate::WasmCodegen;
-    use crate::qir::utils_ext::UtilsCodegenExtension;
-    use super::*;
 
     #[rstest::rstest]
     #[case::get_context(WasmOp::GetContext)]
@@ -253,13 +286,15 @@ mod test {
             settings.set_snapshot_suffix(suffix);
             settings
         }
-            .bind_to_scope();
+        .bind_to_scope();
 
         llvm_ctx.add_extensions(move |cge| {
             cge.add_extension(UtilsCodegenExtension)
                 .add_default_prelude_extensions()
                 .add_default_int_extensions()
-                .add_extension(WasmCodegen::new())
+                .add_extension(WasmCodegen {
+                    funcs: BTreeMap::from([(42, "wasm_func_42".into())]),
+                })
         });
         let hugr = single_op_hugr(op.into());
         check_emission!(hugr, llvm_ctx);
