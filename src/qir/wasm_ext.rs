@@ -185,6 +185,9 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let outputs: TypeRow = outputs.try_into()?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
             let func = insert_func(ctx, name, llvm_func_ty)?;
+            let llvm_context = ctx.get_current_module().get_context();
+            let attribute = llvm_context.create_string_attribute("wasm", "");
+            func.add_attribute(AttributeLoc::Function, attribute);
             let builder = ctx.builder();
             args.outputs
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])

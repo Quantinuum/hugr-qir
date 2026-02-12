@@ -13,4 +13,6 @@ entry_block:                                      ; preds = %alloca_block
   ret void ()* @wasm_func_42
 }
 
-declare void @wasm_func_42()
+declare void @wasm_func_42() #0
+
+attributes #0 = { "wasm" }
