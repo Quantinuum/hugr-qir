@@ -20,7 +20,8 @@ from hugr_qir.output import OutputFormat, get_write_mode, ir_string_to_output_fo
 
 logger = logging.getLogger()
 
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
 
 @click.command(name="hugr-qir", context_settings=CONTEXT_SETTINGS)
 @click.argument("hugr_file", type=click.Path(exists=True, path_type=Path))

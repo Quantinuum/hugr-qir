@@ -16,7 +16,7 @@ def hugr_to_qir(  # noqa: PLR0913
     target: str = compile_target_default(),
     opt_level: str = opt_level_default(),
     output_format: OutputFormat = OutputFormat.BASE64,
-    wasm_file: Path | None = None
+    wasm_file: Path | None = None,
 ) -> str | bytes:
     """A function for converting hugr to qir (llvm bitcode)
 
