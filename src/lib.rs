@@ -80,7 +80,7 @@ impl CompileArgs {
             })
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
-            .add_extension(wasm_cg) // wasm todo
+            .add_extension(wasm_cg)
             .finish()
     }
 
