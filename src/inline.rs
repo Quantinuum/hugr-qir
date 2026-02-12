@@ -1,8 +1,11 @@
 use anyhow::{Result, anyhow};
 use hugr::Node;
+use hugr::algorithms::call_graph::{CallGraph, CallGraphEdge};
 use hugr::hugr::hugrmut::HugrMut;
 use hugr::hugr::patch::inline_call::InlineCall;
 use hugr_core::{Hugr, HugrView};
+use petgraph::algo::toposort;
+use petgraph::visit::{EdgeFiltered, IntoEdges};
 
 pub fn inline(hugr: &mut Hugr, nodes: Vec<Node>) -> Result<()> {
     // Check all nodes are call nodes
@@ -11,14 +14,23 @@ pub fn inline(hugr: &mut Hugr, nodes: Vec<Node>) -> Result<()> {
             return Err(anyhow!("node type mismatch"));
         }
     }
-
-    // Inline each call node
-    // Note: We inline in the order provided. For recursive calls, this may need
-    // to be more sophisticated, but for now we assume no recursion.
-    for node in nodes.iter().rev() {
-        let rewrite = InlineCall::new(*node);
-        hugr.apply_patch(rewrite)?;
+    // Construct a call graph for HUGR and filter out calls not in nodes
+    let call_graph = CallGraph::new(hugr);
+    let filtered_call_graph = EdgeFiltered::from_fn(call_graph.graph(), |e| match e.weight() {
+        CallGraphEdge::Call(n) => nodes.contains(n),
+        _ => false,
+    });
+    // We visit each call in reverse topological order, so that we always inline a call
+    // before its parent function
+    let to_inline = toposort(&filtered_call_graph, None)
+        .map_err(|e| anyhow!("Call graph is recursive: {e:?}"))?;
+    for func_index in to_inline.iter().rev() {
+        for call in filtered_call_graph.edges(*func_index) {
+            if let CallGraphEdge::Call(n) = call.weight() {
+                let rewrite = InlineCall::new(*n);
+                hugr.apply_patch(rewrite)?;
+            }
+        }
     }
-
     Ok(())
 }
