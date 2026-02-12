@@ -120,7 +120,7 @@ impl CodegenExtension for WasmCodegen {
     }
 }
 
-fn empty_struct_type(context: &inkwell::context::Context) -> StructType {
+fn empty_struct_type(context: &inkwell::context::Context) -> StructType<'_> {
     context.struct_type(&[], false)
 }
 
