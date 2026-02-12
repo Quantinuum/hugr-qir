@@ -15,13 +15,13 @@ use std::fs;
 
 use anyhow::{Result, bail};
 use hugr_core::extension::prelude::option_type;
+use inkwell::attributes::AttributeLoc;
 use inkwell::types::FunctionType;
 use inkwell::values::BasicValue;
 use inkwell::{
     types::{BasicTypeEnum, StructType},
     values::{CallableValue, FunctionValue},
 };
-use inkwell::attributes::AttributeLoc;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
 use wasmparser::{Export, ExternalKind, Payload};
