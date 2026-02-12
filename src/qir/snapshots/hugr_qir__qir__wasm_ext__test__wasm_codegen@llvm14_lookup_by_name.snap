@@ -1,5 +1,6 @@
 ---
 source: src/qir/wasm_ext.rs
+assertion_line: 304
 expression: mod_str
 ---
 ; ModuleID = 'test_context'
@@ -13,4 +14,6 @@ entry_block:                                      ; preds = %alloca_block
   ret void ()* @example_function
 }
 
-declare void @example_function()
+declare void @example_function() #0
+
+attributes #0 = { "wasm" }
