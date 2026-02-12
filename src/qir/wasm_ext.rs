@@ -21,6 +21,7 @@ use inkwell::{
     types::{BasicTypeEnum, StructType},
     values::{CallableValue, FunctionValue},
 };
+use inkwell::attributes::AttributeLoc;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
 use wasmparser::{Export, ExternalKind, Payload};
@@ -198,6 +199,9 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
             let func = insert_func(ctx, &name, llvm_func_ty)?;
             let builder = ctx.builder();
+            let llvm_context = ctx.get_current_module().get_context();
+            let attribute = llvm_context.create_string_attribute("wasm", "");
+            func.add_attribute(AttributeLoc::Function, attribute);
             args.outputs
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])
         }
