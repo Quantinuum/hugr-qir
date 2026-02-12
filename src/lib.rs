@@ -233,9 +233,10 @@ pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> u64 {
             let Ok(call) = CallSiteValue::try_from(ins) else {
                 continue;
             };
-            let func = call.get_called_fn_value();
-
-            let global = func.expect("REASON").as_global_value();
+            let Some(func) = call.get_called_fn_value() else {
+                continue;
+            };
+            let global = func.as_global_value();
 
             if global.get_name().to_bytes() == funcname.as_bytes() {
                 let ptr = PointerValue::try_from(ins).unwrap();
