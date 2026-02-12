@@ -1,6 +1,7 @@
 import sys
 
 from guppylang import guppy
+from guppylang.std.num import nat
 from guppylang.std.platform import result
 from guppylang.std.qsystem.wasm import spawn_wasm_contexts, spawn_wasm_context
 from guppylang_internals.decorator import wasm, wasm_module
@@ -22,7 +23,7 @@ class MyWasm:
 
 @guppy.comptime
 def main() -> None:
-    mod = spawn_wasm_context(MyWasm)
+    mod = MyWasm(nat(1))
     two = mod.add_one(1)
     six = mod.multi(2,3)
     mod.discard()
