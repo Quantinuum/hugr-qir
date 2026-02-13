@@ -6,46 +6,49 @@ from hugr_qir.output import OutputFormat, expected_file_extension
 from pytest_snapshot.plugin import Snapshot  # type: ignore
 
 from .conftest import (
-    GUPPY_EXAMPLES_DIR_GENERAL,
-    cli_on_guppy,
-    guppy_files,
+    GuppyExample,
+    cli_on_hugr,
+    guppy_example_dict,
+    guppy_examples,
     skip_snapshot_checks,
 )
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 
-guppy_files_xpass = list(guppy_files)
-
 
 @pytest.mark.parametrize(
-    "guppy_file",
-    guppy_files_xpass,
-    ids=[str(file_path.stem) for file_path in guppy_files_xpass],
+    "guppy_example",
+    guppy_examples,
+    ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
-def test_guppy_files(tmp_path: Path, guppy_file: Path) -> None:
+def test_guppy_files(tmp_path: Path, guppy_example: GuppyExample) -> None:
     out_file = tmp_path / "out.ll"
     options = ["-o", str(out_file)]
-    if "wasm" in guppy_file.stem:
-        wasm_binary_filepath = str(guppy_file.parent / f"{guppy_file.stem}.wasm")
+    guppy_path = guppy_example.guppy_filepath
+    if "wasm" in guppy_path.stem:
+        wasm_binary_filepath = str(guppy_path.parent / f"{guppy_path.stem}.wasm")
         options.extend(["--wasm-file", wasm_binary_filepath])
-    cli_on_guppy(guppy_file, tmp_path, *options)
+    cli_on_hugr(guppy_example.hugr_filepath, *options)
 
 
 @pytest.mark.parametrize(
-    "guppy_file", guppy_files, ids=[str(file_path.stem) for file_path in guppy_files]
+    "guppy_example",
+    guppy_examples,
+    ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
 def test_guppy_file_snapshots(
-    tmp_path: Path, guppy_file: Path, snapshot: Snapshot
+    tmp_path: Path, guppy_example: GuppyExample, snapshot: Snapshot
 ) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
     out_file = tmp_path / "out.ll"
     options = ["-o", str(out_file), "--no-validate-qir", "--validate-hugr"]
+    guppy_file = guppy_example.guppy_filepath
     if "wasm" in guppy_file.stem:
         wasm_binary_filepath = str(guppy_file.parent / f"{guppy_file.stem}.wasm")
         options.extend(["--wasm-file", wasm_binary_filepath])
-    cli_on_guppy(
-        guppy_file,
-        tmp_path,
+
+    cli_on_hugr(
+        guppy_example.hugr_filepath,
         *options,
     )
     with Path.open(out_file) as f:
@@ -64,15 +67,20 @@ def test_guppy_file_snapshots(
     ],
 )
 def test_guppy_files_options(
-    tmp_path: Path, snapshot: Snapshot, target: str, opt_level: str, out_format: str
+    tmp_path: Path,
+    snapshot: Snapshot,
+    target: str,
+    opt_level: str,
+    out_format: str,
 ) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
-    guppy_file = Path(GUPPY_EXAMPLES_DIR_GENERAL) / Path("quantum-conditional-2.py")
+    guppy_example = guppy_example_dict["quantum-conditional-2"]
+    guppy_file = guppy_example.guppy_filepath
     out_file = tmp_path / "out.ll"
     extra_args = ["-t", target, "-l", opt_level, "-f", out_format]
     if opt_level == "none":
         extra_args.append("--no-validate-qir")
-    cli_on_guppy(guppy_file, tmp_path, "-o", str(out_file), *extra_args)
+    cli_on_hugr(guppy_example.hugr_filepath, "-o", str(out_file), *extra_args)
     file_read_mode = "rb" if out_format == "bitcode" else "r"
     file_suffix = expected_file_extension(out_format)
     with Path.open(out_file, mode=file_read_mode) as f:
@@ -90,9 +98,10 @@ def test_guppy_files_options(
     list(compile_target_choices()),
 )
 def test_qircheck_is_happy_with_discard_for_all_compilation_targets(
-    tmp_path: Path, target: str
+    tmp_path: Path,
+    target: str,
 ) -> None:
-    guppy_file = Path(GUPPY_EXAMPLES_DIR_GENERAL) / Path("uses-discard.py")
+    guppy_example = guppy_example_dict["uses-discard"]
     out_file = tmp_path / "out.ll"
     extra_args = ["-t", target]
-    cli_on_guppy(guppy_file, tmp_path, "-o", str(out_file), *extra_args)
+    cli_on_hugr(guppy_example.hugr_filepath, "-o", str(out_file), *extra_args)

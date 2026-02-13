@@ -1,0 +1,20 @@
+{
+  "quantum-conditional-2": "b59ea123f81d1d3bd6312c6e588878f02e38996f03d4febf59ad2d895eac4d6c",
+  "quantum-loop-1": "64b89979293d8459652a3875fe50b7e5506210c8a78c48b88bce6d9608394e80",
+  "quantum-complex-1": "b1788acba0ee06ae260f5ccb276d11844aac5863165b80f655443b018869faf3",
+  "quantum-simple-2": "02a4ce851cdbf7d6b79f79707c654b6ba1f754038cafa855328466a5268119ee",
+  "generates-llvm-switch": "54951f13c703f19feabae9eadf09128c2b3486574d7a88b9b32fe18b7884875b",
+  "quantum-functions-1": "06c1ddeef08e4badd707813b777ea7200929a6787baa52d4d9e6aca270066d4a",
+  "uses-discard": "87f674b822a676e468d25cb92d20ebe460b2693f18d839c1880783f30c5d530e",
+  "quantum-functions-3": "635c6340cdfa1cc14df71fc9b263e3446023fa5bf10499a48f928a14cffbdb3e",
+  "quantum-functions-2": "010afa57ba38753413028855734bca3531d217233b47a3f62bafb6215d9e8a99",
+  "quantum-classical-1": "ff71ffb9fb4b52d5c40db6a0e4314dd5a84dd630f9beab23ec6c891209bc3dd6",
+  "quantum-simple-1": "1b2b1d9e8f2b6f3683bff7dabd570d3990d399f6e589488171ce36afc19b9c48",
+  "quantum-conditional-1": "ccd283754d14d6c8c1e1c6cd87af9dd6f8f5c9888e584de6a9ea80b9bf1a0e6c",
+  "quantum-loop-2": "b4489adcbbcc6e5aa8f9bf2680ba334bc8f51fbcfabd73fa53aec7ec18c44347",
+  "planqc-1": "85360427527eb5a13b74950c9e39b8c6f72726185fda43a5894757ab5ba2a717",
+  "rng-quantum-rng-2": "a3878df9944bdb65d821a614b179f73db62aa2d3382bdf7c08dbf6f8a480efa0",
+  "wasm-quantum-1": "1bf6212f6161cfe27f55ebc492e1a3645958f7ce0f3c4171ef5687ae2766b984",
+  "rng-quantum-jobid-1": "af9a7d3cfb12770452a024f98cce5ed621078601e62e67dbd7cb634c387c9632",
+  "rng-quantum-rng-1": "a02a13bfaa327c79906cd432fc323e58b307c257bffff9f430c4a485478d7faa"
+}
