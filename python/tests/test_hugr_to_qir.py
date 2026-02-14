@@ -14,63 +14,41 @@ from llvmlite.binding import (  # type: ignore
 from pytest_snapshot.plugin import Snapshot  # type: ignore
 
 from .conftest import (
-    GUPPY_EXAMPLES_DIR_GENERAL,
-    guppy_files,
-    guppy_to_hugr_binary,
+    guppy_example_dict,
+    guppy_examples,
     skip_snapshot_checks,
 )
+from .hugr_generation import GuppyExample
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
-GUPPY_EXAMPLES_XFAIL: list[str] = []
-
-guppy_files_xpass = [
-    guppy_file
-    for guppy_file in guppy_files
-    if guppy_file.name not in GUPPY_EXAMPLES_XFAIL
-]
-
-guppy_files_xfail = [
-    guppy_file for guppy_file in guppy_files if guppy_file.name in GUPPY_EXAMPLES_XFAIL
-]
 
 
 @pytest.mark.parametrize(
-    "guppy_file",
-    guppy_files_xpass,
-    ids=[str(file_path.stem) for file_path in guppy_files_xpass],
+    "guppy_example",
+    guppy_examples,
+    ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
-def test_guppy_files(guppy_file: Path) -> None:
-    hugr = guppy_to_hugr_binary(guppy_file)
-    wasm_binary_filepath = (
-        guppy_file.parent / f"{guppy_file.stem}.wasm"
-        if "wasm" in guppy_file.stem
-        else None
-    )
+def test_guppy_files(guppy_example: GuppyExample) -> None:
+    guppy_file = guppy_example.guppy_filepath
+    hugr = guppy_example.hugr_binary
+    wasm_binary_filepath = None
+    if "wasm" in guppy_file.stem:
+        wasm_binary_filepath = guppy_file.parent / f"{guppy_file.stem}.wasm"
     hugr_to_qir(hugr, wasm_file=wasm_binary_filepath)
 
 
 @pytest.mark.parametrize(
-    "guppy_file",
-    guppy_files_xfail,
-    ids=[str(file_path.stem) for file_path in guppy_files_xfail],
+    "guppy_example",
+    guppy_examples,
+    ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
-def test_guppy_files_xfail(guppy_file: Path) -> None:
-    hugr = guppy_to_hugr_binary(guppy_file)
-    with pytest.raises(ValueError):  # noqa: PT011
-        hugr_to_qir(hugr)
-
-
-@pytest.mark.parametrize(
-    "guppy_file", guppy_files, ids=[str(file_path.stem) for file_path in guppy_files]
-)
-def test_guppy_file_snapshots(guppy_file: Path, snapshot: Snapshot) -> None:
+def test_guppy_file_snapshots(guppy_example: GuppyExample, snapshot: Snapshot) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
-    hugr = guppy_to_hugr_binary(guppy_file)
-    wasm_binary_filepath = (
-        guppy_file.parent / f"{guppy_file.stem}.wasm"
-        if "wasm" in guppy_file.stem
-        else None
-    )
+    hugr = guppy_example.hugr_binary
+    guppy_file = guppy_example.guppy_filepath
+    wasm_binary_filepath = None
+    if "wasm" in guppy_file.stem:
+        wasm_binary_filepath = guppy_file.parent / f"{guppy_file.stem}.wasm"
     qir = hugr_to_qir(
         hugr,
         validate_qir=False,
@@ -82,15 +60,16 @@ def test_guppy_file_snapshots(guppy_file: Path, snapshot: Snapshot) -> None:
 
 
 @pytest.mark.parametrize(
-    "guppy_file", guppy_files, ids=[str(file_path.stem) for file_path in guppy_files]
+    "guppy_example",
+    guppy_examples,
+    ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
-def test_bitcode_and_assembly_output_match(guppy_file: Path) -> None:
-    hugr = guppy_to_hugr_binary(guppy_file)
-    wasm_binary_filepath = (
-        guppy_file.parent / f"{guppy_file.stem}.wasm"
-        if "wasm" in guppy_file.stem
-        else None
-    )
+def test_bitcode_and_assembly_output_match(guppy_example: GuppyExample) -> None:
+    hugr = guppy_example.hugr_binary
+    guppy_file = guppy_example.guppy_filepath
+    wasm_binary_filepath = None
+    if "wasm" in guppy_file.stem:
+        wasm_binary_filepath = guppy_file.parent / f"{guppy_file.stem}.wasm"
     qir = hugr_to_qir(hugr, validate_qir=False, wasm_file=wasm_binary_filepath)
     assert isinstance(qir, str)
     qir_bitcode_bytes = base64.b64decode(qir.encode("utf-8"))
@@ -125,8 +104,9 @@ def test_guppy_files_options(
     snapshot: Snapshot, target: str, opt_level: str, out_format: str
 ) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
-    guppy_file = Path(GUPPY_EXAMPLES_DIR_GENERAL) / Path("quantum-conditional-2.py")
-    hugr = guppy_to_hugr_binary(guppy_file)
+    guppy_example = guppy_example_dict["quantum-conditional-2"]
+    hugr = guppy_example.hugr_binary
+    guppy_file = guppy_example.guppy_filepath
     qir = hugr_to_qir(
         hugr,
         validate_qir=False,

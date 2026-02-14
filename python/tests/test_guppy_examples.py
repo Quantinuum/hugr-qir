@@ -6,12 +6,12 @@ from hugr_qir.output import OutputFormat, expected_file_extension
 from pytest_snapshot.plugin import Snapshot  # type: ignore
 
 from .conftest import (
-    GuppyExample,
     cli_on_hugr,
     guppy_example_dict,
     guppy_examples,
     skip_snapshot_checks,
 )
+from .hugr_generation import GuppyExample
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 
