@@ -39,6 +39,7 @@ def get_file_hashes() -> dict[str, str]:
 def dump_file_hashes(hashes: dict[str, str]) -> None:
     with GUPPY_EXAMPLE_HASHES.open("w") as f:
         json.dump(hashes, f, indent=2)
+        f.write("\n")  # add newline so it doesn't get changed by pre-commit
 
 
 def get_guppylang_hugr_version_str() -> str:
