@@ -1,0 +1,33 @@
+import sys
+
+from guppylang import guppy, qubit
+from guppylang.std.builtins import result
+from guppylang.std.quantum import h, measure, x
+
+
+@guppy
+def a_function(n: int) -> int:
+    return n + 1
+
+
+@guppy
+def b_function() -> qubit:
+    q1, q2 = qubit(), qubit()
+    h(q1)
+    if measure(q1):
+        x(q2)
+    return q2
+
+
+@guppy
+def main() -> None:
+    # bind a variable to our function
+    q_func = b_function
+    my_function = a_function
+    res = my_function(100)
+    result("res", res)
+    result("q", measure(q_func()))
+
+
+if __name__ == "__main__":
+    sys.stdout.buffer.write(main.compile().to_bytes())
