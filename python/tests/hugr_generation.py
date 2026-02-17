@@ -37,8 +37,9 @@ def get_file_hashes() -> dict[str, str]:
 
 
 def dump_file_hashes(hashes: dict[str, str]) -> None:
+    sorted_hashes = dict(sorted(hashes.items()))
     with GUPPY_EXAMPLE_HASHES.open("w") as f:
-        json.dump(hashes, f, indent=2)
+        json.dump(sorted_hashes, f, indent=2)
         f.write("\n")  # add newline so it doesn't get changed by pre-commit
 
 
