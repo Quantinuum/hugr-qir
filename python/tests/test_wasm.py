@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import no_type_check
 
-from guppylang import guppy
+import pytest
+from guppylang import guppy, qubit
 from guppylang.std.platform import result
+from guppylang.std.quantum import measure
 from guppylang_internals.decorator import wasm, wasm_module
 from hugr_qir.hugr_to_qir import hugr_to_qir
 
@@ -40,13 +42,59 @@ def test_wasm_functions(wasm_file: Path) -> None:
         two1 = mod1.two()
         two2 = mod1.two()
         four = mod1.add(two1, two2)
-        f = mod1.fid(42.0)
-        mod1.consume_float(f)
+        mod1.consume_float(1.0)
+        q = qubit()
         mod1.discard()
         result("six", four + two2)
+        result("q", measure(q))
 
     hugr = main.compile()
-    hugr_to_qir(hugr, validate_qir=True, wasm_file=wasm_file)
+    hugr_to_qir(hugr, validate_qir=False, wasm_file=wasm_file)
+
+
+def test_error_on_wasm_function_that_returns_float(wasm_file: Path) -> None:
+    wasm_file_str = str(wasm_file)
+
+    @wasm_module(wasm_file_str)
+    @no_type_check
+    class MyWasm:
+        @wasm
+        @no_type_check
+        def two(self: "MyWasm") -> int: ...
+
+        @wasm
+        @no_type_check
+        def add(self: "MyWasm", x: int, y: int) -> int: ...
+
+        @wasm
+        @no_type_check
+        def fid(self: "MyWasm", x: float) -> float: ...
+
+        @wasm
+        @no_type_check
+        def consume_float(self: "MyWasm", x: float) -> None: ...
+
+        @wasm
+        @no_type_check
+        def nothing(self: "MyWasm") -> None: ...
+
+    @guppy
+    @no_type_check
+    def main() -> None:
+        mod1 = MyWasm(1)
+        two1 = mod1.two()
+        two2 = mod1.two()
+        four = mod1.add(two1, two2)
+        f = mod1.fid(42.0)
+        mod1.consume_float(f)
+        q = qubit()
+        mod1.discard()
+        result("six", four + two2)
+        result("q", measure(q))
+
+    hugr = main.compile()
+    with pytest.raises(ValueError, match=r"(?=.*wasm return type error)(?=.*float64)"):
+        hugr_to_qir(hugr, validate_qir=False, wasm_file=wasm_file)
 
 
 def test_wasm_function_indices(wasm_file: Path) -> None:

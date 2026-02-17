@@ -15,6 +15,7 @@ use std::fs;
 
 use anyhow::{Result, bail};
 use hugr_core::extension::prelude::option_type;
+use hugr_core::std_extensions::arithmetic::int_types::INT_TYPES;
 use inkwell::attributes::AttributeLoc;
 use inkwell::types::FunctionType;
 use inkwell::values::BasicValue;
@@ -22,6 +23,7 @@ use inkwell::{
     types::{BasicTypeEnum, StructType},
     values::{CallableValue, FunctionValue},
 };
+use itertools::Itertools;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
 use wasmparser::{Export, ExternalKind, Payload};
@@ -82,16 +84,21 @@ impl CodegenExtension for WasmCodegen {
                     wasm::FUNC_TYPE_NAME.to_owned(),
                 ),
                 |session, hugr_type| {
-                    let wasm::WasmType::Func { inputs, outputs } =
-                        wasm::WasmType::try_from(hugr_type.clone())?
+                    let WasmType::Func { inputs, outputs } =
+                        WasmType::try_from(hugr_type.clone())?
                     else {
-                        anyhow::bail!("doesn't make sense")
+                        bail!("doesn't make sense")
                     };
                     let inputs: TypeRow = inputs.try_into()?;
                     let outputs: TypeRow = outputs.try_into()?;
-                    // TODO verify outputs has 0 or 1 element
-                    let func_type = session.llvm_func_type(&Signature::new(inputs, outputs))?;
-                    // TODO func_type has only allowed types in signature
+                    if outputs.len() > 1 {
+                        bail!("wasm return type error: wasm function with more than one return value")
+                    };
+                    let func_type = session.llvm_func_type(&Signature::new(inputs, outputs.clone()))?;
+                    if !outputs.iter().all(|ty| {INT_TYPES.contains(ty)}){
+                        let out_tys: Vec<String> = outputs.iter().map(|ty| {ty.as_type_enum().to_string()}).collect_vec();
+                        bail!("wasm return type error: wasm function returns {:?} but only allowed to return an integer or nothing", out_tys)
+                    };
                     Ok(func_type.ptr_type(Default::default()).into())
                 },
             )
@@ -148,7 +155,9 @@ fn insert_func<'c, H: HugrView<Node = Node>>(
     func_type: FunctionType<'c>,
 ) -> Result<FunctionValue<'c>> {
     let func = ctx.get_extern_func(name, func_type)?;
-    // TODO set attributes
+    let llvm_context = ctx.get_current_module().get_context();
+    let attribute = llvm_context.create_string_attribute("wasm", "");
+    func.add_attribute(AttributeLoc::Function, attribute);
     Ok(func)
 }
 
@@ -185,9 +194,6 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let outputs: TypeRow = outputs.try_into()?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
             let func = insert_func(ctx, name, llvm_func_ty)?;
-            let llvm_context = ctx.get_current_module().get_context();
-            let attribute = llvm_context.create_string_attribute("wasm", "");
-            func.add_attribute(AttributeLoc::Function, attribute);
             let builder = ctx.builder();
             args.outputs
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])
@@ -202,9 +208,6 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
             let func = insert_func(ctx, &name, llvm_func_ty)?;
             let builder = ctx.builder();
-            let llvm_context = ctx.get_current_module().get_context();
-            let attribute = llvm_context.create_string_attribute("wasm", "");
-            func.add_attribute(AttributeLoc::Function, attribute);
             args.outputs
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])
         }
@@ -243,7 +246,6 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
     }
 }
 
-// TODO add test cases using simple_op_hugr
 #[cfg(test)]
 mod test {
     use super::*;
