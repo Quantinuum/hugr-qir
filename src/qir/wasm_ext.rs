@@ -87,7 +87,7 @@ impl CodegenExtension for WasmCodegen {
                     let WasmType::Func { inputs, outputs } =
                         WasmType::try_from(hugr_type.clone())?
                     else {
-                        bail!("doesn't make sense")
+                        bail!("could not convert {:?} to a WasmType::Func", hugr_type)
                     };
                     let inputs: TypeRow = inputs.try_into()?;
                     let outputs: TypeRow = outputs.try_into()?;
