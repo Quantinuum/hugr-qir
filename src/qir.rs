@@ -5,6 +5,7 @@ pub mod random_ext;
 pub mod result_ext;
 pub mod tket2_ext;
 pub mod utils_ext;
+pub mod wasm_ext;
 
 use anyhow::{Result, bail, ensure};
 use hugr::{

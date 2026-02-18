@@ -26,6 +26,8 @@ pub mod target;
 use crate::cli::CliOptimizationLevel;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
+use crate::qir::wasm_ext::WasmCodegen;
+
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -44,6 +46,7 @@ pub struct CompileArgs {
     pub qsystem_pass: bool,
     pub target: CompileTarget,
     pub opt_level: CliOptimizationLevel,
+    pub wasm_file: Option<String>,
 }
 
 impl Default for CompileArgs {
@@ -55,6 +58,7 @@ impl Default for CompileArgs {
             qsystem_pass: true,
             target: CompileTarget::QuantinuumHardware,
             opt_level: CliOptimizationLevel::Aggressive,
+            wasm_file: None,
         }
     }
 }
@@ -62,6 +66,7 @@ impl Default for CompileArgs {
 impl CompileArgs {
     pub fn codegen_extensions(&self) -> CodegenExtsMap<'static, Hugr> {
         let pcg = QirPreludeCodegen;
+        let wasm_cg = WasmCodegen::new(&self.wasm_file);
 
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
@@ -75,6 +80,7 @@ impl CompileArgs {
             })
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
+            .add_extension(wasm_cg)
             .finish()
     }
 
@@ -227,9 +233,10 @@ pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> u64 {
             let Ok(call) = CallSiteValue::try_from(ins) else {
                 continue;
             };
-            let func = call.get_called_fn_value();
-
-            let global = func.expect("REASON").as_global_value();
+            let Some(func) = call.get_called_fn_value() else {
+                continue;
+            };
+            let global = func.as_global_value();
 
             if global.get_name().to_bytes() == funcname.as_bytes() {
                 let ptr = PointerValue::try_from(ins).unwrap();

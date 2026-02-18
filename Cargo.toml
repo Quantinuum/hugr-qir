@@ -1,6 +1,6 @@
 [package]
 name = "hugr-qir"
-version = "0.0.21"
+version = "0.0.21-rc.1"
 edition = "2024"
 rust-version = "1.85"
 
@@ -28,6 +28,7 @@ pyo3 = { version = "0.27.0", features = [
 serde = "1.0.219"
 tket = "0.16.0"
 tket-qsystem = { version = "0.22.0", features = ["cli"] }
+wasmparser = { version = "0.244", default-features = false }
 
 [dev-dependencies]
 insta = "1.46.2"
