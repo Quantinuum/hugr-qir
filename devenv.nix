@@ -18,7 +18,16 @@ in {
       pkgs.libxml2
       pkgs.libz
       pkgs.ncurses
+    ]
+    ++ lib.optionals pkgs.stdenv.isLinux [
+    pkgs.stdenv.cc.cc.lib
+    ]
+    ++ lib.optionals pkgs.stdenv.isDarwin [
+    pkgs.xz
     ];
+
+    env.LD_LIBRARY_PATH = lib.optionalString pkgs.stdenv.isLinux
+    (lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]);
 
     # enterShell = ''
     # '';
