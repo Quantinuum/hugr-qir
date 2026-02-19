@@ -25,32 +25,35 @@ You can use the available cli after installing the python package.
 
 This will generate qir for a given hugr file:
 
-```
+```sh
 hugr-qir test-file.hugr
 ```
 
 Run `hugr-qir --help` to see the available options.
 
 If you want to generate a hugr file from guppy, you can do this in two steps:
+
 1. Add this to the end of your guppy file:
-```
-if __name__ == "__main__":
-    sys.stdout.buffer.write(main.compile().to_bytes())
-    # Or to compile a non-main guppy function:
-    sys.stdout.buffer.write(guppy_func.compile_function().to_bytes())
-```
 
-2. Generate the hugr file with:
-```
-python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
-```
+    ```py
+    if __name__ == "__main__":
+        sys.stdout.buffer.write(main.compile().to_bytes())
+        # Or to compile a non-main guppy function:
+        sys.stdout.buffer.write(guppy_func.compile_function().to_bytes())
+    ```
 
+1. Generate the hugr file with:
+
+    ```sh
+    python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
+    ```
 
 ## Development
 
 ### #️⃣ Setting up the development environment
 
 You'll need to install:
+
 - [Rust](https://rustup.rs/) (via rustup)
 - [uv](https://docs.astral.sh/uv/) for Python package management
 - LLVM 14 development libraries
@@ -58,13 +61,15 @@ You'll need to install:
 #### Installing LLVM 14
 
 On macOS:
-```bash
+
+```sh
 brew install llvm@14
 export LLVM_SYS_140_PREFIX="$(brew --prefix llvm@14)"
 ```
 
 On Ubuntu/Debian:
-```bash
+
+```sh
 sudo apt-get install llvm-14-dev libclang-14-dev
 export LLVM_SYS_140_PREFIX=/usr/lib/llvm-14
 ```
@@ -72,7 +77,8 @@ export LLVM_SYS_140_PREFIX=/usr/lib/llvm-14
 #### Setting up Python environment
 
 Install dependencies with uv:
-```bash
+
+```sh
 uv sync --all-groups
 ```
 
@@ -82,25 +88,25 @@ This will create a virtual environment and install all dependencies including de
 
 You can run the rust test with:
 
-```bash
+```sh
 cargo test
 ```
 
 You can run the Python test with:
 
-```bash
-uv run pytest
+```sh
+uv run pytest -n auto
 ```
 
 If you want to update the snapshots you can do that via:
 
-```bash
+```sh
 uv run pytest --snapshot-update
 ```
 
 ## License
 
-This project is licensed under Apache License, Version 2.0 ([LICENSE][] or http://www.apache.org/licenses/LICENSE-2.0).
+This project is licensed under Apache License, Version 2.0 ([LICENSE][] or <http://www.apache.org/licenses/LICENSE-2.0>).
 
 [build_status]: https://github.com/Quantinuum/hugr-qir/actions/workflows/ci-py.yml/badge.svg?branch=main
 [codecov]: https://img.shields.io/codecov/c/gh/Quantinuum/hugr-qir?logo=codecov
