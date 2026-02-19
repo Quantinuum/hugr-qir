@@ -93,7 +93,7 @@ def generate_guppy_example_dict(guppy_files: list[Path]) -> dict[str, GuppyExamp
     example_dict: dict[str, GuppyExample] = {}
     hashes = get_file_hashes()
     versions = hashes.get("guppylang_hugr_version", "")
-    this_file_hash_old = hashes.get(str(THIS_FILE), "")
+    this_file_hash_old = hashes.get("hugr_generation_module", "")
     current_versions = get_guppylang_hugr_version_str()
     this_file_hash = get_file_hash(THIS_FILE)
     if versions != current_versions or this_file_hash != this_file_hash_old:
@@ -102,7 +102,7 @@ def generate_guppy_example_dict(guppy_files: list[Path]) -> dict[str, GuppyExamp
         hashes = {}
     new_hashes = {
         "guppylang_hugr_version": current_versions,
-        str(THIS_FILE): this_file_hash,
+        "hugr_generation_module": this_file_hash,
     }
     for guppy_file in guppy_files:
         file_stem = guppy_file.stem

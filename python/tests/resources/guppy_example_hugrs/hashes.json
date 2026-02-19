@@ -1,7 +1,7 @@
 {
-  "/Users/travis.thompson/Develop/CQCL/hugr-qir/python/tests/hugr_generation.py": "555ee8dc8840debca8d2fc0da3d2e13dd02047a3e88bbfbfb49498a2703209ed",
   "generates-llvm-switch": "54951f13c703f19feabae9eadf09128c2b3486574d7a88b9b32fe18b7884875b",
   "guppylang_hugr_version": "guppy-v0.21.8 hugr-v0.15.1",
+  "hugr_generation_module": "93a2b06f3d8ceafce380b1b0457e9d183f67e177976df3b310f7429bd2392784",
   "planqc-1": "90557e381ff288343c34bd3009816ab2d90d19d56f38e1b96c17ca82b3e7e277",
   "quantum-classical-1": "ff71ffb9fb4b52d5c40db6a0e4314dd5a84dd630f9beab23ec6c891209bc3dd6",
   "quantum-complex-1": "b1788acba0ee06ae260f5ccb276d11844aac5863165b80f655443b018869faf3",
