@@ -50,19 +50,33 @@ python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
 
 ### #️⃣ Setting up the development environment
 
-The easiest way to setup the development environment is to use the provided
-[`devenv.nix`](devenv.nix) file. This will setup a development shell with all the
-required dependencies.
+You'll need to install:
+- [Rust](https://rustup.rs/) (via rustup)
+- [uv](https://docs.astral.sh/uv/) for Python package management
+- LLVM 14 development libraries
 
-To use this, you will need to install [devenv](https://devenv.sh/getting-started/).
-Once you have it running, open a shell with:
+#### Installing LLVM 14
 
+On macOS:
 ```bash
-devenv shell
+brew install llvm@14
+export LLVM_SYS_140_PREFIX="$(brew --prefix llvm@14)"
 ```
 
-All the required dependencies should be available. You can automate loading the
-shell by setting up [direnv](https://devenv.sh/automatic-shell-activation/).
+On Ubuntu/Debian:
+```bash
+sudo apt-get install llvm-14-dev libclang-14-dev
+export LLVM_SYS_140_PREFIX=/usr/lib/llvm-14
+```
+
+#### Setting up Python environment
+
+Install dependencies with uv:
+```bash
+uv sync --all-groups
+```
+
+This will create a virtual environment and install all dependencies including development and example groups.
 
 ### Run tests
 
@@ -75,13 +89,13 @@ cargo test
 You can run the Python test with:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 If you want to update the snapshots you can do that via:
 
 ```bash
-pytest --snapshot-update
+uv run pytest --snapshot-update
 ```
 
 ## License
