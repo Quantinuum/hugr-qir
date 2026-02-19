@@ -4,6 +4,7 @@ from typing import no_type_check
 from guppylang import guppy, qubit
 from guppylang.std.qsystem.functional import measure
 from guppylang.std.quantum import cx, discard, h
+from tket_exts import tket_registry
 
 
 @guppy
@@ -19,4 +20,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    sys.stdout.buffer.write(main.compile().to_bytes())
+    hugr_package = main.compile()
+    # Can remove once extension handling fixed in guppy
+    for ext in tket_registry().extensions.values():
+        if ext not in hugr_package.extensions:
+            hugr_package.extensions.append(ext)
+    sys.stdout.buffer.write(hugr_package.to_bytes())
