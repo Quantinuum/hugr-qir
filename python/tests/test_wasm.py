@@ -6,6 +6,8 @@ from guppylang import guppy, qubit
 from guppylang.std.platform import result
 from guppylang.std.quantum import measure
 from guppylang_internals.decorator import wasm, wasm_module
+from tket_exts import tket_registry
+
 from hugr_qir.hugr_to_qir import hugr_to_qir
 
 
@@ -49,6 +51,8 @@ def test_wasm_functions(wasm_file: Path) -> None:
         result("q", measure(q))
 
     hugr = main.compile()
+    # TODO: Can remove once extension handling fixed in guppy
+    hugr.extensions.append(tket_registry().get_extension("tket.rotation"))
     hugr_to_qir(hugr, validate_qir=False, wasm_file=wasm_file)
 
 
@@ -93,6 +97,8 @@ def test_error_on_wasm_function_that_returns_float(wasm_file: Path) -> None:
         result("q", measure(q))
 
     hugr = main.compile()
+    # TODO: Can remove once extension handling fixed in guppy
+    hugr.extensions.append(tket_registry().get_extension("tket.rotation"))
     with pytest.raises(ValueError, match=r"(?=.*wasm return type error)(?=.*float64)"):
         hugr_to_qir(hugr, validate_qir=False, wasm_file=wasm_file)
 
@@ -132,6 +138,8 @@ def test_wasm_function_indices(wasm_file: Path) -> None:
         result("six", four + two2)
 
     hugr = main.compile()
+    # TODO: Can remove once extension handling fixed in guppy
+    hugr.extensions.append(tket_registry().get_extension("tket.rotation"))
     hugr_to_qir(hugr, validate_qir=True, wasm_file=wasm_file)
 
 
@@ -160,4 +168,6 @@ def test_wasm_methods(wasm_file: Path) -> None:
         result("bla", x + y)
 
     hugr = main.compile()
+    # TODO: Can remove once extension handling fixed in guppy
+    hugr.extensions.append(tket_registry().get_extension("tket.rotation"))
     hugr_to_qir(hugr, validate_qir=True, wasm_file=wasm_file)

@@ -1,7 +1,8 @@
 {
-  "generates-llvm-switch": "54951f13c703f19feabae9eadf09128c2b3486574d7a88b9b32fe18b7884875b",
-  "guppylang_hugr_version": "guppy-v0.21.6 hugr-v0.14.4",
-  "planqc-1": "85360427527eb5a13b74950c9e39b8c6f72726185fda43a5894757ab5ba2a717",
+  "/Users/travis.thompson/Develop/CQCL/hugr-qir/python/tests/hugr_generation.py": "b4524c5f46e567c78ecbae21b2e51f48170e0b132e6d774996fb19fa03343eb3",
+  "generates-llvm-switch": "7393df572a2fa3a7f331fbe96bd309d0e2d69555274eea875c4d66fba2f41124",
+  "guppylang_hugr_version": "guppy-v0.21.9 hugr-v0.15.1",
+  "planqc-1": "bdf97f76c78bd6b1a9572e63d8964c36c654d7a1eb2c1279a9749340829f4592",
   "quantum-classical-1": "ff71ffb9fb4b52d5c40db6a0e4314dd5a84dd630f9beab23ec6c891209bc3dd6",
   "quantum-complex-1": "b1788acba0ee06ae260f5ccb276d11844aac5863165b80f655443b018869faf3",
   "quantum-conditional-1": "ccd283754d14d6c8c1e1c6cd87af9dd6f8f5c9888e584de6a9ea80b9bf1a0e6c",
@@ -16,6 +17,5 @@
   "rng-quantum-jobid-1": "af9a7d3cfb12770452a024f98cce5ed621078601e62e67dbd7cb634c387c9632",
   "rng-quantum-rng-1": "a02a13bfaa327c79906cd432fc323e58b307c257bffff9f430c4a485478d7faa",
   "rng-quantum-rng-2": "a3878df9944bdb65d821a614b179f73db62aa2d3382bdf7c08dbf6f8a480efa0",
-  "uses-discard": "87f674b822a676e468d25cb92d20ebe460b2693f18d839c1880783f30c5d530e",
-  "wasm-quantum-1": "1bf6212f6161cfe27f55ebc492e1a3645958f7ce0f3c4171ef5687ae2766b984"
+  "uses-discard": "87f674b822a676e468d25cb92d20ebe460b2693f18d839c1880783f30c5d530e"
 }

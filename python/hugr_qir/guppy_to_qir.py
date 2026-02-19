@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from guppylang.defs import GuppyFunctionDefinition
+from tket_exts import tket_registry
 
 from .hugr_to_qir import to_qir_bytes, to_qir_str
 
@@ -41,4 +42,7 @@ def guppy_to_qir_str(entrypoint: Callable, *, validate_qir: bool = True) -> str:
         raise ValueError(message)
 
     assert isinstance(entrypoint, GuppyFunctionDefinition)  # noqa: S101
-    return to_qir_str(entrypoint.compile(), validate_qir=validate_qir)
+
+    hugr_package = entrypoint.compile()
+    hugr_package.extensions.append(tket_registry().get_extension("tket.rotation"))
+    return to_qir_str(hugr_package, validate_qir=validate_qir)
