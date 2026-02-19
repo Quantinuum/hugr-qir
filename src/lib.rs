@@ -3,12 +3,11 @@ use std::rc::Rc;
 use crate::inkwell::passes::PassBuilderOptions;
 use crate::inkwell::values::CallSiteValue;
 use crate::inkwell::values::PointerValue;
-use crate::inline::inline;
 use anyhow::Result;
 use anyhow::anyhow;
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
-use hugr::algorithms::{ComposablePass, RemoveDeadFuncsPass};
+use hugr::algorithms::{ComposablePass, RemoveDeadFuncsPass, inline_acyclic};
 use hugr::llvm::custom::CodegenExtsMap;
 use hugr::llvm::emit::{EmitHugr, Namer};
 use hugr::llvm::utils::fat::FatExt;
@@ -107,11 +106,9 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        let all_calls: Vec<_> = hugr
-            .nodes()
-            .filter(|n| hugr.get_optype(*n).is_call())
-            .collect();
-        inline(hugr, all_calls)?;
+        inline_acyclic(hugr, |_, _| {
+            true // <- always inline, no matter what
+        })?;
         if self.validate {
             hugr.validate()?;
         }
@@ -382,6 +379,5 @@ pub fn set_explicit_entrypoint_linkage(
     Ok(())
 }
 
-mod inline;
 #[cfg(test)]
 pub(crate) mod test;

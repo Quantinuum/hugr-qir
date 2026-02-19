@@ -1,8 +1,8 @@
 {
   "generates-llvm-switch": "5e5c83ebef839577568c4ab79f4b66cc6cafb28657fc636762c8432e73523b25",
-  "guppylang_hugr_version": "guppy-v0.21.8 hugr-v0.15.1",
+  "guppylang_hugr_version": "guppy-v0.21.9 hugr-v0.15.1",
   "hugr_generation_module": "93a2b06f3d8ceafce380b1b0457e9d183f67e177976df3b310f7429bd2392784",
-  "planqc-1": "d2c4d34800d75233fc01caee5c5daf673e54557b633d6c22e46ac4f0aab1118a",
+  "planqc-1": "92ff2173ffc332f651aaab959794705216adf84ccad3a33c16210c3f0eaec921",
   "quantum-classical-1": "08f9e1696d21a259c28e56d5aa1df19d861d42440ca1a49169ab4f8ac37832d7",
   "quantum-complex-1": "5fa7b9f3908329acbbf3cce7756b757c7f8d61962993f07c323bc4fa953caa11",
   "quantum-conditional-1": "5cbfbdcf5c993aa32b30356997fe4f5adf4522334055c145945adc2ec8b1b95f",
