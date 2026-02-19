@@ -1,35 +1,44 @@
 import hashlib
 import importlib.util
-import sys
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import guppylang
 import hugr
+from mypy.moduleinspect import ModuleType
 from tket_exts import tket_registry
 
 
-def load_py_module_from_path(module_name: str, file_path : str):
+def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:
     # 1. Create a module spec from the file location
     spec = importlib.util.spec_from_file_location(module_name, file_path)
+    msg = "Bad file path"
+    if not spec:
+        raise (ValueError(msg))
+
     # 2. Create a new module based on that spec
     module = importlib.util.module_from_spec(spec)
     # 3. Optional: Add it to sys.modules so it behaves like a normal import
     sys.modules[module_name] = module
     # 4. Execute the module to make its functions available
-    spec.loader.exec_module(module)
+    loader = spec.loader
+    if loader:
+        loader.exec_module(module)
     return module
+
 
 GUPPY_EXAMPLE_HASHES = (
     Path(__file__).parent / "resources/guppy_example_hugrs/hashes.json"
 )
 THIS_FILE = Path(__file__)
 
+
 def guppy_to_hugr_binary(guppy_file: Path) -> bytes:
     guppy_example = load_py_module_from_path("guppy_example_mod", str(guppy_file))
     hugr_package = guppy_example.main.compile()
-    # TODO: Can remove once extension handling fixed in guppy
+    # Can remove once extension handling fixed in guppy
     for ext in tket_registry().extensions.values():
         if ext not in hugr_package.extensions:
             hugr_package.extensions.append(ext)
@@ -38,6 +47,7 @@ def guppy_to_hugr_binary(guppy_file: Path) -> bytes:
 
 def get_file_hash(path: Path) -> str:
     return hashlib.sha256(path.open("rb").read()).hexdigest()
+
 
 def get_file_hashes() -> dict[str, str]:
     if GUPPY_EXAMPLE_HASHES.exists():
@@ -90,7 +100,10 @@ def generate_guppy_example_dict(guppy_files: list[Path]) -> dict[str, GuppyExamp
         # if guppylang and/or hugr versions don't match
         # or this file changed regenerate everything
         hashes = {}
-    new_hashes = {"guppylang_hugr_version": current_versions, str(THIS_FILE): this_file_hash}
+    new_hashes = {
+        "guppylang_hugr_version": current_versions,
+        str(THIS_FILE): this_file_hash,
+    }
     for guppy_file in guppy_files:
         file_stem = guppy_file.stem
         hugr_file_path = (
