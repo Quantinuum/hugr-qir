@@ -44,5 +44,8 @@ def guppy_to_qir_str(entrypoint: Callable, *, validate_qir: bool = True) -> str:
     assert isinstance(entrypoint, GuppyFunctionDefinition)  # noqa: S101
 
     hugr_package = entrypoint.compile()
-    hugr_package.extensions.append(tket_registry().get_extension("tket.rotation"))
+    # Remove this once guppy extension handling bug is fixed
+    for ext in tket_registry().extensions.values():
+        if ext not in hugr_package.extensions:
+            hugr_package.extensions.append(ext)
     return to_qir_str(hugr_package, validate_qir=validate_qir)
