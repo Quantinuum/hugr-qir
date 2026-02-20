@@ -1,4 +1,3 @@
-import sys
 from typing import no_type_check
 
 from guppylang import guppy, qubit
@@ -20,7 +19,3 @@ def main() -> None:
     b2 = b0 ^ b1
 
     result("0", b2)
-
-
-if __name__ == "__main__":
-    sys.stdout.buffer.write(main.compile().to_bytes())

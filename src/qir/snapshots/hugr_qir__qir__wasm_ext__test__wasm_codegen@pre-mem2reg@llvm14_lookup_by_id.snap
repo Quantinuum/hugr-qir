@@ -1,0 +1,27 @@
+---
+source: src/qir/wasm_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define private void ()* @_hl.main.1({} %0) {
+alloca_block:
+  %"0" = alloca void ()*, align 8
+  %"2_0" = alloca {}, align 8
+  %"4_0" = alloca void ()*, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store {} %0, {}* %"2_0", align 1
+  %"2_01" = load {}, {}* %"2_0", align 1
+  store void ()* @wasm_func_42, void ()** %"4_0", align 8
+  %"4_02" = load void ()*, void ()** %"4_0", align 8
+  store void ()* %"4_02", void ()** %"0", align 8
+  %"03" = load void ()*, void ()** %"0", align 8
+  ret void ()* %"03"
+}
+
+declare void @wasm_func_42() #0
+
+attributes #0 = { "wasm" }
