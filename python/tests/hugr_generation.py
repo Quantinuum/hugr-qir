@@ -8,7 +8,6 @@ from pathlib import Path
 import guppylang
 import hugr
 from mypy.moduleinspect import ModuleType
-from tket_exts import tket_registry
 
 
 def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:
@@ -38,11 +37,6 @@ THIS_FILE = Path(__file__)
 def guppy_to_hugr_binary(guppy_file: Path) -> bytes:
     guppy_example = load_py_module_from_path("guppy_example_mod", str(guppy_file))
     hugr_package = guppy_example.main.compile()
-    # Can remove once extension handling fixed in guppy
-    sorted_exts = dict(sorted(tket_registry().extensions.items()))
-    for ext in sorted_exts.values():
-        if ext not in hugr_package.extensions:
-            hugr_package.extensions.append(ext)
     return hugr_package.to_bytes()
 
 

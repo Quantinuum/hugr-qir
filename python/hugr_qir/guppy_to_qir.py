@@ -1,7 +1,6 @@
 from collections.abc import Callable
 
 from guppylang.defs import GuppyFunctionDefinition
-from tket_exts import tket_registry
 
 from .hugr_to_qir import to_qir_bytes, to_qir_str
 
@@ -43,9 +42,4 @@ def guppy_to_qir_str(entrypoint: Callable, *, validate_qir: bool = True) -> str:
 
     assert isinstance(entrypoint, GuppyFunctionDefinition)  # noqa: S101
 
-    hugr_package = entrypoint.compile()
-    # Remove this once guppy extension handling bug is fixed
-    for ext in tket_registry().extensions.values():
-        if ext not in hugr_package.extensions:
-            hugr_package.extensions.append(ext)
-    return to_qir_str(hugr_package, validate_qir=validate_qir)
+    return to_qir_str(entrypoint.compile(), validate_qir=validate_qir)

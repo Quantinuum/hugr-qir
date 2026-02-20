@@ -13,10 +13,10 @@ anyhow = "1.0"
 clap = "4.5"
 clap-verbosity-flag = "3.0"
 clio = { version = "0.3.5", features = ["clap-parse"] }
-hugr = { version = "0.25.5", features = ["llvm"] }
-hugr-cli = "0.25.5"
-hugr-core = "0.25.5"
-hugr-llvm = { version = "0.25.5", features = ["test-utils"] }
+hugr = { version = "0.25.6", features = ["llvm"] }
+hugr-cli = "0.25.6"
+hugr-core = "0.25.6"
+hugr-llvm = { version = "0.25.6", features = ["test-utils"] }
 inkwell = { version = "0.8.0", features = ["llvm14-0"] }
 itertools = "0.14.0"
 lazy_static = "1.5.0"
