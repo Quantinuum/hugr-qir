@@ -23,6 +23,7 @@ def main() -> None:
     result("0", b2)
 
 
-qir = hugr_to_qir(main.compile(), output_format=OutputFormat.LLVM_IR)
+hugr_package = main.compile()
+qir = hugr_to_qir(hugr_package, output_format=OutputFormat.LLVM_IR)
 
 assert len(qir) > 10  # noqa: PLR2004

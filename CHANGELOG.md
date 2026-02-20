@@ -4,6 +4,8 @@
 
 - add to_qir_str()
 - add to_qir_bytes()
+- update hugr version requirement to  0.15.4
+- update guppylang version requirement to 0.21.9
 
 ### v0.0.20
 

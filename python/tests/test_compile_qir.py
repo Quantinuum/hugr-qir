@@ -23,8 +23,11 @@ def main() -> None:
     result("0", b2)
 
 
+hugr_package = main.compile()
+
+
 def test_hugr_package_to_qir() -> None:
-    qir = to_qir_str(main.compile())
+    qir = to_qir_str(hugr_package)
     assert len(qir) > 10  # noqa: PLR2004
 
 
