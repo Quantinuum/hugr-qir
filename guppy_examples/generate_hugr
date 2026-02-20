@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import importlib.util
+import sys
+from mypy.moduleinspect import ModuleType
+from tket_exts import tket_registry
+
+def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:
+    # 1. Create a module spec from the file location
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    msg = "Bad file path"
+    if not spec:
+        raise (ValueError(msg))
+
+    # 2. Create a new module based on that spec
+    module = importlib.util.module_from_spec(spec)
+    # 3. Optional: Add it to sys.modules so it behaves like a normal import
+    sys.modules[module_name] = module
+    # 4. Execute the module to make its functions available
+    loader = spec.loader
+    if loader:
+        loader.exec_module(module)
+    return module
+
+
+if __name__ == "__main__":
+    try:
+        guppy_file = sys.argv[1]
+    except IndexError:
+        print("Missing guppy file input argument")
+        guppy_file = None
+
+    if guppy_file:
+        guppy_example = load_py_module_from_path("guppy_example_mod", str(guppy_file))
+        hugr_package = guppy_example.main.compile()
+        # Can remove once extension handling fixed in guppy
+        sorted_exts = dict(sorted(tket_registry().extensions.items()))
+        for ext in sorted_exts.values():
+            if ext not in hugr_package.extensions:
+                hugr_package.extensions.append(ext)
+        sys.stdout.buffer.write(hugr_package.to_bytes())
