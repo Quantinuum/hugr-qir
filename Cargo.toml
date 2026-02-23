@@ -1,36 +1,36 @@
 [package]
 name = "hugr-qir"
-version = "0.0.21"
+version = "0.0.21-rc.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.89"
 
 [features]
 default = ["py"]
 py = ["dep:pyo3"]
 
 [dependencies]
-anyhow = "1.0.98"
-clap = "4.5.56"
-inkwell = { version = "0.6.0", features = ["llvm14-0"] }
-clap-verbosity-flag = "3.0.2"
+anyhow = "1.0"
+clap = "4.5"
+clap-verbosity-flag = "3.0"
 clio = { version = "0.3.5", features = ["clap-parse"] }
-hugr = { version = "0.24.3", features = ["llvm"] }
-hugr-core = "0.24.2"
-hugr-cli = "0.24.3"
-hugr-llvm = { version = "0.24.2", features = ["test-utils"] }
+hugr = { version = "0.25.6", features = ["llvm"] }
+hugr-cli = "0.25.6"
+hugr-core = "0.25.6"
+hugr-llvm = { version = "0.25.6", features = ["test-utils"] }
+inkwell = { version = "0.8.0", features = ["llvm14-0"] }
 itertools = "0.14.0"
 lazy_static = "1.5.0"
-petgraph = { version = ">= 0.8.1, < 0.9", default-features = false }
-pyo3 = { version = "0.27.0", features = [
+pyo3 = { version = "0.28", features = [
     "abi3-py310",
     "anyhow",
 ], optional = true }
-serde = "1.0.219"
-tket = "0.16.0"
-tket-qsystem = { version = "0.22.0", features = ["cli"] }
+serde = "1.0"
+tket = "0.17.0"
+tket-qsystem = { version = "0.23.0", features = ["cli"] }
+wasmparser = { version = "0.244", default-features = false }
 
 [dev-dependencies]
-insta = "1.46.2"
+insta = "1.46"
 rstest = "0.26.1"
-serde = { version = "1.0.218", features = ["derive"] }
-typetag = "0.2.19"
+serde = { version = "1.0", features = ["derive"] }
+typetag = "0.2"

@@ -1,4 +1,3 @@
-import sys
 from typing import no_type_check
 
 from guppylang import guppy, qubit
@@ -18,11 +17,7 @@ def rx(q: qubit, x: angle) -> None:
 
 @guppy
 @no_type_check
-def main_circuit() -> None:
+def main() -> None:
     q = qubit()
     rx(q, angle(1.5))
     result("1", measure(q))
-
-
-if __name__ == "__main__":
-    sys.stdout.buffer.write(main_circuit.compile().to_bytes())

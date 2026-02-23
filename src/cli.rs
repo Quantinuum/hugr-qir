@@ -38,9 +38,6 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, help = "Turn debugging information on")]
     pub debug: u8,
 
-    #[arg(long, help = "Save transformed HUGR to a file")]
-    pub save_hugr: Option<String>,
-
     #[clap(value_parser, short = 'f', long)]
     pub output_format: Option<OutputFormat>,
 
@@ -55,6 +52,9 @@ pub struct Cli {
 
     #[arg(value_parser, short = 'l', long, help = "LLVM optimization level")]
     pub optimization_level: Option<CliOptimizationLevel>,
+
+    #[arg(long, help = "Optional path to WASM binary file")]
+    pub wasm_file: Option<String>,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
@@ -98,7 +98,6 @@ impl Cli {
             .validate()
             .map_err(|val_err| Self::wrap_generator(generator, val_err))?;
         let mut hugr = package.modules[0].clone();
-
         let args = self.compile_args();
         args.compile(&mut hugr, context)
     }
@@ -126,10 +125,9 @@ impl Cli {
                 .path()
                 .file_name()
                 .and_then(|x| Path::new(x).extension()?.to_str())
+                && ["ll", "asm"].contains(&extension)
             {
-                if ["ll", "asm"].contains(&extension) {
-                    return OutputFormat::LlvmIr;
-                }
+                return OutputFormat::LlvmIr;
             }
             OutputFormat::Bitcode
         })
@@ -144,6 +142,7 @@ impl Cli {
             qsystem_pass: self.qsystem_pass,
             target: self.target.unwrap_or(default_args.target),
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
+            wasm_file: self.wasm_file.clone(),
         }
     }
 

@@ -1,0 +1,31 @@
+---
+source: src/qir/wasm_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define private { {}, i32 } @_hl.main.1(i32 %0) {
+alloca_block:
+  %"0" = alloca {}, align 8
+  %"1" = alloca i32, align 4
+  %"2_0" = alloca i32, align 4
+  %"4_0" = alloca {}, align 8
+  %"4_1" = alloca i32, align 4
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store i32 %0, i32* %"2_0", align 4
+  %"2_01" = load i32, i32* %"2_0", align 4
+  store {} undef, {}* %"4_0", align 1
+  store i32 %"2_01", i32* %"4_1", align 4
+  %"4_02" = load {}, {}* %"4_0", align 1
+  %"4_13" = load i32, i32* %"4_1", align 4
+  store {} %"4_02", {}* %"0", align 1
+  store i32 %"4_13", i32* %"1", align 4
+  %"04" = load {}, {}* %"0", align 1
+  %"15" = load i32, i32* %"1", align 4
+  %mrv = insertvalue { {}, i32 } undef, {} %"04", 0
+  %mrv6 = insertvalue { {}, i32 } %mrv, i32 %"15", 1
+  ret { {}, i32 } %mrv6
+}

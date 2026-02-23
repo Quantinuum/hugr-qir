@@ -41,4 +41,5 @@ def guppy_to_qir_str(entrypoint: Callable, *, validate_qir: bool = True) -> str:
         raise ValueError(message)
 
     assert isinstance(entrypoint, GuppyFunctionDefinition)  # noqa: S101
+
     return to_qir_str(entrypoint.compile(), validate_qir=validate_qir)
