@@ -3,8 +3,8 @@ use std::rc::Rc;
 use crate::inkwell::passes::PassBuilderOptions;
 use crate::inkwell::values::CallSiteValue;
 use crate::inkwell::values::PointerValue;
-use anyhow::{bail, Result};
 use anyhow::anyhow;
+use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
 use hugr::algorithms::{ComposablePass, RemoveDeadFuncsPass, inline_acyclic};
@@ -162,7 +162,6 @@ impl CompileArgs {
         let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
-
 
         Ok(module)
     }
