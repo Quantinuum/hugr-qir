@@ -2,6 +2,7 @@ import sys
 from collections.abc import Callable
 
 from guppylang import guppy
+from guppylang.std.platform import result
 
 
 @guppy
@@ -18,7 +19,9 @@ def main() -> None:
     # # Apply our higher order function `my_function` to `is_even`
     my_function_composition = my_function(is_even)
 
-    my_function_composition(42)
+    res = my_function_composition(42)
+    result("res", res)
+
 
 
 if __name__ == "__main__":
