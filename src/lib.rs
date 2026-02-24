@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::inkwell::passes::PassBuilderOptions;
 use crate::inkwell::values::CallSiteValue;
 use crate::inkwell::values::PointerValue;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use anyhow::anyhow;
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
@@ -152,14 +152,17 @@ impl CompileArgs {
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
         let module = emit.emit_module(hugr.fat_root().unwrap())?.finish();
 
-        let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate");
-        let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result");
-
-        add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
-
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
         set_explicit_entrypoint_linkage(&namer, hugr, &module)?;
+
+        // We optimize before `replace_int_opaque_pointer`ing, because that will fail if there are indirect function  calls, which must be removed in the end qir anyway.
+        self.optimize_module_llvm(&module)?;
+        let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
+        let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
+
+        add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
+
 
         Ok(module)
     }
@@ -212,7 +215,7 @@ pub fn find_hugr_entry_point(hugr: &impl HugrView<Node = Node>) -> Result<Node> 
     Ok(entry_point_node)
 }
 
-pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> u64 {
+pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> Result<u64> {
     let first_func = module.get_first_function().unwrap();
 
     let mut pointer_counter: u64 = 0;
@@ -231,7 +234,7 @@ pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> u64 {
                 continue;
             };
             let Some(func) = call.get_called_fn_value() else {
-                continue;
+                bail!("Indirect call {:?}", call);
             };
             let global = func.as_global_value();
 
@@ -259,7 +262,7 @@ pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> u64 {
         }
     }
 
-    pointer_counter
+    Ok(pointer_counter)
 }
 
 pub fn add_module_metadata(
