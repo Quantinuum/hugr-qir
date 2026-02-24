@@ -23,6 +23,5 @@ def main() -> None:
     result("res", res)
 
 
-
 if __name__ == "__main__":
     sys.stdout.buffer.write(main.compile().to_bytes())

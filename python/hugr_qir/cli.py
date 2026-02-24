@@ -154,7 +154,9 @@ which is not supported in QIR."
         try:
             qircheck(qir)
         except (ValueError, ValidationError) as e:
-            error_message = e.error_message if isinstance(e, ValidationError) else str(e)
+            error_message = (
+                e.error_message if isinstance(e, ValidationError) else str(e)
+            )
             if "__quantum__rt__qubit_release" in error_message and target == "native":
                 pass
             else:

@@ -11,7 +11,7 @@ from guppylang.std.quantum import h, measure, x
 def recursive_func(q: qubit) -> None:
     x(q)
     q_temp = qubit()
-    if measure(q_temp):  # noqa: PLR2004
+    if measure(q_temp):
         return recursive_func(q)
     return None
 

@@ -1,30 +1,30 @@
-from typing import no_type_check, Generator
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import no_type_check
 
 import guppylang_internals
+import wasmtime as wt
 from guppylang import guppy, qubit
 from guppylang.std.num import nat
 from guppylang.std.platform import result
 from guppylang.std.qsystem.functional import measure
 from guppylang_internals.decorator import wasm, wasm_module
-
-
-from contextlib import contextmanager
-import wasmtime as wt
 from guppylang_internals.tys.ty import (
     NumericType,
     Type,
 )
 
+
 def h2_decode_type(ty: wt.ValType) -> Type | None:
     if ty == wt.ValType.i32():
         return NumericType(NumericType.Kind.Int)
-    elif ty == wt.ValType.f64():
+    if ty == wt.ValType.f64():
         return NumericType(NumericType.Kind.Float)
-    else:
-        return None
+    return None
+
 
 @contextmanager
-def h_series(yes: bool) -> Generator:
+def h_series(*, yes: bool) -> Generator:
     if yes:
         original = guppylang_internals.wasm_util.decode_type
         guppylang_internals.wasm_util.decode_type = h2_decode_type
@@ -36,7 +36,8 @@ def h_series(yes: bool) -> Generator:
         yield
 
 
-with h_series(True):
+with h_series(yes=True):
+
     @wasm_module("wasm-quantum-1.wasm")
     @no_type_check
     class MyWasm:

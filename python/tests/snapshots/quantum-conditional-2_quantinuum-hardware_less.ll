@@ -13,8 +13,8 @@ define dso_local void @__hugr__.main.1() local_unnamed_addr #0 {
 alloca_block:
   call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  call void @__quantum__qis__mz__body(%Qubit* null, %Result* nonnull inttoptr (i64 2 to %Result*))
-  %0 = call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 2 to %Result*))
+  call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
+  %0 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %0, label %cond_64_case_1, label %1
 
 cond_exit_178:                                    ; preds = %cond_64_case_1, %1
@@ -31,8 +31,8 @@ cond_exit_178:                                    ; preds = %cond_64_case_1, %1
 cond_64_case_1:                                   ; preds = %alloca_block
   call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
-  call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* null)
-  %3 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
+  %3 = call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 2 to %Result*))
   br label %cond_exit_178
 }
 
