@@ -117,10 +117,10 @@ def main_noncomptime() -> None:
 |-------------------------------------|---------|----------------------------------------------------------|
 | if elif else constructs             | ✅       |                                                          |
 | function overloading                | ✅       |                                                          |
-| Generics (type_var/nat_var)         |  ✅      | nat_vars not really useful without runtime array support |
-| measure_array/discard_array         |  ❌      | Use non-comptime arrays internally                       |
-| First class/ Higher order functions | ❌       |                                                          |
-| Recursive functions                 | ❌       |                                                          |
+| Generics (type_var/nat_var)         | ✅       | nat_vars not really useful without runtime array support |
+| First class/ Higher order functions | ✅       |                                                          |
+| Recursive functions/loops           | *️⃣     | Only if unrollable/serializable                          |
+| measure_array/discard_array         | ❌       | Use non-comptime arrays internally                       |
 
 
 
