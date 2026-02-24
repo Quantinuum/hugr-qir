@@ -50,17 +50,21 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 ## Guppy language support
 
+✅ = full support, *️⃣ = partial support, ❌ = unsupported
 
 ### Overview Data Types
-| Data Types | Full Support | Partial Support | Unsupported | Caveats                                             |
-|------------|--------------|-----------------|-------------|-----------------------------------------------------|
-| array      |              | ✅               |             | Comptime only                                       |
-| tuple      |              | ✅               |             | Unpacking with * returns array, so only at comptime |
-| struct     | ✅            |                 |             | Cannot contain arrays                               |
-| int        | ✅            |                 |             |                                                     |
-| bool       | ✅            |                 |             |                                                     |
-| float      |              | ✅               |             | Must be runtime constant, arithmetic comptime only  |
-| nat        | ✅            |                 |             |                                                     |
+
+
+
+| Data Types | Support | Caveats                                             |
+|------------|---------|-----------------------------------------------------|
+| array      |  *️⃣    | Comptime only                                       |
+| tuple      | *️⃣     | Unpacking with * returns array, so only at comptime |
+| struct     |  ✅      | Cannot contain arrays                               |
+| int        | ✅       |                                                     |
+| bool       | ✅       |                                                     |
+| float      | *️⃣     | Must be runtime constant, arithmetic comptime only  |
+| nat        | ✅       |                                                     |
 
 
 
@@ -68,6 +72,39 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 - Only supported within comptime guppy
 - Cannot use guppy builtins that use runtime arrays internally
 - Cannot be used within structs
+- Cannot be used as
+
+Array examples:
+```py
+def py_function(arr: array[qubit]) -> None: # ✅ no need to fully qualify array type, will be treated as python list
+   """This python function can be called from @guppy.comptime, but not @guppy
+      Can do anything here that is allowed within @guppy.comptime
+   """
+    for q in arr:
+       h(q)
+
+@guppy.comptime
+def guppy_comptime_function(arr: array[qubit, 4]) -> None: # ❌ no support for passing in arrays (even to guppy.comptime functions)
+   for q in arr:
+      h(q)
+
+@guppy
+def guppy_function(arr: array[qubit, 4]) -> None: # ❌ no support for passing in arrays
+   for q in arr:
+      h(q)
+
+@guppy.comptime
+def main() -> None:
+    comptime_array = array(qubit() for _ in range(4)) # ✅: array initialization at comptime
+    py_function(comptime_array)             # ✅: can call python function from comptime and pass in comptime array
+    guppy_comptime_function(comptime_array) # ❌: parameters to guppy comptime functions are NOT comptime
+    guppy_function(comptime_array)          # ❌: parameters to guppy functions are NOT comptime
+
+@guppy
+def main_noncomptime() -> None:
+   array = array(qubit() for _ in range(4)) # ❌: non-comptime array initialization
+```
+
 
 #### Tuples
 - Unpacking with * only supported at comptime (creates array)
@@ -76,14 +113,14 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 - Cannot contain arrays
 
 ### Overview Guppy Features
-| Features                            | Support? | Remarks                                                  |
-|-------------------------------------|----------|----------------------------------------------------------|
-| if elif else constructs             | ✅        |                                                          |
-| function overloading                | ✅        |                                                          |
-| Generics (type_var/nat_var)         | ✅        | nat_vars not really useful without runtime array support |
-| measure_array/discard_array         | ❌        | Use non-comptime arrays internally                       |
-| First class/ Higher order functions | ❌        |                                                          |
-| Recursive functions                 | ❌        |                                                          |
+| Features                            | Support | Remarks                                                  |
+|-------------------------------------|---------|----------------------------------------------------------|
+| if elif else constructs             | ✅       |                                                          |
+| function overloading                | ✅       |                                                          |
+| Generics (type_var/nat_var)         |  ✅      | nat_vars not really useful without runtime array support |
+| measure_array/discard_array         |  ❌      | Use non-comptime arrays internally                       |
+| First class/ Higher order functions | ❌       |                                                          |
+| Recursive functions                 | ❌       |                                                          |
 
 
 
