@@ -53,14 +53,14 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 ### Overview Data Types
 | Data Types | Full Support | Partial Support | Unsupported | Caveats                                             |
-|------------|------------|-----------------|--|-----------------------------------------------------|
-| array      |            | ✅               |  | Comptime only                                       |
-| tuple      |            | ✅               |  | Unpacking with * returns array, so only at comptime |
-| struct     | ✅           |                 |  | Cannot contain arrays                               |
-| int        |   ✅        |                 |  |                                                     |
-| bool       |   ✅        |                 |  |                                                     |
-| float      |            |  ✅               |  | Must be runtime constant, arithmetic comptime only  |
-| nat        |    ✅        |                 |  |                                                     |
+|------------|--------------|-----------------|-------------|-----------------------------------------------------|
+| array      |              | ✅               |             | Comptime only                                       |
+| tuple      |              | ✅               |             | Unpacking with * returns array, so only at comptime |
+| struct     | ✅            |                 |             | Cannot contain arrays                               |
+| int        | ✅            |                 |             |                                                     |
+| bool       | ✅            |                 |             |                                                     |
+| float      |              | ✅               |             | Must be runtime constant, arithmetic comptime only  |
+| nat        | ✅            |                 |             |                                                     |
 
 
 
@@ -76,14 +76,14 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 - Cannot contain arrays
 
 ### Overview Guppy Features
-| Features                            | Support? | Remarks                                                 |
-|-------------------------------------|----------|---------------------------------------------------------|
-| if elif else constructs             | ✅        |                                                         |
-| function overloading                | ✅        |                                                         |
+| Features                            | Support? | Remarks                                                  |
+|-------------------------------------|----------|----------------------------------------------------------|
+| if elif else constructs             | ✅        |                                                          |
+| function overloading                | ✅        |                                                          |
 | Generics (type_var/nat_var)         | ✅        | nat_vars not really useful without runtime array support |
-| measure_array/discard_array         | ❌        | Use non-comptime arrays internally                      |
-| First class/ Higher order functions | ❌        |                                                         |
-| Recursive functions                 | ❌        |                                                         |
+| measure_array/discard_array         | ❌        | Use non-comptime arrays internally                       |
+| First class/ Higher order functions | ❌        |                                                          |
+| Recursive functions                 | ❌        |                                                          |
 
 
 
@@ -92,8 +92,8 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 ### #️⃣ Setting up the development environment
 
-The easiest way to setup the development environment is to use the provided
-[`devenv.nix`](devenv.nix) file. This will setup a development shell with all the
+The easiest way to set up the development environment is to use the provided
+[`devenv.nix`](devenv.nix) file. This will set up a development shell with all the
 required dependencies.
 
 To use this, you will need to install [devenv](https://devenv.sh/getting-started/).
