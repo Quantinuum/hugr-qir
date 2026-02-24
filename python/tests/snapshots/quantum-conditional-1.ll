@@ -17,13 +17,13 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, %Qubit* null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
-  tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* nonnull inttoptr (i64 1 to %Result*))
-  %0 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
+  tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
+  %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %0, label %2, label %cond_109_case_1
 
 cond_109_case_1:                                  ; preds = %alloca_block, %2
-  tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* null)
-  %1 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
+  %1 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
   tail call void @__quantum__rt__bool_record_output(i1 %1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i64 0, i64 0))
   ret void
 

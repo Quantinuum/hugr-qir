@@ -7,11 +7,13 @@ from hugr_qir.cli import hugr_qir
 
 from tests.hugr_generation import GuppyExample, generate_guppy_example_dict
 
+GUPPY_EXAMPLES_DIR = Path(__file__).parent / "../../guppy_examples"
 GUPPY_EXAMPLES_DIR_GENERAL = Path(__file__).parent / "../../guppy_examples/general"
 GUPPY_EXAMPLES_DIR_QHO = (
     Path(__file__).parent / "../../guppy_examples/quantinuum-hardware-only"
 )
 TEST_DIR = Path(__file__).parent
+SNAPSHOT_DIR = TEST_DIR / "snapshots"
 
 # Within the cibuildwheels environments, ssa variable names tend to be slightly
 # different, so verbatim snapshot tests do not pass. So we just test
