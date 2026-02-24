@@ -48,6 +48,46 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
     python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
     ```
 
+## Guppy language support
+
+
+### Overview Data Types
+| Data Types | Full Support | Partial Support | Unsupported | Caveats                                             |
+|------------|------------|-----------------|--|-----------------------------------------------------|
+| array      |            | ✅               |  | Comptime only                                       |
+| tuple      |            | ✅               |  | Unpacking with * returns array, so only at comptime |
+| struct     | ✅           |                 |  | Cannot contain arrays                               |
+| int        |   ✅        |                 |  |                                                     |
+| bool       |   ✅        |                 |  |                                                     |
+| float      |            |  ✅               |  | Must be runtime constant, arithmetic comptime only  |
+| nat        |    ✅        |                 |  |                                                     |
+
+
+
+#### Arrays
+- Only supported within comptime guppy
+- Cannot use guppy builtins that use runtime arrays internally
+- Cannot be used within structs
+
+#### Tuples
+- Unpacking with * only supported at comptime (creates array)
+
+#### Structs
+- Cannot contain arrays
+
+### Overview Guppy Features
+| Features                            | Support? | Remarks                                                 |
+|-------------------------------------|----------|---------------------------------------------------------|
+| if elif else constructs             | ✅        |                                                         |
+| function overloading                | ✅        |                                                         |
+| Generics (type_var/nat_var)         | ✅        | nat_vars not really useful without runtime array support |
+| measure_array/discard_array         | ❌        | Use non-comptime arrays internally                      |
+| First class/ Higher order functions | ❌        |                                                         |
+| Recursive functions                 | ❌        |                                                         |
+
+
+
+
 ## Development
 
 ### #️⃣ Setting up the development environment

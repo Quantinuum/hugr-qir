@@ -1,0 +1,3 @@
+QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: assertion `left == right` failed
+  left: 1
+ right: 2

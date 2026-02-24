@@ -141,7 +141,7 @@ but can also happen when trying to convert a feature in HUGR/Guppylang \
 which is not supported in QIR."
         try:
             cli(str(hugr_file), *tmp_options)
-        except RuntimeError as e:
+        except (RuntimeError, BaseException) as e:
             msg = f"{failedqirmsg} Error details: {e}"
             raise ValueError(msg) from e
         try:
