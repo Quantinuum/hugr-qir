@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -20,4 +21,4 @@ def test_unsupported_features_fail(guppy_file: Path) -> None:
     with pytest.raises(Exception) as error:  # noqa: PT011
         to_qir_str(hugr_bin)
     with guppy_file.with_suffix(".error").open("w") as error_file:
-        error_file.write(str(error.value))
+        error_file.write(str(error.value) + os.linesep)
