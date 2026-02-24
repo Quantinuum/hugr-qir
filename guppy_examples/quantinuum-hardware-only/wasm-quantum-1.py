@@ -18,25 +18,24 @@ from guppylang_internals.tys.ty import (
 def h2_decode_type(ty: wt.ValType) -> Type | None:
     if ty == wt.ValType.i32():
         return NumericType(NumericType.Kind.Int)
-    if ty == wt.ValType.f64():
-        return NumericType(NumericType.Kind.Float)
     return None
 
 
+# This context manager is a workaround to make H2 wasm files
+# work with current guppy. We are working on adding a parameter
+# to the wasm_module decorator to fix this guppy-side and this
+# can be removed once that is released
 @contextmanager
-def h_series(*, yes: bool) -> Generator:
-    if yes:
-        original = guppylang_internals.wasm_util.decode_type
-        guppylang_internals.wasm_util.decode_type = h2_decode_type
-        try:
-            yield
-        finally:
-            guppylang_internals.wasm_util.decode_type = original
-    else:
+def h_series() -> Generator:
+    original = guppylang_internals.wasm_util.decode_type
+    guppylang_internals.wasm_util.decode_type = h2_decode_type
+    try:
         yield
+    finally:
+        guppylang_internals.wasm_util.decode_type = original
 
 
-with h_series(yes=True):
+with h_series():
 
     @wasm_module("wasm-quantum-1.wasm")
     @no_type_check
