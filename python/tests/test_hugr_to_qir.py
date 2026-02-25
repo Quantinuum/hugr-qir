@@ -14,13 +14,12 @@ from llvmlite.binding import (  # type: ignore
 from pytest_snapshot.plugin import Snapshot  # type: ignore
 
 from .conftest import (
+    SNAPSHOT_DIR,
     guppy_example_dict,
     guppy_examples,
     skip_snapshot_checks,
 )
 from .hugr_generation import GuppyExample
-
-SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 
 
 @pytest.mark.parametrize(

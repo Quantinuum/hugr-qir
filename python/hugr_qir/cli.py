@@ -141,7 +141,7 @@ but can also happen when trying to convert a feature in HUGR/Guppylang \
 which is not supported in QIR."
         try:
             cli(str(hugr_file), *tmp_options)
-        except RuntimeError as e:
+        except (RuntimeError, BaseException) as e:
             msg = f"{failedqirmsg} Error details: {e}"
             raise ValueError(msg) from e
         try:
@@ -153,8 +153,10 @@ which is not supported in QIR."
     if validate_qir:
         try:
             qircheck(qir)
-        except ValidationError as e:
-            error_message = e.error_message
+        except (ValueError, ValidationError) as e:
+            error_message = (
+                e.error_message if isinstance(e, ValidationError) else str(e)
+            )
             if "__quantum__rt__qubit_release" in error_message and target == "native":
                 pass
             else:
