@@ -5,7 +5,8 @@
 
 A tool for converting Hierarchical Unified Graph Representation (HUGR, pronounced _hugger_) formatted quantum programs into [QIR](https://github.com/qir-alliance/qir-spec) format.
 
-Warning: Not all hugr/guppy programs can be converted to QIR.
+> [!NOTE]
+> Not all Guppy/HUGR programs can be converted to QIR.
 
 ## Installation
 
@@ -17,11 +18,11 @@ You can install from pypi via `pip install hugr-qir`.
 
 Use the function `hugr_to_qir` from the `hugr_to_qir` module to convert hugr to qir. By default, some basic validity checks will be run on the generated QIR. These checks can be turned off by passing `validate_qir = False`.
 
-You can find an example notebook at `examples/submit-guppy-h2-via-qir.ipynb` showing the conversion and the submission to H1/H2.
+You can find an example notebook at `examples/submit-guppy-h2-via-qir.ipynb` showing the conversion and the submission to Quantinuum System Model H2.
 
 ### CLI
 
-You can use the available cli after installing the python package.
+You can use the available CLI after installing the python package.
 
 This will generate qir for a given hugr file:
 
@@ -58,13 +59,13 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 | Data Types | Support | Caveats                                             |
 |------------|---------|-----------------------------------------------------|
-| array      |  *️⃣    | Comptime only                                       |
-| tuple      | *️⃣     | Unpacking with * returns array, so only at comptime |
-| struct     |  ✅      | Cannot contain arrays                               |
-| int        | ✅       |                                                     |
-| bool       | ✅       |                                                     |
-| float      | *️⃣     | Must be runtime constant, arithmetic comptime only  |
-| nat        | ✅       |                                                     |
+| struct     |  ✅     | Cannot contain arrays                               |
+| int        |  ✅     |                                                     |
+| bool       |  ✅     |                                                     |
+| nat        |  ✅     |                                                     |
+| float      |  *️⃣     | Must be runtime constant, arithmetic comptime only  |
+| array      |  *️⃣     | Comptime only                                       |
+| tuple      |  *️⃣     | Unpacking with * returns array, so only at comptime |
 
 
 
@@ -119,7 +120,7 @@ def main_noncomptime() -> None:
 | function overloading                | ✅       |                                                          |
 | Generics (type_var/nat_var)         | ✅       | nat_vars not really useful without runtime array support |
 | First class/ Higher order functions | ✅       |                                                          |
-| Recursive functions/loops           | *️⃣     | Only if unrollable/serializable                          |
+| Recursive functions/loops           | *️⃣       | Only if unrollable/serializable                          |
 | measure_array/discard_array         | ❌       | Use non-comptime arrays internally                       |
 
 
