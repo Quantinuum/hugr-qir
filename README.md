@@ -59,10 +59,10 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 | Data Types | Support | Caveats                                             |
 |------------|---------|-----------------------------------------------------|
-| struct     |  ✅     | Cannot contain arrays                               |
 | int        |  ✅     |                                                     |
 | bool       |  ✅     |                                                     |
 | nat        |  ✅     |                                                     |
+| struct     |  ✅     | Cannot contain arrays                               |
 | float      |  *️⃣     | Must be runtime constant, arithmetic comptime only  |
 | array      |  *️⃣     | Comptime only                                       |
 | tuple      |  *️⃣     | Unpacking with * returns array, so only at comptime |
