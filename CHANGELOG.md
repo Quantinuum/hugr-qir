@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.0.21
+### v0.0.22
 
 - add to_qir_str()
 - add to_qir_bytes()
