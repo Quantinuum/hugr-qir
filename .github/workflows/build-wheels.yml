@@ -103,3 +103,29 @@ jobs:
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
+
+  # This is a meta job to mark successful completion of the required checks,
+  # even if they are skipped due to no changes in the relevant files.
+  required-checks:
+    name: Required checks build-wheels
+    needs: [release, build_wheels, sdist, job-logic]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if required checks failed
+        # This condition should simply be `if: failure() || cancelled()`,
+        # but there seems to be a bug in the github workflow runner.
+        #
+        # See https://github.com/orgs/community/discussions/80788
+        if: |
+          needs.job-logic.result == 'failure' || needs.job-logic.result == 'cancelled' ||
+          needs.release.result == 'failure' || needs.release.result == 'cancelled' ||
+          needs.sdist.result == 'failure' || needs.sdist.result == 'cancelled' ||
+          needs.build_wheels.result == 'failure' || needs.build_wheels.result == 'cancelled'
+        run: |
+          echo "Required checks failed"
+          echo "Please check the logs for more information"
+          exit 1
+      - name: Pass if required checks passed
+        run: |
+          echo "All required checks passed"
