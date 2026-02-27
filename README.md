@@ -73,7 +73,7 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 - Only supported within comptime guppy
 - Cannot use guppy builtins that use runtime arrays internally
 - Cannot be used within structs
-- Cannot be used as parameter to either `@guppy` or `@guppy.comtime` decorated functions
+- Cannot be used as parameter to either `@guppy` or `@guppy.comptime` decorated functions
 
 Array examples:
 ```py
