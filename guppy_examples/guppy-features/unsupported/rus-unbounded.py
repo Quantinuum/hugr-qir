@@ -22,8 +22,7 @@ def main() -> None:
         tdg(a)
         cx(b, a)
         t(a)
-        a = h(a)
-        if measure(a):
+        if measure(h(a)):
             discard(b)
             continue
 
@@ -31,8 +30,7 @@ def main() -> None:
         z(q)
         cx(q, b)
         t(b)
-        b = h(b)
-        if measure(b):
+        if measure(h(b)):
             z(q)
             continue
 
