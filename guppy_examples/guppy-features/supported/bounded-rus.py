@@ -32,9 +32,8 @@ def rus_attempt(q: qubit) -> bool:
 @guppy
 @no_type_check
 def rus_step(q: qubit, ok: bool, n: int) -> tuple[bool, int]:
-    # In the original notebook, this dynamic branch lives directly in a
-    # measurement-controlled while loop. Here it is isolated in a regular
-    # Guppy function because the retry structure below is expanded at comptime.
+    # The dynamic stop-or-retry decision lives in a regular Guppy function
+    # because the outer retry structure below is expanded at comptime.
     if ok:
         return True, n
     return rus_attempt(q), n + 1
@@ -43,10 +42,12 @@ def rus_step(q: qubit, ok: bool, n: int) -> tuple[bool, int]:
 @guppy.comptime
 @no_type_check
 def main() -> None:
-    # This differs from the original RUS example in three ways:
+    # This version differs from an unbounded retry loop in three ways:
     # 1. The retry budget is finite (N attempts) rather than unbounded.
     # 2. The loop is unrolled at comptime so hugr-qir sees static control flow.
     # 3. Results expose both whether we succeeded and how many tries were used.
+    # This two-stage retry body also materializes fresh ancillas per attempt in
+    # QIR, unlike rus-flat-bounded.py which reuses 3 qubits.
     q = qubit()
     q = h(q)
     n = 0
