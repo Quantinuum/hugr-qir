@@ -33,7 +33,7 @@ def rus_attempt(q: qubit) -> bool:
 
 @guppy
 @no_type_check
-def rus_step(q: qubit, ok: bool, n: int) -> tuple[bool, int]:  # noqa: FBT001
+def rus_step(q: qubit, ok: bool, n: int) -> tuple[bool, int]:
     # In the original notebook, this dynamic branch lives directly in a
     # measurement-controlled while loop. Here it is isolated in a regular
     # Guppy function because the retry structure below is expanded at comptime.

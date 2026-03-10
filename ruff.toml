@@ -67,3 +67,4 @@ convention = "google"
 "guppy_examples/*" = ["INP"]
 "python/tests/*" = ["PGH003", "S101"]
 "python/hugr_qir/*" = ["FBT001", "FBT002"]
+"guppy_examples/guppy-features/*" = ["FBT001", "FBT002", "FBT003"]
