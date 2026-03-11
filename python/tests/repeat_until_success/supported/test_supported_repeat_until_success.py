@@ -17,9 +17,7 @@ SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
     SUPPORTED_RUS_FILES,
     ids=[str(guppy_file.stem) for guppy_file in SUPPORTED_RUS_FILES],
 )
-def test_supported_repeat_until_success(
-    guppy_file: Path, snapshot: Snapshot
-) -> None:
+def test_supported_repeat_until_success(guppy_file: Path, snapshot: Snapshot) -> None:
     snapshot.snapshot_dir = SNAPSHOT_DIR
     hugr_bin = guppy_to_hugr_binary(guppy_file)
     qir = to_qir_str(hugr_bin)
