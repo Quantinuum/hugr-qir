@@ -19,8 +19,11 @@ def branch(a: bool, b: bool, i: int) -> bool:
 
 @no_type_check
 def repeat_until_success(q: qubit, attempts: int @ comptime) -> bool:
-    # This uses a flat bounded loop body with measure-and-reset ancillas, so
-    # the same three qubits can be reused.
+    # This differs from rus-flat-unbounded.py in three ways:
+    # 1. The retry budget is finite (`attempts`) rather than unbounded.
+    # 2. The loop bound is comptime-known so hugr-qir sees static control flow.
+    # 3. Ancillas are allocated once and reused with measure_and_reset, so the
+    #    lowered QIR only needs 3 qubits.
     ok = False
     a = qubit()
     b = qubit()
