@@ -11,8 +11,7 @@ from guppylang.std.quantum.functional import h
 def main() -> None:
     # This matches the original RUS control structure more closely than the
     # supported example: retry until success using a measurement-controlled loop.
-    q = qubit()
-    q = h(q)
+    q = h(qubit())
 
     n = 0
     while True:

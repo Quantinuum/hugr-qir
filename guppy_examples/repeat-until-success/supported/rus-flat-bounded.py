@@ -3,17 +3,18 @@ from typing import no_type_check
 from guppylang import guppy
 from guppylang.std.builtins import comptime, result
 from guppylang.std.qsystem import measure_and_reset
-from guppylang.std.quantum import discard, h, qubit, s, toffoli
+from guppylang.std.quantum import discard, h, qubit, s, toffoli, z
 
 N = 10
 
 
 @guppy
 @no_type_check
-def branch(a: bool, b: bool, i: int) -> bool:
+def branch(q: qubit, a: bool, b: bool, i: int) -> bool:
     if not (a | b):
         result("attempts", i)
         return True
+    z(q)
     return False
 
 
@@ -35,7 +36,9 @@ def repeat_until_success(q: qubit, attempts: int @ comptime) -> bool:
         toffoli(a, b, q)
         h(a)
         h(b)
-        ok = branch(measure_and_reset(a), measure_and_reset(b), i)
+        c0 = measure_and_reset(a)
+        c1 = measure_and_reset(b)
+        ok = branch(q, c0, c1, i)
     discard(a)
     discard(b)
     return ok

@@ -2,7 +2,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import result
-from guppylang.std.quantum import discard, measure, qubit, s, toffoli
+from guppylang.std.quantum import discard, measure, qubit, s, toffoli, z
 from guppylang.std.quantum.functional import h
 
 
@@ -24,4 +24,5 @@ def main() -> None:
             result("success", True)
             discard(q)
             break
+        z(q)
         n += 1

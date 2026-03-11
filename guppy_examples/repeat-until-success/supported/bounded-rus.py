@@ -48,8 +48,7 @@ def main() -> None:
     # 3. Results expose both whether we succeeded and how many tries were used.
     # This two-stage retry body also materializes fresh ancillas per attempt in
     # QIR, unlike rus-flat-bounded.py which reuses 3 qubits.
-    q = qubit()
-    q = h(q)
+    q = h(qubit())
     n = 0
     ok = False
     for _ in range(N):
