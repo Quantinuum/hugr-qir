@@ -161,10 +161,11 @@ which is not supported in QIR."
                 pass
             else:
                 msg = (
-                    f"{failedqirmsg} The failure occurred in the validity check of the \
-generated QIR. This check can be disabled by setting `--no-validate-qir`\
-on the cli or passing `validate_qir=False` for library calls. Error \
-details: {error_message}"
+                    f"{failedqirmsg} The failure occurred in the validity check of the "
+                    "generated QIR. This check can be disabled by setting "
+                    f"`--no-validate-qir` on the cli or passing "
+                    f"`validate_qir=False` for library calls. Error details: "
+                    f"{error_message}"
                 )
                 raise ValueError(msg) from e
 
