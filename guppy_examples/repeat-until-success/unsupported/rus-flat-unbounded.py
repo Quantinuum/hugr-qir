@@ -11,7 +11,8 @@ from guppylang.std.quantum.functional import h
 def main() -> None:
     # This keeps the flat retry body, but leaves the retry loop truly
     # unbounded. That open-ended runtime control flow is what hugr-qir
-    # rejects today.
+    # rejects today. The `attempts` output counts failed attempts before
+    # success, so a first-try success records 0.
     q = qubit()
     n = 0
     while True:
