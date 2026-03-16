@@ -32,7 +32,7 @@ jobs:
           echo "publish_release=$SHOULD_RELEASE" >> $GITHUB_OUTPUT
         env:
           SHOULD_RELEASE:  ${{ (github.event_name == 'release') }}
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: .github/change-filters.yml
