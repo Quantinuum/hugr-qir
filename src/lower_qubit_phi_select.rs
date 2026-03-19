@@ -1,14 +1,15 @@
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::module::Module;
-use inkwell::types::BasicTypeEnum;
+use inkwell::types::{AnyTypeEnum, BasicTypeEnum};
 use inkwell::values::{
     AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, FunctionValue, InstructionValue,
     Operand, PhiValue, ValueKind,
 };
 use std::collections::HashMap;
+use inkwell::values::InstructionOpcode as Op;
 
-pub fn replace_select_phi_on_qubit(module: &Module) -> bool {
+pub fn replace_phi_on_qubit(module: &Module) -> bool {
     let context = module.get_context();
     let builder = context.create_builder();
     let first_func = module.get_first_function().unwrap();
@@ -102,7 +103,6 @@ fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
 }
 
 fn predecessors<'ctx>(func: FunctionValue<'ctx>, to: BasicBlock<'ctx>) -> Vec<BasicBlock<'ctx>> {
-    use inkwell::values::InstructionOpcode as Op;
     let mut preds = Vec::new();
 
     for b in func.get_basic_blocks() {
@@ -220,7 +220,6 @@ fn rebuild_terminator<'ctx>(
     inst: InstructionValue<'ctx>,
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
 ) -> bool {
-    use inkwell::values::InstructionOpcode as Op;
     match inst.get_opcode() {
         Op::Br => {
             if inst.is_conditional() {
@@ -261,7 +260,6 @@ fn redirect_edge<'ctx>(
     new_to: BasicBlock<'ctx>,
 ) {
     if let Some(term) = from.get_terminator() {
-        use inkwell::values::InstructionOpcode as Op;
         builder.position_at_end(from);
         match term.get_opcode() {
             Op::Br => {
@@ -295,7 +293,6 @@ pub fn rebuild_inst<'ctx>(
     inst: InstructionValue<'ctx>,
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
 ) -> Result<RebuildOutcome<'ctx>, ()> {
-    use inkwell::values::InstructionOpcode as Op;
 
     let name = inst.get_name().unwrap_or(c"").to_string_lossy();
 
@@ -476,4 +473,240 @@ fn operand_as_value(op: Operand) -> Option<BasicValueEnum> {
 #[inline]
 fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> {
     inst.get_operand(i).and_then(operand_as_value)
+}
+
+
+/// Lower all pointer-typed `select` to explicit control flow by introducing
+/// a then/else diamond and a merge PHI. Works even if %sel has non-local uses.
+pub fn lower_pointer_selects_with_phi_merge(
+    module: &Module
+) -> bool {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+
+    for func in module.get_functions() {
+        for bb in func.get_basic_blocks() {
+            // Collect selects first to avoid invalidating iteration
+            let mut sels = Vec::new();
+            let mut it = bb.get_first_instruction();
+            while let Some(i) = it {
+                it = i.get_next_instruction();
+                if i.get_opcode() == inkwell::values::InstructionOpcode::Select {
+                    if let AnyTypeEnum::PointerType(pt) = i.get_type() {
+                        if pt
+                            .get_element_type()
+                            .into_struct_type()
+                            .get_name()
+                            .unwrap()
+                            .eq(c"Qubit")
+                        {
+                            sels.push(i);
+                        }
+                    }
+                }
+            }
+            for sel in sels {
+                println!("select: {:?}", sel);
+                if lower_one_select_to_cf_with_phi(&builder, sel) {
+                    changed = true;
+                }
+            }
+        }
+    }
+    changed
+}
+
+fn lower_one_select_to_cf_with_phi<'ctx>(
+    builder: &Builder<'ctx>,
+    sel: InstructionValue<'ctx>,
+) -> bool {
+    let bb = match sel.get_parent() { Some(b) => b, None => return false };
+    let func = match bb.get_parent() { Some(f) => f, None => return false };
+
+    // Extract select operands (per LangRef: 0=cond,1=true,2=false)
+    let cond = match inst_operand_value(sel, 0) { Some(v) => v.into_int_value(), None => return false };
+    let tval = match inst_operand_value(sel, 1) { Some(v) => v, None => return false };
+    let fval = match inst_operand_value(sel, 2) { Some(v) => v, None => return false };
+    println!("tval: {:?}", tval);
+    println!("fval: {:?}", fval);
+
+    // Gather the tail (all instructions after `sel`, including the original terminator)
+    let mut tail: Vec<InstructionValue> = Vec::new();
+    let mut it = sel.get_next_instruction();
+    while let Some(i) = it {
+        tail.push(i);
+        it = i.get_next_instruction();
+    }
+    let tail2 = tail.clone();
+    println!("orig br of select bb: {:?}", tail.last());
+
+    // Create THEN, ELSE, MERGE blocks and append to function
+    let ctx = bb.get_context();
+
+    let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
+    let else_bb = ctx.insert_basic_block_after(then_bb, &format!("{}select.else", name_of_block(bb)));
+    let merge_bb = ctx.insert_basic_block_after(else_bb, &format!("{}select.merge", name_of_block(bb)));
+    //func.append_existing_basic_block(then_bb);
+    //func.append_existing_basic_block(else_bb);
+    //func.append_existing_basic_block(merge_bb);
+
+    // Build PHI in merge (must be first in the block)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
+    builder.position_at_end(merge_bb);
+    let phi_ty: BasicTypeEnum = match sel.get_type().try_into() {
+        Ok(bt) => bt,
+        Err(_) => return false, // select must have a first-class (basic) type
+    };
+    let phi = builder.build_phi(phi_ty, "select.merge.val").ok().unwrap();
+    phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
+
+    // Rebuild the original tail into merge, remapping %sel -> %phi
+    let mut vmap: HashMap<String, BasicValueEnum> = HashMap::new();
+    vmap.insert(sel.get_name().unwrap().to_string_lossy().to_string(), phi.as_basic_value());
+    if !rebuild_tail_slice(builder, &tail, &mut vmap) {
+        return false;
+    }
+
+    // Now that merge has a full copy of the tail (including the original terminator),
+    // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
+    builder.position_at_end(bb);
+    for &i in tail.iter().rev() {
+        i.erase_from_basic_block();
+    }
+    // Build: br i1 %cond, label %then_bb, label %else_bb  (0=cond,1=true,2=false)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
+    builder.build_conditional_branch(cond, then_bb, else_bb).ok();
+    builder.position_at_end(then_bb);
+    builder.build_unconditional_branch(merge_bb).ok();
+    builder.position_at_end(else_bb);
+    builder.build_unconditional_branch(merge_bb).ok();
+
+    // PHI fixups: any successor that previously had incoming from `bb`
+    // must now have incoming from `merge_bb`.
+    if let Some(merge_term) = merge_bb.get_terminator() {
+        fix_successor_phis_block_rename(merge_term, bb, merge_bb, phi);
+    }
+
+    // Finally, drop the original %sel itself (all uses now read %phi)
+    sel.erase_from_basic_block();
+
+    true
+}
+
+
+/// Rebuild an instruction slice (the "tail") into the current insertion block,
+/// using the same `rebuild_inst` / `rebuild_terminator` strategy you already have.
+/// `slice` comes from the original block; it’s safe to iterate because we erased them from `bb`.
+fn rebuild_tail_slice<'ctx>(
+    builder: &inkwell::builder::Builder<'ctx>,
+    slice: &[InstructionValue<'ctx>],
+    vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
+) -> bool {
+    for &orig_inst in slice {
+        if orig_inst.is_terminator() {
+            println!("rebuild_tail_slice: orig_inst: {:?}", orig_inst);
+            return rebuild_terminator(builder, orig_inst, vmap);
+        } else {
+            match rebuild_inst(builder, orig_inst, vmap) {
+                Ok(RebuildOutcome::Value(bv)) => {
+                    vmap.insert(orig_inst.get_name().unwrap().to_string_lossy().to_string(), bv);
+                }
+                Ok(RebuildOutcome::Void) => { /* fine */ }
+                Err(()) => return false,
+            }
+        }
+    }
+    true
+}
+
+
+/// Replace PHI incoming `(…, old_bb)` → `(…, new_bb)` for *all* PHIs in each successor
+/// of `term` (supports unconditional/conditional br). Extend for `switch` if needed.
+fn fix_successor_phis_block_rename<'ctx>(
+    term: InstructionValue<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: BasicBlock<'ctx>,
+    merge_phi: PhiValue,
+) {
+    match term.get_opcode() {
+        Op::Br => unsafe {
+            let is_cond = term.is_conditional();
+            let succs: Vec<BasicBlock> = if is_cond {
+                // br i1 %cond, %then, %else  → operands 1/2 are the successors  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
+                [inst_operand_block(term, 1).unwrap(), inst_operand_block(term, 2).unwrap()].to_vec()
+            } else {
+                // br %dest  → operand 0 is the successor  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
+                [inst_operand_block(term, 0).unwrap()].to_vec()
+            };
+            for s in succs {
+                rename_incoming_block_in_phis(s, old_bb, new_bb, merge_phi);
+            }
+        }
+        // TODO: handle Op::Switch similarly, if your IR uses switches.
+        _ => {}
+    }
+}
+
+/// For every PHI at the start of `succ_bb`, if it has an incoming from `old_bb`,
+/// rebuild that PHI with the incoming block replaced by `new_bb`.
+unsafe fn rename_incoming_block_in_phis<'ctx>(
+    succ_bb: BasicBlock<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: BasicBlock<'ctx>,
+    merge_phi: PhiValue,
+) {
+    // Iterate PHIs at block start
+    let mut it = succ_bb.get_first_instruction();
+    while let Some(inst) = it {
+        if inst.get_opcode() != Op::Phi { break; }
+        // Defensive: clone the incoming list
+        let phi = PhiValue::new(inst.as_value_ref()); // safe: opcode checked
+        let incomings = phi.get_incomings();
+
+        // If no incoming from old_bb, skip
+        if !incomings.into_iter().any(|(_, b)| b == old_bb) {
+            it = inst.get_next_instruction();
+            continue;
+        }
+
+        let incomings = phi.get_incomings();
+
+        // Build a replacement PHI with the same type, before the old PHI
+        let ty: BasicTypeEnum = phi.as_basic_value().get_type().try_into().unwrap();
+        let builder = succ_bb.get_context().create_builder();
+        builder.position_before(&inst);
+        let new_phi = builder.build_phi(ty, "phi.fix").unwrap();
+
+        for (val, inc_bb) in incomings {
+            println!("   -> phi incoming val {:?}", val);
+            println!("   -> phi incoming bb {:?}", inc_bb);
+            let mapped_bb = if inc_bb == old_bb { new_bb } else { inc_bb };
+            let mapped_val = if inc_bb == old_bb { merge_phi.as_basic_value() } else { val };
+            new_phi.add_incoming(&[(&mapped_val, mapped_bb)]);
+        }
+
+        // Replace all uses and erase old phi
+        phi.replace_all_uses_with(&new_phi);
+        inst.erase_from_basic_block();
+
+        // Move iterator to the *next* instruction after the newly inserted PHI
+        it = new_phi.as_instruction().get_next_instruction();
+    }
+}
+
+
+/// Convert an `Operand` into a `BasicBlock` if it *is* a block operand.
+#[inline]
+fn operand_as_block(op: Operand) -> Option<BasicBlock> {
+    match op {
+        Operand::Block(bb) => Some(bb),
+        Operand::Value(_) => None,
+    }
+}
+
+
+/// Fetch the i-th operand of `inst` and return it as a `BasicBlock`
+/// (returns `None` if the operand doesn't exist or isn't a block).
+#[inline]
+fn inst_operand_block(inst: InstructionValue, i: u32) -> Option<BasicBlock> {
+    inst.get_operand(i).and_then(operand_as_block)
 }

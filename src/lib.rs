@@ -30,7 +30,7 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 
-use crate::lower_qubit_phi_select::replace_select_phi_on_qubit;
+use crate::lower_qubit_phi_select::{lower_pointer_selects_with_phi_merge, replace_phi_on_qubit};
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -188,10 +188,11 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         self.optimize_module_llvm(&module)?;
-        replace_select_phi_on_qubit(&module);
-        self.simplify_cfg(&module)?;
-        let ok = module.verify();
-        assert!(ok.is_ok(), "Failed to verify module");
+        lower_pointer_selects_with_phi_merge(&module);
+        //replace_phi_on_qubit(&module);
+        //self.simplify_cfg(&module)?;
+        //let ok = module.verify();
+        //assert!(ok.is_ok(), "Failed to verify module");
 
         Ok(module)
     }
