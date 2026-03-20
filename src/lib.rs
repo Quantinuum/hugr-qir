@@ -30,7 +30,9 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 
-use crate::lower_qubit_phi_select::{lower_pointer_selects_with_phi_merge, replace_first_phi_on_qubit};
+use crate::lower_qubit_phi_select::{
+    lower_pointer_selects_with_phi_merge, replace_all_phis_on_qubits,
+};
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -149,19 +151,6 @@ impl CompileArgs {
         Ok(())
     }
 
-    fn simplify_cfg(&self, module: &Module) -> Result<()> {
-        self.target.initialise();
-
-        let ctm = self.target.machine(self.opt_level.into());
-
-        module.set_triple(&ctm.get_triple());
-        module.set_data_layout(&ctm.get_target_data().get_data_layout());
-
-        let opt_str = String::from("simplifycfg");
-        let _ = module.run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create());
-        Ok(())
-    }
-
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
         let extensions = self.codegen_extensions().into();
         let namer = Rc::new(Namer::new("__hugr__.", true));
@@ -189,14 +178,13 @@ impl CompileArgs {
 
         self.optimize_module_llvm(&module)?;
         lower_pointer_selects_with_phi_merge(&module);
-        for _ in 0..20{
-            if !replace_first_phi_on_qubit(&module){
-                break;
-            }
-            self.simplify_cfg(&module)?;
-        }
+        replace_all_phis_on_qubits(&module);
         let ok = module.verify();
-        assert!(ok.is_ok(), "Failed to verify module");
+        assert!(
+            ok.is_ok(),
+            "Error in module verification \n{}",
+            ok.err().unwrap().to_string()
+        );
 
         Ok(module)
     }
