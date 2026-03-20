@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.23
+
+- update quantinuum-qircheck version requirement to 0.5.0
+
 ### v0.0.22
 
 - add to_qir_str()
