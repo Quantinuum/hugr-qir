@@ -1,3 +1,9 @@
+//! Utilities for squashing any ssa variables to QUBIT pointers.
+//!
+//! For OG systems, these cannot be used as input to qis functions,
+//! because dynamic addressing of qubits is not allowed
+
+use anyhow::{Result, bail};
 use inkwell::basic_block::BasicBlock;
 use inkwell::builder::Builder;
 use inkwell::module::Module;
@@ -11,7 +17,25 @@ use inkwell::values::{
 use itertools::Itertools;
 use std::collections::HashMap;
 
-pub fn replace_all_phis_on_qubits(module: &Module) -> bool {
+/// Lowers select and phi instructions returning QUBIT* to control flow.
+/// These can be introduced through llvm optimizations to reduce branching.
+/// Lowers select instructions to branch + phi, then lowers all phi's
+pub fn lower_qubit_selects_phis(module: &Module) -> Result<bool> {
+    let lowered_selects = lower_qubit_selects_with_phi_merge(module)?;
+    let lowered_phis = lower_qubit_phis(module)?;
+    let ok = module.verify();
+    if ok.is_err() {
+        bail!(
+            "Error during module verification:\n{}",
+            ok.err().unwrap().to_string()
+        )
+    }
+    let changed = lowered_selects || lowered_phis;
+    Ok(changed)
+}
+
+/// Lowers all phi instructions returning QUBIT* to control flow.
+pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let first_func = module.get_first_function().unwrap();
@@ -102,8 +126,8 @@ pub fn replace_all_phis_on_qubits(module: &Module) -> bool {
         //    .remove_from_function()
         //    .expect("Block not attached to function");
     }
-    remove_dead_code_from_function(&module, first_func);
-    changed
+    remove_dead_code_from_function(module, first_func);
+    Ok(changed)
 }
 
 fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
@@ -142,9 +166,9 @@ fn is_qubit_pointer(ptr_ty: PointerType) -> bool {
 /// Inputs:
 /// - `phi`:  the PHI you plan to delete (in block `B`)
 /// - `clone_for_pred`: mapping P -> the block that now replaces the (P->B) edge
-///                     when flowing to successors (e.g., your per-pred clone of B).
-///                     This block *must* be an immediate predecessor of the user PHI's block.
-///                     If you don't duplicate, you must split edges so this is true.
+///   when flowing to successors (e.g., your per-pred clone of B).
+///   This block *must* be an immediate predecessor of the user PHI's block.
+///   If you don't duplicate, you must split edges so this is true.
 ///
 /// Returns: number of PHIs rewritten.
 pub fn expand_phi_uses_into_per_pred_incomings<'ctx>(
@@ -182,11 +206,7 @@ pub fn expand_phi_uses_into_per_pred_incomings<'ctx>(
             let incomings = u_phi.get_incomings();
 
             // Build a replacement PHI before the old one
-            let ty: BasicTypeEnum = u_phi
-                .as_basic_value()
-                .get_type()
-                .try_into()
-                .expect("phi value must be first-class");
+            let ty: BasicTypeEnum = u_phi.as_basic_value().get_type();
             let builder = succ_bb.get_context().create_builder();
             builder.position_before(&u_inst);
             let new_phi = builder.build_phi(ty, "phi.expanded").expect("build_phi");
@@ -237,11 +257,7 @@ pub fn expand_phi_uses_into_per_pred_incomings<'ctx>(
             local_builder.position_before(&u_inst);
 
             // 1) Create the replacement PHI in the call's block with per-pred incomings
-            let phi_ty: BasicTypeEnum = phi
-                .as_basic_value()
-                .get_type()
-                .try_into()
-                .expect("first-class type");
+            let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
             let arg_phi = local_builder
                 .build_phi(phi_ty, "phi.arg")
                 .expect("build_phi");
@@ -346,7 +362,7 @@ fn predecessors<'ctx>(func: FunctionValue<'ctx>, to: BasicBlock<'ctx>) -> Vec<Ba
 fn first_non_phi(bb: BasicBlock) -> Option<InstructionValue> {
     let mut it = bb.get_first_instruction();
     while let Some(i) = it {
-        if i.get_opcode() != inkwell::values::InstructionOpcode::Phi {
+        if i.get_opcode() != InstructionOpcode::Phi {
             return Some(i);
         }
         it = i.get_next_instruction();
@@ -402,7 +418,7 @@ fn rebuild_tail_into<'ctx>(
             Ok(RebuildOutcome::Void) => {
                 // built successfully, but nothing to map → keep going
             }
-            Err(()) => {
+            Err(_) => {
                 // unsupported/failed to rebuild → bail on this path
                 return false;
             }
@@ -435,7 +451,7 @@ fn rebuild_terminator<'ctx>(
     match inst.get_opcode() {
         Op::Br => {
             if inst.is_conditional() {
-                let cond = remap(vmap, inst_operand_value(inst, 0).unwrap()).into_int_value();
+                let cond = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
 
                 let tbb = operand_as_bb(inst, 1).unwrap();
                 let fbb = operand_as_bb(inst, 2).unwrap();
@@ -476,7 +492,7 @@ fn redirect_edge<'ctx>(
         match term.get_opcode() {
             Op::Br => {
                 if term.is_conditional() {
-                    let cond = inst_operand_value(term, 0).unwrap().into_int_value();
+                    let cond = expect_inst_operand_value(term, 0).into_int_value();
                     let then_bb = operand_as_bb(term, 1).unwrap();
                     let else_bb = operand_as_bb(term, 2).unwrap();
                     let new_then = if then_bb == old_to { new_to } else { then_bb };
@@ -501,111 +517,92 @@ pub fn rebuild_inst<'ctx>(
     builder: &Builder<'ctx>,
     inst: InstructionValue<'ctx>,
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
-) -> Result<RebuildOutcome<'ctx>, ()> {
+) -> Result<RebuildOutcome<'ctx>> {
     let name = inst.get_name().unwrap_or(c"").to_string_lossy();
-
     match inst.get_opcode() {
         // ---------------- Pointer / aggregate ops ----------------
         Op::GetElementPtr => unsafe {
-            let base = remap(vmap, inst_operand_value(inst, 0).ok_or(())?);
+            let base = remap(vmap, expect_inst_operand_value(inst, 0));
             let num_ops = inst.get_num_operands();
             let mut indices = Vec::new();
             for i in 1..num_ops {
-                let idx = inst_operand_value(inst, i).ok_or(())?;
+                let idx = expect_inst_operand_value(inst, i);
                 indices.push(remap(vmap, idx).into_int_value());
             }
-            let built = builder
-                .build_gep(base.into_pointer_value(), &indices, &name)
-                .ok()
-                .ok_or(())?;
+            let built = builder.build_gep(base.into_pointer_value(), &indices, &name)?;
             Ok(RebuildOutcome::Value(built.as_basic_value_enum()))
         },
 
         // ---------------- Casts (no `build_bitcast` fallback) ----------------
         Op::BitCast => {
             // We implement bitcast via specialized casts. See comments in our previous message.
-            let src_val = remap(vmap, inst_operand_value(inst, 0).ok_or(())?);
+            let src_val = remap(vmap, expect_inst_operand_value(inst, 0));
             let dst_any = inst.get_type(); // LLVM 14: typed pointers still exist
 
             match dst_any.try_into() {
                 Ok(BasicTypeEnum::PointerType(dst_ptr_ty)) => {
                     let src_ptr = match src_val {
                         BasicValueEnum::PointerValue(p) => p,
-                        _ => return Err(()),
+                        _ => bail!("Could not cast to PointerType"),
                     };
-                    let cast = builder
-                        .build_pointer_cast(src_ptr, dst_ptr_ty, &name)
-                        .ok()
-                        .ok_or(())?;
+                    let cast = builder.build_pointer_cast(src_ptr, dst_ptr_ty, &name)?;
                     Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
                 }
                 Ok(BasicTypeEnum::IntType(dst_int_ty)) => {
                     let src_int = match src_val {
                         BasicValueEnum::IntValue(i) => i,
-                        _ => return Err(()),
+                        _ => bail!("Could not cast to IntValue"),
                     };
                     if src_int.get_type().get_bit_width() != dst_int_ty.get_bit_width() {
-                        return Err(());
+                        bail!("Bit width mismatch");
                     }
-                    let cast = builder
-                        .build_int_cast(src_int, dst_int_ty, &name)
-                        .ok()
-                        .ok_or(())?;
+                    let cast = builder.build_int_cast(src_int, dst_int_ty, &name)?;
                     Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
                 }
                 Ok(BasicTypeEnum::FloatType(dst_fp_ty)) => {
                     let src_fp = match src_val {
                         BasicValueEnum::FloatValue(f) => f,
-                        _ => return Err(()),
+                        _ => bail!("Could not cast to FloatValue"),
                     };
                     if src_fp.get_type() != dst_fp_ty {
-                        return Err(());
+                        bail!("Floating type mismatch");
                     }
-                    let cast = builder
-                        .build_float_cast(src_fp, dst_fp_ty, &name)
-                        .ok()
-                        .ok_or(())?;
+                    let cast = builder.build_float_cast(src_fp, dst_fp_ty, &name)?;
                     Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
                 }
-                _ => Err(()),
+                _ => bail!("Unsupported BitCase type"),
             }
         }
 
         // ---------------- Memory ops ----------------
         Op::Load => {
-            let addr = remap(vmap, inst_operand_value(inst, 0).ok_or(())?).into_pointer_value();
+            let addr = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
             //let ty   = inst.get_type();
-            let load = builder.build_load(addr, &name).ok().ok_or(())?;
+            let load = builder.build_load(addr, &name)?;
             Ok(RebuildOutcome::Value(load))
         }
 
         Op::Store => {
-            let val = remap(vmap, inst_operand_value(inst, 0).ok_or(())?);
-            let addr = remap(vmap, inst_operand_value(inst, 1).ok_or(())?).into_pointer_value();
-            builder.build_store(addr, val).ok().ok_or(())?;
+            let val = remap(vmap, expect_inst_operand_value(inst, 0));
+            let addr = remap(vmap, expect_inst_operand_value(inst, 1)).into_pointer_value();
+            builder.build_store(addr, val)?;
             Ok(RebuildOutcome::Void)
         }
 
         // ---------------- Comparisons / select ----------------
         Op::ICmp => {
-            let pred = inst.get_icmp_predicate().ok_or(())?;
-            let lhs = remap(vmap, inst_operand_value(inst, 0).ok_or(())?).into_int_value();
-            let rhs = remap(vmap, inst_operand_value(inst, 1).ok_or(())?).into_int_value();
-            let cmp = builder
-                .build_int_compare(pred, lhs, rhs, &name)
-                .ok()
-                .ok_or(())?;
+            let pred = inst.get_icmp_predicate().expect("Failed to get predicate");
+            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_int_value();
+            let cmp = builder.build_int_compare(pred, lhs, rhs, &name)?;
             Ok(RebuildOutcome::Value(cmp.as_basic_value_enum()))
         }
 
         Op::Select => {
-            let cond = remap(vmap, inst_operand_value(inst, 0).ok_or(())?).into_int_value();
-            let tval = remap(vmap, inst_operand_value(inst, 1).ok_or(())?);
-            let fval = remap(vmap, inst_operand_value(inst, 2).ok_or(())?);
-            let sel = builder
-                .build_select(cond, tval, fval, &name)
-                .ok()
-                .ok_or(())?;
+            let cond = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let tval = remap(vmap, expect_inst_operand_value(inst, 1));
+            let fval = remap(vmap, expect_inst_operand_value(inst, 2));
+            let sel = builder.build_select(cond, tval, fval, &name)?;
             Ok(RebuildOutcome::Value(sel))
         }
 
@@ -620,8 +617,8 @@ pub fn rebuild_inst<'ctx>(
         | Op::And
         | Op::Or
         | Op::Xor => {
-            let lhs = remap(vmap, inst_operand_value(inst, 0).ok_or(())?).into_int_value();
-            let rhs = remap(vmap, inst_operand_value(inst, 1).ok_or(())?).into_int_value();
+            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_int_value();
             let res = match inst.get_opcode() {
                 Op::Add => builder.build_int_add(lhs, rhs, &name),
                 Op::Sub => builder.build_int_sub(lhs, rhs, &name),
@@ -634,16 +631,14 @@ pub fn rebuild_inst<'ctx>(
                 Op::Or => builder.build_or(lhs, rhs, &name),
                 Op::Xor => builder.build_xor(lhs, rhs, &name),
                 _ => unreachable!(),
-            }
-            .ok()
-            .ok_or(())?;
+            }?;
             Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
         }
 
         // ---------------- Calls (LLVM 14: use build_direct_call) ----------------
         Op::Call => {
-            let cs = CallSiteValue::try_from(inst)?;
-            let callee = cs.get_called_fn_value().ok_or(())?;
+            let cs = CallSiteValue::try_from(inst).expect("could not convert to CallSiteValue");
+            let callee = cs.get_called_fn_value().expect("Failed to get callee");
 
             // Collect value operands as args (calls don't have block operands).
             let mut args = Vec::new();
@@ -655,7 +650,7 @@ pub fn rebuild_inst<'ctx>(
 
             // NOTE: In Inkwell, build_call is available only for LLVM>=15 and aliases build_direct_call.
             // On LLVM 14, use build_direct_call.
-            let callsite = builder.build_call(callee, &args, &name).ok().ok_or(())?; // [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/classllvm_1_1ValueMapper.html)
+            let callsite = builder.build_call(callee, &args, &name)?; // [1](https://cs6340.cc.gatech//.edu/LLVM8Doxygen/classllvm_1_1ValueMapper.html)
 
             // If return type is void → Void; else produce the resulting SSA value
             let value = callsite.try_as_basic_value();
@@ -664,9 +659,8 @@ pub fn rebuild_inst<'ctx>(
                 ValueKind::Instruction(_) => Ok(RebuildOutcome::Void),
             }
         }
-
         // Add more opcodes as needed (sext/zext/trunc, ptrtoint/inttoptr, FP ops, vectors, etc.)
-        _ => Err(()),
+        _ => bail!("Instruction type not yet supported for rebuild"),
     }
 }
 #[inline]
@@ -683,9 +677,16 @@ fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> 
     inst.get_operand(i).and_then(operand_as_value)
 }
 
-/// Lower all pointer-typed `select` to explicit control flow by introducing
+#[inline]
+fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
+    inst.get_operand(i)
+        .and_then(operand_as_value)
+        .expect("Cound not get operand value")
+}
+
+/// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
 /// a then/else diamond and a merge PHI. Works even if %sel has non-local uses.
-pub fn lower_pointer_selects_with_phi_merge(module: &Module) -> bool {
+pub fn lower_qubit_selects_with_phi_merge(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
@@ -697,45 +698,44 @@ pub fn lower_pointer_selects_with_phi_merge(module: &Module) -> bool {
             let mut it = bb.get_first_instruction();
             while let Some(i) = it {
                 it = i.get_next_instruction();
-                if i.get_opcode() == inkwell::values::InstructionOpcode::Select {
-                    if let AnyTypeEnum::PointerType(pt) = i.get_type()
-                        && is_qubit_pointer(pt)
-                    {
-                        sels.push(i);
-                    }
+                if i.get_opcode() == InstructionOpcode::Select
+                    && let AnyTypeEnum::PointerType(pt) = i.get_type()
+                    && is_qubit_pointer(pt)
+                {
+                    sels.push(i);
                 }
             }
             for sel in sels {
-                if lower_one_select_to_cf_with_phi(&builder, sel) {
+                if lower_one_select_to_cf_with_phi(&builder, sel)? {
                     changed = true;
                 }
             }
         }
     }
-    changed
+    Ok(changed)
 }
 
 fn lower_one_select_to_cf_with_phi<'ctx>(
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
-) -> bool {
+) -> Result<bool> {
     let bb = match sel.get_parent() {
         Some(b) => b,
-        None => return false,
+        None => return Ok(false),
     };
 
     // Extract select operands (per LangRef: 0=cond,1=true,2=false)
     let cond = match inst_operand_value(sel, 0) {
         Some(v) => v.into_int_value(),
-        None => return false,
+        None => return Ok(false),
     };
     let tval = match inst_operand_value(sel, 1) {
         Some(v) => v,
-        None => return false,
+        None => return Ok(false),
     };
     let fval = match inst_operand_value(sel, 2) {
         Some(v) => v,
-        None => return false,
+        None => return Ok(false),
     };
 
     // Gather the tail (all instructions after `sel`, including the original terminator)
@@ -753,15 +753,12 @@ fn lower_one_select_to_cf_with_phi<'ctx>(
         ctx.insert_basic_block_after(then_bb, &format!("{}select.else", name_of_block(bb)));
     let merge_bb =
         ctx.insert_basic_block_after(else_bb, &format!("{}select.merge", name_of_block(bb)));
-    //func.append_existing_basic_block(then_bb);
-    //func.append_existing_basic_block(else_bb);
-    //func.append_existing_basic_block(merge_bb);
 
     // Build PHI in merge (must be first in the block)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
     builder.position_at_end(merge_bb);
     let phi_ty: BasicTypeEnum = match sel.get_type().try_into() {
         Ok(bt) => bt,
-        Err(_) => return false, // select must have a first-class (basic) type
+        Err(_) => return Ok(false), // select must have a first-class (basic) type
     };
     let phi = builder.build_phi(phi_ty, "select.merge.val").ok().unwrap();
     phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
@@ -773,7 +770,7 @@ fn lower_one_select_to_cf_with_phi<'ctx>(
         phi.as_basic_value(),
     );
     if !rebuild_tail_slice(builder, &tail, &mut vmap) {
-        return false;
+        return Ok(false);
     }
 
     // Now that merge has a full copy of the tail (including the original terminator),
@@ -794,20 +791,20 @@ fn lower_one_select_to_cf_with_phi<'ctx>(
     // PHI fixups: any successor that previously had incoming from `bb`
     // must now have incoming from `merge_bb`.
     if let Some(merge_term) = merge_bb.get_terminator() {
-        fix_successor_phis_block_rename(merge_term, bb, merge_bb, phi);
+        fix_successor_phis_block_rename(merge_term, bb, merge_bb, phi)?;
     }
 
     // Finally, drop the original %sel itself (all uses now read %phi)
     sel.erase_from_basic_block();
 
-    true
+    Ok(true)
 }
 
 /// Rebuild an instruction slice (the "tail") into the current insertion block,
 /// using the same `rebuild_inst` / `rebuild_terminator` strategy you already have.
 /// `slice` comes from the original block; it’s safe to iterate because we erased them from `bb`.
 fn rebuild_tail_slice<'ctx>(
-    builder: &inkwell::builder::Builder<'ctx>,
+    builder: &Builder<'ctx>,
     slice: &[InstructionValue<'ctx>],
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
 ) -> bool {
@@ -823,7 +820,7 @@ fn rebuild_tail_slice<'ctx>(
                     );
                 }
                 Ok(RebuildOutcome::Void) => { /* fine */ }
-                Err(()) => return false,
+                Err(_) => return false,
             }
         }
     }
@@ -837,7 +834,7 @@ fn fix_successor_phis_block_rename<'ctx>(
     old_bb: BasicBlock<'ctx>,
     new_bb: BasicBlock<'ctx>,
     merge_phi: PhiValue,
-) {
+) -> Result<()> {
     match term.get_opcode() {
         Op::Br => {
             let is_cond = term.is_conditional();
@@ -855,9 +852,12 @@ fn fix_successor_phis_block_rename<'ctx>(
             for s in succs {
                 rename_incoming_block_in_phis(s, old_bb, new_bb, merge_phi);
             }
+            Ok(())
         }
-        // TODO: handle Op::Switch similarly, if your IR uses switches.
-        _ => {}
+        Op::Switch => {
+            bail!("Found switch instruction, but switch is not supported")
+        }
+        _ => Ok(()),
     }
 }
 
@@ -888,7 +888,7 @@ fn rename_incoming_block_in_phis<'ctx>(
         let incomings = phi.get_incomings();
 
         // Build a replacement PHI with the same type, before the old PHI
-        let ty: BasicTypeEnum = phi.as_basic_value().get_type().try_into().unwrap();
+        let ty: BasicTypeEnum = phi.as_basic_value().get_type();
         let builder = succ_bb.get_context().create_builder();
         builder.position_before(&inst);
         let new_phi = builder.build_phi(ty, "phi.fix").unwrap();

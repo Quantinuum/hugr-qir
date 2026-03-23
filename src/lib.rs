@@ -20,19 +20,15 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 pub mod cli;
+pub mod lower_qubit_ssa_vars;
 pub mod qir;
 pub mod target;
 
-pub mod lower_qubit_phi_select;
-
 use crate::cli::CliOptimizationLevel;
+use crate::lower_qubit_ssa_vars::lower_qubit_selects_phis;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
-
-use crate::lower_qubit_phi_select::{
-    lower_pointer_selects_with_phi_merge, replace_all_phis_on_qubits,
-};
 use itertools::Itertools;
 
 #[cfg(feature = "py")]
@@ -177,15 +173,7 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         self.optimize_module_llvm(&module)?;
-        lower_pointer_selects_with_phi_merge(&module);
-        replace_all_phis_on_qubits(&module);
-        let ok = module.verify();
-        assert!(
-            ok.is_ok(),
-            "Error in module verification \n{}",
-            ok.err().unwrap().to_string()
-        );
-
+        lower_qubit_selects_phis(&module)?;
         Ok(module)
     }
 }
