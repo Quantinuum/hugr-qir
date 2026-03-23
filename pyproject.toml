@@ -9,7 +9,7 @@ dependencies = [
     "guppylang~=0.21.9",
     "hugr~=0.15.4",
     "llvmlite~=0.44.0",
-    "quantinuum-qircheck~=0.4.0",
+    "quantinuum-qircheck>=0.4,<0.6",
 ]
 
 [project.scripts]
