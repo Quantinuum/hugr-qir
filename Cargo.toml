@@ -28,6 +28,7 @@ serde = "1.0"
 tket = "0.17.0"
 tket-qsystem = { version = "0.23.0", features = ["cli"] }
 wasmparser = { version = "0.245", default-features = false }
+log = "0.4.29"
 
 [dev-dependencies]
 insta = "1.46"

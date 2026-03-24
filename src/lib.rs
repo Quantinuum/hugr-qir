@@ -25,7 +25,7 @@ pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
-use crate::lower_qubit_ssa_vars::lower_qubit_selects_phis;
+use crate::lower_qubit_ssa_vars::lower_qubit_selects_and_phis;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -173,7 +173,7 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         self.optimize_module_llvm(&module)?;
-        lower_qubit_selects_phis(&module)?;
+        lower_qubit_selects_and_phis(&module)?;
         Ok(module)
     }
 }

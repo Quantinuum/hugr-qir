@@ -11,18 +11,22 @@ use inkwell::passes::PassManager;
 use inkwell::types::{AnyTypeEnum, BasicTypeEnum, PointerType};
 use inkwell::values::InstructionOpcode as Op;
 use inkwell::values::{
-    AnyValueEnum, AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, FunctionValue,
-    InstructionOpcode, InstructionValue, Operand, PhiValue, ValueKind,
+    AnyValueEnum, AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, InstructionOpcode,
+    InstructionValue, Operand, PhiValue, ValueKind,
 };
-use itertools::Itertools;
 use std::collections::HashMap;
 
 /// Lowers select and phi instructions returning QUBIT* to control flow.
 /// These can be introduced through llvm optimizations to reduce branching.
-/// Lowers select instructions to branch + phi, then lowers all phi's
-pub fn lower_qubit_selects_phis(module: &Module) -> Result<bool> {
-    let lowered_selects = lower_qubit_selects_with_phi_merge(module)?;
+/// Lowers select instructions to branching + possible additional phi's,
+/// then lowers any remaining phis
+pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
+    let lowered_selects = lower_qubit_selects(module)?;
     let lowered_phis = lower_qubit_phis(module)?;
+    let changed = lowered_selects || lowered_phis;
+    if changed {
+        simp_cfg(module);
+    }
     let ok = module.verify();
     if ok.is_err() {
         bail!(
@@ -30,7 +34,6 @@ pub fn lower_qubit_selects_phis(module: &Module) -> Result<bool> {
             ok.err().unwrap().to_string()
         )
     }
-    let changed = lowered_selects || lowered_phis;
     Ok(changed)
 }
 
@@ -38,96 +41,103 @@ pub fn lower_qubit_selects_phis(module: &Module) -> Result<bool> {
 pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
-    let first_func = module.get_first_function().unwrap();
     let mut changed = false;
-    let mut block_opt = first_func.get_first_basic_block();
-    while let Some(block) = block_opt {
-        block_opt = block.get_next_basic_block();
-
-        // 1) Get the phis of `block` and continue if none
-        let phi_candidates = get_block_phis(block);
-        if phi_candidates.is_empty() {
-            continue;
-        }
-        println!();
-        println!("Found phis to fix in block {:?}", block.get_name());
-        println!(
-            "phi_candidates: {:?}",
-            phi_candidates
-                .iter()
-                .map(|phi| { phi.get_name() })
-                .collect_vec()
-        );
-        println!();
-
-        // 2) Get the predecessors of `block`, i.e. any block that branches directy to it
-        // If none, remove this block and continue
-        let preds = predecessors(first_func, block);
-        if preds.is_empty() {
-            unsafe {
-                block
-                    .delete()
-                    .expect("Tried to delete block without parent")
-            };
-            // block.remove_from_function()
-            //    .expect("Block not attached to function");
-            continue;
-        }
-
-        // 3) For each predecessor, duplicate tail and redirect edge
-        let mut clone_map: HashMap<BasicBlock, BasicBlock> = HashMap::new();
-        for pred in preds {
-            // New block that will hold the duplicated tail
-            let clone_block = pred
-                .get_context()
-                .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(block)));
-
-            clone_map.insert(pred, clone_block);
-
-            // Seed the value map: PHI -> incoming value for this predecessor
-            let mut vmap: HashMap<String, BasicValueEnum> = HashMap::new();
-            for phi in &phi_candidates {
-                if let Some((val, _)) = incoming_for_predecessor(*phi, pred) {
-                    let key = phi
-                        .as_instruction()
-                        .get_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .to_string();
-                    vmap.insert(key, val);
-                } else {
-                    // This predecessor doesn’t contribute to this PHI; skip this pred
-                    continue;
-                }
-            }
-
-            // Rebuild non‑PHI instructions from bb into clone_block
-            if !rebuild_tail_into(&builder, block, clone_block, &mut vmap) {
-                // if unsupported opcode appears, skip this pred
+    for func in module.get_functions() {
+        let mut block_opt = func.get_first_basic_block();
+        while let Some(block) = block_opt {
+            block_opt = block.get_next_basic_block();
+            let phi_candidates = get_block_phis(block);
+            if phi_candidates.is_empty() {
                 continue;
             }
-
-            // Redirect edge pred -> bb to pred -> clone_block
-            redirect_edge(&builder, pred, block, clone_block);
-
-            changed = true;
+            if lower_successive_qubit_phis_in_block(&builder, block, phi_candidates)? {
+                changed = true;
+            }
         }
-        // Now need to take care of any instructions that used the ssa variable
-        // created by the phi, e.g. function calls on the variable or additional phis
-        for phi in phi_candidates {
-            expand_phi_uses_into_per_pred_incomings(phi, &clone_map);
-        }
+    }
+    Ok(changed)
+}
+
+pub fn lower_successive_qubit_phis_in_block(
+    builder: &Builder,
+    block: BasicBlock,
+    phis: Vec<PhiValue>,
+) -> Result<bool> {
+    // Return if phis empty
+    if phis.is_empty() {
+        return Ok(false);
+    }
+    // Make sure phis are all in this block
+    if phis
+        .iter()
+        .any(|phi| phi.as_instruction().get_parent().unwrap().ne(&block))
+    {
+        bail!("Provided phis are not all in the provided block")
+    }
+
+    // 2) Get the predecessors of `block`, i.e. any block that branches directy to it
+    // If none, remove this block and continue
+    let preds = predecessors(block)?;
+    if preds.is_empty() {
         unsafe {
             block
                 .delete()
                 .expect("Tried to delete block without parent")
         };
-        //block
-        //    .remove_from_function()
-        //    .expect("Block not attached to function");
+        return Ok(false);
     }
-    remove_dead_code_from_function(module, first_func);
-    Ok(changed)
+
+    // 3) For each predecessor, duplicate tail and redirect edge
+    let mut clone_map: HashMap<BasicBlock, BasicBlock> = HashMap::new();
+    for pred in preds {
+        // New block that will hold the duplicated tail
+        let clone_block = pred
+            .get_context()
+            .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(block)));
+
+        clone_map.insert(pred, clone_block);
+
+        // Seed the value map: PHI -> incoming value for this predecessor
+        let mut vmap: HashMap<String, BasicValueEnum> = HashMap::new();
+        for phi in &phis {
+            if let Some((val, _)) = incoming_for_predecessor(*phi, pred) {
+                let key = phi
+                    .as_instruction()
+                    .get_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string();
+                vmap.insert(key, val);
+            } else {
+                // This predecessor doesn’t contribute to this PHI; skip this pred
+                continue;
+            }
+        }
+
+        // Rebuild non‑PHI instructions from bb into clone_block
+        if !rebuild_tail_into(builder, block, clone_block, &mut vmap) {
+            // if unsupported opcode appears, skip this pred
+            continue;
+        }
+
+        // Redirect edge pred -> bb to pred -> clone_block
+        redirect_edge(builder, pred, block, clone_block);
+    }
+
+    // Now need to take care of any instructions that used the ssa variable
+    // created by the phi, e.g. function calls on the variable or additional phis
+    for phi in phis {
+        handle_phi_users(phi, block, &clone_map)?;
+    }
+
+    // Delete no longer needed block
+    // Do it before
+    unsafe {
+        block
+            .delete()
+            .expect("Tried to delete block without parent")
+    };
+    Ok(true)
 }
 
 fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
@@ -163,25 +173,31 @@ fn is_qubit_pointer(ptr_ty: PointerType) -> bool {
 /// so that an incoming `(%phi, B)` becomes many `([val_from_pred], [block_from_pred])`,
 /// one per original predecessor of `B`.
 ///
+/// For a Call that uses `%phi`, replace every use of `%phi` by
+/// adding a new PHI at the beginning of its block that merges the possible cases
+/// of the original phi
+///
 /// Inputs:
 /// - `phi`:  the PHI you plan to delete (in block `B`)
+/// - `phi_block`: the block of the PHI you plan to delete (`B`)
 /// - `clone_for_pred`: mapping P -> the block that now replaces the (P->B) edge
 ///   when flowing to successors (e.g., your per-pred clone of B).
 ///   This block *must* be an immediate predecessor of the user PHI's block.
 ///   If you don't duplicate, you must split edges so this is true.
 ///
-/// Returns: number of PHIs rewritten.
-pub fn expand_phi_uses_into_per_pred_incomings<'ctx>(
+/// Returns: number of rewritten instructions.
+pub fn handle_phi_users<'ctx>(
     phi: PhiValue<'ctx>,
+    phi_block: BasicBlock<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
-) -> usize {
+) -> Result<usize> {
     // 1) Build the incoming map for %phi: P -> value v_i used on edge (P -> B)
     let mut incoming_by_pred: HashMap<BasicBlock, BasicValueEnum> = HashMap::new();
     for (val, pred_bb) in phi.get_incomings() {
         incoming_by_pred.insert(pred_bb, val);
     }
 
-    // 2) Collect *all* PHI users first (don't mutate while iterating uses)
+    // 2) Collect *all* users first (don't mutate while iterating uses)
     let mut phi_users: Vec<InstructionValue> = Vec::new();
     let mut use_opt = phi.as_basic_value().get_first_use();
     while let Some(u) = use_opt {
@@ -195,133 +211,145 @@ pub fn expand_phi_uses_into_per_pred_incomings<'ctx>(
         use_opt = u.get_next_use();
     }
 
-    // 3) For each PHI user, rebuild it with expanded incomings
+    // For each PHI user, rebuild it with expanded incomings
+    // For each Call user, add phi to call block that merges cases
     let mut rewritten = 0usize;
 
     for u_inst in phi_users {
-        if u_inst.get_opcode() == Op::Phi {
-            println!("Fixing downstream phi {:?}", u_inst.to_string());
-            let u_phi = unsafe { PhiValue::new(u_inst.as_value_ref()) };
-            let succ_bb = u_inst.get_parent().expect("user phi must be in a block");
-            let incomings = u_phi.get_incomings();
-
-            // Build a replacement PHI before the old one
-            let ty: BasicTypeEnum = u_phi.as_basic_value().get_type();
-            let builder = succ_bb.get_context().create_builder();
-            builder.position_before(&u_inst);
-            let new_phi = builder.build_phi(ty, "phi.expanded").expect("build_phi");
-
-            // Re-add all incoming pairs, expanding (%phi, B) into per-pred pairs
-            for (val, inc_bb) in incomings {
-                if val != phi.as_basic_value() {
-                    // copy as-is
-                    new_phi.add_incoming(&[(&val, inc_bb)]);
-                    continue;
-                }
-
-                // This incoming was (%phi, inc_bb). The usual case is inc_bb == B.
-                // We will *replace* it by a set of per-pred pairs:
-                //    for each P in preds(B):
-                //       value = incoming_by_pred[P]
-                //       block = clone_for_pred[P]  (must be an immediate predecessor of succ_bb)
-                //
-                // If you haven't duplicated/split so clone_for_pred[P] is a predecessor of succ_bb,
-                // you must do that (or skip) because PHI incoming blocks must be real predecessors.  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-                for (pred, edge_val) in &incoming_by_pred {
-                    if let Some(&clone_block) = clone_for_pred.get(pred) {
-                        // Add incoming (edge_val, clone_of_B_for_pred)
-                        new_phi.add_incoming(&[(edge_val, clone_block)]);
-                    } else {
-                        // Fallback: if you did not duplicate/split such that `pred` (or its clone)
-                        // is a predecessor of succ_bb, you cannot legally add an incoming from it.
-                        // You need to split that edge first or run your B-tail duplication prior.
-                        // For safety, keep the old incoming (%phi, inc_bb) (or skip adding).
-                        // Here we choose to *skip* adding; the caller should ensure proper clones exist.
-                        panic!("did something wrong")
-                    }
-                }
-                // NOTE: we do *not* copy the old (%phi, inc_bb); we replaced it.
-            }
-            // Replace and erase old PHI
-            u_phi.replace_all_uses_with(&new_phi);
-            u_inst.erase_from_basic_block();
+        if u_inst.get_parent().unwrap() == phi_block {
+            // The phi block will be deleted, so don't worry about
+            // fixing it up
+            continue;
         }
-        if u_inst.get_opcode() == Op::Call {
-            println!("Fixing downstream call {:?}", u_inst.to_string());
-            let call_bb = match u_inst.get_parent() {
-                Some(bb) => bb,
-                None => continue,
-            };
-            let ctx = call_bb.get_context();
-            let local_builder = ctx.create_builder();
-            local_builder.position_before(&u_inst);
+        match u_inst.get_opcode() {
+            InstructionOpcode::Phi => {
+                let u_phi = unsafe { PhiValue::new(u_inst.as_value_ref()) };
+                let succ_bb = u_inst.get_parent().expect("user phi must be in a block");
+                let incomings = u_phi.get_incomings();
 
-            // 1) Create the replacement PHI in the call's block with per-pred incomings
-            let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
-            let arg_phi = local_builder
-                .build_phi(phi_ty, "phi.arg")
-                .expect("build_phi");
+                // Build a replacement PHI before the old one
+                let ty: BasicTypeEnum = u_phi.as_basic_value().get_type();
+                let builder = succ_bb.get_context().create_builder();
+                builder.position_before(&u_inst);
+                let new_phi = builder.build_phi(ty, "phi.expanded").expect("build_phi");
 
-            for (pred, edge_val) in &incoming_by_pred {
-                if let Some(&clone_bb) = clone_for_pred.get(pred) {
-                    // clone_bb must be an immediate predecessor of call_bb (LangRef)  [1](https://deepwiki.com/TheDan64/inkwell/1-overview)
-                    arg_phi.add_incoming(&[(edge_val, clone_bb)]);
-                } else {
-                    // If you reach here, ensure edge splitting / per-pred duplication makes clone_bb
-                    // a real predecessor of `call_bb` before rewriting this call.
-                    // You can skip or bail; safest is to bail for this call instance.
-                    panic!("did something wrong");
+                // Re-add all incoming pairs, expanding (%phi, B) into per-pred pairs
+                for (val, inc_bb) in incomings {
+                    if val != phi.as_basic_value() {
+                        // copy as-is
+                        new_phi.add_incoming(&[(&val, inc_bb)]);
+                        continue;
+                    }
+
+                    // This incoming was (%phi, inc_bb). The usual case is inc_bb == B.
+                    // We will *replace* it by a set of per-pred pairs:
+                    //    for each P in preds(B):
+                    //       value = incoming_by_pred[P]
+                    //       block = clone_for_pred[P]  (must be an immediate predecessor of succ_bb)
+                    //
+                    // If you haven't duplicated/split so clone_for_pred[P] is a predecessor of succ_bb,
+                    // you must do that (or skip) because PHI incoming blocks must be real predecessors.  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
+                    for (pred, edge_val) in &incoming_by_pred {
+                        if let Some(&clone_block) = clone_for_pred.get(pred) {
+                            // Add incoming (edge_val, clone_of_B_for_pred)
+                            new_phi.add_incoming(&[(edge_val, clone_block)]);
+                        } else {
+                            // Fallback: if you did not duplicate/split such that `pred` (or its clone)
+                            // is a predecessor of succ_bb, you cannot legally add an incoming from it.
+                            // You need to split that edge first or run your B-tail duplication prior.
+                            // For safety, keep the old incoming (%phi, inc_bb) (or skip adding).
+                            // Here we choose to *skip* adding; the caller should ensure proper clones exist.
+                            panic!("did something wrong")
+                        }
+                    }
+                    // NOTE: we do *not* copy the old (%phi, inc_bb); we replaced it.
                 }
+                // Replace and erase old PHI
+                u_phi.replace_all_uses_with(&new_phi);
+                u_inst.erase_from_basic_block();
             }
+            InstructionOpcode::Call => {
+                let call_bb = match u_inst.get_parent() {
+                    Some(bb) => bb,
+                    None => continue,
+                };
+                let ctx = call_bb.get_context();
+                let local_builder = ctx.create_builder();
+                local_builder.position_before(&u_inst);
 
-            // 2) Rebuild the call with `%phi` replaced by `arg_phi`
-            // Read the original as a CallSite to collect callee & operands
-            let cs: CallSiteValue = match u_inst.try_into() {
-                Ok(cs) => cs,
-                Err(_) => continue,
-            };
-            let callee = match cs.get_called_fn_value() {
-                Some(f) => f,
-                None => continue, // (indirect call via function pointer can be handled similarly)
-            };
+                // 1) Create the replacement PHI in the call's block with per-pred incomings
+                let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
+                let arg_phi = local_builder
+                    .build_phi(phi_ty, "phi.arg")
+                    .expect("build_phi");
 
-            // Gather arguments (filter out block operands; calls use only value operands)
-            // Replace any operand that pointer-equals `%phi` with `arg_phi`.
-            let old_val_ref = phi.as_basic_value().as_value_ref();
-            let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
-            for i in 0..cs.count_arguments() {
-                if let Some(op_bv) = inst_operand_value(u_inst, i) {
-                    let vref = op_bv.as_value_ref();
-                    if vref == old_val_ref {
-                        // substitute with our new PHI in this block
-                        args.push(arg_phi.as_basic_value().into());
+                for (pred, edge_val) in &incoming_by_pred {
+                    if let Some(&clone_bb) = clone_for_pred.get(pred) {
+                        // clone_bb must be an immediate predecessor of call_bb (LangRef)  [1](https://deepwiki.com/TheDan64/inkwell/1-overview)
+                        arg_phi.add_incoming(&[(edge_val, clone_bb)]);
                     } else {
-                        args.push(op_bv.into());
+                        // If you reach here, ensure edge splitting / per-pred duplication makes clone_bb
+                        // a real predecessor of `call_bb` before rewriting this call.
+                        // You can skip or bail; safest is to bail for this call instance.
+                        bail!("Detected error in phi predecessors");
                     }
                 }
+
+                // 2) Rebuild the call with `%phi` replaced by `arg_phi`
+                // Read the original as a CallSite to collect callee & operands
+                let cs: CallSiteValue = match u_inst.try_into() {
+                    Ok(cs) => cs,
+                    Err(_) => continue,
+                };
+                let callee = match cs.get_called_fn_value() {
+                    Some(f) => f,
+                    None => continue, // (indirect call via function pointer can be handled similarly)
+                };
+
+                // Gather arguments (filter out block operands; calls use only value operands)
+                // Replace any operand that pointer-equals `%phi` with `arg_phi`.
+                let old_val_ref = phi.as_basic_value().as_value_ref();
+                let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
+                for i in 0..cs.count_arguments() {
+                    if let Some(op_bv) = inst_operand_value(u_inst, i) {
+                        let vref = op_bv.as_value_ref();
+                        if vref == old_val_ref {
+                            // substitute with our new PHI in this block
+                            args.push(arg_phi.as_basic_value().into());
+                        } else {
+                            args.push(op_bv.into());
+                        }
+                    }
+                }
+
+                // Build the replacement call *at the same point*
+                // (LLVM 14: use build_direct_call)  [2](https://deepwiki.com/eshard/obfuscator-llvm/3.2-llvm-pass-pipeline-integration)
+                let name = u_inst
+                    .get_name()
+                    .map(|c| c.to_string_lossy())
+                    .unwrap_or_default();
+                let new_cs = match local_builder.build_call(callee, &args, &name) {
+                    Ok(cs) => cs,
+                    Err(_) => continue,
+                };
+
+                // If call returns a value, RAUW; else just drop the old call
+                if let Some(ret) = new_cs.try_as_basic_value().basic() {
+                    u_inst.replace_all_uses_with(&ret.as_instruction_value().unwrap());
+                } else {
+                    u_inst.erase_from_basic_block();
+                }
             }
-
-            // Build the replacement call *at the same point*
-            // (LLVM 14: use build_direct_call)  [2](https://deepwiki.com/eshard/obfuscator-llvm/3.2-llvm-pass-pipeline-integration)
-            let name = u_inst
-                .get_name()
-                .map(|c| c.to_string_lossy())
-                .unwrap_or_default();
-            let new_cs = match local_builder.build_call(callee, &args, &name) {
-                Ok(cs) => cs,
-                Err(_) => continue,
-            };
-
-            // If call returns a value, RAUW; else just drop the old call
-            if let Some(ret) = new_cs.try_as_basic_value().basic() {
-                u_inst.replace_all_uses_with(&ret.as_instruction_value().unwrap());
-            } else {
-                u_inst.erase_from_basic_block();
+            opcode => {
+                bail!(
+                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                    opcode
+                );
             }
         }
         rewritten += 1;
     }
-    rewritten
+    Ok(rewritten)
 }
 
 /// Extract BasicBlock operand i from instruction (works for Br/Switch operands).
@@ -331,8 +359,9 @@ fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
     inst.get_operand(idx)?.block()
 }
 
-fn predecessors<'ctx>(func: FunctionValue<'ctx>, to: BasicBlock<'ctx>) -> Vec<BasicBlock<'ctx>> {
+fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
     let mut preds = Vec::new();
+    let func = to.get_parent().unwrap();
     for b in func.get_basic_blocks() {
         if let Some(term) = b.get_terminator() {
             match term.get_opcode() {
@@ -350,12 +379,24 @@ fn predecessors<'ctx>(func: FunctionValue<'ctx>, to: BasicBlock<'ctx>) -> Vec<Ba
                         }
                     }
                 }
-                _ => { /* We lowered switches and don't use indirectbr so no need to handle those cases*/
+                Op::Switch
+                | Op::IndirectBr
+                | Op::Invoke
+                | Op::CallBr
+                | Op::CatchSwitch
+                | Op::CatchRet
+                | Op::CleanupRet => {
+                    // These cases could be predecessors, but we don't handle them for now
+                    // Switch is not supported for OG systems, not sure if the others can occur
+                    bail!(
+                        "Found unsupported terminal case when searching for phi predecessor blocks"
+                    );
                 }
+                _ => { /* Cases that do not point to successors cannot be predecessors */ }
             }
         }
     }
-    preds
+    Ok(preds)
 }
 
 /// First non‑PHI in a block
@@ -685,37 +726,45 @@ fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
 }
 
 /// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
-/// a then/else diamond and a merge PHI. Works even if %sel has non-local uses.
-pub fn lower_qubit_selects_with_phi_merge(module: &Module) -> Result<bool> {
+/// a then/else diamond and a merge PHI, then using phi elimination to remove phi.
+/// May introduce new phis downstream
+pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
 
     for func in module.get_functions() {
-        for bb in func.get_basic_blocks() {
-            // Collect selects first to avoid invalidating iteration
-            let mut sels = Vec::new();
-            let mut it = bb.get_first_instruction();
-            while let Some(i) = it {
-                it = i.get_next_instruction();
-                if i.get_opcode() == InstructionOpcode::Select
-                    && let AnyTypeEnum::PointerType(pt) = i.get_type()
-                    && is_qubit_pointer(pt)
-                {
-                    sels.push(i);
-                }
+        let mut block_opt = func.get_first_basic_block();
+        while let Some(bb) = block_opt {
+            if let Some(first_sel) = get_first_qubit_select_in_block(bb)
+                && lower_one_select_to_control_flow(&builder, first_sel)?
+            {
+                changed = true;
             }
-            for sel in sels {
-                if lower_one_select_to_cf_with_phi(&builder, sel)? {
-                    changed = true;
-                }
-            }
+            // If we found a select we will have added new blocks just after
+            // the current one. Need to check those blocks for further selects
+            // so only get the next block here, not before handling first select
+            block_opt = bb.get_next_basic_block();
         }
     }
     Ok(changed)
 }
 
-fn lower_one_select_to_cf_with_phi<'ctx>(
+fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
+    let mut it = bb.get_first_instruction();
+    while let Some(i) = it {
+        it = i.get_next_instruction();
+        if i.get_opcode() == InstructionOpcode::Select
+            && let AnyTypeEnum::PointerType(pt) = i.get_type()
+            && is_qubit_pointer(pt)
+        {
+            return Some(i);
+        }
+    }
+    None
+}
+
+fn lower_one_select_to_control_flow<'ctx>(
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
 ) -> Result<bool> {
@@ -796,6 +845,9 @@ fn lower_one_select_to_cf_with_phi<'ctx>(
 
     // Finally, drop the original %sel itself (all uses now read %phi)
     sel.erase_from_basic_block();
+
+    // Now use phi removal to completely eliminate ssa
+    lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
 
     Ok(true)
 }
@@ -928,10 +980,16 @@ fn inst_operand_block(inst: InstructionValue, i: u32) -> Option<BasicBlock> {
     inst.get_operand(i).and_then(operand_as_block)
 }
 
-fn remove_dead_code_from_function(module: &Module, function: FunctionValue) {
+fn simp_cfg(module: &Module) -> bool {
     let pm = PassManager::create(module);
-    pm.add_aggressive_dce_pass();
+    let mut changed = false;
+    pm.add_cfg_simplification_pass();
     pm.initialize();
-    pm.run_on(&function);
+    for func in module.get_functions() {
+        if pm.run_on(&func) {
+            changed = true;
+        }
+    }
     pm.finalize();
+    changed
 }
