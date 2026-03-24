@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.0.23
+### v0.0.24
 
 - update quantinuum-qircheck version requirement to 0.5.0
 
