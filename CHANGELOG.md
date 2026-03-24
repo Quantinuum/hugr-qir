@@ -1,5 +1,10 @@
 ## Changelog
 
+### v0.0.24
+
+- update quantinuum-qircheck version requirement to 0.5.0
+- pin guppy version to 0.21.9
+
 ### v0.0.22
 
 - add to_qir_str()
