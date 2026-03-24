@@ -9,7 +9,7 @@ from guppylang.std.quantum import h, measure, rz
 
 
 @guppy
-def plus_or_minus(res: bool) -> int:  # noqa: FBT001
+def plus_or_minus(res: bool) -> int:
     if res:
         return 1
     return -1
