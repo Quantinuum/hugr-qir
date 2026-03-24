@@ -75,7 +75,7 @@ pub fn lower_successive_qubit_phis_in_block(
         bail!("Provided phis are not all in the provided block")
     }
 
-    // 2) Get the predecessors of `block`, i.e. any block that branches directy to it
+    // Get the predecessors of `block`, i.e. any block that branches directly to it
     // If none, remove this block and continue
     let preds = predecessors(block)?;
     if preds.is_empty() {
@@ -87,7 +87,7 @@ pub fn lower_successive_qubit_phis_in_block(
         return Ok(false);
     }
 
-    // 3) For each predecessor, duplicate tail and redirect edge
+    // For each predecessor, duplicate tail and redirect edge
     let mut clone_map: HashMap<BasicBlock, BasicBlock> = HashMap::new();
     for pred in preds {
         // New block that will hold the duplicated tail
@@ -124,14 +124,13 @@ pub fn lower_successive_qubit_phis_in_block(
         redirect_edge(builder, pred, block, clone_block);
     }
 
-    // Now need to take care of any instructions that used the ssa variable
-    // created by the phi, e.g. function calls on the variable or additional phis
+    // Now need to take care of any instructions that used the phi ssa variable
+    // , e.g. function calls on the variable or additional phis
     for phi in phis {
         handle_phi_users(phi, block, &clone_map)?;
     }
 
     // Delete no longer needed block
-    // Do it before
     unsafe {
         block
             .delete()
@@ -191,13 +190,13 @@ pub fn handle_phi_users<'ctx>(
     phi_block: BasicBlock<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
 ) -> Result<usize> {
-    // 1) Build the incoming map for %phi: P -> value v_i used on edge (P -> B)
+    // Build the incoming map for %phi: P -> value v_i used on edge (P -> B)
     let mut incoming_by_pred: HashMap<BasicBlock, BasicValueEnum> = HashMap::new();
     for (val, pred_bb) in phi.get_incomings() {
         incoming_by_pred.insert(pred_bb, val);
     }
 
-    // 2) Collect *all* users first (don't mutate while iterating uses)
+    // Collect *all* users first (don't mutate while iterating uses)
     let mut phi_users: Vec<InstructionValue> = Vec::new();
     let mut use_opt = phi.as_basic_value().get_first_use();
     while let Some(u) = use_opt {
@@ -213,6 +212,7 @@ pub fn handle_phi_users<'ctx>(
 
     // For each PHI user, rebuild it with expanded incomings
     // For each Call user, add phi to call block that merges cases
+    // Other user types are not currently handled
     let mut rewritten = 0usize;
 
     for u_inst in phi_users {
@@ -225,6 +225,7 @@ pub fn handle_phi_users<'ctx>(
             InstructionOpcode::Phi => {
                 let u_phi = unsafe { PhiValue::new(u_inst.as_value_ref()) };
                 let succ_bb = u_inst.get_parent().expect("user phi must be in a block");
+
                 let incomings = u_phi.get_incomings();
 
                 // Build a replacement PHI before the old one
@@ -247,19 +248,14 @@ pub fn handle_phi_users<'ctx>(
                     //       value = incoming_by_pred[P]
                     //       block = clone_for_pred[P]  (must be an immediate predecessor of succ_bb)
                     //
-                    // If you haven't duplicated/split so clone_for_pred[P] is a predecessor of succ_bb,
-                    // you must do that (or skip) because PHI incoming blocks must be real predecessors.  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
                     for (pred, edge_val) in &incoming_by_pred {
                         if let Some(&clone_block) = clone_for_pred.get(pred) {
                             // Add incoming (edge_val, clone_of_B_for_pred)
                             new_phi.add_incoming(&[(edge_val, clone_block)]);
                         } else {
-                            // Fallback: if you did not duplicate/split such that `pred` (or its clone)
-                            // is a predecessor of succ_bb, you cannot legally add an incoming from it.
-                            // You need to split that edge first or run your B-tail duplication prior.
-                            // For safety, keep the old incoming (%phi, inc_bb) (or skip adding).
-                            // Here we choose to *skip* adding; the caller should ensure proper clones exist.
-                            panic!("did something wrong")
+                            // If you reach here, ensure edge splitting / per-pred duplication makes clone_bb
+                            // a real predecessor of `call_bb` before rewriting this phi.
+                            bail!("Detected error in phi predecessors");
                         }
                     }
                     // NOTE: we do *not* copy the old (%phi, inc_bb); we replaced it.
@@ -269,19 +265,15 @@ pub fn handle_phi_users<'ctx>(
                 u_inst.erase_from_basic_block();
             }
             InstructionOpcode::Call => {
-                let call_bb = match u_inst.get_parent() {
-                    Some(bb) => bb,
-                    None => continue,
-                };
-                let ctx = call_bb.get_context();
-                let local_builder = ctx.create_builder();
+                let succ_bb = u_inst.get_parent().expect("user call must be in a block");
+                let local_builder = succ_bb.get_context().create_builder();
                 local_builder.position_before(&u_inst);
 
-                // 1) Create the replacement PHI in the call's block with per-pred incomings
+                // Create the replacement PHI in the call's block with per-pred incomings
                 let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
                 let arg_phi = local_builder
                     .build_phi(phi_ty, "phi.arg")
-                    .expect("build_phi");
+                    .expect("error building phi");
 
                 for (pred, edge_val) in &incoming_by_pred {
                     if let Some(&clone_bb) = clone_for_pred.get(pred) {
@@ -290,12 +282,11 @@ pub fn handle_phi_users<'ctx>(
                     } else {
                         // If you reach here, ensure edge splitting / per-pred duplication makes clone_bb
                         // a real predecessor of `call_bb` before rewriting this call.
-                        // You can skip or bail; safest is to bail for this call instance.
                         bail!("Detected error in phi predecessors");
                     }
                 }
 
-                // 2) Rebuild the call with `%phi` replaced by `arg_phi`
+                // Rebuild the call with `%phi` replaced by `arg_phi`
                 // Read the original as a CallSite to collect callee & operands
                 let cs: CallSiteValue = match u_inst.try_into() {
                     Ok(cs) => cs,
@@ -323,7 +314,6 @@ pub fn handle_phi_users<'ctx>(
                 }
 
                 // Build the replacement call *at the same point*
-                // (LLVM 14: use build_direct_call)  [2](https://deepwiki.com/eshard/obfuscator-llvm/3.2-llvm-pass-pipeline-integration)
                 let name = u_inst
                     .get_name()
                     .map(|c| c.to_string_lossy())
@@ -354,8 +344,6 @@ pub fn handle_phi_users<'ctx>(
 
 /// Extract BasicBlock operand i from instruction (works for Br/Switch operands).
 fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
-    // In Inkwell 0.8, operands that are blocks are exposed as BasicBlock directly via the operand API.
-    // We try both typed accessors that are commonly available.
     inst.get_operand(idx)?.block()
 }
 
@@ -676,7 +664,7 @@ pub fn rebuild_inst<'ctx>(
             Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
         }
 
-        // ---------------- Calls (LLVM 14: use build_direct_call) ----------------
+        // ---------------- Calls ----------------
         Op::Call => {
             let cs = CallSiteValue::try_from(inst).expect("could not convert to CallSiteValue");
             let callee = cs.get_called_fn_value().expect("Failed to get callee");
@@ -688,10 +676,7 @@ pub fn rebuild_inst<'ctx>(
                     args.push(remap(vmap, v).into());
                 }
             }
-
-            // NOTE: In Inkwell, build_call is available only for LLVM>=15 and aliases build_direct_call.
-            // On LLVM 14, use build_direct_call.
-            let callsite = builder.build_call(callee, &args, &name)?; // [1](https://cs6340.cc.gatech//.edu/LLVM8Doxygen/classllvm_1_1ValueMapper.html)
+            let callsite = builder.build_call(callee, &args, &name)?;
 
             // If return type is void → Void; else produce the resulting SSA value
             let value = callsite.try_as_basic_value();
