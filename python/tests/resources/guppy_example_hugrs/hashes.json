@@ -1,5 +1,4 @@
 {
-  "generates-llvm-selects-on-qubits": "05172dc6b3c484f8ac245f36e4d884392b42efd560ecc824f2026bfa7e70ac35",
   "generates-llvm-switch": "a99a004351a9d59373b1a6b10bbcb4eedd0d4b667609b3671248695977029dc0",
   "guppylang_hugr_version": "guppy-v0.21.9 hugr-v0.15.4",
   "hugr_generation_module": "8c8f69d6f18ce1c059191f94d0bc029645716dc7507ff03e15b4ab18bdb0b197",
