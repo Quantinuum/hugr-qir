@@ -9,33 +9,208 @@ use inkwell::builder::Builder;
 use inkwell::module::Module;
 use inkwell::passes::PassManager;
 use inkwell::types::{AnyTypeEnum, BasicTypeEnum, PointerType};
-use inkwell::values::InstructionOpcode as Op;
+use inkwell::values::{AnyValue, InstructionOpcode as Op};
 use inkwell::values::{
     AnyValueEnum, AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, InstructionOpcode,
     InstructionValue, Operand, PhiValue, ValueKind,
 };
 use std::collections::HashMap;
+use inkwell::values::InstructionOpcode::Return;
 
 /// Lowers select and phi instructions returning QUBIT* to control flow.
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
 /// then lowers any remaining phis
 pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
+    prepare_module(module)?;
+    module.verify().expect("verify 1");
+    println!("after prepare");
     let lowered_selects = lower_qubit_selects(module)?;
-    let lowered_phis = lower_qubit_phis(module)?;
-    let changed = lowered_selects || lowered_phis;
-    if changed {
-        simp_cfg(module);
-    }
-    let ok = module.verify();
-    if ok.is_err() {
-        bail!(
-            "Error during module verification:\n{}",
-            ok.err().unwrap().to_string()
-        )
-    }
-    Ok(changed)
+    println!("after ls");
+    //let lowered_phis = lower_qubit_phis(module)?;
+    //let changed = lowered_selects; // || lowered_phis;
+    //if changed {
+    //    simp_cfg(module);
+    //}
+    //let ok = module.verify();
+    //if ok.is_err() {
+    //    bail!(
+    //        "Error during module verification:\n{}",
+    //        ok.err().unwrap().to_string()
+    //    )
+    //}
+    //Ok(changed)
+    //println!("{}", module.to_string());
+    Ok(true)
 }
+
+
+
+
+fn rebuild_terminator_into<'ctx>(
+    builder: &Builder<'ctx>,
+    term: InstructionValue<'ctx>,
+) -> Result<()> {
+    match term.get_opcode() {
+        InstructionOpcode::Br => {
+            let is_cond = term.is_conditional();
+            if is_cond {
+                let cond = expect_inst_operand_value(term, 0).into_int_value();
+
+                let then_bb = operand_as_bb(term, 1).unwrap();
+                let else_bb = operand_as_bb(term, 2).unwrap();
+
+                builder
+                    .build_conditional_branch(cond, else_bb, then_bb)?;
+            } else {
+                let dest = inst_operand_block(term, 0).unwrap();
+                builder
+                    .build_unconditional_branch(dest)?;
+            }
+            Ok(())
+        }
+
+        InstructionOpcode::Return => {
+            let ret_val = inst_operand_value(term, 0);
+            let ret_arg: Option<&dyn BasicValue<'ctx>> =
+                ret_val.as_ref().map(|v| v as &dyn BasicValue<'ctx>);
+
+            builder
+                .build_return(ret_arg)?;
+            Ok(())
+        }
+
+        _ => bail!("terminator kind not supported yet"),
+    }
+}
+
+pub fn move_matching_calls_to_fresh_block<'ctx>(
+    bb: BasicBlock<'ctx>,
+    target_fn_name: &str,
+) -> Result<BasicBlock<'ctx>> {
+    let function = bb.get_parent().unwrap();
+    let context = bb.get_context();
+    let builder = context.create_builder();
+
+    // ------------------------------------------------------------
+    // 1) Collect matching direct calls
+    // ------------------------------------------------------------
+    let mut calls_to_rebuild: Vec<InstructionValue<'ctx>> = Vec::new();
+    let mut inst_opt = bb.get_first_instruction();
+
+    while let Some(inst) = inst_opt {
+        inst_opt = inst.get_next_instruction();
+
+        if inst.get_opcode() != InstructionOpcode::Call {
+            continue;
+        }
+
+        let callsite: inkwell::values::CallSiteValue<'ctx> = CallSiteValue::try_from(inst).expect("bla");
+
+        let callee = match callsite.get_called_fn_value() {
+            Some(f) => f,
+            None => continue, // indirect call: skip
+        };
+
+        if callee.get_name().to_str() == Ok(target_fn_name) {
+            calls_to_rebuild.push(inst);
+        }
+        if callee.get_name().to_str() == Ok("__quantum__qis__read_result__body") {
+            inst.set_name("qread")?;
+        }
+    }
+
+    if calls_to_rebuild.is_empty() {
+        return bail!("no matching calls in block")
+    }
+
+    // ------------------------------------------------------------
+    // 2) Snapshot the old terminator BEFORE changing the block
+    // ------------------------------------------------------------
+    let old_term = bb.get_terminator().unwrap();
+
+    // ------------------------------------------------------------
+    // 3) Create the new block immediately after `bb`
+    // ------------------------------------------------------------
+    let new_bb = context.append_basic_block(function, "moved.calls");
+    new_bb.move_after(bb).unwrap();
+
+    // ------------------------------------------------------------
+    // 4) Rebuild matching calls into new_bb
+    // ------------------------------------------------------------
+    builder.position_at_end(new_bb);
+
+    let mut rebuilt_pairs: Vec<(InstructionValue<'ctx>, Option<inkwell::values::BasicValueEnum<'ctx>>)> =
+        Vec::new();
+
+    for old_call in &calls_to_rebuild {
+        let cs = CallSiteValue::try_from(*old_call).expect("bla");
+        let callee = cs.get_called_fn_value().unwrap();
+
+        // For LLVM 14, build_direct_call is the right API path. build_call is only
+        // exposed directly on newer LLVM feature sets.
+        let mut args = Vec::new();
+        for i in 0..cs.count_arguments() {
+            if let Some(v) = inst_operand_value(*old_call, i) {
+                args.push(v.into());
+            }
+        }
+
+        let name = old_call
+            .get_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+
+        let new_cs = builder
+            .build_call(callee, &args, &name)?;
+
+        rebuilt_pairs.push((*old_call, new_cs.try_as_basic_value().basic()));
+    }
+
+    // ------------------------------------------------------------
+    // 5) Rebuild old terminator into new_bb
+    // ------------------------------------------------------------
+    rebuild_terminator_into(&builder, old_term)?;
+
+    // ------------------------------------------------------------
+    // 6) Replace uses of rebuilt calls, then erase originals
+    // ------------------------------------------------------------
+    for (old_call, maybe_new_val) in rebuilt_pairs {
+        if let Some(new_val) = maybe_new_val {
+            old_call.replace_all_uses_with(&new_val.as_instruction_value().unwrap());
+        }
+        old_call.erase_from_basic_block();
+    }
+
+    // ------------------------------------------------------------
+    // 7) Erase old terminator from bb
+    // ------------------------------------------------------------
+    old_term.erase_from_basic_block();
+
+    // ------------------------------------------------------------
+    // 8) Make bb end with br new_bb
+    // ------------------------------------------------------------
+    builder.position_at_end(bb);
+    builder
+        .build_unconditional_branch(new_bb)?;
+
+    Ok(new_bb)
+}
+
+
+
+fn prepare_module(module: &Module) -> Result<()>{
+    for func in module.get_functions() {
+        for block in func.get_basic_blocks(){
+            move_matching_calls_to_fresh_block(
+                block,
+                "__quantum__rt__bool_record_output"
+            )?;
+        }
+    }
+    Ok(())
+}
+
 
 /// Lowers all phi instructions returning QUBIT* to control flow.
 pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
@@ -439,7 +614,7 @@ fn rebuild_tail_into<'ctx>(
             }
             break;
         }
-        match rebuild_inst(builder, inst, vmap) {
+        match rebuild_inst(builder, into_bb, inst, vmap, true) {
             Ok(RebuildOutcome::Value(bv)) => {
                 // only value-producing instructions enter vmap
                 vmap.insert(inst.get_name().unwrap().to_string_lossy().to_string(), bv);
@@ -544,10 +719,13 @@ fn redirect_edge<'ctx>(
 
 pub fn rebuild_inst<'ctx>(
     builder: &Builder<'ctx>,
+    into_block: BasicBlock<'ctx>,
     inst: InstructionValue<'ctx>,
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
+    duplicating: bool
 ) -> Result<RebuildOutcome<'ctx>> {
     let name = inst.get_name().unwrap_or(c"").to_string_lossy();
+    builder.position_at_end(into_block);
     match inst.get_opcode() {
         // ---------------- Pointer / aggregate ops ----------------
         Op::GetElementPtr => unsafe {
@@ -666,21 +844,64 @@ pub fn rebuild_inst<'ctx>(
 
         // ---------------- Calls ----------------
         Op::Call => {
-            let cs = CallSiteValue::try_from(inst).expect("could not convert to CallSiteValue");
-            let callee = cs.get_called_fn_value().expect("Failed to get callee");
+            let orig_callsite = CallSiteValue::try_from(inst).expect("could not convert to CallSiteValue");
+            let orig_callee = orig_callsite.get_called_fn_value().expect("Failed to get callee");
 
             // Collect value operands as args (calls don't have block operands).
             let mut args = Vec::new();
-            for i in 0..cs.count_arguments() {
+            for i in 0..orig_callsite.count_arguments() {
                 if let Some(v) = inst_operand_value(inst, i) {
                     args.push(remap(vmap, v).into());
                 }
             }
-            let callsite = builder.build_call(callee, &args, &name)?;
+            let dup_callsite = builder.build_call(orig_callee, &args, &name)?;
+            let dup_value = dup_callsite.try_as_basic_value();
+
+            // If the call had downstream users need reconcile with duplicate by adding phi
+            if duplicating {
+                let orig_value = orig_callsite.try_as_basic_value();
+                let mut call_users: Vec<InstructionValue> = Vec::new();
+                if orig_value.is_basic() {
+                    let orig_call_value = orig_value.basic().unwrap();
+                    let dup_call_value = dup_value.basic().unwrap();
+                    let mut use_opt = orig_call_value.get_first_use();
+                    while let Some(u) = use_opt {
+                        let user_any = u.get_user();
+                        if let AnyValueEnum::InstructionValue(user_inst) = user_any {
+                            call_users.push(user_inst);
+                        }
+                        if let AnyValueEnum::PointerValue(user_inst) = user_any {
+                            call_users.push(user_inst.as_instruction().unwrap());
+                        }
+                        use_opt = u.get_next_use();
+                    }
+                    for user in call_users {
+                        let user_block = user.get_parent().unwrap();
+                        let orig_call_block = inst.get_parent().unwrap();
+                        if user_block ==  orig_call_block{
+                            // don't need to reconcile if user is in same block
+                            // in that case the user was also duplicated
+                            continue;
+                        }
+                        builder.position_before(&user_block.get_first_instruction().unwrap());
+                        let call_ty = orig_call_value.get_type();
+                        let call_user_phi = builder
+                            .build_phi(call_ty, "phi.calluser")
+                            .expect("error building phi");
+
+
+                        call_user_phi.add_incoming(&[(&orig_call_value, orig_call_block), (&dup_call_value, into_block)]);
+
+                        println!("call User {:?}", user.to_string());
+                        println!("call User phi {:?}", call_user_phi.to_string());
+                        println!("call user block {:?}", user_block);
+                    }
+                }
+            }
+            builder.position_at_end(into_block);
 
             // If return type is void → Void; else produce the resulting SSA value
-            let value = callsite.try_as_basic_value();
-            match value {
+            match dup_value {
                 ValueKind::Basic(bv) => Ok(RebuildOutcome::Value(bv)),
                 ValueKind::Instruction(_) => Ok(RebuildOutcome::Void),
             }
@@ -722,7 +943,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
         let mut block_opt = func.get_first_basic_block();
         while let Some(bb) = block_opt {
             if let Some(first_sel) = get_first_qubit_select_in_block(bb)
-                && lower_one_select_to_control_flow(&builder, first_sel)?
+                && lower_one_select_to_control_flow(module, &builder, first_sel)?
             {
                 changed = true;
             }
@@ -732,6 +953,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
             block_opt = bb.get_next_basic_block();
         }
     }
+    println!("Done");
     Ok(changed)
 }
 
@@ -750,9 +972,11 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
 }
 
 fn lower_one_select_to_control_flow<'ctx>(
+    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
 ) -> Result<bool> {
+    println!("Select {:?}", sel.to_string());
     let bb = match sel.get_parent() {
         Some(b) => b,
         None => return Ok(false),
@@ -803,9 +1027,15 @@ fn lower_one_select_to_control_flow<'ctx>(
         sel.get_name().unwrap().to_string_lossy().to_string(),
         phi.as_basic_value(),
     );
-    if !rebuild_tail_slice(builder, &tail, &mut vmap) {
+
+
+    if !rebuild_tail_slice(builder, merge_bb, &tail, &mut vmap) {
         return Ok(false);
     }
+
+
+
+    println!("rebuild tail slice done");
 
     // Now that merge has a full copy of the tail (including the original terminator),
     // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
@@ -813,6 +1043,9 @@ fn lower_one_select_to_control_flow<'ctx>(
     for &i in tail.iter().rev() {
         i.erase_from_basic_block();
     }
+
+
+    println!("erase old tail done");
     // Build: br i1 %cond, label %then_bb, label %else_bb  (0=cond,1=true,2=false)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
     builder
         .build_conditional_branch(cond, then_bb, else_bb)
@@ -822,17 +1055,25 @@ fn lower_one_select_to_control_flow<'ctx>(
     builder.position_at_end(else_bb);
     builder.build_unconditional_branch(merge_bb).ok();
 
+    println!("build branching into merge done");
     // PHI fixups: any successor that previously had incoming from `bb`
     // must now have incoming from `merge_bb`.
     if let Some(merge_term) = merge_bb.get_terminator() {
         fix_successor_phis_block_rename(merge_term, bb, merge_bb, phi)?;
     }
+    println!("phi fixups done");
 
+    module.verify().expect("verify 2");
     // Finally, drop the original %sel itself (all uses now read %phi)
     sel.erase_from_basic_block();
 
+
+    println!("erase sel done");
+
     // Now use phi removal to completely eliminate ssa
     lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+
+    println!("lower phi done");
 
     Ok(true)
 }
@@ -842,6 +1083,7 @@ fn lower_one_select_to_control_flow<'ctx>(
 /// `slice` comes from the original block; it’s safe to iterate because we erased them from `bb`.
 fn rebuild_tail_slice<'ctx>(
     builder: &Builder<'ctx>,
+    into_block: BasicBlock<'ctx>,
     slice: &[InstructionValue<'ctx>],
     vmap: &mut HashMap<String, BasicValueEnum<'ctx>>,
 ) -> bool {
@@ -849,7 +1091,7 @@ fn rebuild_tail_slice<'ctx>(
         if orig_inst.is_terminator() {
             return rebuild_terminator(builder, orig_inst, vmap);
         } else {
-            match rebuild_inst(builder, orig_inst, vmap) {
+            match rebuild_inst(builder, into_block, orig_inst, vmap, false) {
                 Ok(RebuildOutcome::Value(bv)) => {
                     vmap.insert(
                         orig_inst.get_name().unwrap().to_string_lossy().to_string(),
@@ -906,6 +1148,7 @@ fn rename_incoming_block_in_phis<'ctx>(
     new_bb: BasicBlock<'ctx>,
     merge_phi: PhiValue,
 ) {
+    println!{"renameing phis"}
     // Iterate PHIs at block start
     let mut it = succ_bb.get_first_instruction();
     while let Some(inst) = it {

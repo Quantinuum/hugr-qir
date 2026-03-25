@@ -174,6 +174,7 @@ impl CompileArgs {
 
         self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module)?;
+        println!("MADE IT");
         Ok(module)
     }
 }
