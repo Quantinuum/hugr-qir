@@ -66,7 +66,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3
+        uses: pypa/cibuildwheel@v3.4
 
       - uses: actions/upload-artifact@v7
         with:
