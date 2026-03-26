@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.25-rc.1
+
+- clean up generation of phi and select operations containing qubits
+
 ### v0.0.24
 
 - update quantinuum-qircheck version requirement to 0.5.0
