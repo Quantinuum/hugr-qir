@@ -1009,7 +1009,7 @@ dependencies = [
 
 [[package]]
 name = "hugr-qir"
-version = "0.0.25rc0"
+version = "0.0.25"
 dependencies = [
  "anyhow",
  "clap",
