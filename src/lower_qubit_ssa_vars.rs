@@ -199,7 +199,7 @@ fn rebuild_terminator_into<'ctx>(
 
 pub fn move_matching_calls_to_fresh_block<'ctx>(
     bb: BasicBlock<'ctx>,
-    target_fn_name: &str,
+    should_match: impl Fn(&str) -> bool,
 ) -> Result<Option<BasicBlock<'ctx>>> {
     let function = required_parent_function(bb, "move_matching_calls_to_fresh_block")?;
     let context = bb.get_context();
@@ -226,7 +226,7 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
             None => continue, // indirect call: skip
         };
 
-        if callee.get_name().to_str() == Ok(target_fn_name) {
+        if callee.get_name().to_str().is_ok_and(&should_match) {
             calls_to_rebuild.push(inst);
         }
     }
@@ -313,10 +313,14 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     Ok(Some(new_bb))
 }
 
+fn is_record_output_runtime_call(name: &str) -> bool {
+    name.starts_with("__quantum__rt__") && name.ends_with("_record_output")
+}
+
 fn prepare_module(module: &Module) -> Result<()> {
     for func in module.get_functions() {
         for block in func.get_basic_blocks() {
-            move_matching_calls_to_fresh_block(block, "__quantum__rt__bool_record_output")?;
+            move_matching_calls_to_fresh_block(block, is_record_output_runtime_call)?;
         }
     }
     Ok(())
