@@ -42,6 +42,49 @@ fn any_value_as_instruction(value: AnyValueEnum) -> Option<InstructionValue> {
     }
 }
 
+fn instruction_user(value: AnyValueEnum) -> Result<InstructionValue> {
+    any_value_as_instruction(value).ok_or_else(|| anyhow!("Unsupported non-instruction value user"))
+}
+
+fn collect_instruction_users(value: BasicValueEnum) -> Result<Vec<InstructionValue>> {
+    let mut users = Vec::new();
+    let mut use_opt = value.get_first_use();
+    while let Some(u) = use_opt {
+        users.push(instruction_user(u.get_user())?);
+        use_opt = u.get_next_use();
+    }
+    Ok(users)
+}
+
+fn collect_external_instruction_users<'ctx>(
+    value: BasicValueEnum<'ctx>,
+    original_block: BasicBlock<'ctx>,
+) -> Result<Vec<InstructionValue<'ctx>>> {
+    let mut external_users = Vec::new();
+    let mut seen_users: HashSet<ValueKey> = HashSet::new();
+    for user_inst in collect_instruction_users(value)? {
+        if user_inst.get_parent() != Some(original_block) {
+            let user_key = value_key_from_instruction(user_inst);
+            if seen_users.insert(user_key) {
+                external_users.push(user_inst);
+            }
+        }
+    }
+    Ok(external_users)
+}
+
+fn incoming_map(phi: PhiValue) -> HashMap<BasicBlock, BasicValueEnum> {
+    phi.get_incomings()
+        .map(|(val, pred_bb)| (pred_bb, val))
+        .collect()
+}
+
+fn verify_module(module: &Module) -> Result<()> {
+    module
+        .verify()
+        .map_err(|err| anyhow!("Error verifying module: {}", err.to_string()))
+}
+
 /// Lowers select and phi instructions returning QUBIT* to control flow.
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
@@ -57,7 +100,7 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
     if changed {
         simp_cfg(module);
     }
-    module.verify().expect("Error verifying module");
+    verify_module(module)?;
     Ok(changed)
 }
 
@@ -133,8 +176,7 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
             continue;
         }
 
-        let callsite: inkwell::values::CallSiteValue<'ctx> =
-            CallSiteValue::try_from(inst).expect("bla");
+        let callsite: CallSiteValue<'ctx> = CallSiteValue::try_from(inst).expect("bla");
 
         let callee = match callsite.get_called_fn_value() {
             Some(f) => f,
@@ -166,10 +208,7 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     // ------------------------------------------------------------
     builder.position_at_end(new_bb);
 
-    let mut rebuilt_pairs: Vec<(
-        InstructionValue<'ctx>,
-        Option<inkwell::values::BasicValueEnum<'ctx>>,
-    )> = Vec::new();
+    let mut rebuilt_pairs: Vec<(InstructionValue<'ctx>, Option<BasicValueEnum<'ctx>>)> = Vec::new();
 
     for old_call in &calls_to_rebuild {
         let cs = CallSiteValue::try_from(*old_call).expect("bla");
@@ -433,25 +472,8 @@ fn plan_phi_user_rewrites<'ctx>(
     phi_block: BasicBlock<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
 ) -> Result<Vec<InstructionValue<'ctx>>> {
-    let mut incoming_by_pred: HashMap<BasicBlock, BasicValueEnum> = HashMap::new();
-    for (val, pred_bb) in phi.get_incomings() {
-        incoming_by_pred.insert(pred_bb, val);
-    }
-
-    let mut phi_users: Vec<InstructionValue> = Vec::new();
-    let mut use_opt = phi.as_basic_value().get_first_use();
-    while let Some(u) = use_opt {
-        let user_any = u.get_user();
-        let user_inst = match user_any {
-            AnyValueEnum::InstructionValue(inst) => inst,
-            AnyValueEnum::PointerValue(ptr) => ptr.as_instruction().unwrap(),
-            _ => {
-                bail!("Unsupported non-instruction phi user");
-            }
-        };
-        phi_users.push(user_inst);
-        use_opt = u.get_next_use();
-    }
+    let incoming_by_pred = incoming_map(phi);
+    let phi_users = collect_instruction_users(phi.as_basic_value())?;
 
     for u_inst in &phi_users {
         if u_inst.get_parent().unwrap() == phi_block {
@@ -483,10 +505,7 @@ fn apply_phi_user_rewrites<'ctx>(
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     phi_users: &[InstructionValue<'ctx>],
 ) -> Result<usize> {
-    let mut incoming_by_pred: HashMap<BasicBlock, BasicValueEnum> = HashMap::new();
-    for (val, pred_bb) in phi.get_incomings() {
-        incoming_by_pred.insert(pred_bb, val);
-    }
+    let incoming_by_pred = incoming_map(phi);
 
     let mut rewritten = 0usize;
     for &u_inst in phi_users {
@@ -584,19 +603,8 @@ fn validate_phi_users<'ctx>(
     phi_block: BasicBlock<'ctx>,
     preds: &[BasicBlock<'ctx>],
 ) -> Result<()> {
-    let mut use_opt = phi.as_basic_value().get_first_use();
-    while let Some(u) = use_opt {
-        let user_any = u.get_user();
-        let user_inst = match user_any {
-            AnyValueEnum::InstructionValue(inst) => inst,
-            AnyValueEnum::PointerValue(ptr) => ptr.as_instruction().unwrap(),
-            _ => {
-                bail!("Unsupported non-instruction phi user");
-            }
-        };
-
+    for user_inst in collect_instruction_users(phi.as_basic_value())? {
         if user_inst.get_parent().unwrap() == phi_block {
-            use_opt = u.get_next_use();
             continue;
         }
 
@@ -623,8 +631,6 @@ fn validate_phi_users<'ctx>(
                 bail!("Phi predecessor has no terminator");
             }
         }
-
-        use_opt = u.get_next_use();
     }
     Ok(())
 }
@@ -729,7 +735,7 @@ fn replace_value_uses_in_instruction<'ctx>(
 fn rewrite_external_uses_to_vmap<'ctx>(
     original_block: BasicBlock<'ctx>,
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) {
+) -> Result<()> {
     for inst in original_block.get_instructions() {
         let key = value_key_from_instruction(inst);
         let Some(&new_value) = vmap.get(&key) else {
@@ -739,33 +745,11 @@ fn rewrite_external_uses_to_vmap<'ctx>(
             continue;
         };
 
-        let mut external_users: Vec<InstructionValue<'ctx>> = Vec::new();
         let Ok(old_value): Result<BasicValueEnum<'ctx>, ()> = inst.as_any_value_enum().try_into()
         else {
             continue;
         };
-        let mut use_opt = old_value.get_first_use();
-        while let Some(u) = use_opt {
-            let user_any = u.get_user();
-            let user_inst = match user_any {
-                AnyValueEnum::InstructionValue(user_inst) => user_inst,
-                AnyValueEnum::PointerValue(ptr) => match ptr.as_instruction() {
-                    Some(inst) => inst,
-                    None => {
-                        use_opt = u.get_next_use();
-                        continue;
-                    }
-                },
-                _ => {
-                    use_opt = u.get_next_use();
-                    continue;
-                }
-            };
-            if user_inst.get_parent() != Some(original_block) {
-                external_users.push(user_inst);
-            }
-            use_opt = u.get_next_use();
-        }
+        let external_users = collect_external_instruction_users(old_value, original_block)?;
 
         for user in external_users {
             replace_value_uses_in_instruction(user, old_value, new_value);
@@ -775,6 +759,7 @@ fn rewrite_external_uses_to_vmap<'ctx>(
             inst.replace_all_uses_with(&new_inst);
         }
     }
+    Ok(())
 }
 
 fn reconcile_external_uses_after_duplication<'ctx>(
@@ -804,26 +789,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                 })
         };
 
-        let mut external_users: Vec<InstructionValue<'ctx>> = Vec::new();
-        let mut seen_users: HashSet<ValueKey> = HashSet::new();
-        let mut use_opt = old_value.get_first_use();
-        while let Some(u) = use_opt {
-            let user_any = u.get_user();
-            let user_inst = match any_value_as_instruction(user_any) {
-                Some(inst) => inst,
-                None => {
-                    use_opt = u.get_next_use();
-                    continue;
-                }
-            };
-            if user_inst.get_parent() != Some(original_block) {
-                let user_key = value_key_from_instruction(user_inst);
-                if seen_users.insert(user_key) {
-                    external_users.push(user_inst);
-                }
-            }
-            use_opt = u.get_next_use();
-        }
+        let external_users = collect_external_instruction_users(old_value, original_block)?;
 
         for user in external_users {
             if user.get_opcode() == InstructionOpcode::Phi {
@@ -1332,7 +1298,7 @@ fn lower_one_select_to_control_flow<'ctx>(
 
     // Build PHI in merge (must be first in the block)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
     builder.position_at_end(merge_bb);
-    let phi = builder.build_phi(phi_ty, "select.merge.val").ok().unwrap();
+    let phi = builder.build_phi(phi_ty, "select.merge.val")?;
     phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
 
     // Rebuild the original tail into merge, remapping %sel -> %phi
@@ -1342,7 +1308,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     if !rebuild_tail_slice(builder, merge_bb, &tail, &mut vmap) {
         return Ok(false);
     }
-    rewrite_external_uses_to_vmap(bb, &vmap);
+    rewrite_external_uses_to_vmap(bb, &vmap)?;
 
     // Now that merge has a full copy of the tail (including the original terminator),
     // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
@@ -1351,13 +1317,11 @@ fn lower_one_select_to_control_flow<'ctx>(
         i.erase_from_basic_block();
     }
     // Build: br i1 %cond, label %then_bb, label %else_bb  (0=cond,1=true,2=false)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-    builder
-        .build_conditional_branch(cond, then_bb, else_bb)
-        .ok();
+    builder.build_conditional_branch(cond, then_bb, else_bb)?;
     builder.position_at_end(then_bb);
-    builder.build_unconditional_branch(merge_bb).ok();
+    builder.build_unconditional_branch(merge_bb)?;
     builder.position_at_end(else_bb);
-    builder.build_unconditional_branch(merge_bb).ok();
+    builder.build_unconditional_branch(merge_bb)?;
     // PHI fixups: any successor that previously had incoming from `bb`
     // must now have incoming from `merge_bb`.
     if let Some(merge_term) = merge_bb.get_terminator() {
@@ -1436,7 +1400,7 @@ fn fix_successor_phis_block_rename<'ctx>(
                 [inst_operand_block(term, 0).unwrap()].to_vec()
             };
             for s in succs {
-                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap);
+                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap)?;
             }
             Ok(())
         }
@@ -1454,7 +1418,7 @@ fn rename_incoming_block_in_phis<'ctx>(
     old_bb: BasicBlock<'ctx>,
     new_bb: BasicBlock<'ctx>,
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) {
+) -> Result<()> {
     // Iterate PHIs at block start
     let mut it = succ_bb.get_first_instruction();
     while let Some(inst) = it {
@@ -1477,7 +1441,7 @@ fn rename_incoming_block_in_phis<'ctx>(
         let ty: BasicTypeEnum = phi.as_basic_value().get_type();
         let builder = succ_bb.get_context().create_builder();
         builder.position_before(&inst);
-        let new_phi = builder.build_phi(ty, "phi.fix").unwrap();
+        let new_phi = builder.build_phi(ty, "phi.fix")?;
 
         for (val, inc_bb) in incomings {
             let mapped_bb = if inc_bb == old_bb { new_bb } else { inc_bb };
@@ -1496,6 +1460,7 @@ fn rename_incoming_block_in_phis<'ctx>(
         // Move iterator to the *next* instruction after the newly inserted PHI
         it = new_phi.as_instruction().get_next_instruction();
     }
+    Ok(())
 }
 
 /// Convert an `Operand` into a `BasicBlock` if it *is* a block operand.
