@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.0.25
+### v0.0.25-rc.1
 
 - clean up generation of phi and select operations containing qubits
 
