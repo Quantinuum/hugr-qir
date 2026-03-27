@@ -60,31 +60,38 @@ fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool 
 
 /// Rebuilds a terminator into the builder's current insertion block.
 ///
-/// This is used by `prepare_module` when record-output calls are split into a
-/// fresh block and the original terminator needs to be recreated there.
-fn rebuild_terminator_into<'ctx>(
+/// When `vmap` is present, any value operands are remapped through it before
+/// the terminator is recreated. This is used both for record-output block
+/// splitting and for rebuilding duplicated/lowered tails.
+fn rebuild_terminator<'ctx>(
     builder: &Builder<'ctx>,
     term: InstructionValue<'ctx>,
+    vmap: Option<&HashMap<ValueKey, BasicValueEnum<'ctx>>>,
 ) -> Result<()> {
+    let remap_value = |value: BasicValueEnum<'ctx>| match vmap {
+        Some(vmap) => remap(vmap, value),
+        None => value,
+    };
+
     match term.get_opcode() {
         InstructionOpcode::Br => {
             let is_cond = term.is_conditional();
             if is_cond {
-                let cond = expect_inst_operand_value(term, 0).into_int_value();
+                let cond = remap_value(expect_inst_operand_value(term, 0)).into_int_value();
 
-                let then_bb = required_block_operand(term, 1, "rebuild_terminator_into")?;
-                let else_bb = required_block_operand(term, 2, "rebuild_terminator_into")?;
+                let then_bb = required_block_operand(term, 1, "rebuild_terminator")?;
+                let else_bb = required_block_operand(term, 2, "rebuild_terminator")?;
 
                 builder.build_conditional_branch(cond, else_bb, then_bb)?;
             } else {
-                let dest = required_block_operand(term, 0, "rebuild_terminator_into")?;
+                let dest = required_block_operand(term, 0, "rebuild_terminator")?;
                 builder.build_unconditional_branch(dest)?;
             }
             Ok(())
         }
 
         InstructionOpcode::Return => {
-            let ret_val = inst_operand_value(term, 0);
+            let ret_val = inst_operand_value(term, 0).map(remap_value);
             let ret_arg: Option<&dyn BasicValue<'ctx>> =
                 ret_val.as_ref().map(|v| v as &dyn BasicValue<'ctx>);
 
@@ -92,7 +99,44 @@ fn rebuild_terminator_into<'ctx>(
             Ok(())
         }
 
-        _ => bail!("terminator kind not supported yet"),
+        InstructionOpcode::Switch => {
+            let discr = remap_value(expect_inst_operand_value(term, 0)).into_int_value();
+            let default_bb = required_block_operand(term, 1, "rebuild_terminator")?;
+            let mut cases = Vec::new();
+            let num_ops = term.get_num_operands();
+            let mut idx = 2;
+            while idx + 1 < num_ops {
+                let case_val = expect_inst_operand_value(term, idx).into_int_value();
+                let case_bb = required_block_operand(term, idx + 1, "rebuild_terminator")?;
+                cases.push((case_val, case_bb));
+                idx += 2;
+            }
+            builder.build_switch(discr, default_bb, &cases)?;
+            Ok(())
+        }
+
+        InstructionOpcode::Unreachable => {
+            builder.build_unreachable()?;
+            Ok(())
+        }
+
+        InstructionOpcode::Resume => {
+            let resume_val = remap_value(expect_inst_operand_value(term, 0));
+            builder.build_resume(resume_val)?;
+            Ok(())
+        }
+
+        InstructionOpcode::IndirectBr => {
+            let address = remap_value(expect_inst_operand_value(term, 0)).into_pointer_value();
+            let mut destinations = Vec::new();
+            for idx in 1..term.get_num_operands() {
+                destinations.push(required_block_operand(term, idx, "rebuild_terminator")?);
+            }
+            builder.build_indirect_branch(address, &destinations)?;
+            Ok(())
+        }
+
+        _ => bail!("Terminator kind not supported for rebuild: {}", term),
     }
 }
 
@@ -188,7 +232,7 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     // ------------------------------------------------------------
     // 5) Rebuild old terminator into new_bb
     // ------------------------------------------------------------
-    rebuild_terminator_into(&builder, old_term)?;
+    rebuild_terminator(&builder, old_term, None)?;
 
     // ------------------------------------------------------------
     // 6) Replace uses of rebuilt calls, then erase originals
@@ -363,9 +407,9 @@ fn rebuild_tail_slice<'ctx>(
 ) -> Result<()> {
     for &orig_inst in slice {
         if orig_inst.is_terminator() {
-            if !rebuild_terminator(builder, orig_inst, vmap) {
-                bail!("Select block tail contains a terminator the lowering pass cannot rebuild");
-            }
+            rebuild_terminator(builder, orig_inst, Some(vmap)).map_err(|err| {
+                anyhow!("Select block tail contains a terminator the lowering pass cannot rebuild: {err}")
+            })?;
             return Ok(());
         }
 
@@ -555,13 +599,15 @@ pub fn lower_successive_qubit_phis_in_block(
             .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(block)));
 
         // Rebuild non‑PHI instructions from bb into clone_block
-        if !rebuild_tail_into(
+        if rebuild_tail_into(
             builder,
             block,
             clone_block,
             &mut vmap,
             Some(&mut cloned_values),
-        ) {
+        )
+        .is_err()
+        {
             unsafe {
                 clone_block
                     .delete()
@@ -1068,6 +1114,8 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                 continue;
             }
 
+            // If not phi
+
             let user_block =
                 required_parent_block(user, "reconcile_external_uses_after_duplication")?;
             let phi = *merge_phi_by_block_and_value
@@ -1148,7 +1196,7 @@ fn validate_rebuildable_tail_slice(slice: &[InstructionValue]) -> Result<()> {
 
     for &inst in slice {
         if inst.is_terminator() {
-            if !can_rebuild_terminator(inst) {
+            if !can_rebuild_terminator_opcode(inst) {
                 bail!(
                     "Block tail contains an unsupported terminator for rebuilding: {}",
                     inst
@@ -1168,8 +1216,11 @@ fn validate_rebuildable_tail_slice(slice: &[InstructionValue]) -> Result<()> {
 }
 
 /// Returns whether `rebuild_terminator` supports the given terminator opcode.
-fn can_rebuild_terminator(inst: InstructionValue) -> bool {
-    matches!(inst.get_opcode(), Op::Br | Op::Return)
+fn can_rebuild_terminator_opcode(inst: InstructionValue) -> bool {
+    matches!(
+        inst.get_opcode(),
+        Op::Br | Op::Return | Op::Switch | Op::Unreachable | Op::Resume | Op::IndirectBr
+    )
 }
 
 /// Rebuild all non‑PHI instructions from `from_bb` into `into_bb`.
@@ -1179,16 +1230,14 @@ fn rebuild_tail_into<'ctx>(
     into_bb: BasicBlock<'ctx>,
     vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
     produced_values: Option<&mut HashMap<ValueKey, BasicValueEnum<'ctx>>>,
-) -> bool {
+) -> Result<()> {
     builder.position_at_end(into_bb);
     let mut it = first_non_phi(from_bb);
     let mut produced_values = produced_values;
     while let Some(inst) = it {
         if inst.is_terminator() {
-            if !rebuild_terminator(builder, inst, vmap) {
-                return false;
-            }
-            break;
+            rebuild_terminator(builder, inst, Some(vmap))?;
+            return Ok(());
         }
         match rebuild_inst(builder, into_bb, inst, vmap) {
             Ok(RebuildOutcome::Value(bv)) => {
@@ -1202,14 +1251,13 @@ fn rebuild_tail_into<'ctx>(
             Ok(RebuildOutcome::Void) => {
                 // built successfully, but nothing to map → keep going
             }
-            Err(_) => {
-                // unsupported/failed to rebuild → bail on this path
-                return false;
+            Err(err) => {
+                bail!("Failed to rebuild duplicated phi tail instruction: {err}");
             }
         }
         it = inst.get_next_instruction();
     }
-    true
+    bail!("Duplicated phi tail did not end in a terminator")
 }
 
 /// Remaps a value through `vmap` when that value was originally produced by an instruction.
@@ -1223,45 +1271,6 @@ fn remap<'ctx>(
         return *mapped;
     }
     v
-}
-
-/// Rebuilds a terminator while remapping operands through `vmap`.
-fn rebuild_terminator<'ctx>(
-    builder: &Builder<'ctx>,
-    inst: InstructionValue<'ctx>,
-    vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) -> bool {
-    match inst.get_opcode() {
-        Op::Br => {
-            if inst.is_conditional() {
-                let cond = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-
-                let tbb = operand_as_bb(inst, 1).unwrap();
-                let fbb = operand_as_bb(inst, 2).unwrap();
-                // This order of fbb and tbb is not what I would expect but
-                // if you do it the other way the branches get switched...
-                builder.build_conditional_branch(cond, fbb, tbb).is_ok()
-            } else {
-                let bb = operand_as_bb(inst, 0).unwrap();
-                builder.build_unconditional_branch(bb).is_ok()
-            }
-        }
-        Op::Return => {
-            let val = inst
-                .get_operand(0)
-                .and_then(|o| operand_as_value(o))
-                .map(|v| remap(vmap, v));
-
-            use inkwell::values::BasicValue; // bring the trait into scope
-            builder
-                .build_return(
-                    val.as_ref().map(|v| v as &dyn BasicValue), // coerce &BasicValueEnum -> &dyn BasicValue
-                )
-                .is_ok()
-        }
-        // TODO: handle Switch if your IR uses it (map default and cases)
-        _ => false,
-    }
 }
 
 /// Redirects a CFG edge `from -> old_to` so that it instead targets `new_to`.

@@ -1,5 +1,5 @@
 {
-  "generates-llvm-selects-on-qubits": "ee15bd6c630bee343974e7a2933edb13409f732ed69edf0c7a905d90e03df2f7",
+  "generates-llvm-selects-on-qubits": "f79bc6625aab21e1999fe4169d2ffec58950817cb6248882c0a5c61385877a86",
   "generates-llvm-switch": "982d97382be219dd49986c55f44d6c8f72bc1882816d15cc5d7c3f6d5ce9b910",
   "guppylang_hugr_version": "guppy-v0.21.9 hugr-v0.15.4",
   "hugr_generation_module": "8c8f69d6f18ce1c059191f94d0bc029645716dc7507ff03e15b4ab18bdb0b197",
@@ -18,7 +18,7 @@
   "rng-quantum-jobid-1": "cdd9656e1c26353c3450681c3e752e1c99d5282d12d8ea2fe4c97108f71f358d",
   "rng-quantum-rng-1": "c7285c82ba64628b86592e5b10d29233ad1caaa76806c715334874bf76ac3c1c",
   "rng-quantum-rng-2": "472cb5072e9d4e539b7fa487bcb6abacf803c34a4caa3cc71173bd04543ca530",
-  "toric_code": "a0a70769085198c2a153e0f2022fa2487527bdd434059ea0740481ab3c0d744d",
+  "toric_code": "b3347027f52cffe9f92ecc53af05a3bf527824f4009773297143e7fe6ecc1c65",
   "uses-discard": "78b7b78306a13db4217f82e0601ac90d117cf8cf03ac59917e5873728835f958",
   "wasm-quantum-1": "bb10bfbbc8d9d69ef7ad1c3171f5e7d33dbf432a673057bacb5a64d35736a14f"
 }
