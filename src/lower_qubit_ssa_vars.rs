@@ -342,12 +342,7 @@ fn lower_one_select_to_control_flow<'ctx>(
         .ok_or_else(|| anyhow!("lower_one_select_to_control_flow: missing false select value"))?;
 
     // Gather the tail (all instructions after `sel`, including the original terminator)
-    let mut tail: Vec<InstructionValue> = Vec::new();
-    let mut it = sel.get_next_instruction();
-    while let Some(i) = it {
-        tail.push(i);
-        it = i.get_next_instruction();
-    }
+    let tail = collect_instruction_tail(sel.get_next_instruction());
 
     let phi_ty: BasicTypeEnum = sel.get_type().try_into().map_err(|_| {
         anyhow!("lower_one_select_to_control_flow: select result is not a basic type")
@@ -373,7 +368,14 @@ fn lower_one_select_to_control_flow<'ctx>(
     let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
     vmap.insert(value_key_from_instruction(sel), phi.as_basic_value());
 
-    rebuild_tail_slice(builder, merge_bb, &tail, &mut vmap)?;
+    rebuild_tail(
+        builder,
+        merge_bb,
+        &tail,
+        &mut vmap,
+        None,
+        "select block tail",
+    )?;
     rewrite_external_uses_to_vmap(bb, &vmap)?;
 
     // Now that merge has a full copy of the tail (including the original terminator),
@@ -398,32 +400,44 @@ fn lower_one_select_to_control_flow<'ctx>(
     Ok(())
 }
 
-/// Rebuild an instruction slice (the "tail") into the current insertion block.
-fn rebuild_tail_slice<'ctx>(
+/// Rebuilds an instruction tail into `into_block`, remapping operands through `vmap`.
+///
+/// `slice` is expected to end in a terminator. When `produced_values` is
+/// provided, any rebuilt value-producing instructions are also recorded there.
+/// `context` is used to produce more specific error messages for the caller.
+fn rebuild_tail<'ctx>(
     builder: &Builder<'ctx>,
     into_block: BasicBlock<'ctx>,
     slice: &[InstructionValue<'ctx>],
     vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
+    mut produced_values: Option<&mut HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+    context: &str,
 ) -> Result<()> {
+    builder.position_at_end(into_block);
+
     for &orig_inst in slice {
         if orig_inst.is_terminator() {
             rebuild_terminator(builder, orig_inst, Some(vmap)).map_err(|err| {
-                anyhow!("Select block tail contains a terminator the lowering pass cannot rebuild: {err}")
+                anyhow!("{context} contains a terminator the lowering pass cannot rebuild: {err}")
             })?;
             return Ok(());
         }
 
         match rebuild_inst(builder, into_block, orig_inst, vmap) {
             Ok(RebuildOutcome::Value(bv)) => {
-                vmap.insert(value_key_from_instruction(orig_inst), bv);
+                let key = value_key_from_instruction(orig_inst);
+                vmap.insert(key, bv);
+                if let Some(ref mut produced_values) = produced_values {
+                    produced_values.insert(key, bv);
+                }
             }
             Ok(RebuildOutcome::Void) => {}
             Err(err) => {
-                bail!("Failed to rebuild select block tail instruction: {err}");
+                bail!("Failed to rebuild {context} instruction: {err}");
             }
         }
     }
-    bail!("Select block tail did not end in a terminator")
+    bail!("{context} did not end in a terminator")
 }
 
 /// Validates that a qubit-pointer `select` can be lowered by this pass.
@@ -576,45 +590,10 @@ pub fn lower_successive_qubit_phis_in_block(
     let mut clone_map: HashMap<BasicBlock, BasicBlock> = HashMap::new();
     let mut clone_value_maps: HashMap<BasicBlock, HashMap<ValueKey, BasicValueEnum>> =
         HashMap::new();
+    let duplicated_tail = collect_instruction_tail(first_non_phi(block));
     for pred in preds {
-        let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
-        let mut cloned_values: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
-        let mut all_incomings_present = true;
-        for phi in &phis {
-            if let Some((val, _)) = incoming_for_predecessor(*phi, pred) {
-                let key = value_key_from_instruction(phi.as_instruction());
-                vmap.insert(key, val);
-            } else {
-                all_incomings_present = false;
-                break;
-            }
-        }
-        if !all_incomings_present {
-            bail!("Missing phi incoming for predecessor during lowering");
-        }
-
-        // New block that will hold the duplicated tail
-        let clone_block = pred
-            .get_context()
-            .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(block)));
-
-        // Rebuild non‑PHI instructions from bb into clone_block
-        if rebuild_tail_into(
-            builder,
-            block,
-            clone_block,
-            &mut vmap,
-            Some(&mut cloned_values),
-        )
-        .is_err()
-        {
-            unsafe {
-                clone_block
-                    .delete()
-                    .expect("Tried to delete failed clone block without parent")
-            };
-            bail!("Failed to rebuild duplicated phi tail");
-        }
+        let (clone_block, cloned_values) =
+            duplicate_phi_tail_for_predecessor(builder, block, pred, &phis, &duplicated_tail)?;
 
         // Redirect edge pred -> bb to pred -> clone_block
         redirect_edge(builder, pred, block, clone_block);
@@ -783,76 +762,10 @@ fn apply_phi_user_rewrites<'ctx>(
         }
         match u_inst.get_opcode() {
             InstructionOpcode::Phi => {
-                let u_phi = unsafe { PhiValue::new(u_inst.as_value_ref()) };
-                let succ_bb = required_parent_block(u_inst, "apply_phi_user_rewrites")?;
-                let incomings = u_phi.get_incomings();
-
-                let ty: BasicTypeEnum = u_phi.as_basic_value().get_type();
-                let builder = succ_bb.get_context().create_builder();
-                builder.position_before(&u_inst);
-                let new_phi = builder.build_phi(ty, "phi.expanded")?;
-
-                for (val, inc_bb) in incomings {
-                    if val != phi.as_basic_value() {
-                        new_phi.add_incoming(&[(&val, inc_bb)]);
-                        continue;
-                    }
-                    for (pred, edge_val) in &sorted_incoming_by_pred {
-                        let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
-                            anyhow!("apply_phi_user_rewrites: missing planned phi predecessor")
-                        })?;
-                        new_phi.add_incoming(&[(edge_val, clone_block)]);
-                    }
-                }
-                u_phi.replace_all_uses_with(&new_phi);
-                u_inst.erase_from_basic_block();
+                rewrite_phi_user_as_phi(phi, u_inst, clone_for_pred, &sorted_incoming_by_pred)?
             }
             InstructionOpcode::Call => {
-                let succ_bb = required_parent_block(u_inst, "apply_phi_user_rewrites")?;
-                let local_builder = succ_bb.get_context().create_builder();
-                local_builder.position_before(&u_inst);
-
-                let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
-                let arg_phi = local_builder.build_phi(phi_ty, "phi.arg")?;
-
-                for (pred, edge_val) in &sorted_incoming_by_pred {
-                    let &clone_bb = clone_for_pred.get(pred).ok_or_else(|| {
-                        anyhow!("apply_phi_user_rewrites: missing planned phi predecessor")
-                    })?;
-                    arg_phi.add_incoming(&[(edge_val, clone_bb)]);
-                }
-
-                let cs: CallSiteValue = u_inst.try_into().map_err(|_| {
-                    anyhow!("apply_phi_user_rewrites: planned call rewrite is not a call")
-                })?;
-                let callee = required_called_function(cs, "apply_phi_user_rewrites")?;
-
-                let old_val_ref = phi.as_basic_value().as_value_ref();
-                let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
-                for i in 0..cs.count_arguments() {
-                    if let Some(op_bv) = inst_operand_value(u_inst, i) {
-                        let vref = op_bv.as_value_ref();
-                        if vref == old_val_ref {
-                            args.push(arg_phi.as_basic_value().into());
-                        } else {
-                            args.push(op_bv.into());
-                        }
-                    }
-                }
-
-                let name = u_inst
-                    .get_name()
-                    .map(|c| c.to_string_lossy())
-                    .unwrap_or_default();
-                let new_cs = local_builder.build_call(callee, &args, &name)?;
-
-                if let Some(ret) = new_cs.try_as_basic_value().basic() {
-                    u_inst.replace_all_uses_with(&required_instruction_value(
-                        ret,
-                        "apply_phi_user_rewrites",
-                    )?);
-                }
-                u_inst.erase_from_basic_block();
+                rewrite_phi_user_as_call(phi, u_inst, clone_for_pred, &sorted_incoming_by_pred)?
             }
             opcode => {
                 bail!(
@@ -864,6 +777,97 @@ fn apply_phi_user_rewrites<'ctx>(
         rewritten += 1;
     }
     Ok(rewritten)
+}
+
+/// Rewrites a downstream PHI that uses `phi` so its incoming from the original
+/// block is expanded into one incoming per duplicated predecessor tail.
+fn rewrite_phi_user_as_phi<'ctx>(
+    phi: PhiValue<'ctx>,
+    user_inst: InstructionValue<'ctx>,
+    clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+) -> Result<()> {
+    let user_phi = unsafe { PhiValue::new(user_inst.as_value_ref()) };
+    let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_phi")?;
+    let incomings = user_phi.get_incomings();
+
+    let ty: BasicTypeEnum = user_phi.as_basic_value().get_type();
+    let builder = succ_bb.get_context().create_builder();
+    builder.position_before(&user_inst);
+    let new_phi = builder.build_phi(ty, "phi.expanded")?;
+
+    for (val, inc_bb) in incomings {
+        if val != phi.as_basic_value() {
+            new_phi.add_incoming(&[(&val, inc_bb)]);
+            continue;
+        }
+        for (pred, edge_val) in sorted_incoming_by_pred {
+            let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
+                anyhow!("rewrite_phi_user_as_phi: missing planned phi predecessor")
+            })?;
+            new_phi.add_incoming(&[(edge_val, clone_block)]);
+        }
+    }
+
+    user_phi.replace_all_uses_with(&new_phi);
+    user_inst.erase_from_basic_block();
+    Ok(())
+}
+
+/// Rewrites a downstream call that uses `phi` by inserting a local merge phi for
+/// the call argument and rebuilding the call with that merged value.
+fn rewrite_phi_user_as_call<'ctx>(
+    phi: PhiValue<'ctx>,
+    user_inst: InstructionValue<'ctx>,
+    clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+) -> Result<()> {
+    let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_call")?;
+    let local_builder = succ_bb.get_context().create_builder();
+    local_builder.position_before(&user_inst);
+
+    let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
+    let arg_phi = local_builder.build_phi(phi_ty, "phi.arg")?;
+
+    for (pred, edge_val) in sorted_incoming_by_pred {
+        let &clone_bb = clone_for_pred
+            .get(pred)
+            .ok_or_else(|| anyhow!("rewrite_phi_user_as_call: missing planned phi predecessor"))?;
+        arg_phi.add_incoming(&[(edge_val, clone_bb)]);
+    }
+
+    let cs: CallSiteValue = user_inst
+        .try_into()
+        .map_err(|_| anyhow!("rewrite_phi_user_as_call: planned call rewrite is not a call"))?;
+    let callee = required_called_function(cs, "rewrite_phi_user_as_call")?;
+
+    let old_val_ref = phi.as_basic_value().as_value_ref();
+    let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
+    for i in 0..cs.count_arguments() {
+        if let Some(op_bv) = inst_operand_value(user_inst, i) {
+            let vref = op_bv.as_value_ref();
+            if vref == old_val_ref {
+                args.push(arg_phi.as_basic_value().into());
+            } else {
+                args.push(op_bv.into());
+            }
+        }
+    }
+
+    let name = user_inst
+        .get_name()
+        .map(|c| c.to_string_lossy())
+        .unwrap_or_default();
+    let new_cs = local_builder.build_call(callee, &args, &name)?;
+
+    if let Some(ret) = new_cs.try_as_basic_value().basic() {
+        user_inst.replace_all_uses_with(&required_instruction_value(
+            ret,
+            "rewrite_phi_user_as_call",
+        )?);
+    }
+    user_inst.erase_from_basic_block();
+    Ok(())
 }
 
 /// Validates that all external users of a phi are supported by the phi-user rewrite logic.
@@ -965,6 +969,21 @@ fn first_non_phi(bb: BasicBlock) -> Option<InstructionValue> {
     None
 }
 
+/// Collects a linear instruction tail starting at `start`, including the first
+/// terminator encountered if present.
+fn collect_instruction_tail(start: Option<InstructionValue>) -> Vec<InstructionValue> {
+    let mut tail = Vec::new();
+    let mut current = start;
+    while let Some(inst) = current {
+        tail.push(inst);
+        if inst.is_terminator() {
+            break;
+        }
+        current = inst.get_next_instruction();
+    }
+    tail
+}
+
 fn name_of_block(bb: BasicBlock<'_>) -> String {
     bb.get_name().to_string_lossy().to_string()
 }
@@ -979,6 +998,56 @@ fn incoming_for_predecessor<'ctx>(
         }
     }
     None
+}
+
+/// Seeds the value map for one duplicated predecessor edge using the incoming
+/// values that each eliminated phi contributes on that edge.
+fn phi_incoming_vmap_for_predecessor<'ctx>(
+    phis: &[PhiValue<'ctx>],
+    pred: BasicBlock<'ctx>,
+) -> Result<HashMap<ValueKey, BasicValueEnum<'ctx>>> {
+    let mut vmap = HashMap::new();
+    for phi in phis {
+        let (val, _) = incoming_for_predecessor(*phi, pred)
+            .ok_or_else(|| anyhow!("Missing phi incoming for predecessor during lowering"))?;
+        let key = value_key_from_instruction(phi.as_instruction());
+        vmap.insert(key, val);
+    }
+    Ok(vmap)
+}
+
+/// Builds one predecessor-specific clone block for a phi-only block lowering.
+fn duplicate_phi_tail_for_predecessor<'ctx>(
+    builder: &Builder<'ctx>,
+    original_block: BasicBlock<'ctx>,
+    pred: BasicBlock<'ctx>,
+    phis: &[PhiValue<'ctx>],
+    duplicated_tail: &[InstructionValue<'ctx>],
+) -> Result<(BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>)> {
+    let mut vmap = phi_incoming_vmap_for_predecessor(phis, pred)?;
+    let mut cloned_values: HashMap<ValueKey, BasicValueEnum<'ctx>> = HashMap::new();
+
+    let clone_block = pred
+        .get_context()
+        .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(original_block)));
+
+    if let Err(err) = rebuild_tail(
+        builder,
+        clone_block,
+        duplicated_tail,
+        &mut vmap,
+        Some(&mut cloned_values),
+        "duplicated phi tail",
+    ) {
+        unsafe {
+            clone_block
+                .delete()
+                .expect("Tried to delete failed clone block without parent")
+        };
+        bail!("Failed to rebuild duplicated phi tail: {err}");
+    }
+
+    Ok((clone_block, cloned_values))
 }
 
 /// The result of rebuilding a *non-terminator* instruction.
@@ -1221,43 +1290,6 @@ fn can_rebuild_terminator_opcode(inst: InstructionValue) -> bool {
         inst.get_opcode(),
         Op::Br | Op::Return | Op::Switch | Op::Unreachable | Op::Resume | Op::IndirectBr
     )
-}
-
-/// Rebuild all non‑PHI instructions from `from_bb` into `into_bb`.
-fn rebuild_tail_into<'ctx>(
-    builder: &Builder<'ctx>,
-    from_bb: BasicBlock<'ctx>,
-    into_bb: BasicBlock<'ctx>,
-    vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
-    produced_values: Option<&mut HashMap<ValueKey, BasicValueEnum<'ctx>>>,
-) -> Result<()> {
-    builder.position_at_end(into_bb);
-    let mut it = first_non_phi(from_bb);
-    let mut produced_values = produced_values;
-    while let Some(inst) = it {
-        if inst.is_terminator() {
-            rebuild_terminator(builder, inst, Some(vmap))?;
-            return Ok(());
-        }
-        match rebuild_inst(builder, into_bb, inst, vmap) {
-            Ok(RebuildOutcome::Value(bv)) => {
-                // only value-producing instructions enter vmap
-                let key = value_key_from_instruction(inst);
-                vmap.insert(key, bv);
-                if let Some(ref mut produced_values) = produced_values {
-                    produced_values.insert(key, bv);
-                }
-            }
-            Ok(RebuildOutcome::Void) => {
-                // built successfully, but nothing to map → keep going
-            }
-            Err(err) => {
-                bail!("Failed to rebuild duplicated phi tail instruction: {err}");
-            }
-        }
-        it = inst.get_next_instruction();
-    }
-    bail!("Duplicated phi tail did not end in a terminator")
 }
 
 /// Remaps a value through `vmap` when that value was originally produced by an instruction.
