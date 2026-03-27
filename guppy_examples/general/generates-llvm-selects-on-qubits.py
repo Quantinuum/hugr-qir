@@ -60,6 +60,8 @@ def main() -> None:
     q4 = qubit()
     q5 = qubit()
 
+    int_res += int(mtup[2])
+
     if int_res == 0:
         x(q4)
     elif int_res == 1:
