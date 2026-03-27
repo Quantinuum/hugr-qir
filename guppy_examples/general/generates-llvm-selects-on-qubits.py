@@ -38,8 +38,8 @@ def main() -> None:
     q3, q3m1 = measure_and_reset(q3)
 
     result("q0", q0m1)  # -> false
-    result("q1", q1m1)  # -> true
-    result("q2", q2m1)  # -> false
+    result("q1", q1m1)  # -> false
+    result("q2", q2m1)  # -> true
     result("q3", q3m1)  # -> false
     result("c0 + c1", int_res)  # -> 1
 
@@ -49,13 +49,13 @@ def main() -> None:
         x(q1)
 
     mtup = (
-        measure(q0),
-        measure(q1),
-        measure(q2),
-        measure(q3),
+        measure(q0),  # -> false
+        measure(q1),  # -> true
+        measure(q2),  # -> false
+        measure(q3),  # -> false
     )
     integer_value = to_int(mtup)
-    result("2nd result as int", integer_value)  # -> 4
+    result("2nd result as int", integer_value)  # -> [0100] = 4
 
     q4 = qubit()
     q5 = qubit()
