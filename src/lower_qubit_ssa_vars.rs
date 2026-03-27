@@ -18,115 +18,6 @@ use std::collections::{HashMap, HashSet};
 
 type ValueKey = usize;
 
-fn value_key_from_instruction(inst: InstructionValue) -> ValueKey {
-    inst.as_value_ref() as ValueKey
-}
-
-fn value_key_from_basic_value(value: BasicValueEnum) -> Option<ValueKey> {
-    value.as_instruction_value().map(value_key_from_instruction)
-}
-
-fn any_value_as_instruction(value: AnyValueEnum) -> Option<InstructionValue> {
-    match value {
-        AnyValueEnum::InstructionValue(inst) => Some(inst),
-        AnyValueEnum::PhiValue(phi) => Some(phi.as_instruction()),
-        AnyValueEnum::IntValue(v) => v.as_instruction(),
-        AnyValueEnum::PointerValue(v) => v.as_instruction(),
-        AnyValueEnum::FloatValue(v) => v.as_instruction(),
-        AnyValueEnum::StructValue(v) => v.as_instruction(),
-        AnyValueEnum::ArrayValue(v) => v.as_instruction(),
-        AnyValueEnum::VectorValue(v) => v.as_instruction(),
-        AnyValueEnum::ScalableVectorValue(v) => v.as_instruction(),
-        AnyValueEnum::FunctionValue(_) => None,
-        AnyValueEnum::MetadataValue(_) => None,
-    }
-}
-
-fn instruction_user(value: AnyValueEnum) -> Result<InstructionValue> {
-    any_value_as_instruction(value).ok_or_else(|| anyhow!("Unsupported non-instruction value user"))
-}
-
-fn collect_instruction_users(value: BasicValueEnum) -> Result<Vec<InstructionValue>> {
-    let mut users = Vec::new();
-    let mut use_opt = value.get_first_use();
-    while let Some(u) = use_opt {
-        users.push(instruction_user(u.get_user())?);
-        use_opt = u.get_next_use();
-    }
-    Ok(users)
-}
-
-fn collect_external_instruction_users<'ctx>(
-    value: BasicValueEnum<'ctx>,
-    original_block: BasicBlock<'ctx>,
-) -> Result<Vec<InstructionValue<'ctx>>> {
-    let mut external_users = Vec::new();
-    let mut seen_users: HashSet<ValueKey> = HashSet::new();
-    for user_inst in collect_instruction_users(value)? {
-        if user_inst.get_parent() != Some(original_block) {
-            let user_key = value_key_from_instruction(user_inst);
-            if seen_users.insert(user_key) {
-                external_users.push(user_inst);
-            }
-        }
-    }
-    Ok(external_users)
-}
-
-fn incoming_map(phi: PhiValue) -> HashMap<BasicBlock, BasicValueEnum> {
-    phi.get_incomings()
-        .map(|(val, pred_bb)| (pred_bb, val))
-        .collect()
-}
-
-fn verify_module(module: &Module) -> Result<()> {
-    module
-        .verify()
-        .map_err(|err| anyhow!("Error verifying module: {}", err.to_string()))
-}
-
-fn required_parent_block<'ctx>(
-    inst: InstructionValue<'ctx>,
-    context: &str,
-) -> Result<BasicBlock<'ctx>> {
-    inst.get_parent()
-        .ok_or_else(|| anyhow!("{context}: instruction has no parent block"))
-}
-
-fn required_parent_function<'ctx>(
-    bb: BasicBlock<'ctx>,
-    context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
-    bb.get_parent()
-        .ok_or_else(|| anyhow!("{context}: block has no parent function"))
-}
-
-fn required_block_operand<'ctx>(
-    inst: InstructionValue<'ctx>,
-    idx: u32,
-    context: &str,
-) -> Result<BasicBlock<'ctx>> {
-    operand_as_bb(inst, idx).ok_or_else(|| anyhow!("{context}: missing block operand {idx}"))
-}
-
-fn required_called_function<'ctx>(
-    callsite: CallSiteValue<'ctx>,
-    context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
-    callsite
-        .get_called_fn_value()
-        .ok_or_else(|| anyhow!("{context}: indirect call is not supported"))
-}
-
-fn required_instruction_value<'ctx>(
-    value: BasicValueEnum<'ctx>,
-    context: &str,
-) -> Result<InstructionValue<'ctx>> {
-    value
-        .as_instruction_value()
-        .ok_or_else(|| anyhow!("{context}: expected instruction-backed value"))
-}
-
 /// Lowers select and phi instructions returning QUBIT* to control flow.
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
@@ -245,7 +136,7 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     // ------------------------------------------------------------
     // 3) Create the new block immediately after `bb`
     // ------------------------------------------------------------
-    let new_bb = context.append_basic_block(function, "record_branch");
+    let new_bb = context.append_basic_block(function, "record_block");
     new_bb
         .move_after(bb)
         .map_err(|_| anyhow!("move_matching_calls_to_fresh_block: failed to move block"))?;
@@ -322,6 +213,235 @@ fn prepare_module(module: &Module) -> Result<()> {
         for block in func.get_basic_blocks() {
             move_matching_calls_to_fresh_block(block, is_record_output_runtime_call)?;
         }
+    }
+    Ok(())
+}
+
+/// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
+/// a then/else diamond and a merge PHI, then using phi elimination to remove phi.
+/// May introduce new phis downstream
+pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+
+    for func in module.get_functions() {
+        let mut block_opt = func.get_first_basic_block();
+        while let Some(bb) = block_opt {
+            if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
+                lower_one_select_to_control_flow(&builder, first_sel)?;
+                changed = true;
+            }
+            // If we found a select we will have added new blocks just after
+            // the current one. Need to check those blocks for further selects
+            // so only get the next block here, not before handling first select
+            block_opt = bb.get_next_basic_block();
+        }
+    }
+    Ok(changed)
+}
+
+fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
+    let mut it = bb.get_first_instruction();
+    while let Some(i) = it {
+        it = i.get_next_instruction();
+        if i.get_opcode() == InstructionOpcode::Select
+            && let AnyTypeEnum::PointerType(pt) = i.get_type()
+            && is_qubit_pointer(pt)
+        {
+            return Some(i);
+        }
+    }
+    None
+}
+
+fn lower_one_select_to_control_flow<'ctx>(
+    builder: &Builder<'ctx>,
+    sel: InstructionValue<'ctx>,
+) -> Result<()> {
+    let bb = required_parent_block(sel, "lower_one_select_to_control_flow")?;
+
+    // Extract select operands (per LangRef: 0=cond,1=true,2=false)
+    let cond = inst_operand_value(sel, 0)
+        .ok_or_else(|| anyhow!("lower_one_select_to_control_flow: missing select condition"))?
+        .into_int_value();
+    let tval = inst_operand_value(sel, 1)
+        .ok_or_else(|| anyhow!("lower_one_select_to_control_flow: missing true select value"))?;
+    let fval = inst_operand_value(sel, 2)
+        .ok_or_else(|| anyhow!("lower_one_select_to_control_flow: missing false select value"))?;
+
+    // Gather the tail (all instructions after `sel`, including the original terminator)
+    let mut tail: Vec<InstructionValue> = Vec::new();
+    let mut it = sel.get_next_instruction();
+    while let Some(i) = it {
+        tail.push(i);
+        it = i.get_next_instruction();
+    }
+
+    let phi_ty: BasicTypeEnum = sel.get_type().try_into().map_err(|_| {
+        anyhow!("lower_one_select_to_control_flow: select result is not a basic type")
+    })?;
+
+    validate_select_lowering(sel, &tail)?;
+
+    // Create THEN, ELSE, MERGE blocks and append to function
+    let ctx = bb.get_context();
+
+    let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
+    let else_bb =
+        ctx.insert_basic_block_after(then_bb, &format!("{}select.else", name_of_block(bb)));
+    let merge_bb =
+        ctx.insert_basic_block_after(else_bb, &format!("{}select.merge", name_of_block(bb)));
+
+    // Build PHI in merge (must be first in the block)
+    builder.position_at_end(merge_bb);
+    let phi = builder.build_phi(phi_ty, "select.merge.val")?;
+    phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
+
+    // Rebuild the original tail into merge, remapping %sel -> %phi
+    let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
+    vmap.insert(value_key_from_instruction(sel), phi.as_basic_value());
+
+    rebuild_tail_slice(builder, merge_bb, &tail, &mut vmap)?;
+    rewrite_external_uses_to_vmap(bb, &vmap)?;
+
+    // Now that merge has a full copy of the tail (including the original terminator),
+    // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
+    builder.position_at_end(bb);
+    for &i in tail.iter().rev() {
+        i.erase_from_basic_block();
+    }
+    builder.build_conditional_branch(cond, then_bb, else_bb)?;
+    builder.position_at_end(then_bb);
+    builder.build_unconditional_branch(merge_bb)?;
+    builder.position_at_end(else_bb);
+    builder.build_unconditional_branch(merge_bb)?;
+
+    if let Some(merge_term) = merge_bb.get_terminator() {
+        fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
+    }
+    sel.erase_from_basic_block();
+
+    lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+
+    Ok(())
+}
+
+/// Rebuild an instruction slice (the "tail") into the current insertion block.
+fn rebuild_tail_slice<'ctx>(
+    builder: &Builder<'ctx>,
+    into_block: BasicBlock<'ctx>,
+    slice: &[InstructionValue<'ctx>],
+    vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
+) -> Result<()> {
+    for &orig_inst in slice {
+        if orig_inst.is_terminator() {
+            if !rebuild_terminator(builder, orig_inst, vmap) {
+                bail!("Select block tail contains a terminator the lowering pass cannot rebuild");
+            }
+            return Ok(());
+        }
+
+        match rebuild_inst(builder, into_block, orig_inst, vmap) {
+            Ok(RebuildOutcome::Value(bv)) => {
+                vmap.insert(value_key_from_instruction(orig_inst), bv);
+            }
+            Ok(RebuildOutcome::Void) => {}
+            Err(err) => {
+                bail!("Failed to rebuild select block tail instruction: {err}");
+            }
+        }
+    }
+    bail!("Select block tail did not end in a terminator")
+}
+
+fn validate_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) -> Result<()> {
+    validate_rebuildable_tail_slice(tail)
+        .map_err(|err| anyhow!("Select block tail cannot be lowered: {err}"))?;
+    match sel.get_type() {
+        AnyTypeEnum::PointerType(pt) if is_qubit_pointer(pt) => Ok(()),
+        AnyTypeEnum::PointerType(_) => {
+            bail!("Select lowering only supports qubit pointer results")
+        }
+        _ => bail!("Select lowering only supports pointer-typed results"),
+    }
+}
+
+/// Replace PHI incoming `(…, old_bb)` → `(…, new_bb)` for *all* PHIs in each successor
+/// of `term` (supports unconditional/conditional br). Extend for `switch` if needed.
+fn fix_successor_phis_block_rename<'ctx>(
+    term: InstructionValue<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: BasicBlock<'ctx>,
+    vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
+) -> Result<()> {
+    match term.get_opcode() {
+        Op::Br => {
+            let is_cond = term.is_conditional();
+            let succs: Vec<BasicBlock> = if is_cond {
+                [
+                    required_block_operand(term, 1, "fix_successor_phis_block_rename")?,
+                    required_block_operand(term, 2, "fix_successor_phis_block_rename")?,
+                ]
+                .to_vec()
+            } else {
+                [required_block_operand(
+                    term,
+                    0,
+                    "fix_successor_phis_block_rename",
+                )?]
+                .to_vec()
+            };
+            for s in succs {
+                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap)?;
+            }
+            Ok(())
+        }
+        Op::Switch => {
+            bail!("Found switch instruction, but switch is not supported")
+        }
+        _ => Ok(()),
+    }
+}
+
+fn rename_incoming_block_in_phis<'ctx>(
+    succ_bb: BasicBlock<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: BasicBlock<'ctx>,
+    vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
+) -> Result<()> {
+    let mut it = succ_bb.get_first_instruction();
+    while let Some(inst) = it {
+        if inst.get_opcode() != Op::Phi {
+            break;
+        }
+        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        let incomings = phi.get_incomings();
+
+        if !incomings.into_iter().any(|(_, b)| b == old_bb) {
+            it = inst.get_next_instruction();
+            continue;
+        }
+
+        let incomings = phi.get_incomings();
+        let ty: BasicTypeEnum = phi.as_basic_value().get_type();
+        let builder = succ_bb.get_context().create_builder();
+        builder.position_before(&inst);
+        let new_phi = builder.build_phi(ty, "phi.fix")?;
+
+        for (val, inc_bb) in incomings {
+            let mapped_bb = if inc_bb == old_bb { new_bb } else { inc_bb };
+            let mapped_val = if inc_bb == old_bb {
+                remap(vmap, val)
+            } else {
+                val
+            };
+            new_phi.add_incoming(&[(&mapped_val, mapped_bb)]);
+        }
+
+        phi.replace_all_uses_with(&new_phi);
+        inst.erase_from_basic_block();
+        it = new_phi.as_instruction().get_next_instruction();
     }
     Ok(())
 }
@@ -456,8 +576,12 @@ fn validate_phi_lowering<'ctx>(
         }
     }
 
-    if !can_rebuild_tail(block) {
-        bail!("Phi block tail contains instructions the lowering pass cannot rebuild");
+    let tail: Vec<_> = block
+        .get_instructions()
+        .skip_while(|inst| inst.get_opcode() == InstructionOpcode::Phi)
+        .collect();
+    if let Err(err) = validate_rebuildable_tail_slice(&tail) {
+        bail!("Phi block tail cannot be lowered: {err}");
     }
 
     for phi in phis {
@@ -561,6 +685,7 @@ fn apply_phi_user_rewrites<'ctx>(
     phi_users: &[InstructionValue<'ctx>],
 ) -> Result<usize> {
     let incoming_by_pred = incoming_map(phi);
+    let sorted_incoming_by_pred = sorted_incoming_entries(&incoming_by_pred);
 
     let mut rewritten = 0usize;
     for &u_inst in phi_users {
@@ -583,7 +708,7 @@ fn apply_phi_user_rewrites<'ctx>(
                         new_phi.add_incoming(&[(&val, inc_bb)]);
                         continue;
                     }
-                    for (pred, edge_val) in &incoming_by_pred {
+                    for (pred, edge_val) in &sorted_incoming_by_pred {
                         let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
                             anyhow!("apply_phi_user_rewrites: missing planned phi predecessor")
                         })?;
@@ -601,7 +726,7 @@ fn apply_phi_user_rewrites<'ctx>(
                 let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
                 let arg_phi = local_builder.build_phi(phi_ty, "phi.arg")?;
 
-                for (pred, edge_val) in &incoming_by_pred {
+                for (pred, edge_val) in &sorted_incoming_by_pred {
                     let &clone_bb = clone_for_pred.get(pred).ok_or_else(|| {
                         anyhow!("apply_phi_user_rewrites: missing planned phi predecessor")
                     })?;
@@ -823,6 +948,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 ) -> Result<()> {
     let mut merge_phi_by_block_and_value: HashMap<(BasicBlock<'ctx>, ValueKey), PhiValue<'ctx>> =
         HashMap::new();
+    let sorted_clone_entries = sorted_clone_entries(clone_map);
 
     for inst in original_block.get_instructions() {
         let Ok(old_value): Result<BasicValueEnum<'ctx>, ()> = inst.as_any_value_enum().try_into()
@@ -901,7 +1027,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                     let phi = builder
                         .build_phi(old_value.get_type(), "phi.calluser")
                         .expect("error building phi");
-                    for (pred, clone_block) in clone_map {
+                    for (pred, clone_block) in &sorted_clone_entries {
                         let clone_value = incoming_value_for_clone(pred)
                             .expect("missing cloned value for external-use reconciliation");
                         phi.add_incoming(&[(&clone_value, *clone_block)]);
@@ -919,9 +1045,21 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
     match inst.get_opcode() {
         Op::GetElementPtr
         | Op::BitCast
+        | Op::Trunc
+        | Op::ZExt
+        | Op::SExt
+        | Op::FPTrunc
+        | Op::FPExt
+        | Op::UIToFP
+        | Op::SIToFP
+        | Op::FPToUI
+        | Op::FPToSI
+        | Op::PtrToInt
+        | Op::IntToPtr
         | Op::Load
         | Op::Store
         | Op::ICmp
+        | Op::FCmp
         | Op::Select
         | Op::Add
         | Op::Sub
@@ -930,6 +1068,9 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
         | Op::SDiv
         | Op::URem
         | Op::SRem
+        | Op::Shl
+        | Op::LShr
+        | Op::AShr
         | Op::And
         | Op::Or
         | Op::Xor => true,
@@ -943,34 +1084,34 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
     }
 }
 
-fn can_rebuild_terminator(inst: InstructionValue) -> bool {
-    matches!(inst.get_opcode(), Op::Br | Op::Return)
-}
-
-fn can_rebuild_tail(bb: BasicBlock) -> bool {
-    let mut it = first_non_phi(bb);
-    while let Some(inst) = it {
-        if inst.is_terminator() {
-            return can_rebuild_terminator(inst);
-        }
-        if !can_rebuild_inst(inst) {
-            return false;
-        }
-        it = inst.get_next_instruction();
+fn validate_rebuildable_tail_slice(slice: &[InstructionValue]) -> Result<()> {
+    if slice.is_empty() {
+        bail!("Block tail is empty");
     }
-    false
-}
 
-fn can_rebuild_tail_slice(slice: &[InstructionValue]) -> bool {
     for &inst in slice {
         if inst.is_terminator() {
-            return can_rebuild_terminator(inst);
+            if !can_rebuild_terminator(inst) {
+                bail!(
+                    "Block tail contains an unsupported terminator for rebuilding: {}",
+                    inst
+                );
+            }
+            return Ok(());
         }
         if !can_rebuild_inst(inst) {
-            return false;
+            bail!(
+                "Block tail contains an instruction the lowering pass cannot rebuild: {}",
+                inst
+            );
         }
     }
-    false
+
+    bail!("Block tail did not end in a terminator")
+}
+
+fn can_rebuild_terminator(inst: InstructionValue) -> bool {
+    matches!(inst.get_opcode(), Op::Br | Op::Return)
 }
 
 /// Rebuild all non‑PHI instructions from `from_bb` into `into_bb`.
@@ -1159,6 +1300,83 @@ pub fn rebuild_inst<'ctx>(
             }
         }
 
+        Op::Trunc => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_int_truncate(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::ZExt => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_int_z_extend(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::SExt => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_int_s_extend(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::FPTrunc => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let dst_ty = inst.get_type().into_float_type();
+            let cast = builder.build_float_trunc(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::FPExt => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let dst_ty = inst.get_type().into_float_type();
+            let cast = builder.build_float_ext(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::UIToFP => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_float_type();
+            let cast = builder.build_unsigned_int_to_float(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::SIToFP => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_float_type();
+            let cast = builder.build_signed_int_to_float(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::FPToUI => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_float_to_unsigned_int(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::FPToSI => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_float_to_signed_int(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::PtrToInt => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
+            let dst_ty = inst.get_type().into_int_type();
+            let cast = builder.build_ptr_to_int(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
+        Op::IntToPtr => {
+            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
+            let dst_ty = inst.get_type().into_pointer_type();
+            let cast = builder.build_int_to_ptr(src, dst_ty, &name)?;
+            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
+        }
+
         // ---------------- Memory ops ----------------
         Op::Load => {
             let addr = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
@@ -1183,6 +1401,16 @@ pub fn rebuild_inst<'ctx>(
             Ok(RebuildOutcome::Value(cmp.as_basic_value_enum()))
         }
 
+        Op::FCmp => {
+            let pred = inst
+                .get_fcmp_predicate()
+                .ok_or_else(|| anyhow!("Failed to get fcmp predicate"))?;
+            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_float_value();
+            let cmp = builder.build_float_compare(pred, lhs, rhs, &name)?;
+            Ok(RebuildOutcome::Value(cmp.as_basic_value_enum()))
+        }
+
         Op::Select => {
             let cond = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
             let tval = remap(vmap, expect_inst_operand_value(inst, 1));
@@ -1199,6 +1427,9 @@ pub fn rebuild_inst<'ctx>(
         | Op::SDiv
         | Op::URem
         | Op::SRem
+        | Op::Shl
+        | Op::LShr
+        | Op::AShr
         | Op::And
         | Op::Or
         | Op::Xor => {
@@ -1212,6 +1443,9 @@ pub fn rebuild_inst<'ctx>(
                 Op::SDiv => builder.build_int_signed_div(lhs, rhs, &name),
                 Op::URem => builder.build_int_unsigned_rem(lhs, rhs, &name),
                 Op::SRem => builder.build_int_signed_rem(lhs, rhs, &name),
+                Op::Shl => builder.build_left_shift(lhs, rhs, &name),
+                Op::LShr => builder.build_right_shift(lhs, rhs, false, &name),
+                Op::AShr => builder.build_right_shift(lhs, rhs, true, &name),
                 Op::And => builder.build_and(lhs, rhs, &name),
                 Op::Or => builder.build_or(lhs, rhs, &name),
                 Op::Xor => builder.build_xor(lhs, rhs, &name),
@@ -1243,8 +1477,7 @@ pub fn rebuild_inst<'ctx>(
                 ValueKind::Instruction(_) => Ok(RebuildOutcome::Void),
             }
         }
-        // Add more opcodes as needed (sext/zext/trunc, ptrtoint/inttoptr, FP ops, vectors, etc.)
-        _ => bail!("Instruction type not yet supported for rebuild"),
+        _ => bail!("Instruction type not yet supported for rebuild: {}", inst),
     }
 }
 #[inline]
@@ -1268,265 +1501,6 @@ fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
         .expect("Cound not get operand value")
 }
 
-/// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
-/// a then/else diamond and a merge PHI, then using phi elimination to remove phi.
-/// May introduce new phis downstream
-pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
-    let context = module.get_context();
-    let builder = context.create_builder();
-    let mut changed = false;
-
-    for func in module.get_functions() {
-        let mut block_opt = func.get_first_basic_block();
-        while let Some(bb) = block_opt {
-            if let Some(first_sel) = get_first_qubit_select_in_block(bb)
-                && lower_one_select_to_control_flow(&builder, first_sel)?
-            {
-                changed = true;
-            }
-            // If we found a select we will have added new blocks just after
-            // the current one. Need to check those blocks for further selects
-            // so only get the next block here, not before handling first select
-            block_opt = bb.get_next_basic_block();
-        }
-    }
-    Ok(changed)
-}
-
-fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
-    let mut it = bb.get_first_instruction();
-    while let Some(i) = it {
-        it = i.get_next_instruction();
-        if i.get_opcode() == InstructionOpcode::Select
-            && let AnyTypeEnum::PointerType(pt) = i.get_type()
-            && is_qubit_pointer(pt)
-        {
-            return Some(i);
-        }
-    }
-    None
-}
-
-fn lower_one_select_to_control_flow<'ctx>(
-    builder: &Builder<'ctx>,
-    sel: InstructionValue<'ctx>,
-) -> Result<bool> {
-    let bb = match sel.get_parent() {
-        Some(b) => b,
-        None => return Ok(false),
-    };
-
-    // Extract select operands (per LangRef: 0=cond,1=true,2=false)
-    let cond = match inst_operand_value(sel, 0) {
-        Some(v) => v.into_int_value(),
-        None => return Ok(false),
-    };
-    let tval = match inst_operand_value(sel, 1) {
-        Some(v) => v,
-        None => return Ok(false),
-    };
-    let fval = match inst_operand_value(sel, 2) {
-        Some(v) => v,
-        None => return Ok(false),
-    };
-
-    // Gather the tail (all instructions after `sel`, including the original terminator)
-    let mut tail: Vec<InstructionValue> = Vec::new();
-    let mut it = sel.get_next_instruction();
-    while let Some(i) = it {
-        tail.push(i);
-        it = i.get_next_instruction();
-    }
-
-    let phi_ty: BasicTypeEnum = match sel.get_type().try_into() {
-        Ok(bt) => bt,
-        Err(_) => return Ok(false),
-    };
-    if !validate_select_lowering(sel, &tail) {
-        return Ok(false);
-    }
-
-    // Create THEN, ELSE, MERGE blocks and append to function
-    let ctx = bb.get_context();
-
-    let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
-    let else_bb =
-        ctx.insert_basic_block_after(then_bb, &format!("{}select.else", name_of_block(bb)));
-    let merge_bb =
-        ctx.insert_basic_block_after(else_bb, &format!("{}select.merge", name_of_block(bb)));
-
-    // Build PHI in merge (must be first in the block)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-    builder.position_at_end(merge_bb);
-    let phi = builder.build_phi(phi_ty, "select.merge.val")?;
-    phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
-
-    // Rebuild the original tail into merge, remapping %sel -> %phi
-    let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
-    vmap.insert(value_key_from_instruction(sel), phi.as_basic_value());
-
-    if !rebuild_tail_slice(builder, merge_bb, &tail, &mut vmap) {
-        return Ok(false);
-    }
-    rewrite_external_uses_to_vmap(bb, &vmap)?;
-
-    // Now that merge has a full copy of the tail (including the original terminator),
-    // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
-    builder.position_at_end(bb);
-    for &i in tail.iter().rev() {
-        i.erase_from_basic_block();
-    }
-    // Build: br i1 %cond, label %then_bb, label %else_bb  (0=cond,1=true,2=false)  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-    builder.build_conditional_branch(cond, then_bb, else_bb)?;
-    builder.position_at_end(then_bb);
-    builder.build_unconditional_branch(merge_bb)?;
-    builder.position_at_end(else_bb);
-    builder.build_unconditional_branch(merge_bb)?;
-    // PHI fixups: any successor that previously had incoming from `bb`
-    // must now have incoming from `merge_bb`.
-    if let Some(merge_term) = merge_bb.get_terminator() {
-        fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
-    }
-    // Finally, drop the original %sel itself (all uses now read %phi)
-    sel.erase_from_basic_block();
-
-    // Now use phi removal to completely eliminate ssa
-    lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
-
-    Ok(true)
-}
-
-/// Rebuild an instruction slice (the "tail") into the current insertion block,
-/// using the same `rebuild_inst` / `rebuild_terminator` strategy you already have.
-/// `slice` comes from the original block; it’s safe to iterate because we erased them from `bb`.
-fn rebuild_tail_slice<'ctx>(
-    builder: &Builder<'ctx>,
-    into_block: BasicBlock<'ctx>,
-    slice: &[InstructionValue<'ctx>],
-    vmap: &mut HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) -> bool {
-    for &orig_inst in slice {
-        if orig_inst.is_terminator() {
-            return rebuild_terminator(builder, orig_inst, vmap);
-        } else {
-            match rebuild_inst(builder, into_block, orig_inst, vmap) {
-                Ok(RebuildOutcome::Value(bv)) => {
-                    vmap.insert(value_key_from_instruction(orig_inst), bv);
-                }
-                Ok(RebuildOutcome::Void) => { /* fine */ }
-                Err(_) => return false,
-            }
-        }
-    }
-    true
-}
-
-fn validate_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) -> bool {
-    if tail.is_empty() {
-        return false;
-    }
-    if !tail.last().is_some_and(|inst| inst.is_terminator()) {
-        return false;
-    }
-    if !can_rebuild_tail_slice(tail) {
-        return false;
-    }
-    match sel.get_type() {
-        AnyTypeEnum::PointerType(pt) => is_qubit_pointer(pt),
-        _ => false,
-    }
-}
-
-/// Replace PHI incoming `(…, old_bb)` → `(…, new_bb)` for *all* PHIs in each successor
-/// of `term` (supports unconditional/conditional br). Extend for `switch` if needed.
-fn fix_successor_phis_block_rename<'ctx>(
-    term: InstructionValue<'ctx>,
-    old_bb: BasicBlock<'ctx>,
-    new_bb: BasicBlock<'ctx>,
-    vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) -> Result<()> {
-    match term.get_opcode() {
-        Op::Br => {
-            let is_cond = term.is_conditional();
-            let succs: Vec<BasicBlock> = if is_cond {
-                // br i1 %cond, %then, %else  → operands 1/2 are the successors  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-                [
-                    required_block_operand(term, 1, "fix_successor_phis_block_rename")?,
-                    required_block_operand(term, 2, "fix_successor_phis_block_rename")?,
-                ]
-                .to_vec()
-            } else {
-                // br %dest  → operand 0 is the successor  [1](https://cs6340.cc.gatech.edu/LLVM8Doxygen/TailDuplicator_8cpp_source.html)
-                [required_block_operand(
-                    term,
-                    0,
-                    "fix_successor_phis_block_rename",
-                )?]
-                .to_vec()
-            };
-            for s in succs {
-                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap)?;
-            }
-            Ok(())
-        }
-        Op::Switch => {
-            bail!("Found switch instruction, but switch is not supported")
-        }
-        _ => Ok(()),
-    }
-}
-
-/// For every PHI at the start of `succ_bb`, if it has an incoming from `old_bb`,
-/// rebuild that PHI with the incoming block replaced by `new_bb`.
-fn rename_incoming_block_in_phis<'ctx>(
-    succ_bb: BasicBlock<'ctx>,
-    old_bb: BasicBlock<'ctx>,
-    new_bb: BasicBlock<'ctx>,
-    vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
-) -> Result<()> {
-    // Iterate PHIs at block start
-    let mut it = succ_bb.get_first_instruction();
-    while let Some(inst) = it {
-        if inst.get_opcode() != Op::Phi {
-            break;
-        }
-        // Defensive: clone the incoming list
-        let phi = unsafe { PhiValue::new(inst.as_value_ref()) }; // safe: opcode checked
-        let incomings = phi.get_incomings();
-
-        // If no incoming from old_bb, skip
-        if !incomings.into_iter().any(|(_, b)| b == old_bb) {
-            it = inst.get_next_instruction();
-            continue;
-        }
-
-        let incomings = phi.get_incomings();
-
-        // Build a replacement PHI with the same type, before the old PHI
-        let ty: BasicTypeEnum = phi.as_basic_value().get_type();
-        let builder = succ_bb.get_context().create_builder();
-        builder.position_before(&inst);
-        let new_phi = builder.build_phi(ty, "phi.fix")?;
-
-        for (val, inc_bb) in incomings {
-            let mapped_bb = if inc_bb == old_bb { new_bb } else { inc_bb };
-            let mapped_val = if inc_bb == old_bb {
-                remap(vmap, val)
-            } else {
-                val
-            };
-            new_phi.add_incoming(&[(&mapped_val, mapped_bb)]);
-        }
-
-        // Replace all uses and erase old phi
-        phi.replace_all_uses_with(&new_phi);
-        inst.erase_from_basic_block();
-
-        // Move iterator to the *next* instruction after the newly inserted PHI
-        it = new_phi.as_instruction().get_next_instruction();
-    }
-    Ok(())
-}
-
 fn simp_cfg(module: &Module) -> bool {
     let pm = PassManager::create(module);
     let mut changed = false;
@@ -1539,4 +1513,137 @@ fn simp_cfg(module: &Module) -> bool {
     }
     pm.finalize();
     changed
+}
+
+fn value_key_from_instruction(inst: InstructionValue) -> ValueKey {
+    inst.as_value_ref() as ValueKey
+}
+
+fn value_key_from_basic_value(value: BasicValueEnum) -> Option<ValueKey> {
+    value.as_instruction_value().map(value_key_from_instruction)
+}
+
+fn any_value_as_instruction(value: AnyValueEnum) -> Option<InstructionValue> {
+    match value {
+        AnyValueEnum::InstructionValue(inst) => Some(inst),
+        AnyValueEnum::PhiValue(phi) => Some(phi.as_instruction()),
+        AnyValueEnum::IntValue(v) => v.as_instruction(),
+        AnyValueEnum::PointerValue(v) => v.as_instruction(),
+        AnyValueEnum::FloatValue(v) => v.as_instruction(),
+        AnyValueEnum::StructValue(v) => v.as_instruction(),
+        AnyValueEnum::ArrayValue(v) => v.as_instruction(),
+        AnyValueEnum::VectorValue(v) => v.as_instruction(),
+        AnyValueEnum::ScalableVectorValue(v) => v.as_instruction(),
+        AnyValueEnum::FunctionValue(_) => None,
+        AnyValueEnum::MetadataValue(_) => None,
+    }
+}
+
+fn instruction_user(value: AnyValueEnum) -> Result<InstructionValue> {
+    any_value_as_instruction(value).ok_or_else(|| anyhow!("Unsupported non-instruction value user"))
+}
+
+fn collect_instruction_users(value: BasicValueEnum) -> Result<Vec<InstructionValue>> {
+    let mut users = Vec::new();
+    let mut use_opt = value.get_first_use();
+    while let Some(u) = use_opt {
+        users.push(instruction_user(u.get_user())?);
+        use_opt = u.get_next_use();
+    }
+    Ok(users)
+}
+
+fn collect_external_instruction_users<'ctx>(
+    value: BasicValueEnum<'ctx>,
+    original_block: BasicBlock<'ctx>,
+) -> Result<Vec<InstructionValue<'ctx>>> {
+    let mut external_users = Vec::new();
+    let mut seen_users: HashSet<ValueKey> = HashSet::new();
+    for user_inst in collect_instruction_users(value)? {
+        if user_inst.get_parent() != Some(original_block) {
+            let user_key = value_key_from_instruction(user_inst);
+            if seen_users.insert(user_key) {
+                external_users.push(user_inst);
+            }
+        }
+    }
+    Ok(external_users)
+}
+
+fn incoming_map(phi: PhiValue) -> HashMap<BasicBlock, BasicValueEnum> {
+    phi.get_incomings()
+        .map(|(val, pred_bb)| (pred_bb, val))
+        .collect()
+}
+
+fn verify_module(module: &Module) -> Result<()> {
+    module
+        .verify()
+        .map_err(|err| anyhow!("Error verifying module: {}", err.to_string()))
+}
+
+fn required_parent_block<'ctx>(
+    inst: InstructionValue<'ctx>,
+    context: &str,
+) -> Result<BasicBlock<'ctx>> {
+    inst.get_parent()
+        .ok_or_else(|| anyhow!("{context}: instruction has no parent block"))
+}
+
+fn required_parent_function<'ctx>(
+    bb: BasicBlock<'ctx>,
+    context: &str,
+) -> Result<inkwell::values::FunctionValue<'ctx>> {
+    bb.get_parent()
+        .ok_or_else(|| anyhow!("{context}: block has no parent function"))
+}
+
+fn required_block_operand<'ctx>(
+    inst: InstructionValue<'ctx>,
+    idx: u32,
+    context: &str,
+) -> Result<BasicBlock<'ctx>> {
+    operand_as_bb(inst, idx).ok_or_else(|| anyhow!("{context}: missing block operand {idx}"))
+}
+
+fn required_called_function<'ctx>(
+    callsite: CallSiteValue<'ctx>,
+    context: &str,
+) -> Result<inkwell::values::FunctionValue<'ctx>> {
+    callsite
+        .get_called_fn_value()
+        .ok_or_else(|| anyhow!("{context}: indirect call is not supported"))
+}
+
+fn required_instruction_value<'ctx>(
+    value: BasicValueEnum<'ctx>,
+    context: &str,
+) -> Result<InstructionValue<'ctx>> {
+    value
+        .as_instruction_value()
+        .ok_or_else(|| anyhow!("{context}: expected instruction-backed value"))
+}
+
+/// This is used to make order of generated phi incomings deterministic
+fn sorted_incoming_entries<'ctx>(
+    incoming_by_pred: &HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+) -> Vec<(BasicBlock<'ctx>, BasicValueEnum<'ctx>)> {
+    let mut entries: Vec<_> = incoming_by_pred
+        .iter()
+        .map(|(pred, value)| (*pred, *value))
+        .collect();
+    entries.sort_by_key(|(pred, _)| name_of_block(*pred));
+    entries
+}
+
+/// This is used to make order of generated phi incomings deterministic
+fn sorted_clone_entries<'ctx>(
+    clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+) -> Vec<(BasicBlock<'ctx>, BasicBlock<'ctx>)> {
+    let mut entries: Vec<_> = clone_map
+        .iter()
+        .map(|(pred, clone_block)| (*pred, *clone_block))
+        .collect();
+    entries.sort_by_key(|(pred, clone_block)| (name_of_block(*pred), name_of_block(*clone_block)));
+    entries
 }

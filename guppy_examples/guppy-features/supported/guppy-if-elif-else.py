@@ -29,7 +29,7 @@ def main() -> None:
         h(q3)
     elif my_int == 1:
         x(q3)
-    elif my_int == 2:  # noqa: PLR2004
+    elif my_int == 2:
         y(q3)
     else:
         z(q3)

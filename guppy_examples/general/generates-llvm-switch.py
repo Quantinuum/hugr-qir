@@ -28,9 +28,9 @@ def main() -> None:
         h(q3)
     elif my_int == 1:
         x(q3)
-    elif my_int == 2:  # noqa: PLR2004
+    elif my_int == 2:
         y(q3)
-    elif my_int == 3:  # noqa: PLR2004
+    elif my_int == 3:
         z(q3)
     d = measure(q3)
     result("a", a)
