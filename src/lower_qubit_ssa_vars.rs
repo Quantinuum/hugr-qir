@@ -37,6 +37,8 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
+/// Returns whether the module contains at least one qubit-pointer `select` or
+/// `phi` that this pass is expected to lower.
 fn module_has_lowerable_qubit_selects_or_phis(module: &Module) -> bool {
     module.get_functions().any(|function| {
         function.get_basic_blocks().iter().any(|block| {
@@ -47,6 +49,8 @@ fn module_has_lowerable_qubit_selects_or_phis(module: &Module) -> bool {
     })
 }
 
+/// Checks whether a single instruction matches the pass entry criteria:
+/// opcode `select` or `phi`, result type `PointerType`, and pointer element type `Qubit`.
 fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool {
     matches!(
         inst.get_opcode(),
@@ -54,6 +58,10 @@ fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool 
     ) && matches!(inst.get_type(), AnyTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
 }
 
+/// Rebuilds a terminator into the builder's current insertion block.
+///
+/// This is used by `prepare_module` when record-output calls are split into a
+/// fresh block and the original terminator needs to be recreated there.
 fn rebuild_terminator_into<'ctx>(
     builder: &Builder<'ctx>,
     term: InstructionValue<'ctx>,
@@ -88,6 +96,11 @@ fn rebuild_terminator_into<'ctx>(
     }
 }
 
+/// Moves all direct calls in `bb` whose callee name satisfies `should_match`
+/// into a fresh block placed immediately after `bb`.
+///
+/// The original block is rewritten to end in an unconditional branch to the new
+/// block, and the original terminator is rebuilt in the new block after the moved calls.
 pub fn move_matching_calls_to_fresh_block<'ctx>(
     bb: BasicBlock<'ctx>,
     should_match: impl Fn(&str) -> bool,
@@ -204,10 +217,16 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     Ok(Some(new_bb))
 }
 
+/// Returns true for runtime record-output functions such as
+/// `__quantum__rt__bool_record_output` and `__quantum__rt__int_record_output`.
 fn is_record_output_runtime_call(name: &str) -> bool {
     name.starts_with("__quantum__rt__") && name.ends_with("_record_output")
 }
 
+/// Normalizes the module before select/phi lowering.
+///
+/// At present this isolates runtime `*_record_output` calls into dedicated
+/// blocks so later tail duplication does not duplicate them.
 fn prepare_module(module: &Module) -> Result<()> {
     for func in module.get_functions() {
         for block in func.get_basic_blocks() {
@@ -241,6 +260,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
+/// Returns the first `select` in `bb` that produces a qubit pointer, if any.
 fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
     let mut it = bb.get_first_instruction();
     while let Some(i) = it {
@@ -255,6 +275,13 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
     None
 }
 
+/// Lowers one qubit-pointer `select` into an explicit then/else/merge diamond and then duplicates
+/// the merge block using tail duplication
+///
+/// The original tail after the select is rebuilt into the merge block. Afterward, this introduces
+/// a phi instruction in the merge block which is immediately lowered. This will introduce new qubit
+/// typed phis downstream if there were downstream users of the select and these phis
+/// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
@@ -355,6 +382,7 @@ fn rebuild_tail_slice<'ctx>(
     bail!("Select block tail did not end in a terminator")
 }
 
+/// Validates that a qubit-pointer `select` can be lowered by this pass.
 fn validate_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) -> Result<()> {
     validate_rebuildable_tail_slice(tail)
         .map_err(|err| anyhow!("Select block tail cannot be lowered: {err}"))?;
@@ -404,6 +432,8 @@ fn fix_successor_phis_block_rename<'ctx>(
     }
 }
 
+/// Rebuilds all leading PHIs in `succ_bb` whose incoming block is `old_bb`,
+/// replacing that incoming edge by `new_bb` and remapping values through `vmap`.
 fn rename_incoming_block_in_phis<'ctx>(
     succ_bb: BasicBlock<'ctx>,
     old_bb: BasicBlock<'ctx>,
@@ -563,6 +593,7 @@ pub fn lower_successive_qubit_phis_in_block(
     Ok(true)
 }
 
+/// Validates that a block of qubit-pointer PHIs can be eliminated by tail duplication.
 fn validate_phi_lowering<'ctx>(
     block: BasicBlock<'ctx>,
     phis: &[PhiValue<'ctx>],
@@ -591,6 +622,10 @@ fn validate_phi_lowering<'ctx>(
     Ok(())
 }
 
+/// Collects the leading qubit-pointer PHIs from a block.
+///
+/// PHIs are always clustered at block start in LLVM IR, so the scan stops on the
+/// first non-PHI instruction.
 fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
     let mut inst_opt = block.get_first_instruction();
     let mut phi_candidates: Vec<PhiValue> = Vec::new();
@@ -611,6 +646,7 @@ fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
     phi_candidates
 }
 
+/// Returns whether a pointer type is the LLVM `%Qubit*` type used by QIR.
 fn is_qubit_pointer(ptr_ty: PointerType) -> bool {
     ptr_ty
         .get_element_type()
@@ -646,6 +682,10 @@ pub fn handle_phi_users<'ctx>(
     apply_phi_user_rewrites(phi, phi_block, clone_for_pred, &phi_users)
 }
 
+/// Plans rewrites for uses of a phi that will be deleted.
+///
+/// This stage performs the support checks first so the apply phase can proceed
+/// without partially mutating the IR and then bailing.
 fn plan_phi_user_rewrites<'ctx>(
     phi: PhiValue<'ctx>,
     phi_block: BasicBlock<'ctx>,
@@ -678,6 +718,9 @@ fn plan_phi_user_rewrites<'ctx>(
     Ok(phi_users)
 }
 
+/// Applies the rewrites planned for uses of a deleted phi.
+///
+/// Supported external users are downstream PHIs and direct calls.
 fn apply_phi_user_rewrites<'ctx>(
     phi: PhiValue<'ctx>,
     phi_block: BasicBlock<'ctx>,
@@ -777,6 +820,7 @@ fn apply_phi_user_rewrites<'ctx>(
     Ok(rewritten)
 }
 
+/// Validates that all external users of a phi are supported by the phi-user rewrite logic.
 fn validate_phi_users<'ctx>(
     phi: PhiValue<'ctx>,
     phi_block: BasicBlock<'ctx>,
@@ -819,6 +863,10 @@ fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
     inst.get_operand(idx)?.block()
 }
 
+/// Returns the predecessor blocks of `to`.
+///
+/// Only direct branch predecessors are supported here; unsupported terminators
+/// cause an error because the lowering logic depends on explicit CFG structure.
 fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
     let mut preds = Vec::new();
     let func = required_parent_function(to, "predecessors")?;
@@ -911,6 +959,8 @@ fn replace_value_uses_in_instruction<'ctx>(
     }
 }
 
+/// Rewrites external uses of values rebuilt through `vmap` so that users outside
+/// `original_block` read the rebuilt values instead of the soon-to-be-erased originals.
 fn rewrite_external_uses_to_vmap<'ctx>(
     original_block: BasicBlock<'ctx>,
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
@@ -941,6 +991,10 @@ fn rewrite_external_uses_to_vmap<'ctx>(
     Ok(())
 }
 
+/// Reconciles external users after a block has been duplicated per predecessor.
+///
+/// For each value defined in `original_block`, downstream users are rewritten so
+/// they merge the per-clone values instead of referring to the deleted original block.
 fn reconcile_external_uses_after_duplication<'ctx>(
     original_block: BasicBlock<'ctx>,
     clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
@@ -1041,6 +1095,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
     Ok(())
 }
 
+/// Returns whether `rebuild_inst` has support for the given non-terminator opcode.
 fn can_rebuild_inst(inst: InstructionValue) -> bool {
     match inst.get_opcode() {
         Op::GetElementPtr
@@ -1084,6 +1139,8 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
     }
 }
 
+/// Validates that a rebuilt tail is non-empty, ends in a supported terminator,
+/// and contains only instructions that the rebuilder knows how to recreate.
 fn validate_rebuildable_tail_slice(slice: &[InstructionValue]) -> Result<()> {
     if slice.is_empty() {
         bail!("Block tail is empty");
@@ -1110,6 +1167,7 @@ fn validate_rebuildable_tail_slice(slice: &[InstructionValue]) -> Result<()> {
     bail!("Block tail did not end in a terminator")
 }
 
+/// Returns whether `rebuild_terminator` supports the given terminator opcode.
 fn can_rebuild_terminator(inst: InstructionValue) -> bool {
     matches!(inst.get_opcode(), Op::Br | Op::Return)
 }
@@ -1154,7 +1212,7 @@ fn rebuild_tail_into<'ctx>(
     true
 }
 
-/// Remap a BasicValue through vmap using the original instruction’s name as key.
+/// Remaps a value through `vmap` when that value was originally produced by an instruction.
 fn remap<'ctx>(
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
     v: BasicValueEnum<'ctx>,
@@ -1167,6 +1225,7 @@ fn remap<'ctx>(
     v
 }
 
+/// Rebuilds a terminator while remapping operands through `vmap`.
 fn rebuild_terminator<'ctx>(
     builder: &Builder<'ctx>,
     inst: InstructionValue<'ctx>,
@@ -1205,6 +1264,9 @@ fn rebuild_terminator<'ctx>(
     }
 }
 
+/// Redirects a CFG edge `from -> old_to` so that it instead targets `new_to`.
+///
+/// This is used after a predecessor-specific clone block has been created.
 fn redirect_edge<'ctx>(
     builder: &Builder<'ctx>,
     from: BasicBlock<'ctx>,
@@ -1237,6 +1299,10 @@ fn redirect_edge<'ctx>(
     }
 }
 
+/// Rebuilds a single non-terminator instruction into `into_block`, remapping operands through `vmap`.
+///
+/// The returned `RebuildOutcome` indicates whether the rebuilt instruction produces
+/// an SSA value that should be inserted back into the remapping table.
 pub fn rebuild_inst<'ctx>(
     builder: &Builder<'ctx>,
     into_block: BasicBlock<'ctx>,
@@ -1481,6 +1547,7 @@ pub fn rebuild_inst<'ctx>(
     }
 }
 #[inline]
+/// Converts an operand into a `BasicValueEnum` when possible.
 fn operand_as_value(op: Operand) -> Option<BasicValueEnum> {
     match op {
         Operand::Value(bv) => Some(bv),
@@ -1488,19 +1555,23 @@ fn operand_as_value(op: Operand) -> Option<BasicValueEnum> {
     }
 }
 
-// Convenience wrappers around InstructionValue::get_operand(i)
 #[inline]
+/// Returns operand `i` of `inst` as a value operand, if present.
 fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> {
     inst.get_operand(i).and_then(operand_as_value)
 }
 
 #[inline]
+/// Returns operand `i` of `inst` as a value operand and panics if it is missing.
+///
+/// This is reserved for internal sites where the LLVM instruction shape is already known.
 fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
     inst.get_operand(i)
         .and_then(operand_as_value)
         .expect("Cound not get operand value")
 }
 
+/// Runs LLVM's CFG simplification pass over every function in the module.
 fn simp_cfg(module: &Module) -> bool {
     let pm = PassManager::create(module);
     let mut changed = false;
@@ -1515,14 +1586,18 @@ fn simp_cfg(module: &Module) -> bool {
     changed
 }
 
+/// Produces a stable key for instruction-produced SSA values.
 fn value_key_from_instruction(inst: InstructionValue) -> ValueKey {
     inst.as_value_ref() as ValueKey
 }
 
+/// Returns the instruction key for a basic value if that value is instruction-backed.
 fn value_key_from_basic_value(value: BasicValueEnum) -> Option<ValueKey> {
     value.as_instruction_value().map(value_key_from_instruction)
 }
 
+/// Converts an arbitrary LLVM value wrapper back to its underlying `InstructionValue`
+/// when the value is produced by an instruction.
 fn any_value_as_instruction(value: AnyValueEnum) -> Option<InstructionValue> {
     match value {
         AnyValueEnum::InstructionValue(inst) => Some(inst),
@@ -1539,10 +1614,12 @@ fn any_value_as_instruction(value: AnyValueEnum) -> Option<InstructionValue> {
     }
 }
 
+/// Converts a user returned by LLVM use-walking into an instruction or errors if it is unsupported.
 fn instruction_user(value: AnyValueEnum) -> Result<InstructionValue> {
     any_value_as_instruction(value).ok_or_else(|| anyhow!("Unsupported non-instruction value user"))
 }
 
+/// Collects all instruction users of a value through LLVM's use-def chain.
 fn collect_instruction_users(value: BasicValueEnum) -> Result<Vec<InstructionValue>> {
     let mut users = Vec::new();
     let mut use_opt = value.get_first_use();
@@ -1553,6 +1630,7 @@ fn collect_instruction_users(value: BasicValueEnum) -> Result<Vec<InstructionVal
     Ok(users)
 }
 
+/// Collects the distinct users of `value` that are outside `original_block`.
 fn collect_external_instruction_users<'ctx>(
     value: BasicValueEnum<'ctx>,
     original_block: BasicBlock<'ctx>,
@@ -1570,18 +1648,21 @@ fn collect_external_instruction_users<'ctx>(
     Ok(external_users)
 }
 
+/// Materializes a phi's incoming list as a predecessor-to-value map.
 fn incoming_map(phi: PhiValue) -> HashMap<BasicBlock, BasicValueEnum> {
     phi.get_incomings()
         .map(|(val, pred_bb)| (pred_bb, val))
         .collect()
 }
 
+/// Verifies the module and converts LLVM's verifier output into `anyhow::Error`.
 fn verify_module(module: &Module) -> Result<()> {
     module
         .verify()
         .map_err(|err| anyhow!("Error verifying module: {}", err.to_string()))
 }
 
+/// Returns the parent block of an instruction or a contextual error.
 fn required_parent_block<'ctx>(
     inst: InstructionValue<'ctx>,
     context: &str,
@@ -1590,6 +1671,7 @@ fn required_parent_block<'ctx>(
         .ok_or_else(|| anyhow!("{context}: instruction has no parent block"))
 }
 
+/// Returns the parent function of a block or a contextual error.
 fn required_parent_function<'ctx>(
     bb: BasicBlock<'ctx>,
     context: &str,
@@ -1598,6 +1680,7 @@ fn required_parent_function<'ctx>(
         .ok_or_else(|| anyhow!("{context}: block has no parent function"))
 }
 
+/// Returns operand `idx` of `inst` as a block operand or a contextual error.
 fn required_block_operand<'ctx>(
     inst: InstructionValue<'ctx>,
     idx: u32,
@@ -1606,6 +1689,7 @@ fn required_block_operand<'ctx>(
     operand_as_bb(inst, idx).ok_or_else(|| anyhow!("{context}: missing block operand {idx}"))
 }
 
+/// Returns the direct callee of a callsite or a contextual error for indirect calls.
 fn required_called_function<'ctx>(
     callsite: CallSiteValue<'ctx>,
     context: &str,
@@ -1615,6 +1699,7 @@ fn required_called_function<'ctx>(
         .ok_or_else(|| anyhow!("{context}: indirect call is not supported"))
 }
 
+/// Returns an instruction-backed value as an `InstructionValue` or a contextual error.
 fn required_instruction_value<'ctx>(
     value: BasicValueEnum<'ctx>,
     context: &str,
@@ -1624,7 +1709,7 @@ fn required_instruction_value<'ctx>(
         .ok_or_else(|| anyhow!("{context}: expected instruction-backed value"))
 }
 
-/// This is used to make order of generated phi incomings deterministic
+/// Returns incoming entries sorted by predecessor block name for deterministic phi construction.
 fn sorted_incoming_entries<'ctx>(
     incoming_by_pred: &HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
 ) -> Vec<(BasicBlock<'ctx>, BasicValueEnum<'ctx>)> {
@@ -1636,7 +1721,7 @@ fn sorted_incoming_entries<'ctx>(
     entries
 }
 
-/// This is used to make order of generated phi incomings deterministic
+/// Returns clone-map entries sorted by predecessor and clone block names for deterministic phi construction.
 fn sorted_clone_entries<'ctx>(
     clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
 ) -> Vec<(BasicBlock<'ctx>, BasicBlock<'ctx>)> {
