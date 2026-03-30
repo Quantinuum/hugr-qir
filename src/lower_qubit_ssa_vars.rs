@@ -754,6 +754,7 @@ fn apply_phi_user_rewrites<'ctx>(
 ) -> Result<usize> {
     let incoming_by_pred = incoming_map(phi);
     let sorted_incoming_by_pred = sorted_incoming_entries(&incoming_by_pred);
+    let mut available_value_cache: HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>> = HashMap::new();
 
     let mut rewritten = 0usize;
     for &u_inst in phi_users {
@@ -761,12 +762,22 @@ fn apply_phi_user_rewrites<'ctx>(
             continue;
         }
         match u_inst.get_opcode() {
-            InstructionOpcode::Phi => {
-                rewrite_phi_user_as_phi(phi, u_inst, clone_for_pred, &sorted_incoming_by_pred)?
-            }
-            InstructionOpcode::Call => {
-                rewrite_phi_user_as_call(phi, u_inst, clone_for_pred, &sorted_incoming_by_pred)?
-            }
+            InstructionOpcode::Phi => rewrite_phi_user_as_phi(
+                phi,
+                phi_block,
+                u_inst,
+                clone_for_pred,
+                &sorted_incoming_by_pred,
+                &mut available_value_cache,
+            )?,
+            InstructionOpcode::Call => rewrite_phi_user_as_call(
+                phi,
+                phi_block,
+                u_inst,
+                clone_for_pred,
+                &sorted_incoming_by_pred,
+                &mut available_value_cache,
+            )?,
             opcode => {
                 bail!(
                     "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
@@ -783,9 +794,11 @@ fn apply_phi_user_rewrites<'ctx>(
 /// block is expanded into one incoming per duplicated predecessor tail.
 fn rewrite_phi_user_as_phi<'ctx>(
     phi: PhiValue<'ctx>,
+    phi_block: BasicBlock<'ctx>,
     user_inst: InstructionValue<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+    available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
 ) -> Result<()> {
     let user_phi = unsafe { PhiValue::new(user_inst.as_value_ref()) };
     let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_phi")?;
@@ -801,11 +814,22 @@ fn rewrite_phi_user_as_phi<'ctx>(
             new_phi.add_incoming(&[(&val, inc_bb)]);
             continue;
         }
-        for (pred, edge_val) in sorted_incoming_by_pred {
-            let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
-                anyhow!("rewrite_phi_user_as_phi: missing planned phi predecessor")
-            })?;
-            new_phi.add_incoming(&[(edge_val, clone_block)]);
+        if inc_bb == phi_block {
+            for (pred, edge_val) in sorted_incoming_by_pred {
+                let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
+                    anyhow!("rewrite_phi_user_as_phi: missing planned phi predecessor")
+                })?;
+                new_phi.add_incoming(&[(edge_val, clone_block)]);
+            }
+        } else {
+            let available_value = value_available_in_block_after_phi_lowering(
+                phi,
+                inc_bb,
+                clone_for_pred,
+                sorted_incoming_by_pred,
+                available_value_cache,
+            )?;
+            new_phi.add_incoming(&[(&available_value, inc_bb)]);
         }
     }
 
@@ -818,23 +842,26 @@ fn rewrite_phi_user_as_phi<'ctx>(
 /// the call argument and rebuilding the call with that merged value.
 fn rewrite_phi_user_as_call<'ctx>(
     phi: PhiValue<'ctx>,
+    phi_block: BasicBlock<'ctx>,
     user_inst: InstructionValue<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+    available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
 ) -> Result<()> {
     let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_call")?;
     let local_builder = succ_bb.get_context().create_builder();
     local_builder.position_before(&user_inst);
-
-    let phi_ty: BasicTypeEnum = phi.as_basic_value().get_type();
-    let arg_phi = local_builder.build_phi(phi_ty, "phi.arg")?;
-
-    for (pred, edge_val) in sorted_incoming_by_pred {
-        let &clone_bb = clone_for_pred
-            .get(pred)
-            .ok_or_else(|| anyhow!("rewrite_phi_user_as_call: missing planned phi predecessor"))?;
-        arg_phi.add_incoming(&[(edge_val, clone_bb)]);
-    }
+    let replacement_value = if succ_bb == phi_block {
+        bail!("rewrite_phi_user_as_call: call user unexpectedly remained in phi block");
+    } else {
+        value_available_in_block_after_phi_lowering(
+            phi,
+            succ_bb,
+            clone_for_pred,
+            sorted_incoming_by_pred,
+            available_value_cache,
+        )?
+    };
 
     let cs: CallSiteValue = user_inst
         .try_into()
@@ -847,7 +874,7 @@ fn rewrite_phi_user_as_call<'ctx>(
         if let Some(op_bv) = inst_operand_value(user_inst, i) {
             let vref = op_bv.as_value_ref();
             if vref == old_val_ref {
-                args.push(arg_phi.as_basic_value().into());
+                args.push(replacement_value.into());
             } else {
                 args.push(op_bv.into());
             }
@@ -868,6 +895,53 @@ fn rewrite_phi_user_as_call<'ctx>(
     }
     user_inst.erase_from_basic_block();
     Ok(())
+}
+
+/// Returns a value in `block` that represents the eliminated phi after its
+/// defining block has been duplicated away.
+///
+/// If `block` is directly reached from the clone blocks, this creates a helper
+/// phi at the top of `block` and caches it so downstream users in the same block
+/// reuse the same merged value.
+fn value_available_in_block_after_phi_lowering<'ctx>(
+    phi: PhiValue<'ctx>,
+    block: BasicBlock<'ctx>,
+    clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+    available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+) -> Result<BasicValueEnum<'ctx>> {
+    if let Some(&cached) = available_value_cache.get(&block) {
+        return Ok(cached);
+    }
+
+    let first_non_phi_inst = block.get_first_instruction().ok_or_else(|| {
+        anyhow!("value_available_in_block_after_phi_lowering: target block has no instructions")
+    })?;
+    let builder = block.get_context().create_builder();
+    builder.position_before(&first_non_phi_inst);
+    let helper_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.available")?;
+
+    let mut added_incoming = false;
+    for (pred, edge_val) in sorted_incoming_by_pred {
+        let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
+            anyhow!("value_available_in_block_after_phi_lowering: missing planned phi predecessor")
+        })?;
+        if block_has_successor(clone_block, block)? {
+            helper_phi.add_incoming(&[(edge_val, clone_block)]);
+            added_incoming = true;
+        }
+    }
+
+    if !added_incoming {
+        bail!(
+            "value_available_in_block_after_phi_lowering: no duplicated predecessors reach block {}",
+            name_of_block(block)
+        );
+    }
+
+    let helper_value = helper_phi.as_basic_value();
+    available_value_cache.insert(block, helper_value);
+    Ok(helper_value)
 }
 
 /// Validates that all external users of a phi are supported by the phi-user rewrite logic.
@@ -955,6 +1029,33 @@ fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
         }
     }
     Ok(preds)
+}
+
+/// Returns whether `from` has `to` as a direct successor through a supported terminator.
+fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
+    let Some(term) = from.get_terminator() else {
+        return Ok(false);
+    };
+
+    match term.get_opcode() {
+        Op::Br => {
+            if !term.is_conditional() {
+                Ok(operand_as_bb(term, 0) == Some(to))
+            } else {
+                Ok(operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to))
+            }
+        }
+        Op::Switch
+        | Op::IndirectBr
+        | Op::Invoke
+        | Op::CallBr
+        | Op::CatchSwitch
+        | Op::CatchRet
+        | Op::CleanupRet => {
+            bail!("Found unsupported terminal case when checking whether one block reaches another")
+        }
+        _ => Ok(false),
+    }
 }
 
 /// First non‑PHI in a block
@@ -1772,4 +1873,65 @@ fn sorted_clone_entries<'ctx>(
         .collect();
     entries.sort_by_key(|(pred, clone_block)| (name_of_block(*pred), name_of_block(*clone_block)));
     entries
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use inkwell::context::Context;
+    use inkwell::memory_buffer::MemoryBuffer;
+    use rstest::rstest;
+    use std::path::PathBuf;
+
+    fn fixture_path(name: &str) -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("test_resources")
+            .join(name)
+    }
+
+    fn load_module_from_fixture<'ctx>(context: &'ctx Context, name: &str) -> Result<Module<'ctx>> {
+        let buffer = MemoryBuffer::create_from_file(&fixture_path(name))
+            .map_err(|err| anyhow!("Failed to read fixture {name}: {err}"))?;
+        context
+            .create_module_from_ir(buffer)
+            .map_err(|err| anyhow!("Failed to parse fixture {name}: {}", err.to_string()))
+    }
+
+    fn count_lowerable_qubit_selects_and_phis(module: &Module) -> usize {
+        module
+            .get_functions()
+            .flat_map(|function| function.get_basic_blocks())
+            .flat_map(|block| block.get_instructions())
+            .filter(|inst| is_lowerable_qubit_select_or_phi_instruction(*inst))
+            .count()
+    }
+
+    #[rstest]
+    #[case("generates-llvm-selects-on-qubits-example.ll")]
+    #[case("toric_code_example.ll")]
+    #[case("simple_qubit_select.ll")]
+    #[case("simple_qubit_phi.ll")]
+    #[case("select_with_record_output.ll")]
+    #[case("select_with_downstream_phi.ll")]
+    fn lowers_all_lowerable_qubit_selects_and_phis_from_fixture(#[case] fixture: &str) {
+        let context = Context::create();
+        let module = load_module_from_fixture(&context, fixture).unwrap();
+
+        let before = count_lowerable_qubit_selects_and_phis(&module);
+        assert!(
+            before > 0,
+            "expected fixture {fixture} to contain at least one lowerable qubit select or phi"
+        );
+
+        let changed = lower_qubit_selects_and_phis(&module).unwrap();
+        let after = count_lowerable_qubit_selects_and_phis(&module);
+
+        assert!(changed, "expected pass to change fixture {fixture}");
+        assert_eq!(
+            after, 0,
+            "expected pass to remove all lowerable qubit selects/phis in fixture {fixture}"
+        );
+        module.verify().unwrap();
+    }
 }
