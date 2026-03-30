@@ -287,6 +287,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
+    let mut wrote_first_select_dump = false;
 
     for func in module.get_functions() {
         let mut block_opt = func.get_first_basic_block();
@@ -294,6 +295,17 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
             if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
                 lower_one_select_to_control_flow(&builder, first_sel)?;
                 changed = true;
+                if !wrote_first_select_dump {
+                    module
+                        .print_to_file("pass_log_after_first_select.ll")
+                        .map_err(|err| {
+                            anyhow!(
+                                "Failed to write pass_log_after_first_select.ll: {}",
+                                err.to_string()
+                            )
+                        })?;
+                    wrote_first_select_dump = true;
+                }
             }
             // If we found a select we will have added new blocks just after
             // the current one. Need to check those blocks for further selects
@@ -484,7 +496,25 @@ fn fix_successor_phis_block_rename<'ctx>(
             Ok(())
         }
         Op::Switch => {
-            bail!("Found switch instruction, but switch is not supported")
+            let mut succs = Vec::new();
+            succs.push(required_block_operand(
+                term,
+                1,
+                "fix_successor_phis_block_rename",
+            )?);
+            let mut idx = 3;
+            while idx < term.get_num_operands() {
+                succs.push(required_block_operand(
+                    term,
+                    idx,
+                    "fix_successor_phis_block_rename",
+                )?);
+                idx += 2;
+            }
+            for succ in succs {
+                rename_incoming_block_in_phis(succ, old_bb, new_bb, vmap)?;
+            }
+            Ok(())
         }
         _ => Ok(()),
     }
@@ -627,7 +657,11 @@ fn validate_phi_lowering<'ctx>(
     for pred in preds {
         for phi in phis {
             if incoming_for_predecessor(*phi, *pred).is_none() {
-                bail!("Phi block is missing an incoming edge for one predecessor");
+                bail!(
+                    "Phi block {} is missing an incoming edge for predecessor {}",
+                    name_of_block(block),
+                    name_of_block(*pred)
+                );
             }
         }
     }
@@ -914,29 +948,66 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
         return Ok(cached);
     }
 
-    let first_non_phi_inst = block.get_first_instruction().ok_or_else(|| {
-        anyhow!("value_available_in_block_after_phi_lowering: target block has no instructions")
-    })?;
-    let builder = block.get_context().create_builder();
-    builder.position_before(&first_non_phi_inst);
-    let helper_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.available")?;
+    let reverse_clone_map: HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>> = clone_for_pred
+        .iter()
+        .map(|(pred, clone_block)| (*clone_block, *pred))
+        .collect();
+    let preds = predecessors(block)?;
 
-    let mut added_incoming = false;
-    for (pred, edge_val) in sorted_incoming_by_pred {
-        let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
-            anyhow!("value_available_in_block_after_phi_lowering: missing planned phi predecessor")
-        })?;
-        if block_has_successor(clone_block, block)? {
-            helper_phi.add_incoming(&[(edge_val, clone_block)]);
-            added_incoming = true;
-        }
-    }
-
-    if !added_incoming {
+    if preds.is_empty() {
         bail!(
-            "value_available_in_block_after_phi_lowering: no duplicated predecessors reach block {}",
+            "value_available_in_block_after_phi_lowering: block {} is unreachable from duplicated phi tails",
             name_of_block(block)
         );
+    }
+
+    let builder = block.get_context().create_builder();
+    if let Some(first_inst) = block.get_first_instruction() {
+        builder.position_before(&first_inst);
+    } else {
+        builder.position_at_end(block);
+    }
+    let helper_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.available")?;
+
+    for pred_block in preds {
+        if pred_block
+            == required_parent_block(
+                phi.as_instruction(),
+                "value_available_in_block_after_phi_lowering",
+            )?
+        {
+            for (pred, edge_val) in sorted_incoming_by_pred {
+                let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
+                    anyhow!(
+                        "value_available_in_block_after_phi_lowering: missing planned phi predecessor"
+                    )
+                })?;
+                if block_has_successor(clone_block, block)? {
+                    helper_phi.add_incoming(&[(edge_val, clone_block)]);
+                }
+            }
+            continue;
+        }
+
+        let incoming_value = if let Some(original_pred) = reverse_clone_map.get(&pred_block) {
+            sorted_incoming_by_pred
+                .iter()
+                .find_map(|(pred, edge_val)| (*pred == *original_pred).then_some(*edge_val))
+                .ok_or_else(|| {
+                    anyhow!(
+                        "value_available_in_block_after_phi_lowering: missing incoming value for duplicated predecessor"
+                    )
+                })?
+        } else {
+            value_available_in_block_after_phi_lowering(
+                phi,
+                pred_block,
+                clone_for_pred,
+                sorted_incoming_by_pred,
+                available_value_cache,
+            )?
+        };
+        helper_phi.add_incoming(&[(&incoming_value, pred_block)]);
     }
 
     let helper_value = helper_phi.as_basic_value();
@@ -1011,15 +1082,28 @@ fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
                         }
                     }
                 }
-                Op::Switch
-                | Op::IndirectBr
+                Op::Switch => {
+                    if operand_as_bb(term, 1) == Some(to) {
+                        preds.push(b);
+                        continue;
+                    }
+                    let mut idx = 3;
+                    while idx < term.get_num_operands() {
+                        if operand_as_bb(term, idx) == Some(to) {
+                            preds.push(b);
+                            break;
+                        }
+                        idx += 2;
+                    }
+                }
+                Op::IndirectBr
                 | Op::Invoke
                 | Op::CallBr
                 | Op::CatchSwitch
                 | Op::CatchRet
                 | Op::CleanupRet => {
                     // These cases could be predecessors, but we don't handle them for now
-                    // Switch is not supported for OG systems, not sure if the others can occur
+                    // Not sure if these can occur for this pass.
                     bail!(
                         "Found unsupported terminal case when searching for phi predecessor blocks"
                     );
@@ -1914,6 +1998,11 @@ mod test {
     #[case("simple_qubit_phi.ll")]
     #[case("select_with_record_output.ll")]
     #[case("select_with_downstream_phi.ll")]
+    #[case("tail_int_ptr_casts.ll")]
+    #[case("tail_float_casts_and_cmp.ll")]
+    #[case("tail_gep_bitcast_and_call.ll")]
+    #[case("tail_switch_terminator.ll")]
+    #[case("tail_unreachable_terminator.ll")]
     fn lowers_all_lowerable_qubit_selects_and_phis_from_fixture(#[case] fixture: &str) {
         let context = Context::create();
         let module = load_module_from_fixture(&context, fixture).unwrap();
@@ -1932,6 +2021,26 @@ mod test {
             after, 0,
             "expected pass to remove all lowerable qubit selects/phis in fixture {fixture}"
         );
+        module.verify().unwrap();
+    }
+
+    #[test]
+    #[ignore = "Currently reproduces an LLVM crash in downstream non-qubit phi reconciliation"]
+    fn reproducer_tail_call_result_downstream_phi() {
+        let context = Context::create();
+        let module =
+            load_module_from_fixture(&context, "tail_call_result_downstream_phi.ll").unwrap();
+        lower_qubit_selects_and_phis(&module).unwrap();
+        module.verify().unwrap();
+    }
+
+    #[test]
+    #[ignore = "Currently reproduces an LLVM crash when record-output relocation interacts with downstream non-qubit phi reconciliation"]
+    fn reproducer_tail_record_output_and_downstream_phi() {
+        let context = Context::create();
+        let module =
+            load_module_from_fixture(&context, "tail_record_output_and_downstream_phi.ll").unwrap();
+        lower_qubit_selects_and_phis(&module).unwrap();
         module.verify().unwrap();
     }
 }
