@@ -292,7 +292,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
         let mut block_opt = func.get_first_basic_block();
         while let Some(bb) = block_opt {
             if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
-                lower_one_select_to_control_flow(&builder, first_sel)?;
+                lower_one_select_to_control_flow(module, &builder, first_sel)?;
                 changed = true;
             }
             // If we found a select we will have added new blocks just after
@@ -327,6 +327,7 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
 /// typed phis downstream if there were downstream users of the select and these phis
 /// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
+    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
 ) -> Result<()> {
@@ -395,7 +396,14 @@ fn lower_one_select_to_control_flow<'ctx>(
     }
     sel.erase_from_basic_block();
 
+    module
+        .print_to_file("pass_log_after_first_select.ll")
+        .expect("print");
+    println!("lowering phi {:?}", phi.to_string());
     lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+    module
+        .print_to_file("pass_log_after_first_select_phi.ll")
+        .expect("print");
 
     Ok(())
 }
@@ -619,12 +627,36 @@ pub fn lower_successive_qubit_phis_in_block(
         clone_value_maps.insert(pred, cloned_values);
     }
 
-    reconcile_external_uses_after_duplication(block, &clone_map, &clone_value_maps)?;
+    println!("clone_map:");
+    for (key, value) in clone_map.iter() {
+        println!("  {:?}: {:?}", key.get_name(), value.get_name());
+    }
+    println!("clone_value_maps:");
+    for (key, value) in clone_value_maps.iter() {
+        println!("  bb {:?}", key.get_name());
+        for (val, bla) in value.iter() {
+            println!("    {:?}: {:?}", val.to_string(), bla.to_string());
+        }
+    }
+
+    println!("clone_value_maps {:?}", clone_map);
+
+    let lowered_phi_keys: HashSet<ValueKey> = phis
+        .iter()
+        .map(|phi| value_key_from_instruction(phi.as_instruction()))
+        .collect();
+    reconcile_external_uses_after_duplication(
+        block,
+        &clone_map,
+        &clone_value_maps,
+        &lowered_phi_keys,
+    )?;
 
     // Now need to take care of any instructions that used the phi ssa variable
     // , e.g. function calls on the variable or additional phis
     for phi in phis {
         handle_phi_users(phi, block, &clone_map)?;
+        phi.as_instruction().erase_from_basic_block();
     }
 
     // Delete no longer needed block
@@ -1287,12 +1319,16 @@ fn reconcile_external_uses_after_duplication<'ctx>(
     original_block: BasicBlock<'ctx>,
     clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     clone_value_maps: &HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+    skipped_value_keys: &HashSet<ValueKey>,
 ) -> Result<()> {
     let mut merge_phi_by_block_and_value: HashMap<(BasicBlock<'ctx>, ValueKey), PhiValue<'ctx>> =
         HashMap::new();
     let sorted_clone_entries = sorted_clone_entries(clone_map);
 
     for inst in original_block.get_instructions() {
+        if skipped_value_keys.contains(&value_key_from_instruction(inst)) {
+            continue;
+        }
         let Ok(old_value): Result<BasicValueEnum<'ctx>, ()> = inst.as_any_value_enum().try_into()
         else {
             continue;
