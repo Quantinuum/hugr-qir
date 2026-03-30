@@ -2170,6 +2170,30 @@ mod test {
             .replace(|ch: char| !ch.is_ascii_alphanumeric(), "_")
     }
 
+    fn normalized_module_ir_for_snapshot(module: &Module, fixture: &str) -> String {
+        let normalized_module_id = format!(
+            "; ModuleID = '<fixture:{}>'",
+            fixture.strip_suffix(".ll").unwrap_or(fixture)
+        );
+
+        module
+            .to_string()
+            .lines()
+            .map(|line| {
+                if line.starts_with("; ModuleID = ") {
+                    normalized_module_id.clone()
+                } else if line.starts_with("target datalayout = ") {
+                    "target datalayout = \"<normalized>\"".to_string()
+                } else if line.starts_with("target triple = ") {
+                    "target triple = \"<normalized>\"".to_string()
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     #[rstest]
     #[case("generates-qubit-selects-1-example.ll")]
     #[case("generates-qubit-selects-2-example.ll")]
@@ -2212,7 +2236,10 @@ mod test {
         );
         settings.set_snapshot_suffix(suffix);
         settings.bind(|| {
-            assert_snapshot!("lowered_qubit_selects_and_phis", module.to_string());
+            assert_snapshot!(
+                "lowered_qubit_selects_and_phis",
+                normalized_module_ir_for_snapshot(&module, fixture)
+            );
         });
     }
 }

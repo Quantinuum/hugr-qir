@@ -1,11 +1,11 @@
 ---
 source: src/lower_qubit_ssa_vars.rs
-expression: module.to_string()
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/simple_qubit_select.ll'
+; ModuleID = '<fixture:simple_qubit_select>'
 source_filename = "simple_qubit_select"
-target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
-target triple = "aarch64-unknown-linux-gnu"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
 
 %Qubit = type opaque
 
