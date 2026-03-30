@@ -10,7 +10,7 @@ py = ["dep:pyo3"]
 
 [dependencies]
 anyhow = "1.0"
-clap = "4.5"
+clap = "4.6"
 clap-verbosity-flag = "3.0"
 clio = { version = "0.3.5", features = ["clap-parse"] }
 hugr = { version = "0.25.6", features = ["llvm"] }
@@ -30,7 +30,7 @@ tket-qsystem = { version = "0.23.0", features = ["cli"] }
 wasmparser = { version = "0.245", default-features = false }
 
 [dev-dependencies]
-insta = "1.46"
+insta = "1.47"
 rstest = "0.26.1"
 serde = { version = "1.0", features = ["derive"] }
 typetag = "0.2"
