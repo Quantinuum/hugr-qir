@@ -1,0 +1,37 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: module.to_string()
+---
+; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/tail_call_result_downstream_phi.ll'
+source_filename = "tail_call_result_downstream_phi"
+target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target triple = "aarch64-unknown-linux-gnu"
+
+%Result = type opaque
+
+@0 = private unnamed_addr constant [5 x i8] c"flag\00", align 1
+
+define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+entry:
+  br i1 %cond0, label %entry.select.merge.dup, label %entry.select.merge.dup3
+
+entry.select.merge.dup:                           ; preds = %entry
+  %flag12 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %cond1, label %join, label %right
+
+entry.select.merge.dup3:                          ; preds = %entry
+  %flag14 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %cond1, label %join, label %right
+
+right:                                            ; preds = %entry.select.merge.dup3, %entry.select.merge.dup
+  br label %join
+
+join:                                             ; preds = %entry.select.merge.dup, %entry.select.merge.dup3, %right
+  %phi.calluser = phi i1 [ false, %right ], [ %flag12, %entry.select.merge.dup ], [ %flag14, %entry.select.merge.dup3 ]
+  tail call void @__test__consume_bool(i1 %phi.calluser)
+  ret void
+}
+
+declare i1 @__quantum__qis__read_result__body(%Result*)
+
+declare void @__test__consume_bool(i1)

@@ -1,0 +1,28 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: module.to_string()
+---
+; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/simple_qubit_select.ll'
+source_filename = "simple_qubit_select"
+target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target triple = "aarch64-unknown-linux-gnu"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup1
+
+common.ret:                                       ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+  ret void
+
+entry.select.merge.dup:                           ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  br label %common.ret
+
+entry.select.merge.dup1:                          ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  br label %common.ret
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)

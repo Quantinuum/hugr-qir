@@ -1,0 +1,37 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: module.to_string()
+---
+; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/select_with_record_output.ll'
+source_filename = "select_with_record_output"
+target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target triple = "aarch64-unknown-linux-gnu"
+
+%Result = type opaque
+%Qubit = type opaque
+
+@0 = private unnamed_addr constant [5 x i8] c"flag\00", align 1
+
+define void @__hugr__.main.1() {
+entry:
+  %flag = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  br i1 %flag, label %entry.select.merge.dup, label %entry.select.merge.dup1
+
+entry.select.merge.dup:                           ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  br label %record_block
+
+entry.select.merge.dup1:                          ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  br label %record_block
+
+record_block:                                     ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+  call void @__quantum__rt__bool_record_output(i1 %flag, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i64 0, i64 0))
+  ret void
+}
+
+declare i1 @__quantum__qis__read_result__body(%Result*)
+
+declare void @__quantum__rt__bool_record_output(i1, i8*)
+
+declare void @__quantum__qis__reset__body(%Qubit*)

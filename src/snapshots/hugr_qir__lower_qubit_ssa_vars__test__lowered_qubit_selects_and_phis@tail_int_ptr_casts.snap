@@ -1,0 +1,38 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: module.to_string()
+---
+; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/tail_int_ptr_casts.ll'
+source_filename = "tail_int_ptr_casts"
+target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target triple = "aarch64-unknown-linux-gnu"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond, i1 %flag) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup12
+
+common.ret:                                       ; preds = %entry.select.merge.dup12, %entry.select.merge.dup
+  ret void
+
+entry.select.merge.dup:                           ; preds = %entry
+  %flag.ext27 = zext i1 %flag to i64
+  %shifted38 = shl i64 %flag.ext27, 1
+  %mixed49 = or i64 0, %shifted38
+  %next510 = add i64 %mixed49, 1
+  %selected.next611 = inttoptr i64 %next510 to %Qubit*
+  call void @__quantum__qis__reset__body(%Qubit* %selected.next611)
+  br label %common.ret
+
+entry.select.merge.dup12:                         ; preds = %entry
+  %flag.ext213 = zext i1 %flag to i64
+  %shifted314 = shl i64 %flag.ext213, 1
+  %mixed415 = or i64 8, %shifted314
+  %next516 = add i64 %mixed415, 1
+  %selected.next617 = inttoptr i64 %next516 to %Qubit*
+  call void @__quantum__qis__reset__body(%Qubit* %selected.next617)
+  br label %common.ret
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)

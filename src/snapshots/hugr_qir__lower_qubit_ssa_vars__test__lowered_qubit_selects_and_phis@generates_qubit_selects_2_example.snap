@@ -1,4 +1,8 @@
-; ModuleID = 'hugr-qir'
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: module.to_string()
+---
+; ModuleID = '/Users/travis.thompson/Develop/CQCL/hugr-qir/src/test_resources/ssa_lowering_pass/generates-qubit-selects-2-example.ll'
 source_filename = "hugr-qir"
 target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
 target triple = "aarch64-unknown-linux-gnu"
@@ -27,10 +31,10 @@ alloca_block:
   %"46_2.0" = zext i1 %0 to i64
   %2 = select i1 %0, i64 2, i64 1
   %"61_2.0" = select i1 %1, i64 %2, i64 %"46_2.0"
-  br i1 %1, label %alloca_block.select.merge.dup.select.merge.dup, label %alloca_block.select.merge.dup1832.select.merge.dup1867
+  br i1 %1, label %alloca_block.select.merge.dup.select.merge.dup, label %alloca_block.select.merge.dup7.select.merge.dup42
 
 alloca_block.select.merge.dup.select.merge.dup:   ; preds = %alloca_block
-  br i1 %0, label %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup, label %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851
+  br i1 %0, label %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup, label %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26
 
 alloca_block.select.merge.dup.select.merge.dup.select.merge.dup: ; preds = %alloca_block.select.merge.dup.select.merge.dup
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
@@ -48,7 +52,7 @@ alloca_block.select.merge.dup.select.merge.dup.select.merge.dup: ; preds = %allo
   %6 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
-alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851: ; preds = %alloca_block.select.merge.dup.select.merge.dup
+alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26: ; preds = %alloca_block.select.merge.dup.select.merge.dup
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 2 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
@@ -64,10 +68,10 @@ alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851: ; preds = %
   %10 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
-alloca_block.select.merge.dup1832.select.merge.dup1867: ; preds = %alloca_block
-  br i1 %0, label %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup, label %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882
+alloca_block.select.merge.dup7.select.merge.dup42: ; preds = %alloca_block
+  br i1 %0, label %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup, label %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57
 
-alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup: ; preds = %alloca_block.select.merge.dup1832.select.merge.dup1867
+alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup: ; preds = %alloca_block.select.merge.dup7.select.merge.dup42
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
@@ -83,7 +87,7 @@ alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup: ; preds
   %14 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
-alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882: ; preds = %alloca_block.select.merge.dup1832.select.merge.dup1867
+alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57: ; preds = %alloca_block.select.merge.dup7.select.merge.dup42
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 3 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
@@ -99,21 +103,21 @@ alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882: ; p
   %18 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
-record_block:                                     ; preds = %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup
-  %phi.calluser1885 = phi i1 [ %10, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851 ], [ %6, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %18, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882 ], [ %14, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup ]
-  %phi.calluser1884 = phi i1 [ %9, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851 ], [ %5, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %17, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882 ], [ %13, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup ]
-  %phi.calluser1883 = phi i1 [ %8, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851 ], [ %4, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %16, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882 ], [ %12, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup ]
-  %phi.calluser = phi i1 [ %7, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup1851 ], [ %3, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %15, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup1882 ], [ %11, %alloca_block.select.merge.dup1832.select.merge.dup1867.select.merge.dup ]
+record_block:                                     ; preds = %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup
+  %phi.calluser60 = phi i1 [ %10, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26 ], [ %6, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %18, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57 ], [ %14, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup ]
+  %phi.calluser59 = phi i1 [ %9, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26 ], [ %5, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %17, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57 ], [ %13, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup ]
+  %phi.calluser58 = phi i1 [ %8, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26 ], [ %4, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %16, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57 ], [ %12, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup ]
+  %phi.calluser = phi i1 [ %7, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup26 ], [ %3, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup ], [ %15, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup57 ], [ %11, %alloca_block.select.merge.dup7.select.merge.dup42.select.merge.dup ]
   call void @__quantum__rt__bool_record_output(i1 %0, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i64 0, i64 0))
   call void @__quantum__rt__bool_record_output(i1 %1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @1, i64 0, i64 0))
   call void @__quantum__rt__bool_record_output(i1 %phi.calluser, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @2, i64 0, i64 0))
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser1883, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @3, i64 0, i64 0))
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser1884, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @4, i64 0, i64 0))
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser1885, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @5, i64 0, i64 0))
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser58, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @3, i64 0, i64 0))
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser59, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @4, i64 0, i64 0))
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser60, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @5, i64 0, i64 0))
   call void @__quantum__rt__int_record_output(i64 %"61_2.0", i8* getelementptr inbounds ([8 x i8], [8 x i8]* @6, i64 0, i64 0))
   br i1 %0, label %29, label %cond_exit_620
 
-cond_336_case_1:                                  ; preds = %cond_exit_620, %30
+cond_336_case_1:                                  ; preds = %30, %cond_exit_620
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* nonnull inttoptr (i64 6 to %Result*))
   %19 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 6 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 7 to %Result*))
@@ -141,17 +145,17 @@ cond_704_case_1.sink.split.dup:                   ; preds = %cond_336_case_1
 
 NodeBlock:                                        ; preds = %cond_336_case_1
   %Pivot = icmp slt i64 %26, 2
-  br i1 %Pivot, label %cond_704_case_1.sink.split.dup1886, label %LeafBlock
+  br i1 %Pivot, label %cond_704_case_1.sink.split.dup61, label %LeafBlock
 
 LeafBlock:                                        ; preds = %NodeBlock
   %SwitchLeaf = icmp eq i64 %26, 2
-  br i1 %SwitchLeaf, label %cond_704_case_1.sink.split.dup1887, label %cond_704_case_1
+  br i1 %SwitchLeaf, label %cond_704_case_1.sink.split.dup62, label %cond_704_case_1
 
-cond_704_case_1.sink.split.dup1886:               ; preds = %NodeBlock
+cond_704_case_1.sink.split.dup61:                 ; preds = %NodeBlock
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 7 to %Qubit*))
   br label %cond_704_case_1
 
-cond_704_case_1:                                  ; preds = %LeafBlock, %cond_704_case_1.sink.split.dup1887, %cond_704_case_1.sink.split.dup1886, %cond_704_case_1.sink.split.dup
+cond_704_case_1:                                  ; preds = %LeafBlock, %cond_704_case_1.sink.split.dup62, %cond_704_case_1.sink.split.dup61, %cond_704_case_1.sink.split.dup
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 6 to %Qubit*), %Result* nonnull inttoptr (i64 10 to %Result*))
   %27 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 10 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 7 to %Qubit*), %Result* nonnull inttoptr (i64 11 to %Result*))
@@ -171,7 +175,7 @@ cond_exit_620:                                    ; preds = %record_block, %29
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   br label %cond_336_case_1
 
-cond_704_case_1.sink.split.dup1887:               ; preds = %LeafBlock
+cond_704_case_1.sink.split.dup62:                 ; preds = %LeafBlock
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 7 to %Qubit*))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 6 to %Qubit*))
   br label %cond_704_case_1

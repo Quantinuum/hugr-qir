@@ -355,9 +355,9 @@ fn lower_one_select_to_control_flow<'ctx>(
 
     let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
     let else_bb =
-        ctx.insert_basic_block_after(then_bb, &format!("{}select.else", name_of_block(bb)));
+        ctx.insert_basic_block_after(then_bb, &format!("{}.select.else", name_of_block(bb)));
     let merge_bb =
-        ctx.insert_basic_block_after(else_bb, &format!("{}select.merge", name_of_block(bb)));
+        ctx.insert_basic_block_after(else_bb, &format!("{}.select.merge", name_of_block(bb)));
 
     // Build PHI in merge (must be first in the block)
     builder.position_at_end(merge_bb);
@@ -1229,7 +1229,7 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
 
     let clone_block = pred
         .get_context()
-        .insert_basic_block_after(pred, &format!("{}_dup", name_of_block(original_block)));
+        .insert_basic_block_after(pred, &format!("{}.dup", name_of_block(original_block)));
 
     if let Err(err) = rebuild_tail(
         builder,
@@ -1436,20 +1436,40 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             return Ok(incoming_val);
         }
 
-        let incoming_key = value_key_from_instruction(incoming_inst);
+        self.resolve_original_instruction_for_predecessor(
+            original_pred,
+            incoming_inst,
+            value_key_from_instruction(incoming_inst),
+            "value_for_duplicated_original_predecessor",
+        )
+    }
+
+    /// Resolves the value contributed by `original_inst` along the duplicated
+    /// predecessor edge `original_pred`.
+    ///
+    /// This prefers the rebuilt SSA value in the duplicated predecessor, but if
+    /// the original instruction is itself a phi then the value for that edge is
+    /// taken from the phi incoming corresponding to `original_pred`.
+    fn resolve_original_instruction_for_predecessor(
+        &self,
+        original_pred: BasicBlock<'ctx>,
+        original_inst: InstructionValue<'ctx>,
+        value_key: ValueKey,
+        context: &str,
+    ) -> Result<BasicValueEnum<'ctx>> {
         self.clone_value_maps
             .get(&original_pred)
-            .and_then(|m| m.get(&incoming_key))
+            .and_then(|m| m.get(&value_key))
             .copied()
             .or_else(|| {
-                (incoming_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
-                    let phi = unsafe { PhiValue::new(incoming_inst.as_value_ref()) };
+                (original_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
+                    let phi = unsafe { PhiValue::new(original_inst.as_value_ref()) };
                     incoming_for_predecessor(phi, original_pred).map(|(val, _)| val)
                 })?
             })
             .ok_or_else(|| {
                 anyhow!(
-                    "value_for_duplicated_original_predecessor: missing cloned value for predecessor {}",
+                    "{context}: missing cloned value for predecessor {}",
                     name_of_block(original_pred)
                 )
             })
@@ -1487,26 +1507,6 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             );
         }
 
-        let incoming_value_for_original_pred =
-            |pred: BasicBlock<'ctx>| -> Result<BasicValueEnum<'ctx>> {
-                self.clone_value_maps
-                    .get(&pred)
-                    .and_then(|m| m.get(&value_key))
-                    .copied()
-                    .or_else(|| {
-                        (original_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
-                            let phi = unsafe { PhiValue::new(original_inst.as_value_ref()) };
-                            incoming_for_predecessor(phi, pred).map(|(val, _)| val)
-                        })?
-                    })
-                    .ok_or_else(|| {
-                        anyhow!(
-                            "value_available_in_block_after_duplication: missing cloned value for predecessor {}",
-                            name_of_block(pred)
-                        )
-                    })
-            };
-
         let builder = block.get_context().create_builder();
         if let Some(first_inst) = block.get_first_instruction() {
             builder.position_before(&first_inst);
@@ -1526,7 +1526,12 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
                     if block_has_successor(*clone_block, block)?
                         && added_pred_keys.insert(clone_key)
                     {
-                        let incoming_val = incoming_value_for_original_pred(*orig_pred)?;
+                        let incoming_val = self.resolve_original_instruction_for_predecessor(
+                            *orig_pred,
+                            original_inst,
+                            value_key,
+                            "value_available_in_block_after_duplication",
+                        )?;
                         helper_phi.add_incoming(&[(&incoming_val, *clone_block)]);
                     }
                 }
@@ -1535,7 +1540,12 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
 
             let incoming_val = if let Some(original_pred) = self.reverse_clone_map.get(&pred_block)
             {
-                incoming_value_for_original_pred(*original_pred)?
+                self.resolve_original_instruction_for_predecessor(
+                    *original_pred,
+                    original_inst,
+                    value_key,
+                    "value_available_in_block_after_duplication",
+                )?
             } else {
                 self.value_available_in_block(
                     original_inst,
@@ -2124,6 +2134,7 @@ mod test {
     use super::*;
     use inkwell::context::Context;
     use inkwell::memory_buffer::MemoryBuffer;
+    use insta::assert_snapshot;
     use rstest::rstest;
     use std::path::PathBuf;
 
@@ -2152,9 +2163,16 @@ mod test {
             .count()
     }
 
+    fn fixture_snapshot_suffix(fixture: &str) -> String {
+        fixture
+            .strip_suffix(".ll")
+            .unwrap_or(fixture)
+            .replace(|ch: char| !ch.is_ascii_alphanumeric(), "_")
+    }
+
     #[rstest]
-    #[case("generates-llvm-selects-on-qubits-example.ll")]
-    #[case("generates-qubit-selects1.ll")]
+    #[case("generates-qubit-selects-1-example.ll")]
+    #[case("generates-qubit-selects-2-example.ll")]
     #[case("toric_code_example.ll")]
     #[case("simple_qubit_select.ll")]
     #[case("simple_qubit_phi.ll")]
@@ -2186,5 +2204,15 @@ mod test {
             "expected pass to remove all lowerable qubit selects/phis in fixture {fixture}"
         );
         module.verify().unwrap();
+
+        let mut settings = insta::Settings::clone_current();
+        let suffix = settings.snapshot_suffix().map_or_else(
+            || fixture_snapshot_suffix(fixture),
+            |existing| format!("{existing}_{}", fixture_snapshot_suffix(fixture)),
+        );
+        settings.set_snapshot_suffix(suffix);
+        settings.bind(|| {
+            assert_snapshot!("lowered_qubit_selects_and_phis", module.to_string());
+        });
     }
 }
