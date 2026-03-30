@@ -292,7 +292,7 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
         let mut block_opt = func.get_first_basic_block();
         while let Some(bb) = block_opt {
             if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
-                lower_one_select_to_control_flow(module, &builder, first_sel)?;
+                lower_one_select_to_control_flow(&builder, first_sel)?;
                 changed = true;
             }
             // If we found a select we will have added new blocks just after
@@ -327,7 +327,6 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
 /// typed phis downstream if there were downstream users of the select and these phis
 /// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
-    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
 ) -> Result<()> {
@@ -395,16 +394,7 @@ fn lower_one_select_to_control_flow<'ctx>(
         fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
     }
     sel.erase_from_basic_block();
-
-    module
-        .print_to_file("pass_log_after_first_select.ll")
-        .expect("print");
-    println!("lowering phi {:?}", phi.to_string());
     lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
-    module
-        .print_to_file("pass_log_after_first_select_phi.ll")
-        .expect("print");
-
     Ok(())
 }
 
@@ -574,6 +564,12 @@ pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
                 continue;
             }
             if lower_successive_qubit_phis_in_block(&builder, block, phi_candidates)? {
+                verify_module(module).map_err(|err| {
+                    anyhow!(
+                        "Module verification failed after lowering qubit phis in block {}: {err}",
+                        name_of_block(block)
+                    )
+                })?;
                 changed = true;
             }
         }
@@ -626,20 +622,6 @@ pub fn lower_successive_qubit_phis_in_block(
         clone_map.insert(pred, clone_block);
         clone_value_maps.insert(pred, cloned_values);
     }
-
-    println!("clone_map:");
-    for (key, value) in clone_map.iter() {
-        println!("  {:?}: {:?}", key.get_name(), value.get_name());
-    }
-    println!("clone_value_maps:");
-    for (key, value) in clone_value_maps.iter() {
-        println!("  bb {:?}", key.get_name());
-        for (val, bla) in value.iter() {
-            println!("    {:?}: {:?}", val.to_string(), bla.to_string());
-        }
-    }
-
-    println!("clone_value_maps {:?}", clone_map);
 
     let lowered_phi_keys: HashSet<ValueKey> = phis
         .iter()
@@ -968,11 +950,22 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
         return Ok(cached);
     }
 
+    let phi_block = required_parent_block(
+        phi.as_instruction(),
+        "value_available_in_block_after_phi_lowering",
+    )?;
     let reverse_clone_map: HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>> = clone_for_pred
         .iter()
         .map(|(pred, clone_block)| (*clone_block, *pred))
         .collect();
     let preds = predecessors(block)?;
+    let clone_pred_keys: HashSet<usize> = reverse_clone_map
+        .keys()
+        .map(|bb| bb.as_mut_ptr() as usize)
+        .collect();
+    let has_direct_clone_pred = preds
+        .iter()
+        .any(|pred_block| clone_pred_keys.contains(&(pred_block.as_mut_ptr() as usize)));
 
     if preds.is_empty() {
         bail!(
@@ -988,21 +981,21 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
         builder.position_at_end(block);
     }
     let helper_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.available")?;
+    let mut added_pred_keys: HashSet<usize> = HashSet::new();
 
     for pred_block in preds {
-        if pred_block
-            == required_parent_block(
-                phi.as_instruction(),
-                "value_available_in_block_after_phi_lowering",
-            )?
-        {
+        if pred_block == phi_block {
+            if has_direct_clone_pred {
+                continue;
+            }
             for (pred, edge_val) in sorted_incoming_by_pred {
                 let &clone_block = clone_for_pred.get(pred).ok_or_else(|| {
                     anyhow!(
                         "value_available_in_block_after_phi_lowering: missing planned phi predecessor"
                     )
                 })?;
-                if block_has_successor(clone_block, block)? {
+                let clone_key = clone_block.as_mut_ptr() as usize;
+                if block_has_successor(clone_block, block)? && added_pred_keys.insert(clone_key) {
                     helper_phi.add_incoming(&[(edge_val, clone_block)]);
                 }
             }
@@ -1027,7 +1020,9 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
                 available_value_cache,
             )?
         };
-        helper_phi.add_incoming(&[(&incoming_value, pred_block)]);
+        if added_pred_keys.insert(pred_block.as_mut_ptr() as usize) {
+            helper_phi.add_incoming(&[(&incoming_value, pred_block)]);
+        }
     }
 
     let helper_value = helper_phi.as_basic_value();
@@ -1321,9 +1316,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
     clone_value_maps: &HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
     skipped_value_keys: &HashSet<ValueKey>,
 ) -> Result<()> {
-    let mut merge_phi_by_block_and_value: HashMap<(BasicBlock<'ctx>, ValueKey), PhiValue<'ctx>> =
-        HashMap::new();
-    let sorted_clone_entries = sorted_clone_entries(clone_map);
+    let mut resolver = DuplicationValueResolver::new(original_block, clone_map, clone_value_maps);
 
     for inst in original_block.get_instructions() {
         if skipped_value_keys.contains(&value_key_from_instruction(inst)) {
@@ -1334,18 +1327,6 @@ fn reconcile_external_uses_after_duplication<'ctx>(
             continue;
         };
         let value_key = value_key_from_instruction(inst);
-        let incoming_value_for_clone = |pred: &BasicBlock<'ctx>| -> Option<BasicValueEnum<'ctx>> {
-            clone_value_maps
-                .get(pred)
-                .and_then(|m| m.get(&value_key))
-                .copied()
-                .or_else(|| {
-                    (inst.get_opcode() == InstructionOpcode::Phi).then(|| {
-                        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
-                        incoming_for_predecessor(phi, *pred).map(|(val, _)| val)
-                    })?
-                })
-        };
 
         let external_users = collect_external_instruction_users(old_value, original_block)?;
 
@@ -1355,36 +1336,40 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                 let user_block =
                     required_parent_block(user, "reconcile_external_uses_after_duplication")?;
                 let incomings = user_phi.get_incomings();
-                let incoming_by_block: HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>> =
-                    incomings.into_iter().map(|(val, bb)| (bb, val)).collect();
-                let user_preds = predecessors(user_block)?;
                 let builder = user_block.get_context().create_builder();
                 builder.position_before(&user);
                 let replacement_phi =
                     builder.build_phi(user_phi.as_basic_value().get_type(), "phi.calluser")?;
+                let sorted_clone_entries = sorted_clone_entries(clone_map);
 
-                for pred_bb in user_preds {
-                    if pred_bb == original_block {
+                for (incoming_val, incoming_bb) in incomings {
+                    if incoming_bb == original_block {
+                        for (orig_pred, clone_block) in &sorted_clone_entries {
+                            if !block_has_successor(*clone_block, user_block)? {
+                                continue;
+                            }
+                            let replacement_val = resolver
+                                .value_for_duplicated_original_predecessor(
+                                    *orig_pred,
+                                    incoming_val,
+                                )?;
+                            replacement_phi.add_incoming(&[(&replacement_val, *clone_block)]);
+                        }
                         continue;
                     }
 
-                    let clone_source = clone_map
-                        .iter()
-                        .find_map(|(pred, clone_bb)| (*clone_bb == pred_bb).then_some(pred));
-
-                    if let Some(pred) = clone_source {
-                        let clone_value = incoming_value_for_clone(pred).ok_or_else(|| {
-                            anyhow!(
-                                "reconcile_external_uses_after_duplication: missing cloned value for external phi-use reconciliation"
-                            )
-                        })?;
-                        replacement_phi.add_incoming(&[(&clone_value, pred_bb)]);
-                        continue;
-                    }
-
-                    if let Some(incoming_val) = incoming_by_block.get(&pred_bb).copied() {
-                        replacement_phi.add_incoming(&[(&incoming_val, pred_bb)]);
-                    }
+                    let replacement_val = if incoming_val.as_value_ref() == old_value.as_value_ref()
+                    {
+                        resolver.value_available_in_block(
+                            inst,
+                            incoming_bb,
+                            value_key,
+                            old_value,
+                        )?
+                    } else {
+                        incoming_val
+                    };
+                    replacement_phi.add_incoming(&[(&replacement_val, incoming_bb)]);
                 }
 
                 user_phi.replace_all_uses_with(&replacement_phi);
@@ -1396,29 +1381,180 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 
             let user_block =
                 required_parent_block(user, "reconcile_external_uses_after_duplication")?;
-            let phi = *merge_phi_by_block_and_value
-                .entry((user_block, value_key))
-                .or_insert_with(|| {
-                    let builder = user_block.get_context().create_builder();
-                    let first_inst = user_block
-                        .get_first_instruction()
-                        .expect("phi merge block must contain at least one instruction");
-                    builder.position_before(&first_inst);
-                    let phi = builder
-                        .build_phi(old_value.get_type(), "phi.calluser")
-                        .expect("error building phi");
-                    for (pred, clone_block) in &sorted_clone_entries {
-                        let clone_value = incoming_value_for_clone(pred)
-                            .expect("missing cloned value for external-use reconciliation");
-                        phi.add_incoming(&[(&clone_value, *clone_block)]);
-                    }
-                    phi
-                });
-            replace_value_uses_in_instruction(user, old_value, phi.as_basic_value());
+            let replacement_value =
+                resolver.value_available_in_block(inst, user_block, value_key, old_value)?;
+            replace_value_uses_in_instruction(user, old_value, replacement_value);
         }
     }
 
     Ok(())
+}
+
+/// Carries the shared state needed to resolve SSA values after a block has been
+/// duplicated per predecessor.
+struct DuplicationValueResolver<'a, 'ctx> {
+    original_block: BasicBlock<'ctx>,
+    clone_value_maps: &'a HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+    sorted_clone_entries: Vec<(BasicBlock<'ctx>, BasicBlock<'ctx>)>,
+    reverse_clone_map: HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    available_value_cache: HashMap<(BasicBlock<'ctx>, ValueKey), BasicValueEnum<'ctx>>,
+}
+
+impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
+    fn new(
+        original_block: BasicBlock<'ctx>,
+        clone_map: &'a HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+        clone_value_maps: &'a HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+    ) -> Self {
+        Self {
+            original_block,
+            clone_value_maps,
+            sorted_clone_entries: sorted_clone_entries(clone_map),
+            reverse_clone_map: clone_map
+                .iter()
+                .map(|(pred, clone_bb)| (*clone_bb, *pred))
+                .collect(),
+            available_value_cache: HashMap::new(),
+        }
+    }
+
+    /// Resolves the value that should flow along the duplicated edge corresponding
+    /// to `original_pred` for a phi incoming that originally came from `original_block`.
+    ///
+    /// If the incoming value was produced in `original_block`, this returns the
+    /// cloned value rebuilt for `original_pred`. Otherwise the incoming is already
+    /// available on all duplicated edges and is returned unchanged.
+    fn value_for_duplicated_original_predecessor(
+        &self,
+        original_pred: BasicBlock<'ctx>,
+        incoming_val: BasicValueEnum<'ctx>,
+    ) -> Result<BasicValueEnum<'ctx>> {
+        let Some(incoming_inst) = incoming_val.as_instruction_value() else {
+            return Ok(incoming_val);
+        };
+        if incoming_inst.get_parent() != Some(self.original_block) {
+            return Ok(incoming_val);
+        }
+
+        let incoming_key = value_key_from_instruction(incoming_inst);
+        self.clone_value_maps
+            .get(&original_pred)
+            .and_then(|m| m.get(&incoming_key))
+            .copied()
+            .or_else(|| {
+                (incoming_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
+                    let phi = unsafe { PhiValue::new(incoming_inst.as_value_ref()) };
+                    incoming_for_predecessor(phi, original_pred).map(|(val, _)| val)
+                })?
+            })
+            .ok_or_else(|| {
+                anyhow!(
+                    "value_for_duplicated_original_predecessor: missing cloned value for predecessor {}",
+                    name_of_block(original_pred)
+                )
+            })
+    }
+
+    /// Returns a value available in `block` for an SSA originally defined in
+    /// `original_block` after that block has been duplicated away.
+    ///
+    /// If `block` is not itself one of the clone blocks, this creates a helper
+    /// phi in `block` that merges the value flowing from its current predecessors.
+    fn value_available_in_block(
+        &mut self,
+        original_inst: InstructionValue<'ctx>,
+        block: BasicBlock<'ctx>,
+        value_key: ValueKey,
+        value_type_source: BasicValueEnum<'ctx>,
+    ) -> Result<BasicValueEnum<'ctx>> {
+        if let Some(&cached) = self.available_value_cache.get(&(block, value_key)) {
+            return Ok(cached);
+        }
+
+        let preds = predecessors(block)?;
+        let clone_pred_keys: HashSet<usize> = self
+            .reverse_clone_map
+            .keys()
+            .map(|bb| bb.as_mut_ptr() as usize)
+            .collect();
+        let has_direct_clone_pred = preds
+            .iter()
+            .any(|pred_block| clone_pred_keys.contains(&(pred_block.as_mut_ptr() as usize)));
+        if preds.is_empty() {
+            bail!(
+                "value_available_in_block_after_duplication: block {} is unreachable from duplicated values",
+                name_of_block(block)
+            );
+        }
+
+        let incoming_value_for_original_pred =
+            |pred: BasicBlock<'ctx>| -> Result<BasicValueEnum<'ctx>> {
+                self.clone_value_maps
+                    .get(&pred)
+                    .and_then(|m| m.get(&value_key))
+                    .copied()
+                    .or_else(|| {
+                        (original_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
+                            let phi = unsafe { PhiValue::new(original_inst.as_value_ref()) };
+                            incoming_for_predecessor(phi, pred).map(|(val, _)| val)
+                        })?
+                    })
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "value_available_in_block_after_duplication: missing cloned value for predecessor {}",
+                            name_of_block(pred)
+                        )
+                    })
+            };
+
+        let builder = block.get_context().create_builder();
+        if let Some(first_inst) = block.get_first_instruction() {
+            builder.position_before(&first_inst);
+        } else {
+            builder.position_at_end(block);
+        }
+        let helper_phi = builder.build_phi(value_type_source.get_type(), "phi.calluser.edge")?;
+        let mut added_pred_keys: HashSet<usize> = HashSet::new();
+
+        for pred_block in preds {
+            if pred_block == self.original_block {
+                if has_direct_clone_pred {
+                    continue;
+                }
+                for (orig_pred, clone_block) in &self.sorted_clone_entries {
+                    let clone_key = clone_block.as_mut_ptr() as usize;
+                    if block_has_successor(*clone_block, block)?
+                        && added_pred_keys.insert(clone_key)
+                    {
+                        let incoming_val = incoming_value_for_original_pred(*orig_pred)?;
+                        helper_phi.add_incoming(&[(&incoming_val, *clone_block)]);
+                    }
+                }
+                continue;
+            }
+
+            let incoming_val = if let Some(original_pred) = self.reverse_clone_map.get(&pred_block)
+            {
+                incoming_value_for_original_pred(*original_pred)?
+            } else {
+                self.value_available_in_block(
+                    original_inst,
+                    pred_block,
+                    value_key,
+                    value_type_source,
+                )?
+            };
+
+            if added_pred_keys.insert(pred_block.as_mut_ptr() as usize) {
+                helper_phi.add_incoming(&[(&incoming_val, pred_block)]);
+            }
+        }
+
+        let helper_value = helper_phi.as_basic_value();
+        self.available_value_cache
+            .insert((block, value_key), helper_value);
+        Ok(helper_value)
+    }
 }
 
 /// Returns whether `rebuild_inst` has support for the given non-terminator opcode.
@@ -1995,6 +2131,7 @@ mod test {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("src")
             .join("test_resources")
+            .join("ssa_lowering_pass")
             .join(name)
     }
 
@@ -2017,6 +2154,7 @@ mod test {
 
     #[rstest]
     #[case("generates-llvm-selects-on-qubits-example.ll")]
+    #[case("generates-qubit-selects1.ll")]
     #[case("toric_code_example.ll")]
     #[case("simple_qubit_select.ll")]
     #[case("simple_qubit_phi.ll")]
@@ -2027,6 +2165,8 @@ mod test {
     #[case("tail_gep_bitcast_and_call.ll")]
     #[case("tail_switch_terminator.ll")]
     #[case("tail_unreachable_terminator.ll")]
+    #[case("tail_record_output_and_downstream_phi.ll")]
+    #[case("tail_call_result_downstream_phi.ll")]
     fn lowers_all_lowerable_qubit_selects_and_phis_from_fixture(#[case] fixture: &str) {
         let context = Context::create();
         let module = load_module_from_fixture(&context, fixture).unwrap();
@@ -2045,26 +2185,6 @@ mod test {
             after, 0,
             "expected pass to remove all lowerable qubit selects/phis in fixture {fixture}"
         );
-        module.verify().unwrap();
-    }
-
-    #[test]
-    #[ignore = "Currently reproduces an LLVM crash in downstream non-qubit phi reconciliation"]
-    fn reproducer_tail_call_result_downstream_phi() {
-        let context = Context::create();
-        let module =
-            load_module_from_fixture(&context, "tail_call_result_downstream_phi.ll").unwrap();
-        lower_qubit_selects_and_phis(&module).unwrap();
-        module.verify().unwrap();
-    }
-
-    #[test]
-    #[ignore = "Currently reproduces an LLVM crash when record-output relocation interacts with downstream non-qubit phi reconciliation"]
-    fn reproducer_tail_record_output_and_downstream_phi() {
-        let context = Context::create();
-        let module =
-            load_module_from_fixture(&context, "tail_record_output_and_downstream_phi.ll").unwrap();
-        lower_qubit_selects_and_phis(&module).unwrap();
         module.verify().unwrap();
     }
 }
