@@ -287,7 +287,6 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
-    let mut wrote_first_select_dump = false;
 
     for func in module.get_functions() {
         let mut block_opt = func.get_first_basic_block();
@@ -295,17 +294,6 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
             if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
                 lower_one_select_to_control_flow(&builder, first_sel)?;
                 changed = true;
-                if !wrote_first_select_dump {
-                    module
-                        .print_to_file("pass_log_after_first_select.ll")
-                        .map_err(|err| {
-                            anyhow!(
-                                "Failed to write pass_log_after_first_select.ll: {}",
-                                err.to_string()
-                            )
-                        })?;
-                    wrote_first_select_dump = true;
-                }
             }
             // If we found a select we will have added new blocks just after
             // the current one. Need to check those blocks for further selects
