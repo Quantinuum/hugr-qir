@@ -2200,6 +2200,7 @@ mod test {
     #[case("toric_code_example.ll")]
     #[case("simple_qubit_select.ll")]
     #[case("simple_qubit_phi.ll")]
+    #[case("multiple_qubit_phis_in_block.ll")]
     #[case("select_with_record_output.ll")]
     #[case("select_with_downstream_phi.ll")]
     #[case("tail_int_ptr_casts.ll")]
