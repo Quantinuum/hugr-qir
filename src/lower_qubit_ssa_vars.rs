@@ -23,6 +23,9 @@ type ValueKey = usize;
 /// Lowers select instructions to branching + possible additional phi's,
 /// then lowers any remaining phis
 pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
+    verify_module(module).map_err(|err| {
+        anyhow!("Verification failed for input module to lower_qubit_selects_and_phis pass: {err}")
+    })?;
     if !module_has_lowerable_qubit_selects_or_phis(module) {
         return Ok(false);
     }
@@ -2154,6 +2157,17 @@ mod test {
             .map_err(|err| anyhow!("Failed to parse fixture {name}: {}", err.to_string()))
     }
 
+    fn load_module_from_ir<'ctx>(
+        context: &'ctx Context,
+        name: &str,
+        ir: &str,
+    ) -> Result<Module<'ctx>> {
+        let buffer = MemoryBuffer::create_from_memory_range_copy(ir.as_bytes(), name);
+        context
+            .create_module_from_ir(buffer)
+            .map_err(|err| anyhow!("Failed to parse inline IR {name}: {}", err.to_string()))
+    }
+
     fn count_lowerable_qubit_selects_and_phis(module: &Module) -> usize {
         module
             .get_functions()
@@ -2242,5 +2256,52 @@ mod test {
                 normalized_module_ir_for_snapshot(&module, fixture)
             );
         });
+    }
+
+    #[test]
+    fn rejects_invalid_input_module_before_lowering() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "invalid_input_module",
+            r#"
+; ModuleID = 'invalid_input_module'
+source_filename = "invalid_input_module"
+target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target triple = "aarch64-unknown-linux-gnu"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %then, label %else
+
+then:
+  br label %merge
+
+else:
+  br label %merge
+
+merge:
+  ; first incoming is invalid because `entry` is not a predecessor of `merge`
+  %selected = phi %Qubit* [ null, %entry ], [ inttoptr (i64 1 to %Qubit*), %else ]
+  tail call void @__quantum__qis__reset__body(%Qubit* %selected)
+  ret void
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)
+"#,
+        )
+        .unwrap();
+
+        let err = lower_qubit_selects_and_phis(&module)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains(
+                "Verification failed for input module to lower_qubit_selects_and_phis pass"
+            ),
+            "unexpected error: {err}"
+        );
     }
 }
