@@ -1,0 +1,34 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:tail_switch_terminator>'
+source_filename = "tail_switch_terminator"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+@0 = private unnamed_addr constant [6 x i8] c"which\00", align 1
+
+define void @__hugr__.main.1(i1 %cond, i1 %flag) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup3
+
+entry.select.merge.dup:                           ; preds = %entry
+  %idx12 = zext i1 %flag to i64
+  %switch.selectcmp = icmp eq i64 %idx12, 0
+  %switch.select = select i1 %switch.selectcmp, i64 0, i64 1
+  br label %record_block
+
+entry.select.merge.dup3:                          ; preds = %entry
+  %idx14 = zext i1 %flag to i64
+  %switch.selectcmp5 = icmp eq i64 %idx14, 0
+  %switch.select6 = select i1 %switch.selectcmp5, i64 0, i64 1
+  br label %record_block
+
+record_block:                                     ; preds = %entry.select.merge.dup, %entry.select.merge.dup3
+  %which = phi i64 [ %switch.select, %entry.select.merge.dup ], [ %switch.select6, %entry.select.merge.dup3 ]
+  call void @__quantum__rt__int_record_output(i64 %which, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i64 0, i64 0))
+  ret void
+}
+
+declare void @__quantum__rt__int_record_output(i64, i8*)

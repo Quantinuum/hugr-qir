@@ -1,0 +1,38 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:tail_record_output_and_downstream_phi>'
+source_filename = "tail_record_output_and_downstream_phi"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Result = type opaque
+
+@0 = private unnamed_addr constant [8 x i8] c"first\00\00\00", align 1
+
+define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+entry:
+  br i1 %cond0, label %entry.select.merge.dup, label %entry.select.merge.dup3
+
+entry.select.merge.dup:                           ; preds = %entry
+  %flag12 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br label %record_block
+
+entry.select.merge.dup3:                          ; preds = %entry
+  %flag14 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  br label %record_block
+
+record_block:                                     ; preds = %entry.select.merge.dup3, %entry.select.merge.dup
+  %phi.calluser.edge5 = phi i1 [ %flag12, %entry.select.merge.dup ], [ %flag14, %entry.select.merge.dup3 ]
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge5, i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i64 0, i64 0))
+  %phi.calluser = select i1 %cond1, i1 %phi.calluser.edge5, i1 true
+  tail call void @__test__consume_bool(i1 %phi.calluser)
+  ret void
+}
+
+declare i1 @__quantum__qis__read_result__body(%Result*)
+
+declare void @__quantum__rt__bool_record_output(i1, i8*)
+
+declare void @__test__consume_bool(i1)

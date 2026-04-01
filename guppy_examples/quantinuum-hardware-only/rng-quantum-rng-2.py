@@ -14,7 +14,7 @@ def main() -> None:
     h(q1)
     h(q1)
     r = RNG(11)
-    if r.random_int_bounded(100) == 5:  # noqa: PLR2004
+    if r.random_int_bounded(100) == 5:
         h(q1)
     r.discard()
     result("0", measure(q0))
