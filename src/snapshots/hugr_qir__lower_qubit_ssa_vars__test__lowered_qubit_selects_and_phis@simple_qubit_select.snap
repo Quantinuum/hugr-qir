@@ -1,0 +1,28 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:simple_qubit_select>'
+source_filename = "simple_qubit_select"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup1
+
+common.ret:                                       ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+  ret void
+
+entry.select.merge.dup:                           ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  br label %common.ret
+
+entry.select.merge.dup1:                          ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  br label %common.ret
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)

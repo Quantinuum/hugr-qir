@@ -13,7 +13,7 @@ def main() -> None:
     q1 = qubit()
     h(q1)
     h(q1)
-    if get_current_shot() == 5:  # noqa: PLR2004
+    if get_current_shot() == 5:
         h(q1)
     result("0", measure(q0))
     result("1", measure(q1))

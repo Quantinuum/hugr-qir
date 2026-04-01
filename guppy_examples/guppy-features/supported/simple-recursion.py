@@ -10,7 +10,7 @@ from guppylang.std.quantum import h, measure, x
 @no_type_check
 def recursive_func(q: qubit, n: int) -> None:
     x(q)
-    if n < 10:  # noqa: PLR2004
+    if n < 10:
         return recursive_func(q, n + 1)
     return None
 

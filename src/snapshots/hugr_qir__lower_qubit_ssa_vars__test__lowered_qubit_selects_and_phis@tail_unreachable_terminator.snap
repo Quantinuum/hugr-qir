@@ -1,0 +1,25 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:tail_unreachable_terminator>'
+source_filename = "tail_unreachable_terminator"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup1
+
+entry.select.merge.dup:                           ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  unreachable
+
+entry.select.merge.dup1:                          ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 9 to %Qubit*))
+  unreachable
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)
