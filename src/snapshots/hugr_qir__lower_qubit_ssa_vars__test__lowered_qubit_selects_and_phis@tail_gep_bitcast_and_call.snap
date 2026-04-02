@@ -1,0 +1,34 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:tail_gep_bitcast_and_call>'
+source_filename = "tail_gep_bitcast_and_call"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Qubit = type opaque
+
+@0 = private unnamed_addr constant [5 x i8] c"tail\00", align 1
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup1
+
+common.ret:                                       ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+  ret void
+
+entry.select.merge.dup:                           ; preds = %entry
+  call void @__test__consume_label(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i64 1))
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  br label %common.ret
+
+entry.select.merge.dup1:                          ; preds = %entry
+  call void @__test__consume_label(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i64 1))
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 5 to %Qubit*))
+  br label %common.ret
+}
+
+declare void @__test__consume_label(i8*)
+
+declare void @__quantum__qis__reset__body(%Qubit*)
