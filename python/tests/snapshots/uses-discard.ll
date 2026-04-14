@@ -6,7 +6,7 @@ target triple = "aarch64-unknown-linux-gnu"
 %Qubit = type opaque
 %Result = type opaque
 
-define dso_local void @__hugr__.main.1() local_unnamed_addr #0 {
+define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
