@@ -14,7 +14,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @5 = private unnamed_addr constant [11 x i8] c"random_sum\00", align 1
 @6 = private unnamed_addr constant [8 x i8] c"int_res\00", align 1
 
-define dso_local void @__hugr__.main.1() local_unnamed_addr #0 {
+define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
