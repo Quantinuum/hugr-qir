@@ -1,4 +1,4 @@
-QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: Failed to emit LLVM for function main at node Node(1)
+QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: Failed to emit LLVM for function guppy_example_mod.main at node Node(1)
 
 Caused by:
     0: Failed to emit LLVM for node N<CFG:Node(4)> with optype CFG
