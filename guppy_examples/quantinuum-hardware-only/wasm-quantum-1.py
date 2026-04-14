@@ -1,19 +1,11 @@
-from collections.abc import Generator
-from contextlib import contextmanager
 from typing import no_type_check
 
-import guppylang_internals
-import wasmtime as wt
 from guppylang import guppy, qubit
 from guppylang.std.num import nat
 from guppylang.std.platform import result
 from guppylang.std.qsystem.functional import measure
 from guppylang_internals.decorator import wasm, wasm_module
 from guppylang_internals.wasm_util import WasmPlatform
-from guppylang_internals.tys.ty import (
-    NumericType,
-    Type,
-)
 
 
 @wasm_module("wasm-quantum-1.wasm", wasm_platform=WasmPlatform.H2)
