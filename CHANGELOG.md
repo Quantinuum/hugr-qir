@@ -1,8 +1,9 @@
 ## Changelog
 
-### v0.0.25-rc.1
+### v0.0.25
 
 - clean up generation of phi and select operations containing qubits
+- update guppylang version requirement to 0.21.11
 
 ### v0.0.24
 
