@@ -8,7 +8,7 @@ dependencies = [
     "click~=8.3.1",
     "guppylang==0.21.11", # see https://github.com/Quantinuum/hugr-qir/issues/252
     "hugr~=0.15.4",
-    "llvmlite~=0.44.0",
+    "llvmlite>=0.44,<0.48",
     "quantinuum-qircheck~=0.5.0",
 ]
 
@@ -29,7 +29,7 @@ dev = [
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus~=0.37.1",
+    "qnexus>=0.37.1,<0.44.0",
 ]
 
 [build-system]
