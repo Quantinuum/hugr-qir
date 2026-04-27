@@ -876,9 +876,9 @@ dependencies = [
 
 [[package]]
 name = "hugr"
-version = "0.25.6"
+version = "0.25.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc11e18017e6ff91448e08e7180e786ca3247c7539de190f01253298442c92a9"
+checksum = "a45b39ce076230f7b2d7ca08ba20d77a8f61bb9d4a3bba2c3ac25a8e2df0cb68"
 dependencies = [
  "hugr-core",
  "hugr-llvm",
@@ -989,9 +989,9 @@ dependencies = [
 
 [[package]]
 name = "hugr-passes"
-version = "0.25.6"
+version = "0.25.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d566bdb985b053d8b02cfbe443f225a3fbc3ef2656193f5072d1c70b6abfe827"
+checksum = "8034893e2f6def14f03406c1d43a79663b9c83364b840bc808e0ffef4ad34e2d"
 dependencies = [
  "ascent",
  "derive_more 2.1.1",
