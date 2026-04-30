@@ -817,6 +817,7 @@ pub fn lower_float_phis(module: &Module) -> Result<bool> {
     let mut changed = false;
     for func in module.get_functions() {
         let mut block_opt = func.get_first_basic_block();
+        let mut round = 0;
         while let Some(block) = block_opt {
             block_opt = block.get_next_basic_block();
             let phi_candidates = get_block_float_phis(block);
@@ -831,6 +832,8 @@ pub fn lower_float_phis(module: &Module) -> Result<bool> {
                     )
                 })?;
                 changed = true;
+                module.print_to_file(format!("debug_phi_{round}")).unwrap();
+                round += 1;
             }
         }
     }
@@ -2600,7 +2603,7 @@ mod test {
 
     #[test]
     fn lowers_all_lowerable_float_selects_and_phis_from_fixtures() {
-        for fixture in ["simple_float_select.ll", "simple_float_phi.ll"] {
+        for fixture in ["simple_float_select.ll", "simple_float_phi.ll", "float_select_with_downstream_call.ll"] {
             let context = Context::create();
             let module = load_module_from_fixture(&context, fixture).unwrap();
 
