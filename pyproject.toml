@@ -32,6 +32,9 @@ examples = [
     "qnexus~=0.37.1",
 ]
 
+[tool.uv.sources]
+quantinuum-qircheck = { git = "https://github.com/Quantinuum/quantinuum-qircheck.git", rev = "1658f992d088575f750ce025224d70d134c1d099" }
+
 [build-system]
 requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
