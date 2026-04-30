@@ -13,21 +13,21 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.select.merge.dup, label %entry.select.merge.dup3
+  br i1 %cond0, label %entry.dup, label %entry.dup3
 
-entry.select.merge.dup:                           ; preds = %entry
+entry.dup:                                        ; preds = %entry
   %flag12 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %cond1, label %join, label %right
 
-entry.select.merge.dup3:                          ; preds = %entry
+entry.dup3:                                       ; preds = %entry
   %flag14 = call i1 @__quantum__qis__read_result__body(%Result* null)
   br i1 %cond1, label %join, label %right
 
-right:                                            ; preds = %entry.select.merge.dup3, %entry.select.merge.dup
+right:                                            ; preds = %entry.dup3, %entry.dup
   br label %join
 
-join:                                             ; preds = %entry.select.merge.dup, %entry.select.merge.dup3, %right
-  %phi.calluser = phi i1 [ false, %right ], [ %flag12, %entry.select.merge.dup ], [ %flag14, %entry.select.merge.dup3 ]
+join:                                             ; preds = %entry.dup, %entry.dup3, %right
+  %phi.calluser = phi i1 [ false, %right ], [ %flag12, %entry.dup ], [ %flag14, %entry.dup3 ]
   tail call void @__test__consume_bool(i1 %phi.calluser)
   ret void
 }

@@ -1,0 +1,25 @@
+---
+source: src/lower_qubit_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:simple_float_phi>'
+source_filename = "simple_float_phi"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+define double @__hugr__.main.1(i1 %cond0) {
+entry:
+  br i1 %cond0, label %left, label %right
+
+left:                                             ; preds = %entry
+  br label %merge.dup
+
+merge.dup:                                        ; preds = %left
+  ret double 4.000000e+00
+
+right:                                            ; preds = %entry
+  br label %merge.dup1
+
+merge.dup1:                                       ; preds = %right
+  ret double 5.000000e+00
+}

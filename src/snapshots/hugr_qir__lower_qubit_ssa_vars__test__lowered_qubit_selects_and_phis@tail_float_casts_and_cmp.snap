@@ -11,9 +11,9 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond, i1 %flag) {
 entry:
-  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup11
+  br i1 %cond, label %entry.dup, label %entry.dup11
 
-entry.select.merge.dup:                           ; preds = %entry
+entry.dup:                                        ; preds = %entry
   %flag.i6416 = zext i1 %flag to i64
   %flag.f6427 = uitofp i64 %flag.i6416 to double
   %flag.f3238 = fptrunc double %flag.f6427 to float
@@ -24,15 +24,15 @@ entry.select.merge.dup:                           ; preds = %entry
 common.ret:                                       ; preds = %left.dup18, %right.dup19, %left.dup, %right.dup
   ret void
 
-right.dup:                                        ; preds = %entry.select.merge.dup
+right.dup:                                        ; preds = %entry.dup
   call void @__quantum__qis__reset__body(%Qubit* null)
   br label %common.ret
 
-left.dup:                                         ; preds = %entry.select.merge.dup
+left.dup:                                         ; preds = %entry.dup
   call void @__quantum__qis__reset__body(%Qubit* null)
   br label %common.ret
 
-entry.select.merge.dup11:                         ; preds = %entry
+entry.dup11:                                      ; preds = %entry
   %flag.i64112 = zext i1 %flag to i64
   %flag.f64213 = uitofp i64 %flag.i64112 to double
   %flag.f32314 = fptrunc double %flag.f64213 to float
@@ -40,11 +40,11 @@ entry.select.merge.dup11:                         ; preds = %entry
   %is.zero516 = fcmp oeq double %flag.f64.ext415, 0.000000e+00
   br i1 %is.zero516, label %left.dup18, label %right.dup19
 
-right.dup19:                                      ; preds = %entry.select.merge.dup11
+right.dup19:                                      ; preds = %entry.dup11
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
   br label %common.ret
 
-left.dup18:                                       ; preds = %entry.select.merge.dup11
+left.dup18:                                       ; preds = %entry.dup11
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
   br label %common.ret
 }

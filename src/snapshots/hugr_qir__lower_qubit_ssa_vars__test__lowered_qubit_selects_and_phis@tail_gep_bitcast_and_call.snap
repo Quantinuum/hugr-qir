@@ -13,17 +13,17 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup1
+  br i1 %cond, label %entry.dup, label %entry.dup1
 
-common.ret:                                       ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+common.ret:                                       ; preds = %entry.dup1, %entry.dup
   ret void
 
-entry.select.merge.dup:                           ; preds = %entry
+entry.dup:                                        ; preds = %entry
   call void @__test__consume_label(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i64 1))
   call void @__quantum__qis__reset__body(%Qubit* null)
   br label %common.ret
 
-entry.select.merge.dup1:                          ; preds = %entry
+entry.dup1:                                       ; preds = %entry
   call void @__test__consume_label(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i64 1))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 5 to %Qubit*))
   br label %common.ret

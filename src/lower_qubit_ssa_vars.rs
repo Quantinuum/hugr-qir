@@ -40,15 +40,54 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
+/// Lowers select and phi instructions returning floating-point values to control flow.
+///
+/// This follows the same lowering strategy as the qubit-pointer pass, but does not
+/// run CFG simplification afterward because that can reintroduce float phis.
+pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
+    verify_module(module).map_err(|err| {
+        anyhow!("Verification failed for input module to lower_float_selects_and_phis pass: {err}")
+    })?;
+    if !module_has_lowerable_float_selects_or_phis(module) {
+        return Ok(false);
+    }
+
+    let lowered_selects = lower_float_selects(module)?;
+    let lowered_phis = lower_float_phis(module)?;
+    let changed = lowered_selects || lowered_phis;
+    verify_module(module)?;
+    Ok(changed)
+}
+
 /// Returns whether the module contains at least one qubit-pointer `select` or
 /// `phi` that this pass is expected to lower.
 fn module_has_lowerable_qubit_selects_or_phis(module: &Module) -> bool {
+    module_has_lowerable_selects_or_phis_matching(
+        module,
+        is_lowerable_qubit_select_or_phi_instruction,
+    )
+}
+
+/// Returns whether the module contains at least one floating-point `select` or
+/// `phi` that this pass is expected to lower.
+fn module_has_lowerable_float_selects_or_phis(module: &Module) -> bool {
+    module_has_lowerable_selects_or_phis_matching(
+        module,
+        is_lowerable_float_select_or_phi_instruction,
+    )
+}
+
+/// Returns whether the module contains at least one `select` or `phi` matching
+/// the provided lowering predicate.
+fn module_has_lowerable_selects_or_phis_matching(
+    module: &Module,
+    predicate: impl Fn(InstructionValue) -> bool + Copy,
+) -> bool {
     module.get_functions().any(|function| {
-        function.get_basic_blocks().iter().any(|block| {
-            block
-                .get_instructions()
-                .any(is_lowerable_qubit_select_or_phi_instruction)
-        })
+        function
+            .get_basic_blocks()
+            .iter()
+            .any(|block| block.get_instructions().any(predicate))
     })
 }
 
@@ -59,6 +98,15 @@ fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool 
         inst.get_opcode(),
         InstructionOpcode::Select | InstructionOpcode::Phi
     ) && matches!(inst.get_type(), AnyTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
+}
+
+/// Checks whether a single instruction matches the float lowering criteria:
+/// opcode `select` or `phi`, result type `FloatType`.
+fn is_lowerable_float_select_or_phi_instruction(inst: InstructionValue) -> bool {
+    matches!(
+        inst.get_opcode(),
+        InstructionOpcode::Select | InstructionOpcode::Phi
+    ) && matches!(inst.get_type(), AnyTypeEnum::FloatType(_))
 }
 
 /// Rebuilds a terminator into the builder's current insertion block.
@@ -196,7 +244,10 @@ pub fn move_matching_calls_to_fresh_block<'ctx>(
     // ------------------------------------------------------------
     // 3) Create the new block immediately after `bb`
     // ------------------------------------------------------------
-    let new_bb = context.append_basic_block(function, "record_block");
+    let new_bb = context.append_basic_block(
+        function,
+        &format!("{}.record", synthetic_block_base_name(bb)),
+    );
     new_bb
         .move_after(bb)
         .map_err(|_| anyhow!("move_matching_calls_to_fresh_block: failed to move block"))?;
@@ -307,6 +358,31 @@ pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
+/// Lower all floating-point `select` instructions to explicit control flow.
+pub fn lower_float_selects(module: &Module) -> Result<bool> {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+    let mut round = 0;
+
+    for func in module.get_functions() {
+        let mut block_opt = func.get_last_basic_block();
+        while let Some(bb) = block_opt {
+            if let Some(last_sel) = get_last_float_select_in_block(bb) {
+                lower_one_float_select_to_control_flow(&builder, last_sel)?;
+                changed = true;
+                module
+                    .print_to_file(format!("debug_round_{round}.ll"))
+                    .unwrap();
+                round += 1;
+            } else {
+                block_opt = bb.get_previous_basic_block();
+            }
+        }
+    }
+    Ok(changed)
+}
+
 /// Returns the first `select` in `bb` that produces a qubit pointer, if any.
 fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
     let mut it = bb.get_first_instruction();
@@ -315,6 +391,20 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
         if i.get_opcode() == InstructionOpcode::Select
             && let AnyTypeEnum::PointerType(pt) = i.get_type()
             && is_qubit_pointer(pt)
+        {
+            return Some(i);
+        }
+    }
+    None
+}
+
+/// Returns the first `select` in `bb` that produces a floating-point value, if any.
+fn get_last_float_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
+    let mut it = bb.get_last_instruction();
+    while let Some(i) = it {
+        it = i.get_previous_instruction();
+        if i.get_opcode() == InstructionOpcode::Select
+            && matches!(i.get_type(), AnyTypeEnum::FloatType(_))
         {
             return Some(i);
         }
@@ -356,11 +446,10 @@ fn lower_one_select_to_control_flow<'ctx>(
     // Create THEN, ELSE, MERGE blocks and append to function
     let ctx = bb.get_context();
 
-    let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
-    let else_bb =
-        ctx.insert_basic_block_after(then_bb, &format!("{}.select.else", name_of_block(bb)));
-    let merge_bb =
-        ctx.insert_basic_block_after(else_bb, &format!("{}.select.merge", name_of_block(bb)));
+    let block_base_name = synthetic_block_base_name(bb);
+    let then_bb = ctx.insert_basic_block_after(bb, &format!("{block_base_name}.sel.then"));
+    let else_bb = ctx.insert_basic_block_after(then_bb, &format!("{block_base_name}.sel.else"));
+    let merge_bb = ctx.insert_basic_block_after(else_bb, &format!("{block_base_name}.sel.merge"));
 
     // Build PHI in merge (must be first in the block)
     builder.position_at_end(merge_bb);
@@ -398,6 +487,137 @@ fn lower_one_select_to_control_flow<'ctx>(
     }
     sel.erase_from_basic_block();
     lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
+    Ok(())
+}
+
+/// Lowers one floating-point `select` into an explicit then/else/merge diamond and
+/// immediately lowers the introduced merge phi.
+fn lower_one_float_select_to_control_flow<'ctx>(
+    builder: &Builder<'ctx>,
+    sel: InstructionValue<'ctx>,
+) -> Result<()> {
+    let bb = required_parent_block(sel, "lower_one_float_select_to_control_flow")?;
+
+    let cond = inst_operand_value(sel, 0)
+        .ok_or_else(|| anyhow!("lower_one_float_select_to_control_flow: missing select condition"))?
+        .into_int_value();
+    let tval = inst_operand_value(sel, 1).ok_or_else(|| {
+        anyhow!("lower_one_float_select_to_control_flow: missing true select value")
+    })?;
+    let fval = inst_operand_value(sel, 2).ok_or_else(|| {
+        anyhow!("lower_one_float_select_to_control_flow: missing false select value")
+    })?;
+
+    let tail = collect_instruction_tail(sel.get_next_instruction());
+
+    let phi_ty: BasicTypeEnum = sel.get_type().try_into().map_err(|_| {
+        anyhow!("lower_one_float_select_to_control_flow: select result is not a basic type")
+    })?;
+
+    validate_float_select_lowering(sel, &tail)?;
+
+    let ctx = bb.get_context();
+    let block_base_name = synthetic_block_base_name(bb);
+    let then_bb = ctx.insert_basic_block_after(bb, &format!("{block_base_name}.sel.then"));
+    let else_bb = ctx.insert_basic_block_after(then_bb, &format!("{block_base_name}.sel.else"));
+    let merge_bb = ctx.insert_basic_block_after(else_bb, &format!("{block_base_name}.sel.merge"));
+
+    builder.position_at_end(merge_bb);
+    let phi = builder.build_phi(phi_ty, "select.merge.val")?;
+    phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
+
+    let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
+    vmap.insert(value_key_from_instruction(sel), phi.as_basic_value());
+
+    rebuild_tail(
+        builder,
+        merge_bb,
+        &tail,
+        &mut vmap,
+        None,
+        "float select block tail",
+    )?;
+    rewrite_external_uses_to_vmap(bb, &vmap)?;
+
+    builder.position_at_end(bb);
+    for &i in tail.iter().rev() {
+        i.erase_from_basic_block();
+    }
+    builder.build_conditional_branch(cond, then_bb, else_bb)?;
+    builder.position_at_end(then_bb);
+    builder.build_unconditional_branch(merge_bb)?;
+    builder.position_at_end(else_bb);
+    builder.build_unconditional_branch(merge_bb)?;
+
+    if let Some(merge_term) = merge_bb.get_terminator() {
+        fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
+    }
+    sel.erase_from_basic_block();
+    lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
+    Ok(())
+}
+
+/// Collapses the trivial `sel.then` / `sel.else` forwarding blocks left behind
+/// after select-lowering-induced phi elimination.
+///
+/// After the merge phi has been lowered, these blocks normally contain only an
+/// unconditional branch to the duplicated tails. In that case we retarget the
+/// original conditional branch to those real tail blocks directly and delete the
+/// forwarding blocks.
+fn collapse_trivial_select_dispatch_blocks<'ctx>(
+    builder: &Builder<'ctx>,
+    source_bb: BasicBlock<'ctx>,
+    then_bb: BasicBlock<'ctx>,
+    else_bb: BasicBlock<'ctx>,
+) -> Result<()> {
+    let Some(source_term) = source_bb.get_terminator() else {
+        return Ok(());
+    };
+    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional() {
+        return Ok(());
+    }
+
+    if !block_is_trivial_unconditional_branch(then_bb)
+        || !block_is_trivial_unconditional_branch(else_bb)
+    {
+        return Ok(());
+    }
+
+    let cond = expect_inst_operand_value(source_term, 0).into_int_value();
+    let direct_then = required_block_operand(
+        then_bb.get_terminator().ok_or_else(|| {
+            anyhow!("collapse_trivial_select_dispatch_blocks: missing then terminator")
+        })?,
+        0,
+        "collapse_trivial_select_dispatch_blocks",
+    )?;
+    let direct_else = required_block_operand(
+        else_bb.get_terminator().ok_or_else(|| {
+            anyhow!("collapse_trivial_select_dispatch_blocks: missing else terminator")
+        })?,
+        0,
+        "collapse_trivial_select_dispatch_blocks",
+    )?;
+
+    builder.position_at_end(source_bb);
+    source_term.erase_from_basic_block();
+    if direct_then == direct_else {
+        builder.build_unconditional_branch(direct_then)?;
+    } else {
+        builder.build_conditional_branch(cond, direct_then, direct_else)?;
+    }
+
+    unsafe {
+        then_bb
+            .delete()
+            .expect("collapse_trivial_select_dispatch_blocks: failed to delete then block");
+        else_bb
+            .delete()
+            .expect("collapse_trivial_select_dispatch_blocks: failed to delete else block");
+    }
+
     Ok(())
 }
 
@@ -451,6 +671,16 @@ fn validate_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) ->
             bail!("Select lowering only supports qubit pointer results")
         }
         _ => bail!("Select lowering only supports pointer-typed results"),
+    }
+}
+
+/// Validates that a floating-point `select` can be lowered by this pass.
+fn validate_float_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) -> Result<()> {
+    validate_rebuildable_tail_slice(tail)
+        .map_err(|err| anyhow!("Float select block tail cannot be lowered: {err}"))?;
+    match sel.get_type() {
+        AnyTypeEnum::FloatType(_) => Ok(()),
+        _ => bail!("Float select lowering only supports floating-point results"),
     }
 }
 
@@ -570,6 +800,33 @@ pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
                 verify_module(module).map_err(|err| {
                     anyhow!(
                         "Module verification failed after lowering qubit phis in block {}: {err}",
+                        name_of_block(block)
+                    )
+                })?;
+                changed = true;
+            }
+        }
+    }
+    Ok(changed)
+}
+
+/// Lowers all phi instructions returning floating-point values to control flow.
+pub fn lower_float_phis(module: &Module) -> Result<bool> {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+    for func in module.get_functions() {
+        let mut block_opt = func.get_first_basic_block();
+        while let Some(block) = block_opt {
+            block_opt = block.get_next_basic_block();
+            let phi_candidates = get_block_float_phis(block);
+            if phi_candidates.is_empty() {
+                continue;
+            }
+            if lower_successive_qubit_phis_in_block(&builder, block, phi_candidates)? {
+                verify_module(module).map_err(|err| {
+                    anyhow!(
+                        "Module verification failed after lowering float phis in block {}: {err}",
                         name_of_block(block)
                     )
                 })?;
@@ -703,6 +960,23 @@ fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
         if let BasicTypeEnum::PointerType(ptr_ty) = phi.as_basic_value().get_type()
             && is_qubit_pointer(ptr_ty)
         {
+            phi_candidates.push(phi);
+        }
+        inst_opt = inst.get_next_instruction();
+    }
+    phi_candidates
+}
+
+/// Collects the leading floating-point PHIs from a block.
+fn get_block_float_phis(block: BasicBlock) -> Vec<PhiValue> {
+    let mut inst_opt = block.get_first_instruction();
+    let mut phi_candidates: Vec<PhiValue> = Vec::new();
+    while let Some(inst) = inst_opt {
+        if inst.get_opcode() != InstructionOpcode::Phi {
+            break;
+        }
+        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        if matches!(phi.as_basic_value().get_type(), BasicTypeEnum::FloatType(_)) {
             phi_candidates.push(phi);
         }
         inst_opt = inst.get_next_instruction();
@@ -1160,6 +1434,20 @@ fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
     }
 }
 
+/// Returns whether a block contains no non-terminator instructions and ends in
+/// an unconditional branch.
+fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
+    let Some(term) = bb.get_terminator() else {
+        return false;
+    };
+    if term.get_opcode() != Op::Br || term.is_conditional() {
+        return false;
+    }
+
+    bb.get_instructions()
+        .all(|inst| inst == term || inst.get_opcode() == InstructionOpcode::Phi)
+}
+
 /// First non‑PHI in a block
 fn first_non_phi(bb: BasicBlock) -> Option<InstructionValue> {
     let mut it = bb.get_first_instruction();
@@ -1189,6 +1477,28 @@ fn collect_instruction_tail(start: Option<InstructionValue>) -> Vec<InstructionV
 
 fn name_of_block(bb: BasicBlock<'_>) -> String {
     bb.get_name().to_string_lossy().to_string()
+}
+
+/// Returns a short stable base name for synthetic blocks created by this pass.
+///
+/// This prevents names from growing recursively as we duplicate/select-lower
+/// blocks that were themselves created by earlier rounds of the pass.
+fn synthetic_block_base_name(bb: BasicBlock<'_>) -> String {
+    let name = name_of_block(bb);
+    let mut base = name.as_str();
+
+    for marker in [".sel.", ".select.", ".dup", ".record"] {
+        if let Some((prefix, _)) = base.split_once(marker) {
+            base = prefix;
+            break;
+        }
+    }
+
+    if base.is_empty() {
+        "bb".to_string()
+    } else {
+        base.to_string()
+    }
 }
 
 fn incoming_for_predecessor<'ctx>(
@@ -1230,9 +1540,10 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
     let mut vmap = phi_incoming_vmap_for_predecessor(phis, pred)?;
     let mut cloned_values: HashMap<ValueKey, BasicValueEnum<'ctx>> = HashMap::new();
 
-    let clone_block = pred
-        .get_context()
-        .insert_basic_block_after(pred, &format!("{}.dup", name_of_block(original_block)));
+    let clone_block = pred.get_context().insert_basic_block_after(
+        pred,
+        &format!("{}.dup", synthetic_block_base_name(original_block)),
+    );
 
     if let Err(err) = rebuild_tail(
         builder,
@@ -1591,6 +1902,11 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
         | Op::ICmp
         | Op::FCmp
         | Op::Select
+        | Op::FAdd
+        | Op::FSub
+        | Op::FMul
+        | Op::FDiv
+        | Op::FRem
         | Op::Add
         | Op::Sub
         | Op::Mul
@@ -1882,6 +2198,21 @@ pub fn rebuild_inst<'ctx>(
             let fval = remap(vmap, expect_inst_operand_value(inst, 2));
             let sel = builder.build_select(cond, tval, fval, &name)?;
             Ok(RebuildOutcome::Value(sel))
+        }
+
+        // ---------------- Floating-point arithmetic ----------------
+        Op::FAdd | Op::FSub | Op::FMul | Op::FDiv | Op::FRem => {
+            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_float_value();
+            let res = match inst.get_opcode() {
+                Op::FAdd => builder.build_float_add(lhs, rhs, &name),
+                Op::FSub => builder.build_float_sub(lhs, rhs, &name),
+                Op::FMul => builder.build_float_mul(lhs, rhs, &name),
+                Op::FDiv => builder.build_float_div(lhs, rhs, &name),
+                Op::FRem => builder.build_float_rem(lhs, rhs, &name),
+                _ => unreachable!(),
+            }?;
+            Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
         }
 
         // ---------------- Integer arithmetic ----------------
@@ -2177,6 +2508,15 @@ mod test {
             .count()
     }
 
+    fn count_lowerable_float_selects_and_phis(module: &Module) -> usize {
+        module
+            .get_functions()
+            .flat_map(|function| function.get_basic_blocks())
+            .flat_map(|block| block.get_instructions())
+            .filter(|inst| is_lowerable_float_select_or_phi_instruction(*inst))
+            .count()
+    }
+
     fn fixture_snapshot_suffix(fixture: &str) -> String {
         fixture
             .strip_suffix(".ll")
@@ -2256,6 +2596,46 @@ mod test {
                 normalized_module_ir_for_snapshot(&module, fixture)
             );
         });
+    }
+
+    #[test]
+    fn lowers_all_lowerable_float_selects_and_phis_from_fixtures() {
+        for fixture in ["simple_float_select.ll", "simple_float_phi.ll"] {
+            let context = Context::create();
+            let module = load_module_from_fixture(&context, fixture).unwrap();
+
+            let before = count_lowerable_float_selects_and_phis(&module);
+            assert!(
+                before > 0,
+                "expected fixture {fixture} to contain at least one lowerable float select or phi"
+            );
+
+            let changed = lower_float_selects_and_phis(&module).unwrap();
+            let after = count_lowerable_float_selects_and_phis(&module);
+
+            assert!(changed, "expected pass to change fixture {fixture}");
+            assert_eq!(
+                after, 0,
+                "expected pass to remove all lowerable float selects/phis in fixture {fixture}"
+            );
+            module.verify().unwrap();
+
+            let mut settings = insta::Settings::clone_current();
+            let suffix = settings.snapshot_suffix().map_or_else(
+                || fixture_snapshot_suffix(fixture),
+                |existing| format!("{existing}_{}", fixture_snapshot_suffix(fixture)),
+            );
+            settings.set_snapshot_suffix(suffix);
+            settings.bind(|| {
+                assert_snapshot!(
+                    "lowered_float_selects_and_phis",
+                    normalized_module_ir_for_snapshot(&module, fixture)
+                );
+            });
+
+            std::mem::forget(module);
+            std::mem::forget(context);
+        }
     }
 
     #[test]
