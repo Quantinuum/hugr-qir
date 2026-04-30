@@ -7,18 +7,18 @@ from guppylang.std.quantum import measure, x
 
 
 @guppy
-def plus_state() -> qubit:
+def one_state() -> qubit:
     q = qubit()
     x(q)
     return q
 
 
 @guppy
-def apply_h(q: qubit) -> None:
+def apply_x(q: qubit) -> None:
     x(q)
 
 
-@guppy.overload(plus_state, apply_h)
+@guppy.overload(one_state, apply_x)
 @no_type_check
 def apply_x_to_something(): ...  # noqa: ANN201
 
