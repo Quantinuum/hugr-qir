@@ -9,6 +9,7 @@ from guppylang.std.quantum import h, measure
 @no_type_check
 def fun_func(q: qubit) -> None:
     h(q)
+    h(q)
 
 
 @guppy

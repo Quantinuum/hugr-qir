@@ -11,121 +11,102 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 2 to %Qubit*), %Result* null)
   %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %0, label %21, label %cond_394_case_0
+  br i1 %0, label %21, label %cond_391_case_0
 
-cond_394_case_0:                                  ; preds = %alloca_block, %21
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+cond_391_case_0:                                  ; preds = %alloca_block, %21
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 3 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
   %1 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
-  br i1 %1, label %2, label %cond_394_case_0.1
+  br i1 %1, label %2, label %cond_391_case_0.1
 
-2:                                                ; preds = %cond_394_case_0
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.1
+2:                                                ; preds = %cond_391_case_0
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.1
 
-cond_394_case_0.1:                                ; preds = %2, %cond_394_case_0
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 4 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 4 to %Qubit*))
+cond_391_case_0.1:                                ; preds = %2, %cond_391_case_0
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 4 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 4 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
   %3 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 2 to %Result*))
-  br i1 %3, label %4, label %cond_394_case_0.2
+  br i1 %3, label %4, label %cond_391_case_0.2
 
-4:                                                ; preds = %cond_394_case_0.1
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.2
+4:                                                ; preds = %cond_391_case_0.1
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.2
 
-cond_394_case_0.2:                                ; preds = %4, %cond_394_case_0.1
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 5 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 5 to %Qubit*))
+cond_391_case_0.2:                                ; preds = %4, %cond_391_case_0.1
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 5 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 5 to %Qubit*), %Result* nonnull inttoptr (i64 3 to %Result*))
   %5 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 3 to %Result*))
-  br i1 %5, label %6, label %cond_394_case_0.3
+  br i1 %5, label %6, label %cond_391_case_0.3
 
-6:                                                ; preds = %cond_394_case_0.2
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.3
+6:                                                ; preds = %cond_391_case_0.2
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.3
 
-cond_394_case_0.3:                                ; preds = %6, %cond_394_case_0.2
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 6 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 6 to %Qubit*))
+cond_391_case_0.3:                                ; preds = %6, %cond_391_case_0.2
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 6 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 6 to %Qubit*), %Result* nonnull inttoptr (i64 4 to %Result*))
   %7 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 4 to %Result*))
-  br i1 %7, label %8, label %cond_394_case_0.4
+  br i1 %7, label %8, label %cond_391_case_0.4
 
-8:                                                ; preds = %cond_394_case_0.3
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.4
+8:                                                ; preds = %cond_391_case_0.3
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.4
 
-cond_394_case_0.4:                                ; preds = %8, %cond_394_case_0.3
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 7 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 7 to %Qubit*))
+cond_391_case_0.4:                                ; preds = %8, %cond_391_case_0.3
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 7 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 7 to %Qubit*), %Result* nonnull inttoptr (i64 5 to %Result*))
   %9 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 5 to %Result*))
-  br i1 %9, label %10, label %cond_394_case_0.5
+  br i1 %9, label %10, label %cond_391_case_0.5
 
-10:                                               ; preds = %cond_394_case_0.4
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.5
+10:                                               ; preds = %cond_391_case_0.4
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.5
 
-cond_394_case_0.5:                                ; preds = %10, %cond_394_case_0.4
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 8 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 8 to %Qubit*))
+cond_391_case_0.5:                                ; preds = %10, %cond_391_case_0.4
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 8 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 8 to %Qubit*), %Result* nonnull inttoptr (i64 6 to %Result*))
   %11 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 6 to %Result*))
-  br i1 %11, label %12, label %cond_394_case_0.6
+  br i1 %11, label %12, label %cond_391_case_0.6
 
-12:                                               ; preds = %cond_394_case_0.5
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.6
+12:                                               ; preds = %cond_391_case_0.5
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.6
 
-cond_394_case_0.6:                                ; preds = %12, %cond_394_case_0.5
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 9 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 9 to %Qubit*))
+cond_391_case_0.6:                                ; preds = %12, %cond_391_case_0.5
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 9 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 9 to %Qubit*), %Result* nonnull inttoptr (i64 7 to %Result*))
   %13 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 7 to %Result*))
-  br i1 %13, label %14, label %cond_394_case_0.7
+  br i1 %13, label %14, label %cond_391_case_0.7
 
-14:                                               ; preds = %cond_394_case_0.6
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.7
+14:                                               ; preds = %cond_391_case_0.6
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.7
 
-cond_394_case_0.7:                                ; preds = %14, %cond_394_case_0.6
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 10 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 10 to %Qubit*))
+cond_391_case_0.7:                                ; preds = %14, %cond_391_case_0.6
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 10 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 10 to %Qubit*), %Result* nonnull inttoptr (i64 8 to %Result*))
   %15 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 8 to %Result*))
-  br i1 %15, label %16, label %cond_394_case_0.8
+  br i1 %15, label %16, label %cond_391_case_0.8
 
-16:                                               ; preds = %cond_394_case_0.7
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.8
+16:                                               ; preds = %cond_391_case_0.7
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.8
 
-cond_394_case_0.8:                                ; preds = %16, %cond_394_case_0.7
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 11 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 11 to %Qubit*))
+cond_391_case_0.8:                                ; preds = %16, %cond_391_case_0.7
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 11 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 11 to %Qubit*), %Result* nonnull inttoptr (i64 9 to %Result*))
   %17 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 9 to %Result*))
-  br i1 %17, label %18, label %cond_394_case_0.9
+  br i1 %17, label %18, label %cond_391_case_0.9
 
-18:                                               ; preds = %cond_394_case_0.8
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0.9
+18:                                               ; preds = %cond_391_case_0.8
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0.9
 
-cond_394_case_0.9:                                ; preds = %18, %cond_394_case_0.8
+cond_391_case_0.9:                                ; preds = %18, %cond_391_case_0.8
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* nonnull inttoptr (i64 10 to %Result*))
   %19 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 10 to %Result*))
   tail call void @__quantum__rt__bool_record_output(i1 %19, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i64 0, i64 0))
@@ -135,9 +116,8 @@ cond_394_case_0.9:                                ; preds = %18, %cond_394_case_
   ret void
 
 21:                                               ; preds = %alloca_block
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
-  br label %cond_394_case_0
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
+  br label %cond_391_case_0
 }
 
 declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
@@ -147,8 +127,6 @@ declare i1 @__quantum__qis__read_result__body(%Result*) local_unnamed_addr
 declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
-
-declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
 
 attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="12" "required_num_results"="12" }
 

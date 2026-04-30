@@ -14,6 +14,10 @@ def main() -> None:
     h(q1)
     h(q2)
     h(q3)
+    h(q3)
+    h(q2)
+    h(q1)
+    h(q0)
     my_int = 0
     a = measure(q0)
     b = measure(q1)
@@ -26,9 +30,9 @@ def main() -> None:
         my_int += 1
 
     if my_int == 0:
-        h(q3)
-    elif my_int == 1:
         x(q3)
+    elif my_int == 1:
+        h(q3)
     elif my_int == 2:
         y(q3)
     else:

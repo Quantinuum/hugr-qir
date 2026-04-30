@@ -2,13 +2,13 @@ from typing import no_type_check
 
 from guppylang import guppy, qubit
 from guppylang.std.builtins import result
-from guppylang.std.quantum import h, measure
+from guppylang.std.quantum import measure, x
 
 
 @guppy
 @no_type_check
 def fun_func(q: qubit) -> None:
-    h(q)
+    x(q)
 
 
 @guppy

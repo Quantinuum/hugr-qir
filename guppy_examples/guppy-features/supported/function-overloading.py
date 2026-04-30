@@ -3,24 +3,24 @@ from typing import no_type_check
 
 from guppylang import guppy, qubit
 from guppylang.std.platform import result
-from guppylang.std.quantum import h, measure
+from guppylang.std.quantum import measure, x
 
 
 @guppy
 def plus_state() -> qubit:
     q = qubit()
-    h(q)
+    x(q)
     return q
 
 
 @guppy
 def apply_h(q: qubit) -> None:
-    h(q)
+    x(q)
 
 
 @guppy.overload(plus_state, apply_h)
 @no_type_check
-def apply_h_to_something(): ...  # noqa: ANN201
+def apply_x_to_something(): ...  # noqa: ANN201
 
 
 @guppy
@@ -28,11 +28,11 @@ def apply_h_to_something(): ...  # noqa: ANN201
 def main() -> None:
     q = qubit()
 
-    # compiler dispatches apply_h() to be used here
-    apply_h_to_something(q)
+    # compiler dispatches apply_x() to be used here
+    apply_x_to_something(q)
 
-    # compiler dispatches plus_state() to be used here
-    other_q = apply_h_to_something()
+    # compiler dispatches one_state() to be used here
+    other_q = apply_x_to_something()
 
     result("q", measure(q))
     result("other_q", measure(other_q))

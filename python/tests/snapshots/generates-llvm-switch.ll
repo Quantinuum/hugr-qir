@@ -13,14 +13,10 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
@@ -32,8 +28,8 @@ alloca_block:
   %"56_3.0" = select i1 %1, i64 %3, i64 %"41_3.0"
   %4 = zext i1 %2 to i64
   %"71_3.0" = add nuw nsw i64 %"56_3.0", %4
-  %Pivot954 = icmp ult i64 %"71_3.0", 2
-  br i1 %Pivot954, label %LeafBlock, label %NodeBlock
+  %Pivot946 = icmp ult i64 %"71_3.0", 2
+  br i1 %Pivot946, label %LeafBlock, label %NodeBlock
 
 NodeBlock:                                        ; preds = %alloca_block
   %Pivot = icmp eq i64 %"71_3.0", 2
@@ -49,7 +45,7 @@ NewDefault:                                       ; preds = %LeafBlock
   br label %cond_exit_394
 
 5:                                                ; preds = %LeafBlock
-  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
   br label %cond_exit_394
 
 6:                                                ; preds = %NodeBlock
@@ -57,7 +53,7 @@ NewDefault:                                       ; preds = %LeafBlock
   br label %cond_exit_394
 
 7:                                                ; preds = %NodeBlock
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
   br label %cond_exit_394
 
 cond_exit_394:                                    ; preds = %5, %7, %6, %NewDefault
@@ -72,11 +68,11 @@ cond_exit_394:                                    ; preds = %5, %7, %6, %NewDefa
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
 
-declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
-
 declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
 
 declare i1 @__quantum__qis__read_result__body(%Result*) local_unnamed_addr
+
+declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 

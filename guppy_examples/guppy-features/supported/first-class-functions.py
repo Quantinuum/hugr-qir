@@ -2,7 +2,7 @@ import sys
 
 from guppylang import guppy, qubit
 from guppylang.std.builtins import result
-from guppylang.std.quantum import h, measure, x
+from guppylang.std.quantum import measure, x
 
 
 @guppy
@@ -13,7 +13,7 @@ def a_function(n: int) -> int:
 @guppy
 def b_function() -> qubit:
     q1, q2 = qubit(), qubit()
-    h(q1)
+    x(q1)
     if measure(q1):
         x(q2)
     return q2
