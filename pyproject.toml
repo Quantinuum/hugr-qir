@@ -57,6 +57,9 @@ skip = "*-win32 *-manylinux_i686 *-musllinux*"
 manylinux-x86_64-image = "manylinux_2_34"
 test-groups = ["dev"]
 test-sources = ["python/tests", "guppy_examples"]
+before-test = [
+    'uv pip install "quantinuum-qircheck @ git+https://github.com/Quantinuum/quantinuum-qircheck.git@1658f992d088575f750ce025224d70d134c1d099"',
+]
 test-command = "pytest python/tests"
 
 [tool.cibuildwheel.linux.environment]
@@ -107,4 +110,7 @@ repair-wheel-command = [
     'uvx abi3audit --strict --report {wheel}',
 ]
 test-groups = []
-before-test = ['uv pip install --group {project}/pyproject.toml:dev']
+before-test = [
+    'uv pip install --group {project}/pyproject.toml:dev',
+    'uv pip install "quantinuum-qircheck @ git+https://github.com/Quantinuum/quantinuum-qircheck.git@1658f992d088575f750ce025224d70d134c1d099"',
+]
