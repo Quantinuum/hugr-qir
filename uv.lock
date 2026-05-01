@@ -770,7 +770,7 @@ requires-dist = [
     { name = "guppylang", specifier = "==0.21.11" },
     { name = "hugr", specifier = "~=0.15.4" },
     { name = "llvmlite", specifier = "~=0.44.0" },
-    { name = "quantinuum-qircheck", git = "https://github.com/Quantinuum/quantinuum-qircheck.git?rev=1658f992d088575f750ce025224d70d134c1d099" },
+    { name = "quantinuum-qircheck", specifier = "~=0.7.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2627,14 +2627,14 @@ wheels = [
 
 [[package]]
 name = "qir-qis"
-version = "0.1.6"
+version = "0.1.7"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/ba/24d106528540e3c373900f2ea18b4b2bd4b76150b857def72f0b7403dea1/qir_qis-0.1.6-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:b09de99d6eba80f094d15235f702f6f6eb38b255d5223cdcbba121faa93a06e5", size = 21828730, upload-time = "2026-04-22T19:00:34.484Z" },
-    { url = "https://files.pythonhosted.org/packages/39/07/210739bee0f7273b6f9cbba3d88c4e9b982f2ccd15f14823456776d67746/qir_qis-0.1.6-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:cd907e8410c85d669e3f33ab38ab7452b43364262c0425cf923a6f9680c72599", size = 20925544, upload-time = "2026-04-22T19:00:37.901Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/32/d96c4afa9d2302c2baa9041d63d22dc62b6e955b9c8f5fb86daaf9e73d6d/qir_qis-0.1.6-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:dcc692b286fb4a12152eedac1e1f56c846e60047647ad8be37e29f6497e19716", size = 29296840, upload-time = "2026-04-22T19:00:40.974Z" },
-    { url = "https://files.pythonhosted.org/packages/57/ea/92f607b427b77e8e033d7f189a8dad9d5f3a79ae14ba805934f4dea09eae/qir_qis-0.1.6-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:21a0c4e367cbcd8a8138558887b983d6c71d938563f3abe663cc9e2396ce4fc5", size = 30221722, upload-time = "2026-04-22T19:00:45.218Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/7c/679880f11062fd18862abfe514696e2e700033a00ce841bb8ecc081ac7d3/qir_qis-0.1.6-cp310-abi3-win_amd64.whl", hash = "sha256:0b39486e79c1c76ec81a47cda23f15cf0894d2fb6ac1b0f3eba2a9aa6de26c12", size = 4179723, upload-time = "2026-04-22T19:00:47.948Z" },
+    { url = "https://files.pythonhosted.org/packages/53/06/c73025bc455ad8a3c0875144a86e5b1e8616f5a2be0c87a55583425a0dde/qir_qis-0.1.7-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:5adcdcf490d8eb7932b74da382e4f18b38e3df9fa25334a809ce63108b8660a5", size = 21854992, upload-time = "2026-04-30T18:41:51.63Z" },
+    { url = "https://files.pythonhosted.org/packages/63/80/b773a5a66cc1a1c4179ca2831e8361cbfa3cd4ed9b801b1a82b5439039c9/qir_qis-0.1.7-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:5cefabf5f3e837e068f48abcc3f726a4998a9336bd3f28e92cd194bf7a79736d", size = 20954590, upload-time = "2026-04-30T18:41:54.448Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/a7/fb173c00ca09de30f0487f1fcacdbe9af89e12a2d721a13bdf49b7a06c8d/qir_qis-0.1.7-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:6b0b7d4ef757db8ac211c97959c316f4a0ba441a7be2f611fda887bbec172323", size = 29331644, upload-time = "2026-04-30T18:41:57.291Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/6c/2f2ab611ab33426899184133d02741a7d9b12667141bb7848f628c4828d1/qir_qis-0.1.7-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:ab12853247c1f939ad30bfe5ff2b1bdde06480a7acc5c745e6eb7f2599c32e80", size = 30263854, upload-time = "2026-04-30T18:42:01Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/50/8f61e5951d071cfbe154501bf5f6d2946fa96ec6ec913c189e57d6e2cc9c/qir_qis-0.1.7-cp310-abi3-win_amd64.whl", hash = "sha256:519e8166838ce8db5daeb11b434d52580a2e5840c7ebc46733c1b89d17f9181d", size = 4204482, upload-time = "2026-04-30T18:42:03.376Z" },
 ]
 
 [[package]]
@@ -2662,10 +2662,13 @@ wheels = [
 
 [[package]]
 name = "quantinuum-qircheck"
-version = "0.5.1.dev1+g1658f992d"
-source = { git = "https://github.com/Quantinuum/quantinuum-qircheck.git?rev=1658f992d088575f750ce025224d70d134c1d099#1658f992d088575f750ce025224d70d134c1d099" }
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyqir" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/38/20c52fe7febcee2c2891d7ace0d10353a912143555cefa15a31a42ac36c3/quantinuum_qircheck-0.7.0-py3-none-any.whl", hash = "sha256:b1144c253d28d5ec8851b743a5af4b622b3fa44880f7d833fcb476981dbf3851", size = 873261, upload-time = "2026-05-01T16:49:11.023Z" },
 ]
 
 [[package]]
