@@ -295,7 +295,7 @@ pub fn add_module_metadata(
     let fn_value = module.get_function(&entry_func_name);
     if Option::is_none(&fn_value) {
         return Err(anyhow!(
-            "expected main function: \"{}\" not found in HUGR",
+            "entrypoint function \"{}\" not found in generated LLVM module",
             entry_func_name
         ));
     }
@@ -374,7 +374,7 @@ fn add_qir_runtime_contracts(
     let entry_func_name = namer.name_func(entrypoint_name, entrypoint_node);
     let entry_func = module.get_function(&entry_func_name).ok_or_else(|| {
         anyhow!(
-            "expected main function: \"{}\" not found in HUGR",
+            "entrypoint function \"{}\" not found in generated LLVM module",
             entry_func_name
         )
     })?;
@@ -435,7 +435,7 @@ pub fn set_explicit_entrypoint_linkage(
     let fn_value = module.get_function(&entry_func_name);
     if Option::is_none(&fn_value) {
         return Err(anyhow!(
-            "expected main function: \"{}\" not found in HUGR",
+            "entrypoint function \"{}\" not found in generated LLVM module",
             entry_func_name
         ));
     }
