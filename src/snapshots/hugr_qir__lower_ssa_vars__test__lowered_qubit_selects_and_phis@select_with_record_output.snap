@@ -1,5 +1,5 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:select_with_record_output>'
@@ -19,13 +19,13 @@ entry:
 
 entry.dup:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* null)
-  br label %entry.record
+  br label %__prepare_module_record_output_final
 
 entry.dup1:                                       ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  br label %entry.record
+  br label %__prepare_module_record_output_final
 
-entry.record:                                     ; preds = %entry.dup1, %entry.dup
+__prepare_module_record_output_final:             ; preds = %entry.dup1, %entry.dup
   call void @__quantum__rt__bool_record_output(i1 %flag, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i64 0, i64 0))
   ret void
 }

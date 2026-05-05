@@ -1,0 +1,30 @@
+---
+source: src/lower_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:multiple_qubit_phis_in_block>'
+source_filename = "multiple_qubit_phis_in_block"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond) {
+entry:
+  br i1 %cond, label %merge.dup, label %merge.dup1
+
+common.ret:                                       ; preds = %merge.dup1, %merge.dup
+  ret void
+
+merge.dup:                                        ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* null)
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
+  br label %common.ret
+
+merge.dup1:                                       ; preds = %entry
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
+  br label %common.ret
+}
+
+declare void @__quantum__qis__reset__body(%Qubit*)

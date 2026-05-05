@@ -1,5 +1,5 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:select_with_downstream_phi>'
@@ -14,9 +14,9 @@ entry:
   br i1 %cond0, label %entry.dup, label %entry.dup1
 
 entry.dup:                                        ; preds = %entry
-  br i1 %cond1, label %merge.dup, label %merge.dup5
+  br i1 %cond1, label %merge.dup, label %merge.dup4
 
-common.ret:                                       ; preds = %merge.dup5, %merge.dup4, %merge.dup
+common.ret:                                       ; preds = %merge.dup4, %merge.dup3, %merge.dup
   ret void
 
 merge.dup:                                        ; preds = %entry.dup
@@ -24,13 +24,13 @@ merge.dup:                                        ; preds = %entry.dup
   br label %common.ret
 
 entry.dup1:                                       ; preds = %entry
-  br i1 %cond1, label %merge.dup4, label %merge.dup5
+  br i1 %cond1, label %merge.dup3, label %merge.dup4
 
-merge.dup4:                                       ; preds = %entry.dup1
+merge.dup3:                                       ; preds = %entry.dup1
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
   br label %common.ret
 
-merge.dup5:                                       ; preds = %entry.dup, %entry.dup1
+merge.dup4:                                       ; preds = %entry.dup, %entry.dup1
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
   br label %common.ret
 }

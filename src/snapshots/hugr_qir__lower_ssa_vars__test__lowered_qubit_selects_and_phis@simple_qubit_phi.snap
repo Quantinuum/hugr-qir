@@ -1,9 +1,9 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '<fixture:multiple_qubit_phis_in_block>'
-source_filename = "multiple_qubit_phis_in_block"
+; ModuleID = '<fixture:simple_qubit_phi>'
+source_filename = "simple_qubit_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
@@ -18,12 +18,10 @@ common.ret:                                       ; preds = %merge.dup1, %merge.
 
 merge.dup:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* null)
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
   br label %common.ret
 
 merge.dup1:                                       ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
   br label %common.ret
 }
 

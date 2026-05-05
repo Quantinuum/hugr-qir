@@ -1,5 +1,5 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:tail_switch_terminator>'
@@ -17,15 +17,15 @@ entry.dup:                                        ; preds = %entry
   %idx12 = zext i1 %flag to i64
   %switch.selectcmp = icmp eq i64 %idx12, 0
   %switch.select = select i1 %switch.selectcmp, i64 0, i64 1
-  br label %exit.record
+  br label %__prepare_module_record_output_final
 
 entry.dup3:                                       ; preds = %entry
   %idx14 = zext i1 %flag to i64
   %switch.selectcmp5 = icmp eq i64 %idx14, 0
   %switch.select6 = select i1 %switch.selectcmp5, i64 0, i64 1
-  br label %exit.record
+  br label %__prepare_module_record_output_final
 
-exit.record:                                      ; preds = %entry.dup, %entry.dup3
+__prepare_module_record_output_final:             ; preds = %entry.dup, %entry.dup3
   %which = phi i64 [ %switch.select, %entry.dup ], [ %switch.select6, %entry.dup3 ]
   call void @__quantum__rt__int_record_output(i64 %which, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i64 0, i64 0))
   ret void
