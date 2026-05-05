@@ -138,13 +138,9 @@ declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnam
 
 declare void @__quantum__qis__rzz__body(double, %Qubit*, %Qubit*) local_unnamed_addr
 
-<<<<<<< HEAD
 declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
-=======
 declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) local_unnamed_addr #1
->>>>>>> main
 
 declare i1 @__quantum__rt__read_result(%Result* readonly) local_unnamed_addr
 

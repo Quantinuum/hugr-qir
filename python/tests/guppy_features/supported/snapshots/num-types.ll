@@ -37,8 +37,7 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 2 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
   %2 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 2 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 3 to %Qubit*), %Result* nonnull inttoptr (i64 3 to %Result*))
-<<<<<<< HEAD
-  %3 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 3 to %Result*))
+  %3 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 3 to %Result*))
   %"787_0.0" = select i1 %0, i64 8, i64 0
   %"822_0.0" = select i1 %1, i64 4, i64 0
   %"857_0.0" = select i1 %2, i64 2, i64 0
@@ -46,16 +45,6 @@ alloca_block:
   %4 = or i64 %"822_0.0", %"787_0.0"
   %5 = or i64 %4, %"857_0.0"
   %6 = or i64 %5, %"892_0.0"
-=======
-  %3 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 3 to %Result*))
-  %"751_0.0" = select i1 %0, i64 8, i64 0
-  %"786_0.0" = select i1 %1, i64 4, i64 0
-  %"821_0.0" = select i1 %2, i64 2, i64 0
-  %"856_0.0" = zext i1 %3 to i64
-  %4 = or i64 %"786_0.0", %"751_0.0"
-  %5 = or i64 %4, %"821_0.0"
-  %6 = or i64 %5, %"856_0.0"
->>>>>>> main
   tail call void @__quantum__rt__bool_record_output(i1 %0, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i64 0, i64 0))
   tail call void @__quantum__rt__bool_record_output(i1 %1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @1, i64 0, i64 0))
   tail call void @__quantum__rt__bool_record_output(i1 %2, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @2, i64 0, i64 0))

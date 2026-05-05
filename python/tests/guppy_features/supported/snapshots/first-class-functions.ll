@@ -39,16 +39,10 @@ declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
 
-<<<<<<< HEAD
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="2" }
-=======
-declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
-
 declare void @__quantum__rt__initialize(i8*) local_unnamed_addr
 
 attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="2" "required_num_results"="2" }
 attributes #1 = { "irreversible" }
->>>>>>> main
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

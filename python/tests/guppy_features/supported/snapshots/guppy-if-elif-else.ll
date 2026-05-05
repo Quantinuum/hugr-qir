@@ -35,13 +35,8 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
   %1 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 2 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
-<<<<<<< HEAD
-  %2 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 2 to %Result*))
-  %"49_3.0" = zext i1 %0 to i64
-=======
   %2 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 2 to %Result*))
-  %"41_3.0" = zext i1 %0 to i64
->>>>>>> main
+  %"49_3.0" = zext i1 %0 to i64
   %3 = select i1 %0, i64 2, i64 1
   %"64_3.0" = select i1 %1, i64 %3, i64 %"49_3.0"
   %4 = zext i1 %2 to i64
