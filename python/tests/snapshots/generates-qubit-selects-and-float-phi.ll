@@ -20,11 +20,12 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
+  tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 4 to %Qubit*), %Result* null)
-  %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  %0 = tail call i1 @__quantum__rt__read_result(%Result* null)
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 5 to %Qubit*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 5 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
-  %1 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
+  %1 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
   %"48_2.0" = zext i1 %0 to i64
   %2 = select i1 %0, i64 2, i64 1
   %"74_2.0" = select i1 %1, i64 %2, i64 %"48_2.0"
@@ -37,32 +38,32 @@ alloca_block.dup2171:                             ; preds = %alloca_block.dup215
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 2 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
-  %3 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %3 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  %4 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %4 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
-  %5 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %5 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
-  %6 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %6 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %cond_exit_176
 
 alloca_block.dup2160:                             ; preds = %alloca_block.dup2153
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
-  %7 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %7 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  %8 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %8 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
-  %9 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %9 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
-  %10 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %10 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %19
 
 alloca_block.dup2157:                             ; preds = %alloca_block
@@ -72,32 +73,32 @@ alloca_block.dup2172:                             ; preds = %alloca_block.dup215
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 3 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
-  %11 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %11 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  %12 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %12 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
-  %13 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %13 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
-  %14 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %14 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %cond_exit_176
 
 alloca_block.dup2161:                             ; preds = %alloca_block.dup2157
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* null)
-  %15 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %15 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  %16 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %16 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
-  %17 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %17 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
-  %18 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %18 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %19
 
 19:                                               ; preds = %alloca_block.dup2161, %alloca_block.dup2160
@@ -117,13 +118,13 @@ cond_exit_176:                                    ; preds = %alloca_block.dup217
 
 cond_374_case_1.dup:                              ; preds = %cond_exit_176
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 6 to %Result*))
-  %20 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 6 to %Result*))
+  %20 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 6 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 7 to %Result*))
-  %21 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 7 to %Result*))
+  %21 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 7 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 8 to %Result*))
-  %22 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 8 to %Result*))
+  %22 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 8 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 9 to %Result*))
-  %23 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 9 to %Result*))
+  %23 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 9 to %Result*))
   %"1162_0.02187" = select i1 %20, i64 8, i64 0
   %"1197_0.02188" = select i1 %21, i64 4, i64 0
   %"1232_0.02189" = select i1 %22, i64 2, i64 0
@@ -146,12 +147,12 @@ cond_759_case_1.sink.split.dup2270:               ; preds = %NodeBlock.dup
 
 cond_759_case_1.dup:                              ; preds = %cond_759_case_1.sink.split.dup2270
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %28 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %28 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %29 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %29 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %30 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %30 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 LeafBlock.dup:                                    ; preds = %NodeBlock.dup
@@ -160,12 +161,12 @@ LeafBlock.dup:                                    ; preds = %NodeBlock.dup
 
 cond_759_case_1.dup2278:                          ; preds = %LeafBlock.dup
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %31 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %31 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %32 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %32 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %33 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %33 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 cond_759_case_1.sink.split.dup:                   ; preds = %LeafBlock.dup
@@ -175,12 +176,12 @@ cond_759_case_1.sink.split.dup:                   ; preds = %LeafBlock.dup
 
 cond_759_case_1.dup2279:                          ; preds = %cond_759_case_1.sink.split.dup
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %34 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %34 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %35 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %35 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %36 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %36 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 cond_759_case_1.sink.split.dup2224:               ; preds = %cond_374_case_1.dup
@@ -189,12 +190,12 @@ cond_759_case_1.sink.split.dup2224:               ; preds = %cond_374_case_1.dup
 
 cond_759_case_1.dup2280:                          ; preds = %cond_759_case_1.sink.split.dup2224
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %37 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %37 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %38 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %38 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %39 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %39 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 40:                                               ; preds = %cond_exit_176
@@ -207,13 +208,13 @@ cond_759_case_1.dup2280:                          ; preds = %cond_759_case_1.sin
 
 cond_374_case_1.dup2193:                          ; preds = %40
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 6 to %Result*))
-  %41 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 6 to %Result*))
+  %41 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 6 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 7 to %Result*))
-  %42 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 7 to %Result*))
+  %42 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 7 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 8 to %Result*))
-  %43 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 8 to %Result*))
+  %43 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 8 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 9 to %Result*))
-  %44 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 9 to %Result*))
+  %44 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 9 to %Result*))
   %"1162_0.02194" = select i1 %41, i64 8, i64 0
   %"1197_0.02195" = select i1 %42, i64 4, i64 0
   %"1232_0.02196" = select i1 %43, i64 2, i64 0
@@ -236,12 +237,12 @@ cond_759_case_1.sink.split.dup2271:               ; preds = %NodeBlock.dup2233
 
 cond_759_case_1.dup2281:                          ; preds = %cond_759_case_1.sink.split.dup2271
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %49 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %49 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %50 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %50 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %51 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %51 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 LeafBlock.dup2249:                                ; preds = %NodeBlock.dup2233
@@ -250,12 +251,12 @@ LeafBlock.dup2249:                                ; preds = %NodeBlock.dup2233
 
 cond_759_case_1.dup2282:                          ; preds = %LeafBlock.dup2249
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %52 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %52 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %53 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %53 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %54 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %54 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 cond_759_case_1.sink.split.dup2263:               ; preds = %LeafBlock.dup2249
@@ -265,12 +266,12 @@ cond_759_case_1.sink.split.dup2263:               ; preds = %LeafBlock.dup2249
 
 cond_759_case_1.dup2283:                          ; preds = %cond_759_case_1.sink.split.dup2263
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %55 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %55 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %56 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %56 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %57 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %57 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 cond_759_case_1.sink.split.dup2225:               ; preds = %cond_374_case_1.dup2193
@@ -279,12 +280,12 @@ cond_759_case_1.sink.split.dup2225:               ; preds = %cond_374_case_1.dup
 
 cond_759_case_1.dup2284:                          ; preds = %cond_759_case_1.sink.split.dup2225
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 6 to %Qubit*), %Result* inttoptr (i64 10 to %Result*))
-  %58 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 10 to %Result*))
+  %58 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 10 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 7 to %Qubit*), %Result* inttoptr (i64 11 to %Result*))
-  %59 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 11 to %Result*))
+  %59 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 11 to %Result*))
   call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, %Qubit* inttoptr (i64 8 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 8 to %Qubit*), %Result* inttoptr (i64 12 to %Result*))
-  %60 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 12 to %Result*))
+  %60 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 12 to %Result*))
   br label %__prepare_module_record_output_final
 
 __prepare_module_record_output_final:             ; preds = %cond_759_case_1.dup2284, %cond_759_case_1.dup2283, %cond_759_case_1.dup2282, %cond_759_case_1.dup2281, %cond_759_case_1.dup2280, %cond_759_case_1.dup2279, %cond_759_case_1.dup2278, %cond_759_case_1.dup
@@ -310,9 +311,9 @@ __prepare_module_record_output_final:             ; preds = %cond_759_case_1.dup
   ret void
 }
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) local_unnamed_addr #1
 
-declare i1 @__quantum__qis__read_result__body(%Result*) local_unnamed_addr
+declare i1 @__quantum__rt__read_result(%Result* readonly) local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
 
@@ -322,7 +323,10 @@ declare void @__quantum__qis__reset__body(%Qubit*) local_unnamed_addr
 
 declare void @__quantum__rt__int_record_output(i64, i8*) local_unnamed_addr
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="9" "required_num_results"="13" }
+declare void @__quantum__rt__initialize(i8*) local_unnamed_addr
+
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="9" "required_num_results"="13" }
+attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

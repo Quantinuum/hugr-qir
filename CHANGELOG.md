@@ -1,5 +1,11 @@
 ## Changelog
 
+### v0.0.26
+
+- clean up generation of phi and select operations containing floats
+- use profile compatible function names for qir read_result calls
+- update quantinuum-qircheck version to 0.7.0
+
 ### v0.0.25
 
 - clean up generation of phi and select operations containing qubits
