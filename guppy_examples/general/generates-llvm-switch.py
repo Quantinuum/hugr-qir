@@ -9,10 +9,10 @@ from guppylang.std.quantum import h, measure, x, y, z
 @no_type_check
 def main() -> None:
     q0, q1, q2, q3 = qubit(), qubit(), qubit(), qubit()
-    h(q0)
-    h(q1)
-    h(q2)
-    h(q3)
+    x(q0)
+    x(q1)
+    x(q2)
+    x(q3)
     my_int = 0
     a = measure(q0)
     b = measure(q1)
@@ -27,11 +27,11 @@ def main() -> None:
     if my_int == 0:
         h(q3)
     elif my_int == 1:
-        x(q3)
+        z(q3)
     elif my_int == 2:
         y(q3)
     elif my_int == 3:
-        z(q3)
+        x(q3)
     d = measure(q3)
     result("a", a)
     result("b", b)

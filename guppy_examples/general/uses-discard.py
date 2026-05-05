@@ -2,7 +2,7 @@ from typing import no_type_check
 
 from guppylang import guppy, qubit
 from guppylang.std.qsystem.functional import measure
-from guppylang.std.quantum import cx, discard, h
+from guppylang.std.quantum import cx, discard, x
 
 
 @guppy
@@ -10,8 +10,8 @@ from guppylang.std.quantum import cx, discard, h
 def main() -> None:
     q0 = qubit()
     q1 = qubit()
-    h(q0)
-    h(q1)
+    x(q0)
+    x(q1)
     cx(q0, q1)
     measure(q0)
     discard(q1)

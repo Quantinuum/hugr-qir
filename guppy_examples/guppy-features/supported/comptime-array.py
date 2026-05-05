@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import array, qubit, result
-from guppylang.std.quantum import cx, h, measure
+from guppylang.std.quantum import cx, measure, x
 
 if TYPE_CHECKING:
     from guppylang.std.lang import owned
@@ -16,9 +16,9 @@ def create_steane(name: str) -> tuple[str, array[qubit, 7]]:
     return name, [qubit() for _ in range(7)]
 
 
-def steane_h(stq: list[qubit]) -> None:
+def steane_x(stq: list[qubit]) -> None:
     for q in stq:
-        h(q)
+        x(q)
 
 
 def steane_cx(
@@ -52,8 +52,8 @@ def steane_measure_result(
 def main() -> None:
     steane_q1 = create_steane("q1")
     steane_q2 = create_steane("q2")
-    steane_h(steane_q1[1])
-    steane_h(steane_q2[1])
+    steane_x(steane_q1[1])
+    steane_x(steane_q2[1])
     steane_cx(steane_q1[1], steane_q2[1])
     steane_measure_result(steane_q1)
     steane_measure_result(steane_q2)

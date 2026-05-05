@@ -16,10 +16,18 @@ alloca_block:
   tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 2 to %Qubit*))
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
@@ -28,46 +36,46 @@ alloca_block:
   %1 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 2 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
   %2 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 2 to %Result*))
-  %"41_3.0" = zext i1 %0 to i64
+  %"49_3.0" = zext i1 %0 to i64
   %3 = select i1 %0, i64 2, i64 1
-  %"56_3.0" = select i1 %1, i64 %3, i64 %"41_3.0"
+  %"64_3.0" = select i1 %1, i64 %3, i64 %"49_3.0"
   %4 = zext i1 %2 to i64
-  %"71_3.0" = add nuw nsw i64 %"56_3.0", %4
-  br label %NodeBlock828
+  %"79_3.0" = add nuw nsw i64 %"64_3.0", %4
+  br label %NodeBlock856
 
-NodeBlock828:                                     ; preds = %alloca_block
-  %Pivot829 = icmp slt i64 %"71_3.0", 1
-  br i1 %Pivot829, label %5, label %NodeBlock
+NodeBlock856:                                     ; preds = %alloca_block
+  %Pivot857 = icmp slt i64 %"79_3.0", 1
+  br i1 %Pivot857, label %5, label %NodeBlock
 
-NodeBlock:                                        ; preds = %NodeBlock828
-  %Pivot = icmp slt i64 %"71_3.0", 2
+NodeBlock:                                        ; preds = %NodeBlock856
+  %Pivot = icmp slt i64 %"79_3.0", 2
   br i1 %Pivot, label %6, label %LeafBlock
 
 LeafBlock:                                        ; preds = %NodeBlock
-  %SwitchLeaf = icmp eq i64 %"71_3.0", 2
-  br i1 %SwitchLeaf, label %7, label %NewDefault827
+  %SwitchLeaf = icmp eq i64 %"79_3.0", 2
+  br i1 %SwitchLeaf, label %7, label %NewDefault855
 
-5:                                                ; preds = %NodeBlock828
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  br label %cond_exit_354
+5:                                                ; preds = %NodeBlock856
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  br label %cond_exit_362
 
 6:                                                ; preds = %NodeBlock
-  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  br label %cond_exit_354
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
+  br label %cond_exit_362
 
-NewDefault827:                                    ; preds = %LeafBlock
+NewDefault855:                                    ; preds = %LeafBlock
   br label %NewDefault
 
-NewDefault:                                       ; preds = %NewDefault827
+NewDefault:                                       ; preds = %NewDefault855
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  br label %cond_exit_354
+  br label %cond_exit_362
 
 7:                                                ; preds = %LeafBlock
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0x3FF921FB54442D18, %Qubit* nonnull inttoptr (i64 3 to %Qubit*))
-  br label %cond_exit_354
+  br label %cond_exit_362
 
-cond_exit_354:                                    ; preds = %6, %NewDefault, %7, %5
+cond_exit_362:                                    ; preds = %6, %NewDefault, %7, %5
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 3 to %Qubit*), %Result* nonnull inttoptr (i64 3 to %Result*))
   %8 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 3 to %Result*))
   tail call void @__quantum__rt__bool_record_output(i1 %0, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i64 0, i64 0))
