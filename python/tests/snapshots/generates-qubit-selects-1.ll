@@ -15,10 +15,11 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
+  tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 4 to %Qubit*), %Result* null)
-  %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  %0 = tail call i1 @__quantum__rt__read_result(%Result* null)
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 5 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
-  %1 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
+  %1 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
   br i1 %1, label %alloca_block.select.merge.dup.select.merge.dup, label %alloca_block.select.merge.dup622.select.merge.dup657
 
 alloca_block.select.merge.dup.select.merge.dup:   ; preds = %alloca_block
@@ -27,25 +28,25 @@ alloca_block.select.merge.dup.select.merge.dup:   ; preds = %alloca_block
 alloca_block.select.merge.dup.select.merge.dup.select.merge.dup: ; preds = %alloca_block.select.merge.dup.select.merge.dup
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
-  %2 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %2 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
-  %3 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %3 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
-  %4 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %4 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
-  %5 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %5 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
 alloca_block.select.merge.dup.select.merge.dup.select.merge.dup641: ; preds = %alloca_block.select.merge.dup.select.merge.dup
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 2 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
-  %6 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %6 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
-  %7 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %7 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
-  %8 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %8 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
-  %9 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %9 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
 alloca_block.select.merge.dup622.select.merge.dup657: ; preds = %alloca_block
@@ -54,25 +55,25 @@ alloca_block.select.merge.dup622.select.merge.dup657: ; preds = %alloca_block
 alloca_block.select.merge.dup622.select.merge.dup657.select.merge.dup: ; preds = %alloca_block.select.merge.dup622.select.merge.dup657
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
-  %10 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %10 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
-  %11 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %11 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
-  %12 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %12 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
-  %13 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %13 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
 alloca_block.select.merge.dup622.select.merge.dup657.select.merge.dup672: ; preds = %alloca_block.select.merge.dup622.select.merge.dup657
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* inttoptr (i64 3 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* inttoptr (i64 2 to %Result*))
-  %14 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %14 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 1 to %Qubit*), %Result* inttoptr (i64 3 to %Result*))
-  %15 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 3 to %Result*))
+  %15 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 3 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 2 to %Qubit*), %Result* inttoptr (i64 4 to %Result*))
-  %16 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 4 to %Result*))
+  %16 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 4 to %Result*))
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
-  %17 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 5 to %Result*))
+  %17 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
   br label %record_block
 
 record_block:                                     ; preds = %alloca_block.select.merge.dup622.select.merge.dup657.select.merge.dup672, %alloca_block.select.merge.dup622.select.merge.dup657.select.merge.dup, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup641, %alloca_block.select.merge.dup.select.merge.dup.select.merge.dup
@@ -89,15 +90,18 @@ record_block:                                     ; preds = %alloca_block.select
   ret void
 }
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) local_unnamed_addr #1
 
-declare i1 @__quantum__qis__read_result__body(%Result*) local_unnamed_addr
+declare i1 @__quantum__rt__read_result(%Result* readonly) local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="6" "required_num_results"="6" }
+declare void @__quantum__rt__initialize(i8*) local_unnamed_addr
+
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="6" "required_num_results"="6" }
+attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

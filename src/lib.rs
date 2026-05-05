@@ -1,8 +1,7 @@
 use std::rc::Rc;
 
 use crate::inkwell::passes::PassBuilderOptions;
-use crate::inkwell::values::CallSiteValue;
-use crate::inkwell::values::PointerValue;
+use crate::inkwell::values::{CallSiteValue, FunctionValue, PointerValue};
 use anyhow::anyhow;
 use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
@@ -164,6 +163,7 @@ impl CompileArgs {
         let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
+        add_qir_runtime_contracts(&namer, hugr, &module)?;
 
         Ok(module)
     }
@@ -282,7 +282,7 @@ pub fn add_module_metadata(
             .create_string_attribute("output_labeling_schema", ""),
         module
             .get_context()
-            .create_string_attribute("qir_profiles", "custom"),
+            .create_string_attribute("qir_profiles", "adaptive_profile"),
         module
             .get_context()
             .create_string_attribute("required_num_qubits", &qubit_count.to_string()),
@@ -295,7 +295,7 @@ pub fn add_module_metadata(
     let fn_value = module.get_function(&entry_func_name);
     if Option::is_none(&fn_value) {
         return Err(anyhow!(
-            "expected main function: \"{}\" not found in HUGR",
+            "entrypoint function \"{}\" not found in generated LLVM module",
             entry_func_name
         ));
     }
@@ -365,6 +365,66 @@ pub fn add_module_metadata(
     Ok(())
 }
 
+fn add_qir_runtime_contracts(
+    namer: &Namer,
+    hugr: &impl HugrView<Node = Node>,
+    module: &Module,
+) -> Result<()> {
+    let (entrypoint_node, entrypoint_name) = find_entry_point_name(hugr)?;
+    let entry_func_name = namer.name_func(entrypoint_name, entrypoint_node);
+    let entry_func = module.get_function(&entry_func_name).ok_or_else(|| {
+        anyhow!(
+            "entrypoint function \"{}\" not found in generated LLVM module",
+            entry_func_name
+        )
+    })?;
+    add_qir_initialize_call(module, entry_func)
+}
+
+fn add_qir_initialize_call(module: &Module, entry_func: FunctionValue) -> Result<()> {
+    if function_calls(entry_func, "__quantum__rt__initialize")? {
+        return Ok(());
+    }
+
+    let context = module.get_context();
+    let i8_ptr_ty = context.i8_type().ptr_type(Default::default());
+    let init_ty = context.void_type().fn_type(&[i8_ptr_ty.into()], false);
+    let init_func = module
+        .get_function("__quantum__rt__initialize")
+        .unwrap_or_else(|| module.add_function("__quantum__rt__initialize", init_ty, None));
+
+    let entry_block = entry_func
+        .get_first_basic_block()
+        .ok_or_else(|| anyhow!("QIR entry point has no entry block"))?;
+    let builder = context.create_builder();
+    if let Some(first_inst) = entry_block.get_first_instruction() {
+        builder.position_before(&first_inst);
+    } else {
+        builder.position_at_end(entry_block);
+    }
+    builder.build_call(init_func, &[i8_ptr_ty.const_null().into()], "")?;
+    Ok(())
+}
+
+fn function_calls(func: FunctionValue, callee_name: &str) -> Result<bool> {
+    for block in func.get_basic_blocks() {
+        let mut inst_opt = block.get_first_instruction();
+        while let Some(inst) = inst_opt {
+            inst_opt = inst.get_next_instruction();
+            let Ok(call) = CallSiteValue::try_from(inst) else {
+                continue;
+            };
+            let Some(callee) = call.get_called_fn_value() else {
+                bail!("Indirect call {:?}", call);
+            };
+            if callee.as_global_value().get_name().to_bytes() == callee_name.as_bytes() {
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
 pub fn set_explicit_entrypoint_linkage(
     namer: &Namer,
     hugr: &impl HugrView<Node = Node>,
@@ -375,7 +435,7 @@ pub fn set_explicit_entrypoint_linkage(
     let fn_value = module.get_function(&entry_func_name);
     if Option::is_none(&fn_value) {
         return Err(anyhow!(
-            "expected main function: \"{}\" not found in HUGR",
+            "entrypoint function \"{}\" not found in generated LLVM module",
             entry_func_name
         ));
     }
