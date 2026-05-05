@@ -18,6 +18,12 @@ use std::collections::{HashMap, HashSet};
 
 type ValueKey = usize;
 
+#[derive(Clone, Copy)]
+enum LoweredSsaKind {
+    QubitPointer,
+    Float,
+}
+
 /// Lowers select and phi instructions returning QUBIT* to control flow.
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
@@ -40,15 +46,55 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
+/// Lowers select and phi instructions returning floating-point values to control flow.
+///
+/// This follows the same lowering strategy as the qubit-pointer pass, but does not
+/// run CFG simplification afterward because that can reintroduce float phis.
+pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
+    verify_module(module).map_err(|err| {
+        anyhow!("Verification failed for input module to lower_float_selects_and_phis pass: {err}")
+    })?;
+    if !module_has_lowerable_float_selects_or_phis(module) {
+        return Ok(false);
+    }
+    prepare_module(module)?;
+    let lowered_selects = lower_float_selects(module)?;
+    let lowered_phis = lower_float_phis(module)?;
+    let changed = lowered_selects || lowered_phis;
+    // Don't run simp_cfg, may reintroduce float selects/phis
+    verify_module(module)?;
+    Ok(changed)
+}
+
 /// Returns whether the module contains at least one qubit-pointer `select` or
 /// `phi` that this pass is expected to lower.
 fn module_has_lowerable_qubit_selects_or_phis(module: &Module) -> bool {
+    module_has_lowerable_selects_or_phis_matching(
+        module,
+        is_lowerable_qubit_select_or_phi_instruction,
+    )
+}
+
+/// Returns whether the module contains at least one floating-point `select` or
+/// `phi` that this pass is expected to lower.
+fn module_has_lowerable_float_selects_or_phis(module: &Module) -> bool {
+    module_has_lowerable_selects_or_phis_matching(
+        module,
+        is_lowerable_float_select_or_phi_instruction,
+    )
+}
+
+/// Returns whether the module contains at least one `select` or `phi` matching
+/// the provided lowering predicate.
+fn module_has_lowerable_selects_or_phis_matching(
+    module: &Module,
+    predicate: impl Fn(InstructionValue) -> bool + Copy,
+) -> bool {
     module.get_functions().any(|function| {
-        function.get_basic_blocks().iter().any(|block| {
-            block
-                .get_instructions()
-                .any(is_lowerable_qubit_select_or_phi_instruction)
-        })
+        function
+            .get_basic_blocks()
+            .iter()
+            .any(|block| block.get_instructions().any(predicate))
     })
 }
 
@@ -58,7 +104,69 @@ fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool 
     matches!(
         inst.get_opcode(),
         InstructionOpcode::Select | InstructionOpcode::Phi
-    ) && matches!(inst.get_type(), AnyTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
+    ) && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::QubitPointer)
+}
+
+/// Checks whether a single instruction matches the float lowering criteria:
+/// opcode `select` or `phi`, result type `FloatType`.
+fn is_lowerable_float_select_or_phi_instruction(inst: InstructionValue) -> bool {
+    matches!(
+        inst.get_opcode(),
+        InstructionOpcode::Select | InstructionOpcode::Phi
+    ) && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
+}
+
+/// Returns whether an LLVM type is a lowerable qubit pointer.
+fn matches_lowered_any_type(ty: AnyTypeEnum, kind: LoweredSsaKind) -> bool {
+    match kind {
+        LoweredSsaKind::QubitPointer => {
+            matches!(ty, AnyTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
+        }
+        LoweredSsaKind::Float => matches!(ty, AnyTypeEnum::FloatType(_)),
+    }
+}
+
+/// Returns whether a basic type matches the lowering kind.
+fn matches_lowered_basic_type(ty: BasicTypeEnum, kind: LoweredSsaKind) -> bool {
+    match kind {
+        LoweredSsaKind::QubitPointer => {
+            matches!(ty, BasicTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
+        }
+        LoweredSsaKind::Float => matches!(ty, BasicTypeEnum::FloatType(_)),
+    }
+}
+
+/// Human-readable description of the lowering kind for diagnostics.
+fn lowered_kind_description(kind: LoweredSsaKind) -> &'static str {
+    match kind {
+        LoweredSsaKind::QubitPointer => "qubit pointer",
+        LoweredSsaKind::Float => "floating-point",
+    }
+}
+
+/// Returns whether an instruction is a lowerable qubit-pointer `select`.
+fn is_lowerable_qubit_select(inst: InstructionValue) -> bool {
+    inst.get_opcode() == InstructionOpcode::Select
+        && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::QubitPointer)
+}
+
+/// Returns whether an instruction is a lowerable floating-point `select`.
+fn is_lowerable_float_select(inst: InstructionValue) -> bool {
+    inst.get_opcode() == InstructionOpcode::Select
+        && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
+}
+
+/// Returns whether a phi is a lowerable qubit-pointer phi.
+fn is_lowerable_qubit_phi(phi: PhiValue) -> bool {
+    matches_lowered_basic_type(
+        phi.as_basic_value().get_type(),
+        LoweredSsaKind::QubitPointer,
+    )
+}
+
+/// Returns whether a phi is a lowerable floating-point phi.
+fn is_lowerable_float_phi(phi: PhiValue) -> bool {
+    matches_lowered_basic_type(phi.as_basic_value().get_type(), LoweredSsaKind::Float)
 }
 
 /// Rebuilds a terminator into the builder's current insertion block.
@@ -143,179 +251,301 @@ fn rebuild_terminator<'ctx>(
     }
 }
 
-/// Moves all direct calls in `bb` whose callee name satisfies `should_match`
-/// into a fresh block placed immediately after `bb`.
-///
-/// The original block is rewritten to end in an unconditional branch to the new
-/// block, and the original terminator is rebuilt in the new block after the moved calls.
-pub fn move_matching_calls_to_fresh_block<'ctx>(
-    bb: BasicBlock<'ctx>,
-    should_match: impl Fn(&str) -> bool,
-) -> Result<Option<BasicBlock<'ctx>>> {
-    let function = required_parent_function(bb, "move_matching_calls_to_fresh_block")?;
-    let context = bb.get_context();
-    let builder = context.create_builder();
-
-    // ------------------------------------------------------------
-    // 1) Collect matching direct calls
-    // ------------------------------------------------------------
-    let mut calls_to_rebuild: Vec<InstructionValue<'ctx>> = Vec::new();
-    let mut inst_opt = bb.get_first_instruction();
-
-    while let Some(inst) = inst_opt {
-        inst_opt = inst.get_next_instruction();
-
-        if inst.get_opcode() != InstructionOpcode::Call {
-            continue;
-        }
-
-        let callsite: CallSiteValue<'ctx> = CallSiteValue::try_from(inst)
-            .map_err(|_| anyhow!("move_matching_calls_to_fresh_block: failed to parse call"))?;
-
-        let callee = match callsite.get_called_fn_value() {
-            Some(f) => f,
-            None => continue, // indirect call: skip
-        };
-
-        if callee.get_name().to_str().is_ok_and(&should_match) {
-            calls_to_rebuild.push(inst);
-        }
-    }
-
-    if calls_to_rebuild.is_empty() {
-        return Ok(None);
-    }
-
-    // ------------------------------------------------------------
-    // 2) Snapshot the old terminator BEFORE changing the block
-    // ------------------------------------------------------------
-    let old_term = bb
-        .get_terminator()
-        .ok_or_else(|| anyhow!("move_matching_calls_to_fresh_block: block has no terminator"))?;
-
-    // ------------------------------------------------------------
-    // 3) Create the new block immediately after `bb`
-    // ------------------------------------------------------------
-    let new_bb = context.append_basic_block(function, "record_block");
-    new_bb
-        .move_after(bb)
-        .map_err(|_| anyhow!("move_matching_calls_to_fresh_block: failed to move block"))?;
-
-    // ------------------------------------------------------------
-    // 4) Rebuild matching calls into new_bb
-    // ------------------------------------------------------------
-    builder.position_at_end(new_bb);
-
-    let mut rebuilt_pairs: Vec<(InstructionValue<'ctx>, Option<BasicValueEnum<'ctx>>)> = Vec::new();
-
-    for old_call in &calls_to_rebuild {
-        let cs = CallSiteValue::try_from(*old_call)
-            .map_err(|_| anyhow!("move_matching_calls_to_fresh_block: failed to parse call"))?;
-        let callee = required_called_function(cs, "move_matching_calls_to_fresh_block")?;
-
-        // For LLVM 14, build_direct_call is the right API path. build_call is only
-        // exposed directly on newer LLVM feature sets.
-        let mut args = Vec::new();
-        for i in 0..cs.count_arguments() {
-            if let Some(v) = inst_operand_value(*old_call, i) {
-                args.push(v.into());
-            }
-        }
-
-        let name = old_call
-            .get_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
-
-        let new_cs = builder.build_call(callee, &args, &name)?;
-
-        rebuilt_pairs.push((*old_call, new_cs.try_as_basic_value().basic()));
-    }
-
-    // ------------------------------------------------------------
-    // 5) Rebuild old terminator into new_bb
-    // ------------------------------------------------------------
-    rebuild_terminator(&builder, old_term, None)?;
-
-    // ------------------------------------------------------------
-    // 6) Replace uses of rebuilt calls, then erase originals
-    // ------------------------------------------------------------
-    for (old_call, maybe_new_val) in rebuilt_pairs {
-        if let Some(new_val) = maybe_new_val {
-            old_call.replace_all_uses_with(&required_instruction_value(
-                new_val,
-                "move_matching_calls_to_fresh_block",
-            )?);
-        }
-        old_call.erase_from_basic_block();
-    }
-
-    // ------------------------------------------------------------
-    // 7) Erase old terminator from bb
-    // ------------------------------------------------------------
-    old_term.erase_from_basic_block();
-
-    // ------------------------------------------------------------
-    // 8) Make bb end with br new_bb
-    // ------------------------------------------------------------
-    builder.position_at_end(bb);
-    builder.build_unconditional_branch(new_bb)?;
-
-    Ok(Some(new_bb))
-}
-
 /// Returns true for runtime record-output functions such as
 /// `__quantum__rt__bool_record_output` and `__quantum__rt__int_record_output`.
 fn is_record_output_runtime_call(name: &str) -> bool {
     name.starts_with("__quantum__rt__") && name.ends_with("_record_output")
 }
 
+const PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME: &str = "__prepare_module_record_output_final";
+
 /// Normalizes the module before select/phi lowering.
 ///
-/// At present this isolates runtime `*_record_output` calls into dedicated
-/// blocks so later tail duplication does not duplicate them.
+/// At present this moves runtime `*_record_output` calls to a single sink at
+/// the end of each function so later tail duplication cannot duplicate them.
 fn prepare_module(module: &Module) -> Result<()> {
     for func in module.get_functions() {
-        for block in func.get_basic_blocks() {
-            move_matching_calls_to_fresh_block(block, is_record_output_runtime_call)?;
-        }
+        move_record_output_calls_to_function_end(func)?;
     }
     Ok(())
+}
+
+/// Moves all movable `*_record_output` calls in a function into a single final
+/// block at the end of the function.
+///
+/// The final block is named so it can be recognized on later runs of
+/// `prepare_module`. Its shape is:
+/// - optional leading phis
+/// - direct `*_record_output` calls only
+/// - a return terminator
+///
+/// If such a block already exists and is the only return point in the function,
+/// newly discovered record-output calls are appended to the start of that block
+/// rather than creating another sink.
+fn move_record_output_calls_to_function_end<'ctx>(
+    function: inkwell::values::FunctionValue<'ctx>,
+) -> Result<bool> {
+    let Some(first_block) = function.get_first_basic_block() else {
+        return Ok(false);
+    };
+    let context = first_block.get_context();
+    let builder = context.create_builder();
+
+    let existing_final_block = find_prepare_module_record_final_block(function)?;
+
+    let mut calls_to_rebuild: Vec<InstructionValue<'ctx>> = Vec::new();
+    for block in function.get_basic_blocks() {
+        if Some(block) == existing_final_block {
+            continue;
+        }
+        for inst in block.get_instructions() {
+            if inst.get_opcode() != InstructionOpcode::Call {
+                continue;
+            }
+            let callsite: CallSiteValue<'ctx> = CallSiteValue::try_from(inst).map_err(|_| {
+                anyhow!("move_record_output_calls_to_function_end: failed to parse call")
+            })?;
+            let Some(callee) = callsite.get_called_fn_value() else {
+                continue;
+            };
+            if callee
+                .get_name()
+                .to_str()
+                .is_ok_and(is_record_output_runtime_call)
+            {
+                calls_to_rebuild.push(inst);
+            }
+        }
+    }
+
+    if calls_to_rebuild.is_empty() {
+        return Ok(false);
+    }
+
+    let mut return_sites: Vec<(BasicBlock<'ctx>, InstructionValue<'ctx>)> = Vec::new();
+    for block in function.get_basic_blocks() {
+        let Some(term) = block.get_terminator() else {
+            continue;
+        };
+        if term.get_opcode() == InstructionOpcode::Return {
+            return_sites.push((block, term));
+        }
+    }
+
+    if return_sites.is_empty() {
+        bail!(
+            "move_record_output_calls_to_function_end: function with record_output calls has no return terminator"
+        );
+    }
+
+    let record_final_bb = if let Some(existing_final_block) = existing_final_block {
+        existing_final_block
+    } else {
+        let record_final_bb =
+            context.append_basic_block(function, PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME);
+
+        let return_type = function.get_type().get_return_type();
+        builder.position_at_end(record_final_bb);
+        let return_value = if let Some(ret_ty) = return_type {
+            let return_phi = builder.build_phi(ret_ty, "record.return")?;
+            for (ret_block, ret_inst) in &return_sites {
+                let ret_val = inst_operand_value(*ret_inst, 0).ok_or_else(|| {
+                    anyhow!(
+                        "move_record_output_calls_to_function_end: non-void return without value"
+                    )
+                })?;
+                return_phi.add_incoming(&[(&ret_val, *ret_block)]);
+            }
+            Some(return_phi.as_basic_value())
+        } else {
+            None
+        };
+        if let Some(ret_val) = return_value {
+            builder.build_return(Some(&ret_val))?;
+        } else {
+            builder.build_return(None)?;
+        }
+
+        for (ret_block, ret_inst) in &return_sites {
+            builder.position_at_end(*ret_block);
+            ret_inst.erase_from_basic_block();
+            builder.build_unconditional_branch(record_final_bb)?;
+        }
+
+        record_final_bb
+    };
+
+    if let Some(first_non_phi) = first_non_phi(record_final_bb) {
+        builder.position_before(&first_non_phi);
+    } else {
+        builder.position_at_end(record_final_bb);
+    }
+    let mut rebuilt_pairs: Vec<(InstructionValue<'ctx>, Option<BasicValueEnum<'ctx>>)> = Vec::new();
+    for old_call in &calls_to_rebuild {
+        let cs = CallSiteValue::try_from(*old_call).map_err(|_| {
+            anyhow!("move_record_output_calls_to_function_end: failed to parse call")
+        })?;
+        let callee = required_called_function(cs, "move_record_output_calls_to_function_end")?;
+        let mut args = Vec::new();
+        for i in 0..cs.count_arguments() {
+            if let Some(v) = inst_operand_value(*old_call, i) {
+                args.push(v.into());
+            }
+        }
+        let name = old_call
+            .get_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let new_cs = builder.build_call(callee, &args, &name)?;
+        rebuilt_pairs.push((*old_call, new_cs.try_as_basic_value().basic()));
+    }
+
+    for (old_call, maybe_new_val) in rebuilt_pairs {
+        if let Some(new_val) = maybe_new_val {
+            old_call.replace_all_uses_with(&required_instruction_value(
+                new_val,
+                "move_record_output_calls_to_function_end",
+            )?);
+        }
+        old_call.erase_from_basic_block();
+    }
+
+    Ok(true)
+}
+
+fn find_prepare_module_record_final_block<'ctx>(
+    function: inkwell::values::FunctionValue<'ctx>,
+) -> Result<Option<BasicBlock<'ctx>>> {
+    let mut matching_blocks = Vec::new();
+    let mut return_blocks = Vec::new();
+
+    for block in function.get_basic_blocks() {
+        if block
+            .get_name()
+            .to_str()
+            .is_ok_and(|name| name == PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME)
+        {
+            matching_blocks.push(block);
+        }
+        if block
+            .get_terminator()
+            .is_some_and(|term| term.get_opcode() == InstructionOpcode::Return)
+        {
+            return_blocks.push(block);
+        }
+    }
+
+    if matching_blocks.is_empty() {
+        return Ok(None);
+    }
+    if matching_blocks.len() > 1 {
+        bail!("prepare_module: found multiple final record-output blocks in one function");
+    }
+
+    let block = matching_blocks[0];
+    if !block_is_prepare_module_record_final_block(block)? {
+        bail!("prepare_module: found named final record-output block with unexpected structure");
+    }
+    if return_blocks.len() != 1 || return_blocks[0] != block {
+        bail!(
+            "prepare_module: found named final record-output block but it is not the only return point"
+        );
+    }
+
+    Ok(Some(block))
+}
+
+fn block_is_prepare_module_record_final_block(block: BasicBlock) -> Result<bool> {
+    if !block
+        .get_name()
+        .to_str()
+        .is_ok_and(|name| name == PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME)
+    {
+        return Ok(false);
+    }
+
+    let Some(term) = block.get_terminator() else {
+        return Ok(false);
+    };
+    if term.get_opcode() != InstructionOpcode::Return {
+        return Ok(false);
+    }
+
+    for inst in block.get_instructions() {
+        if inst.is_terminator() || inst.get_opcode() == InstructionOpcode::Phi {
+            continue;
+        }
+        if inst.get_opcode() != InstructionOpcode::Call {
+            return Ok(false);
+        }
+        let callsite: CallSiteValue = CallSiteValue::try_from(inst).map_err(|_| {
+            anyhow!("block_is_prepare_module_record_final_block: failed to parse call")
+        })?;
+        let Some(callee) = callsite.get_called_fn_value() else {
+            return Ok(false);
+        };
+        if !callee
+            .get_name()
+            .to_str()
+            .is_ok_and(is_record_output_runtime_call)
+        {
+            return Ok(false);
+        }
+    }
+
+    Ok(true)
 }
 
 /// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
 /// a then/else diamond and a merge PHI, then using phi elimination to remove phi.
 /// May introduce new phis downstream
 pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
+    lower_matching_selects(
+        module,
+        is_lowerable_qubit_select,
+        LoweredSsaKind::QubitPointer,
+    )
+}
+
+/// Lower all floating-point `select` instructions to explicit control flow.
+pub fn lower_float_selects(module: &Module) -> Result<bool> {
+    lower_matching_selects(module, is_lowerable_float_select, LoweredSsaKind::Float)
+}
+
+/// Lowers all `select` instructions matched by `matches_select` using reverse
+/// block and instruction order.
+fn lower_matching_selects(
+    module: &Module,
+    matches_select: impl Fn(InstructionValue) -> bool + Copy,
+    kind: LoweredSsaKind,
+) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
 
     for func in module.get_functions() {
-        let mut block_opt = func.get_first_basic_block();
+        let mut block_opt = func.get_last_basic_block();
         while let Some(bb) = block_opt {
-            if let Some(first_sel) = get_first_qubit_select_in_block(bb) {
-                lower_one_select_to_control_flow(&builder, first_sel)?;
+            if let Some(last_sel) = get_last_matching_select_in_block(bb, matches_select) {
+                lower_one_select_to_control_flow(module, &builder, last_sel, kind)?;
                 changed = true;
+            } else {
+                block_opt = bb.get_previous_basic_block();
             }
-            // If we found a select we will have added new blocks just after
-            // the current one. Need to check those blocks for further selects
-            // so only get the next block here, not before handling first select
-            block_opt = bb.get_next_basic_block();
         }
     }
     Ok(changed)
 }
 
-/// Returns the first `select` in `bb` that produces a qubit pointer, if any.
-fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
-    let mut it = bb.get_first_instruction();
+/// Returns the last matching `select` in `bb`, if any.
+fn get_last_matching_select_in_block(
+    bb: BasicBlock,
+    matches_select: impl Fn(InstructionValue) -> bool,
+) -> Option<InstructionValue> {
+    let mut it = bb.get_last_instruction();
     while let Some(i) = it {
-        it = i.get_next_instruction();
-        if i.get_opcode() == InstructionOpcode::Select
-            && let AnyTypeEnum::PointerType(pt) = i.get_type()
-            && is_qubit_pointer(pt)
-        {
+        it = i.get_previous_instruction();
+        if matches_select(i) {
             return Some(i);
         }
     }
@@ -330,8 +560,10 @@ fn get_first_qubit_select_in_block(bb: BasicBlock) -> Option<InstructionValue> {
 /// typed phis downstream if there were downstream users of the select and these phis
 /// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
+    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
+    kind: LoweredSsaKind,
 ) -> Result<()> {
     let bb = required_parent_block(sel, "lower_one_select_to_control_flow")?;
 
@@ -351,16 +583,15 @@ fn lower_one_select_to_control_flow<'ctx>(
         anyhow!("lower_one_select_to_control_flow: select result is not a basic type")
     })?;
 
-    validate_select_lowering(sel, &tail)?;
+    validate_select_lowering(sel, &tail, kind)?;
 
     // Create THEN, ELSE, MERGE blocks and append to function
     let ctx = bb.get_context();
 
-    let then_bb = ctx.insert_basic_block_after(bb, &format!("{}.select.then", name_of_block(bb)));
-    let else_bb =
-        ctx.insert_basic_block_after(then_bb, &format!("{}.select.else", name_of_block(bb)));
-    let merge_bb =
-        ctx.insert_basic_block_after(else_bb, &format!("{}.select.merge", name_of_block(bb)));
+    let block_base_name = synthetic_block_base_name(bb);
+    let then_bb = ctx.insert_basic_block_after(bb, &format!("{block_base_name}.sel.then"));
+    let else_bb = ctx.insert_basic_block_after(then_bb, &format!("{block_base_name}.sel.else"));
+    let merge_bb = ctx.insert_basic_block_after(else_bb, &format!("{block_base_name}.sel.merge"));
 
     // Build PHI in merge (must be first in the block)
     builder.position_at_end(merge_bb);
@@ -377,7 +608,7 @@ fn lower_one_select_to_control_flow<'ctx>(
         &tail,
         &mut vmap,
         None,
-        "select block tail",
+        &format!("{} select block tail", lowered_kind_description(kind)),
     )?;
     rewrite_external_uses_to_vmap(bb, &vmap)?;
 
@@ -397,7 +628,70 @@ fn lower_one_select_to_control_flow<'ctx>(
         fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
     }
     sel.erase_from_basic_block();
-    lower_successive_qubit_phis_in_block(builder, merge_bb, vec![phi])?;
+    lower_successive_phis_in_block(module, builder, merge_bb, vec![phi])?;
+    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
+    Ok(())
+}
+
+/// Collapses the trivial `sel.then` / `sel.else` forwarding blocks left behind
+/// after select-lowering-induced phi elimination.
+///
+/// After the merge phi has been lowered, these blocks normally contain only an
+/// unconditional branch to the duplicated tails. In that case we retarget the
+/// original conditional branch to those real tail blocks directly and delete the
+/// forwarding blocks.
+fn collapse_trivial_select_dispatch_blocks<'ctx>(
+    builder: &Builder<'ctx>,
+    source_bb: BasicBlock<'ctx>,
+    then_bb: BasicBlock<'ctx>,
+    else_bb: BasicBlock<'ctx>,
+) -> Result<()> {
+    let Some(source_term) = source_bb.get_terminator() else {
+        return Ok(());
+    };
+    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional() {
+        return Ok(());
+    }
+
+    if !block_is_trivial_unconditional_branch(then_bb)
+        || !block_is_trivial_unconditional_branch(else_bb)
+    {
+        return Ok(());
+    }
+
+    let cond = expect_inst_operand_value(source_term, 0).into_int_value();
+    let direct_then = required_block_operand(
+        then_bb.get_terminator().ok_or_else(|| {
+            anyhow!("collapse_trivial_select_dispatch_blocks: missing then terminator")
+        })?,
+        0,
+        "collapse_trivial_select_dispatch_blocks",
+    )?;
+    let direct_else = required_block_operand(
+        else_bb.get_terminator().ok_or_else(|| {
+            anyhow!("collapse_trivial_select_dispatch_blocks: missing else terminator")
+        })?,
+        0,
+        "collapse_trivial_select_dispatch_blocks",
+    )?;
+
+    builder.position_at_end(source_bb);
+    source_term.erase_from_basic_block();
+    if direct_then == direct_else {
+        builder.build_unconditional_branch(direct_then)?;
+    } else {
+        builder.build_conditional_branch(cond, direct_then, direct_else)?;
+    }
+
+    unsafe {
+        then_bb
+            .delete()
+            .expect("collapse_trivial_select_dispatch_blocks: failed to delete then block");
+        else_bb
+            .delete()
+            .expect("collapse_trivial_select_dispatch_blocks: failed to delete else block");
+    }
+
     Ok(())
 }
 
@@ -442,15 +736,24 @@ fn rebuild_tail<'ctx>(
 }
 
 /// Validates that a qubit-pointer `select` can be lowered by this pass.
-fn validate_select_lowering(sel: InstructionValue, tail: &[InstructionValue]) -> Result<()> {
-    validate_rebuildable_tail_slice(tail)
-        .map_err(|err| anyhow!("Select block tail cannot be lowered: {err}"))?;
-    match sel.get_type() {
-        AnyTypeEnum::PointerType(pt) if is_qubit_pointer(pt) => Ok(()),
-        AnyTypeEnum::PointerType(_) => {
-            bail!("Select lowering only supports qubit pointer results")
-        }
-        _ => bail!("Select lowering only supports pointer-typed results"),
+fn validate_select_lowering(
+    sel: InstructionValue,
+    tail: &[InstructionValue],
+    kind: LoweredSsaKind,
+) -> Result<()> {
+    validate_rebuildable_tail_slice(tail).map_err(|err| {
+        anyhow!(
+            "{} select block tail cannot be lowered: {err}",
+            lowered_kind_description(kind)
+        )
+    })?;
+    if matches_lowered_any_type(sel.get_type(), kind) {
+        Ok(())
+    } else {
+        bail!(
+            "Select lowering only supports {} results",
+            lowered_kind_description(kind)
+        )
     }
 }
 
@@ -555,6 +858,20 @@ fn rename_incoming_block_in_phis<'ctx>(
 
 /// Lowers all phi instructions returning QUBIT* to control flow.
 pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
+    lower_matching_phis(module, is_lowerable_qubit_phi, LoweredSsaKind::QubitPointer)
+}
+
+/// Lowers all phi instructions returning floating-point values to control flow.
+pub fn lower_float_phis(module: &Module) -> Result<bool> {
+    lower_matching_phis(module, is_lowerable_float_phi, LoweredSsaKind::Float)
+}
+
+/// Lowers all leading block phis matched by `matches_phi`.
+fn lower_matching_phis(
+    module: &Module,
+    matches_phi: impl Fn(PhiValue) -> bool + Copy,
+    kind: LoweredSsaKind,
+) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
     let mut changed = false;
@@ -562,14 +879,15 @@ pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
         let mut block_opt = func.get_first_basic_block();
         while let Some(block) = block_opt {
             block_opt = block.get_next_basic_block();
-            let phi_candidates = get_block_phis(block);
+            let phi_candidates = get_block_matching_phis(block, matches_phi);
             if phi_candidates.is_empty() {
                 continue;
             }
-            if lower_successive_qubit_phis_in_block(&builder, block, phi_candidates)? {
+            if lower_successive_phis_in_block(module, &builder, block, phi_candidates)? {
                 verify_module(module).map_err(|err| {
                     anyhow!(
-                        "Module verification failed after lowering qubit phis in block {}: {err}",
+                        "Module verification failed after lowering {} phis in block {}: {err}",
+                        lowered_kind_description(kind),
                         name_of_block(block)
                     )
                 })?;
@@ -580,7 +898,8 @@ pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
     Ok(changed)
 }
 
-pub fn lower_successive_qubit_phis_in_block(
+pub fn lower_successive_phis_in_block(
+    _module: &Module,
     builder: &Builder,
     block: BasicBlock,
     phis: Vec<PhiValue>,
@@ -630,6 +949,11 @@ pub fn lower_successive_qubit_phis_in_block(
         .iter()
         .map(|phi| value_key_from_instruction(phi.as_instruction()))
         .collect();
+    reconcile_successor_phi_incoming_blocks_after_duplication(
+        block,
+        &clone_map,
+        &clone_value_maps,
+    )?;
     reconcile_external_uses_after_duplication(
         block,
         &clone_map,
@@ -690,19 +1014,18 @@ fn validate_phi_lowering<'ctx>(
 ///
 /// PHIs are always clustered at block start in LLVM IR, so the scan stops on the
 /// first non-PHI instruction.
-fn get_block_phis(block: BasicBlock) -> Vec<PhiValue> {
+fn get_block_matching_phis(
+    block: BasicBlock,
+    matches_phi: impl Fn(PhiValue) -> bool,
+) -> Vec<PhiValue> {
     let mut inst_opt = block.get_first_instruction();
     let mut phi_candidates: Vec<PhiValue> = Vec::new();
     while let Some(inst) = inst_opt {
         if inst.get_opcode() != InstructionOpcode::Phi {
-            // phis are always first instructions, so we are done here
             break;
         }
-        // Turn the inst into PhiValue (safe since we checked opcode)
         let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
-        if let BasicTypeEnum::PointerType(ptr_ty) = phi.as_basic_value().get_type()
-            && is_qubit_pointer(ptr_ty)
-        {
+        if matches_phi(phi) {
             phi_candidates.push(phi);
         }
         inst_opt = inst.get_next_instruction();
@@ -1160,6 +1483,62 @@ fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
     }
 }
 
+/// Returns the direct CFG successors of `bb` for the terminator kinds this pass
+/// reasons about explicitly.
+fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
+    let Some(term) = bb.get_terminator() else {
+        return Ok(Vec::new());
+    };
+
+    match term.get_opcode() {
+        Op::Br => {
+            if !term.is_conditional() {
+                Ok(vec![required_block_operand(term, 0, "direct_successors")?])
+            } else {
+                Ok(vec![
+                    required_block_operand(term, 1, "direct_successors")?,
+                    required_block_operand(term, 2, "direct_successors")?,
+                ])
+            }
+        }
+        Op::Switch => {
+            let mut succs = vec![required_block_operand(term, 1, "direct_successors")?];
+            let mut idx = 3;
+            while idx < term.get_num_operands() {
+                succs.push(required_block_operand(term, idx, "direct_successors")?);
+                idx += 2;
+            }
+            Ok(succs)
+        }
+        Op::IndirectBr => {
+            let mut succs = Vec::new();
+            for idx in 1..term.get_num_operands() {
+                succs.push(required_block_operand(term, idx, "direct_successors")?);
+            }
+            Ok(succs)
+        }
+        Op::Return | Op::Unreachable | Op::Resume => Ok(Vec::new()),
+        _ => bail!(
+            "Unsupported terminator when collecting direct successors: {}",
+            term
+        ),
+    }
+}
+
+/// Returns whether a block contains no non-terminator instructions and ends in
+/// an unconditional branch.
+fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
+    let Some(term) = bb.get_terminator() else {
+        return false;
+    };
+    if term.get_opcode() != Op::Br || term.is_conditional() {
+        return false;
+    }
+
+    bb.get_instructions()
+        .all(|inst| inst == term || inst.get_opcode() == InstructionOpcode::Phi)
+}
+
 /// First non‑PHI in a block
 fn first_non_phi(bb: BasicBlock) -> Option<InstructionValue> {
     let mut it = bb.get_first_instruction();
@@ -1189,6 +1568,28 @@ fn collect_instruction_tail(start: Option<InstructionValue>) -> Vec<InstructionV
 
 fn name_of_block(bb: BasicBlock<'_>) -> String {
     bb.get_name().to_string_lossy().to_string()
+}
+
+/// Returns a short stable base name for synthetic blocks created by this pass.
+///
+/// This prevents names from growing recursively as we duplicate/select-lower
+/// blocks that were themselves created by earlier rounds of the pass.
+fn synthetic_block_base_name(bb: BasicBlock<'_>) -> String {
+    let name = name_of_block(bb);
+    let mut base = name.as_str();
+
+    for marker in [".sel.", ".select.", ".dup", ".record"] {
+        if let Some((prefix, _)) = base.split_once(marker) {
+            base = prefix;
+            break;
+        }
+    }
+
+    if base.is_empty() {
+        "bb".to_string()
+    } else {
+        base.to_string()
+    }
 }
 
 fn incoming_for_predecessor<'ctx>(
@@ -1230,9 +1631,10 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
     let mut vmap = phi_incoming_vmap_for_predecessor(phis, pred)?;
     let mut cloned_values: HashMap<ValueKey, BasicValueEnum<'ctx>> = HashMap::new();
 
-    let clone_block = pred
-        .get_context()
-        .insert_basic_block_after(pred, &format!("{}.dup", name_of_block(original_block)));
+    let clone_block = pred.get_context().insert_basic_block_after(
+        pred,
+        &format!("{}.dup", synthetic_block_base_name(original_block)),
+    );
 
     if let Err(err) = rebuild_tail(
         builder,
@@ -1306,6 +1708,65 @@ fn rewrite_external_uses_to_vmap<'ctx>(
             inst.replace_all_uses_with(&new_inst);
         }
     }
+    Ok(())
+}
+
+/// Rewrites phi incomings in direct successors of `original_block` before that
+/// block is deleted.
+///
+/// This covers downstream phis that mention `original_block` only as an incoming
+/// block, even when the incoming value is a constant or some other value not
+/// defined in `original_block`. Those edges are not discoverable through use-def
+/// walking, but they still need to be expanded to the duplicated clone blocks.
+fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
+    original_block: BasicBlock<'ctx>,
+    clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    clone_value_maps: &HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+) -> Result<()> {
+    let resolver = DuplicationValueResolver::new(original_block, clone_map, clone_value_maps);
+    let sorted_clone_entries = sorted_clone_entries(clone_map);
+
+    for succ_bb in direct_successors(original_block)? {
+        let phi_insts: Vec<_> = succ_bb
+            .get_instructions()
+            .take_while(|inst| inst.get_opcode() == InstructionOpcode::Phi)
+            .collect();
+
+        for phi_inst in phi_insts {
+            let phi = unsafe { PhiValue::new(phi_inst.as_value_ref()) };
+            let incomings: Vec<_> = phi.get_incomings().collect();
+            if !incomings
+                .iter()
+                .any(|(_, incoming_bb)| *incoming_bb == original_block)
+            {
+                continue;
+            }
+
+            let builder = succ_bb.get_context().create_builder();
+            builder.position_before(&phi_inst);
+            let replacement_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.edge")?;
+
+            for (incoming_val, incoming_bb) in incomings {
+                if incoming_bb != original_block {
+                    replacement_phi.add_incoming(&[(&incoming_val, incoming_bb)]);
+                    continue;
+                }
+
+                for (orig_pred, clone_block) in &sorted_clone_entries {
+                    if !block_has_successor(*clone_block, succ_bb)? {
+                        continue;
+                    }
+                    let replacement_val = resolver
+                        .value_for_duplicated_original_predecessor(*orig_pred, incoming_val)?;
+                    replacement_phi.add_incoming(&[(&replacement_val, *clone_block)]);
+                }
+            }
+
+            phi.replace_all_uses_with(&replacement_phi);
+            phi_inst.erase_from_basic_block();
+        }
+    }
+
     Ok(())
 }
 
@@ -1494,6 +1955,18 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             return Ok(cached);
         }
 
+        if let Some(original_pred) = self.reverse_clone_map.get(&block) {
+            let direct_value = self.resolve_original_instruction_for_predecessor(
+                *original_pred,
+                original_inst,
+                value_key,
+                "value_available_in_block_after_duplication",
+            )?;
+            self.available_value_cache
+                .insert((block, value_key), direct_value);
+            return Ok(direct_value);
+        }
+
         let preds = predecessors(block)?;
         let clone_pred_keys: HashSet<usize> = self
             .reverse_clone_map
@@ -1591,6 +2064,11 @@ fn can_rebuild_inst(inst: InstructionValue) -> bool {
         | Op::ICmp
         | Op::FCmp
         | Op::Select
+        | Op::FAdd
+        | Op::FSub
+        | Op::FMul
+        | Op::FDiv
+        | Op::FRem
         | Op::Add
         | Op::Sub
         | Op::Mul
@@ -1884,6 +2362,21 @@ pub fn rebuild_inst<'ctx>(
             Ok(RebuildOutcome::Value(sel))
         }
 
+        // ---------------- Floating-point arithmetic ----------------
+        Op::FAdd | Op::FSub | Op::FMul | Op::FDiv | Op::FRem => {
+            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
+            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_float_value();
+            let res = match inst.get_opcode() {
+                Op::FAdd => builder.build_float_add(lhs, rhs, &name),
+                Op::FSub => builder.build_float_sub(lhs, rhs, &name),
+                Op::FMul => builder.build_float_mul(lhs, rhs, &name),
+                Op::FDiv => builder.build_float_div(lhs, rhs, &name),
+                Op::FRem => builder.build_float_rem(lhs, rhs, &name),
+                _ => unreachable!(),
+            }?;
+            Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
+        }
+
         // ---------------- Integer arithmetic ----------------
         Op::Add
         | Op::Sub
@@ -2169,11 +2662,22 @@ mod test {
     }
 
     fn count_lowerable_qubit_selects_and_phis(module: &Module) -> usize {
+        count_matching_selects_and_phis(module, is_lowerable_qubit_select_or_phi_instruction)
+    }
+
+    fn count_lowerable_float_selects_and_phis(module: &Module) -> usize {
+        count_matching_selects_and_phis(module, is_lowerable_float_select_or_phi_instruction)
+    }
+
+    fn count_matching_selects_and_phis(
+        module: &Module,
+        predicate: impl Fn(InstructionValue) -> bool + Copy,
+    ) -> usize {
         module
             .get_functions()
             .flat_map(|function| function.get_basic_blocks())
             .flat_map(|block| block.get_instructions())
-            .filter(|inst| is_lowerable_qubit_select_or_phi_instruction(*inst))
+            .filter(|inst| predicate(*inst))
             .count()
     }
 
@@ -2208,6 +2712,77 @@ mod test {
             .join("\n")
     }
 
+    fn count_record_output_calls(module: &Module) -> usize {
+        module
+            .get_functions()
+            .flat_map(|function| function.get_basic_blocks())
+            .flat_map(|block| block.get_instructions())
+            .filter(|inst| inst.get_opcode() == InstructionOpcode::Call)
+            .filter(|inst| {
+                CallSiteValue::try_from(*inst)
+                    .ok()
+                    .and_then(|cs| cs.get_called_fn_value())
+                    .and_then(|callee| callee.get_name().to_str().ok().map(str::to_owned))
+                    .is_some_and(|name| is_record_output_runtime_call(&name))
+            })
+            .count()
+    }
+
+    fn prepare_module_final_block<'ctx>(
+        module: &Module<'ctx>,
+        function_name: &str,
+    ) -> BasicBlock<'ctx> {
+        let function = module
+            .get_function(function_name)
+            .unwrap_or_else(|| panic!("expected function {function_name}"));
+        find_prepare_module_record_final_block(function)
+            .unwrap()
+            .unwrap_or_else(|| panic!("expected final prepare_module block in {function_name}"))
+    }
+
+    fn assert_lowering_fixture(
+        fixture: &str,
+        pass: impl Fn(&Module) -> Result<bool>,
+        counter: impl Fn(&Module) -> usize,
+        expected_kind: &str,
+        snapshot_name: &str,
+    ) {
+        let context = Context::create();
+        let module = load_module_from_fixture(&context, fixture).unwrap();
+
+        let before = counter(&module);
+        assert!(
+            before > 0,
+            "expected fixture {fixture} to contain at least one lowerable {expected_kind}"
+        );
+
+        let changed = pass(&module).unwrap();
+        let after = counter(&module);
+
+        assert!(changed, "expected pass to change fixture {fixture}");
+        assert_eq!(
+            after, 0,
+            "expected pass to remove all lowerable {expected_kind} in fixture {fixture}"
+        );
+        module.verify().unwrap();
+
+        let mut settings = insta::Settings::clone_current();
+        let suffix = settings.snapshot_suffix().map_or_else(
+            || fixture_snapshot_suffix(fixture),
+            |existing| format!("{existing}_{}", fixture_snapshot_suffix(fixture)),
+        );
+        settings.set_snapshot_suffix(suffix);
+        settings.bind(|| {
+            assert_snapshot!(
+                snapshot_name,
+                normalized_module_ir_for_snapshot(&module, fixture)
+            );
+        });
+
+        std::mem::forget(module);
+        std::mem::forget(context);
+    }
+
     #[rstest]
     #[case("generates-qubit-selects-1-example.ll")]
     #[case("generates-qubit-selects-2-example.ll")]
@@ -2224,38 +2799,31 @@ mod test {
     #[case("tail_unreachable_terminator.ll")]
     #[case("tail_record_output_and_downstream_phi.ll")]
     #[case("tail_call_result_downstream_phi.ll")]
+    #[case("qubit_phi_with_constant_successor_incoming.ll")]
     fn lowers_all_lowerable_qubit_selects_and_phis_from_fixture(#[case] fixture: &str) {
-        let context = Context::create();
-        let module = load_module_from_fixture(&context, fixture).unwrap();
-
-        let before = count_lowerable_qubit_selects_and_phis(&module);
-        assert!(
-            before > 0,
-            "expected fixture {fixture} to contain at least one lowerable qubit select or phi"
+        assert_lowering_fixture(
+            fixture,
+            lower_qubit_selects_and_phis,
+            count_lowerable_qubit_selects_and_phis,
+            "qubit select or phi",
+            "lowered_qubit_selects_and_phis",
         );
+    }
 
-        let changed = lower_qubit_selects_and_phis(&module).unwrap();
-        let after = count_lowerable_qubit_selects_and_phis(&module);
-
-        assert!(changed, "expected pass to change fixture {fixture}");
-        assert_eq!(
-            after, 0,
-            "expected pass to remove all lowerable qubit selects/phis in fixture {fixture}"
+    #[rstest]
+    #[case("simple_float_select.ll")]
+    #[case("simple_float_phi.ll")]
+    #[case("single_float_phi.ll")]
+    #[case("float_select_with_downstream_call.ll")]
+    #[case("float_phi_with_constant_successor_incoming.ll")]
+    fn lowers_all_lowerable_float_selects_and_phis_from_fixture(#[case] fixture: &str) {
+        assert_lowering_fixture(
+            fixture,
+            lower_float_selects_and_phis,
+            count_lowerable_float_selects_and_phis,
+            "float select or phi",
+            "lowered_float_selects_and_phis",
         );
-        module.verify().unwrap();
-
-        let mut settings = insta::Settings::clone_current();
-        let suffix = settings.snapshot_suffix().map_or_else(
-            || fixture_snapshot_suffix(fixture),
-            |existing| format!("{existing}_{}", fixture_snapshot_suffix(fixture)),
-        );
-        settings.set_snapshot_suffix(suffix);
-        settings.bind(|| {
-            assert_snapshot!(
-                "lowered_qubit_selects_and_phis",
-                normalized_module_ir_for_snapshot(&module, fixture)
-            );
-        });
     }
 
     #[test]
@@ -2303,5 +2871,86 @@ declare void @__quantum__qis__reset__body(%Qubit*)
             ),
             "unexpected error: {err}"
         );
+    }
+
+    #[test]
+    fn prepare_module_moves_record_output_calls_to_final_block_and_is_idempotent() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "prepare_module_idempotent",
+            r#"
+declare void @__quantum__rt__bool_record_output(i1, i8*)
+declare void @__quantum__rt__int_record_output(i64, i8*)
+
+define void @main(i1 %cond, i1 %flag) {
+entry:
+  br i1 %cond, label %left, label %right
+
+left:
+  call void @__quantum__rt__bool_record_output(i1 %flag, i8* null)
+  br label %merge
+
+right:
+  call void @__quantum__rt__int_record_output(i64 7, i8* null)
+  br label %merge
+
+merge:
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(count_record_output_calls(&module), 2);
+
+        prepare_module(&module).unwrap();
+        verify_module(&module).unwrap();
+
+        let final_block = prepare_module_final_block(&module, "main");
+        assert_eq!(
+            name_of_block(final_block),
+            PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME
+        );
+        assert!(block_is_prepare_module_record_final_block(final_block).unwrap());
+
+        let main_fn = module.get_function("main").unwrap();
+        let return_blocks: Vec<_> = main_fn
+            .get_basic_blocks()
+            .into_iter()
+            .filter(|bb| {
+                bb.get_terminator()
+                    .is_some_and(|term| term.get_opcode() == InstructionOpcode::Return)
+            })
+            .collect();
+        assert_eq!(return_blocks, vec![final_block]);
+
+        for block in main_fn.get_basic_blocks() {
+            if block == final_block {
+                continue;
+            }
+            for inst in block.get_instructions() {
+                if inst.get_opcode() != InstructionOpcode::Call {
+                    continue;
+                }
+                let cs = CallSiteValue::try_from(inst).unwrap();
+                let is_record_call = cs
+                    .get_called_fn_value()
+                    .and_then(|callee| callee.get_name().to_str().ok().map(str::to_owned))
+                    .is_some_and(|name| is_record_output_runtime_call(&name));
+                assert!(
+                    !is_record_call,
+                    "found record_output call outside final block in {}",
+                    name_of_block(block)
+                );
+            }
+        }
+
+        let after_first_prepare = module.to_string();
+        prepare_module(&module).unwrap();
+        verify_module(&module).unwrap();
+        let after_second_prepare = module.to_string();
+
+        assert_eq!(after_first_prepare, after_second_prepare);
     }
 }

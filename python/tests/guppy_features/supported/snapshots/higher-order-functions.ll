@@ -7,13 +7,16 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
+  tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__rt__bool_record_output(i1 true, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i64 0, i64 0))
   ret void
 }
 
 declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="0" "required_num_results"="0" }
+declare void @__quantum__rt__initialize(i8*) local_unnamed_addr
+
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="0" "required_num_results"="0" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

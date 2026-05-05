@@ -13,6 +13,7 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() #0 {
 alloca_block:
+  call void @__quantum__rt__initialize(i8* null)
   %"20_0" = alloca { i1, i1 }, align 8
   %"20_1" = alloca %Qubit*, align 8
   %"36_0" = alloca { i1, i1 }, align 8
@@ -224,7 +225,7 @@ NewDefault:                                       ; preds = %LeafBlock
   store %Qubit* %"22_085", %Qubit** %"133_0", align 8
   %"133_086" = load %Qubit*, %Qubit** %"133_0", align 8
   call void @__quantum__qis__mz__body(%Qubit* %"133_086", %Result* null)
-  %7 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  %7 = call i1 @__quantum__rt__read_result(%Result* null)
   %8 = select i1 %7, i1 true, i1 false
   store i1 %8, i1* %"135_0", align 1
   %"135_087" = load i1, i1* %"135_0", align 1
@@ -263,7 +264,7 @@ NewDefault213:                                    ; preds = %LeafBlock214
   store %Qubit* %"36_1150", %Qubit** %"162_0", align 8
   %"162_0151" = load %Qubit*, %Qubit** %"162_0", align 8
   call void @__quantum__qis__mz__body(%Qubit* %"162_0151", %Result* inttoptr (i64 1 to %Result*))
-  %16 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 1 to %Result*))
+  %16 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 1 to %Result*))
   %17 = select i1 %16, i1 true, i1 false
   store i1 %17, i1* %"164_0", align 1
   %"164_0152" = load i1, i1* %"164_0", align 1
@@ -512,7 +513,7 @@ cond_exit_215:                                    ; preds = %cond_215_case_1, %c
   store %Qubit* %"12_034", %Qubit** %"96_0", align 8
   %"96_035" = load %Qubit*, %Qubit** %"96_0", align 8
   call void @__quantum__qis__mz__body(%Qubit* %"96_035", %Result* inttoptr (i64 2 to %Result*))
-  %47 = call i1 @__quantum__qis__read_result__body(%Result* inttoptr (i64 2 to %Result*))
+  %47 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
   %48 = select i1 %47, i1 true, i1 false
   store i1 %48, i1* %"98_0", align 1
   %"98_036" = load i1, i1* %"98_0", align 1
@@ -947,13 +948,16 @@ declare void @__quantum__qis__rz__body(double, %Qubit*)
 
 declare %Result* @__QIR__CONV_Qubit_TO_Result(%Qubit*)
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*)
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
 
-declare i1 @__quantum__qis__read_result__body(%Result*)
+declare i1 @__quantum__rt__read_result(%Result* readonly)
 
 declare void @__quantum__rt__bool_record_output(i1, i8*)
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="3" }
+declare void @__quantum__rt__initialize(i8*)
+
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="2" "required_num_results"="3" }
+attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

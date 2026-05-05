@@ -55,27 +55,25 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
 
 ### Overview Data Types
 
-
-
 | Data Types | Support | Caveats                                             |
 |------------|---------|-----------------------------------------------------|
-| int        |  ✅     |                                                     |
-| bool       |  ✅     |                                                     |
-| nat        |  ✅     |                                                     |
-| struct     |  ✅     | Cannot contain arrays                               |
-| float      |  *️⃣     | Must be runtime constant, arithmetic comptime only  |
-| array      |  *️⃣     | Comptime only                                       |
-| tuple      |  *️⃣     | Unpacking with * returns array, so only at comptime |
-
-
+| int        | ✅      |                                                     |
+| bool       | ✅      |                                                     |
+| nat        | ✅      |                                                     |
+| struct     | ✅      | Cannot contain arrays                               |
+| float      | *️⃣      | Must be runtime constant, arithmetic comptime only  |
+| array      | *️⃣      | Comptime only                                       |
+| tuple      | *️⃣      | Unpacking with * returns array, so only at comptime |
 
 #### Arrays
+
 - Only supported within comptime guppy
 - Cannot use guppy builtins that use runtime arrays internally
 - Cannot be used within structs
 - Cannot be used as parameter to either `@guppy` or `@guppy.comptime` decorated functions
 
 Array examples:
+
 ```py
 def py_function(arr: array[qubit]) -> None: # ✅ no need to fully qualify array type, will be treated as python list
    """This python function can be called from @guppy.comptime, but not @guppy
@@ -106,25 +104,24 @@ def main_noncomptime() -> None:
    array = array(qubit() for _ in range(4)) # ❌: non-comptime array initialization
 ```
 
-
 #### Tuples
+
 - Unpacking with * only supported at comptime (creates array)
 
 #### Structs
+
 - Cannot contain arrays
 
 ### Overview Guppy Features
+
 | Features                            | Support | Remarks                                                  |
 |-------------------------------------|---------|----------------------------------------------------------|
-| if elif else constructs             | ✅       |                                                          |
-| function overloading                | ✅       |                                                          |
-| Generics (type_var/nat_var)         | ✅       | nat_vars not really useful without runtime array support |
-| First class/ Higher order functions | ✅       |                                                          |
-| Recursive functions/loops           | *️⃣       | Only if unrollable/serializable                          |
-| measure_array/discard_array         | ❌       | Use non-comptime arrays internally                       |
-
-
-
+| if elif else constructs             | ✅      |                                                          |
+| function overloading                | ✅      |                                                          |
+| Generics (type_var/nat_var)         | ✅      | nat_vars not really useful without runtime array support |
+| First class/ Higher order functions | ✅      |                                                          |
+| Recursive functions/loops           | *️⃣      | Only if unrollable/serializable                          |
+| measure_array/discard_array         | ❌      | Use non-comptime arrays internally                       |
 
 ## Development
 
@@ -155,13 +152,13 @@ cargo test
 You can run the Python test with:
 
 ```bash
-pytest -n auto
+uv run pytest -n auto
 ```
 
 If you want to update the snapshots you can do that via:
 
 ```bash
-pytest --snapshot-update
+uv run pytest --snapshot-update
 ```
 
 ## License

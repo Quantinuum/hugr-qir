@@ -1,0 +1,40 @@
+---
+source: src/lower_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:float_select_with_downstream_call>'
+source_filename = "float_select_with_downstream_call"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+entry:
+  br i1 %cond0, label %entry.dup, label %entry.dup1
+
+entry.dup:                                        ; preds = %entry
+  br i1 %cond1, label %left.dup, label %right.dup
+
+right.dup:                                        ; preds = %entry.dup
+  call void @consume(double 1.000000e+00)
+  br label %join
+
+left.dup:                                         ; preds = %entry.dup
+  call void @consume(double 1.000000e+00)
+  br label %join
+
+entry.dup1:                                       ; preds = %entry
+  br i1 %cond1, label %left.dup3, label %right.dup4
+
+right.dup4:                                       ; preds = %entry.dup1
+  call void @consume(double 2.000000e+00)
+  br label %join
+
+left.dup3:                                        ; preds = %entry.dup1
+  call void @consume(double 2.000000e+00)
+  br label %join
+
+join:                                             ; preds = %right.dup4, %right.dup, %left.dup3, %left.dup
+  ret void
+}
+
+declare void @consume(double)

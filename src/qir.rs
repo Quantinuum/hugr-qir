@@ -19,7 +19,11 @@ use hugr_llvm::emit::RowPromise;
 use hugr_llvm::emit::libc::emit_libc_abort;
 use hugr_llvm::inkwell;
 use hugr_llvm::inkwell::values::BasicValueEnum;
-use inkwell::{context::Context, types::BasicType};
+use inkwell::{
+    attributes::{Attribute, AttributeLoc},
+    context::Context,
+    types::BasicType,
+};
 use itertools::Itertools;
 use tket_qsystem::extension::futures;
 
@@ -64,6 +68,14 @@ fn result_type(ctx: &Context) -> impl BasicType<'_> {
     ctx.get_struct_type("Result")
         .unwrap_or_else(|| ctx.opaque_struct_type("Result"))
         .ptr_type(Default::default())
+}
+
+fn qir_enum_attribute(context: &Context, name: &str) -> Result<Attribute> {
+    let kind_id = Attribute::get_named_enum_kind_id(name);
+    if kind_id == 0 {
+        bail!("LLVM does not support the {name} attribute");
+    }
+    Ok(context.create_enum_attribute(kind_id, 0))
 }
 
 /// Emits a call to a qir gate fuction.
@@ -139,6 +151,14 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
         .void_type()
         .fn_type(&[qb.get_type().into(), result.get_type().into()], false);
     let measure_func = context.get_extern_func("__quantum__qis__mz__body", measure_t)?;
+    measure_func.add_attribute(
+        AttributeLoc::Function,
+        iw_ctx.create_string_attribute("irreversible", ""),
+    );
+    measure_func.add_attribute(
+        AttributeLoc::Param(1),
+        qir_enum_attribute(iw_ctx, "writeonly")?,
+    );
 
     context
         .builder()
@@ -156,8 +176,11 @@ fn emit_qis_read_result<'c, H: HugrView<Node = Node>>(
     let read_result_t = iw_ctx
         .bool_type()
         .fn_type(&[result.get_type().into()], false);
-    let read_result_func =
-        context.get_extern_func("__quantum__qis__read_result__body", read_result_t)?;
+    let read_result_func = context.get_extern_func("__quantum__rt__read_result", read_result_t)?;
+    read_result_func.add_attribute(
+        AttributeLoc::Param(0),
+        qir_enum_attribute(iw_ctx, "readonly")?,
+    );
     let Some(result_i1) = context
         .builder()
         .build_call(read_result_func, &[result.into()], "")?
