@@ -13,16 +13,16 @@ use hugr_llvm::{
 use std::collections::BTreeMap;
 use std::fs;
 
+use crate::inkwell::attributes::AttributeLoc;
+use crate::inkwell::context::Context;
+use crate::inkwell::values::BasicValue;
+use crate::inkwell::{
+    types::{BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType, StructType},
+    values::FunctionValue,
+};
 use anyhow::{Result, bail};
 use hugr_core::extension::prelude::option_type;
 use hugr_core::std_extensions::arithmetic::int_types::INT_TYPES;
-use inkwell::attributes::AttributeLoc;
-use inkwell::types::FunctionType;
-use inkwell::values::BasicValue;
-use inkwell::{
-    types::{BasicTypeEnum, StructType},
-    values::{CallableValue, FunctionValue},
-};
 use itertools::Itertools;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
@@ -83,24 +83,25 @@ impl CodegenExtension for WasmCodegen {
                     wasm::EXTENSION_ID.to_owned(),
                     wasm::FUNC_TYPE_NAME.to_owned(),
                 ),
-                |session, hugr_type| {
-                    let WasmType::Func { inputs, outputs } =
-                        WasmType::try_from(hugr_type.clone())?
-                    else {
-                        bail!("could not convert {:?} to a WasmType::Func", hugr_type)
-                    };
-                    let inputs: TypeRow = inputs.try_into()?;
-                    let outputs: TypeRow = outputs.try_into()?;
-                    if outputs.len() > 1 {
-                        bail!("wasm return type error: wasm function with more than one return value")
-                    };
-                    let func_type = session.llvm_func_type(&Signature::new(inputs, outputs.clone()))?;
-                    if !outputs.iter().all(|ty| {INT_TYPES.contains(ty)}){
-                        let out_tys: Vec<String> = outputs.iter().map(|ty| {ty.as_type_enum().to_string()}).collect_vec();
-                        bail!("wasm return type error: wasm function returns {:?} but only allowed to return an integer or nothing", out_tys)
-                    };
-                    Ok(func_type.ptr_type(Default::default()).into())
-                },
+                //|session, hugr_type| {
+                //    let WasmType::Func { inputs, outputs } =
+                //        WasmType::try_from(hugr_type.clone())?
+                //    else {
+                //        bail!("could not convert {:?} to a WasmType::Func", hugr_type)
+                //    };
+                //    let inputs: TypeRow = inputs.try_into()?;
+                //    let outputs: TypeRow = outputs.try_into()?;
+                //    if outputs.len() > 1 {
+                //        bail!("wasm return type error: wasm function with more than one return value")
+                //    };
+                //    let func_type = session.llvm_func_type(&Signature::new(inputs, outputs.clone()))?;
+                //    if !outputs.iter().all(|ty| {INT_TYPES.contains(ty)}){
+                //        let out_tys: Vec<String> = outputs.iter().map(|ty| {ty.as_type_enum().to_string()}).collect_vec();
+                //        bail!("wasm return type error: wasm function returns {:?} but only allowed to return an integer or nothing", out_tys)
+                //    };
+                //    Ok(func_type.ptr_type(Default::default()).into())
+                //},
+                |session, _hugr_type| Ok(session.iw_context().ptr_type(Default::default()).into()),
             )
             .custom_type(
                 (
@@ -127,7 +128,7 @@ impl CodegenExtension for WasmCodegen {
     }
 }
 
-fn empty_struct_type(context: &inkwell::context::Context) -> StructType<'_> {
+fn empty_struct_type(context: &Context) -> StructType<'_> {
     context.struct_type(&[], false)
 }
 
@@ -170,8 +171,9 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
         wasm::WasmOp::GetContext => {
             let r = ctx.iw_context().struct_type(&[], false).get_undef().into();
             let builder = ctx.builder();
-            let result_t =
-                ctx.llvm_sum_type(option_type(Type::new_extension(WasmType::Context.into())))?;
+            let result_t = ctx.llvm_sum_type(option_type(vec![Type::new_extension(
+                WasmType::Context.into(),
+            )]))?;
             // Although the result is an option type, we always return true
             // in this lowering: failure is already handled.
             let pair = result_t.build_tag(builder, 1, vec![r])?;
@@ -212,14 +214,26 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
                 .finish(builder, [func.as_global_value().as_pointer_value().into()])
         }
         wasm::WasmOp::Call { outputs, .. } => {
-            let func: CallableValue<'c> = args.inputs[1].into_pointer_value().try_into().unwrap();
+            let func_ptr = args.inputs[1].into_pointer_value();
             let call_args = args.inputs[2..]
                 .iter()
                 .copied()
                 .map(|x| x.into())
                 .collect::<Vec<_>>();
+            let arg_tys: Vec<BasicMetadataTypeEnum> = args.inputs[2..]
+                .iter()
+                .map(|value| value.get_type().into())
+                .collect();
+            let llvm_func_ty = if outputs.is_empty() {
+                ctx.iw_context().void_type().fn_type(&arg_tys, false)
+            } else if outputs.len() == 1 {
+                ctx.llvm_type(&outputs[0])?.fn_type(&arg_tys, false)
+            } else {
+                bail!("WasmOp::Call must have zero or one outputs; got {outputs}");
+            };
+
             let builder = ctx.builder();
-            let r = builder.build_call(func, &call_args, "")?;
+            let r = builder.build_indirect_call(llvm_func_ty, func_ptr, &call_args, "")?;
 
             // if no outputs, return a placeholder empty struct.
             // if one output, return that output directly.

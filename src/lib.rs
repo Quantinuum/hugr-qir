@@ -1,23 +1,31 @@
+use std::num::NonZero;
 use std::rc::Rc;
 
-use crate::inkwell::passes::PassBuilderOptions;
-use crate::inkwell::values::{CallSiteValue, FunctionValue, PointerValue};
 use anyhow::anyhow;
 use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
-use hugr::algorithms::{ComposablePass, RemoveDeadFuncsPass, inline_acyclic};
+use hugr::core::Visibility;
+use hugr::llvm::CodegenExtsBuilder;
 use hugr::llvm::custom::CodegenExtsMap;
 use hugr::llvm::emit::{EmitHugr, Namer};
 use hugr::llvm::utils::fat::FatExt;
-use hugr::llvm::{CodegenExtsBuilder, inkwell};
+use hugr::ops::OpType;
 use hugr::{Hugr, Node};
-use hugr_llvm::inkwell::attributes::AttributeLoc;
+use hugr_core::hugr::internal::HugrMutInternals;
+pub(crate) use hugr_llvm::inkwell;
+use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
 use inkwell::module::{Linkage, Module};
+use inkwell::passes::PassBuilderOptions;
+use inkwell::targets::TargetMachine;
+use inkwell::values::{CallSiteValue, FunctionValue, PointerValue};
 use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
+use tket::passes::{
+    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve, inline_acyclic,
+};
 pub mod cli;
 pub mod lower_ssa_vars;
 pub mod qir;
@@ -119,8 +127,13 @@ impl CompileArgs {
     }
     pub fn remove_dead_functions(&self, hugr: &mut Hugr) -> Result<()> {
         let entry_point_node = find_hugr_entry_point(hugr)?;
+        // ensure that the entry point will be preserved by marking it public.
+        let OpType::FuncDefn(func_defn) = hugr.optype_mut(entry_point_node) else {
+            bail!("entry point node must be a FuncDefn");
+        };
+        *func_defn.visibility_mut() = Visibility::Public;
         let dead_func_pass =
-            RemoveDeadFuncsPass::default().with_module_entry_points([entry_point_node]);
+            RemoveDeadFuncsPass::default_with_scope(PassScope::Global(Preserve::Public));
         dead_func_pass.run(hugr)?;
         if self.validate {
             hugr.validate()?;
@@ -129,7 +142,7 @@ impl CompileArgs {
     }
 
     /// Optimize the module using LLVM passes
-    fn optimize_module_llvm(&self, module: &Module) -> Result<()> {
+    fn optimize_module_llvm(&self, module: &Module) -> Result<TargetMachine> {
         self.target.initialise();
 
         let ctm = self.target.machine(self.opt_level.into());
@@ -145,7 +158,7 @@ impl CompileArgs {
         });
         opt_str.push_str(",lowerswitch");
         let _ = module.run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create());
-        Ok(())
+        Ok(ctm)
     }
 
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
@@ -174,8 +187,8 @@ impl CompileArgs {
         self.hugr_to_hugr(hugr)?;
         let module = self.hugr_to_llvm(hugr, context)?;
 
-        self.optimize_module_llvm(&module)?;
-        lower_qubit_selects_and_phis(&module)?;
+        let target = self.optimize_module_llvm(&module)?;
+        lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module)?;
         normalize_block_names(&module);
         Ok(module)
@@ -246,13 +259,19 @@ pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> Result<u64>
             if global.get_name().to_bytes() == funcname.as_bytes() {
                 let ptr = PointerValue::try_from(ins).unwrap();
 
+                // TODO: it would be more accurate to use Context::ptr_sized_int_type
                 let ptr_width = ptr
                     .get_type()
                     .size_of()
                     .get_zero_extended_constant()
                     .unwrap_or(64);
 
-                let ptr_int_type = module.get_context().custom_width_int_type(ptr_width as u32);
+                let ptr_width_nz =
+                    NonZero::new(ptr_width as u32).expect("pointers should have nonzero width");
+                let ptr_int_type = module
+                    .get_context()
+                    .custom_width_int_type(ptr_width_nz)
+                    .expect("an int type with pointer width should be valid");
 
                 let r = ptr_int_type
                     .const_int(pointer_counter, false)
@@ -391,8 +410,8 @@ fn add_qir_initialize_call(module: &Module, entry_func: FunctionValue) -> Result
     }
 
     let context = module.get_context();
-    let i8_ptr_ty = context.i8_type().ptr_type(Default::default());
-    let init_ty = context.void_type().fn_type(&[i8_ptr_ty.into()], false);
+    let ptr_ty = context.ptr_type(Default::default());
+    let init_ty = context.void_type().fn_type(&[ptr_ty.into()], false);
     let init_func = module
         .get_function("__quantum__rt__initialize")
         .unwrap_or_else(|| module.add_function("__quantum__rt__initialize", init_ty, None));
@@ -406,7 +425,7 @@ fn add_qir_initialize_call(module: &Module, entry_func: FunctionValue) -> Result
     } else {
         builder.position_at_end(entry_block);
     }
-    builder.build_call(init_func, &[i8_ptr_ty.const_null().into()], "")?;
+    builder.build_call(init_func, &[ptr_ty.const_null().into()], "")?;
     Ok(())
 }
 

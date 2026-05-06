@@ -3,17 +3,18 @@
 //! For OG systems, these cannot be used as input to qis functions,
 //! because dynamic addressing of qubits is not allowed
 
-use anyhow::{Result, anyhow, bail};
-use inkwell::basic_block::BasicBlock;
-use inkwell::builder::Builder;
-use inkwell::module::Module;
-use inkwell::passes::PassManager;
-use inkwell::types::{AnyTypeEnum, BasicTypeEnum, PointerType};
-use inkwell::values::{AnyValue, InstructionOpcode as Op};
-use inkwell::values::{
-    AnyValueEnum, AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, InstructionOpcode,
-    InstructionValue, Operand, PhiValue, ValueKind,
+use crate::inkwell::basic_block::BasicBlock;
+use crate::inkwell::builder::Builder;
+use crate::inkwell::module::Module;
+use crate::inkwell::passes::PassBuilderOptions;
+use crate::inkwell::targets::TargetMachine;
+use crate::inkwell::types::{AnyTypeEnum, BasicTypeEnum, PointerType};
+use crate::inkwell::values::{AnyValue, InstructionOpcode as Op};
+use crate::inkwell::values::{
+    AnyValueEnum, AsValueRef, BasicMetadataValueEnum, BasicValue, BasicValueEnum, CallSiteValue,
+    FunctionValue, InstructionOpcode, InstructionValue, Operand, PhiValue, ValueKind,
 };
+use anyhow::{Result, anyhow, bail};
 use std::collections::{HashMap, HashSet};
 
 type ValueKey = usize;
@@ -28,7 +29,7 @@ enum LoweredSsaKind {
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
 /// then lowers any remaining phis
-pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
+pub fn lower_qubit_selects_and_phis(module: &Module, target: &TargetMachine) -> Result<bool> {
     verify_module(module).map_err(|err| {
         anyhow!("Verification failed for input module to lower_qubit_selects_and_phis pass: {err}")
     })?;
@@ -40,7 +41,7 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
     let lowered_phis = lower_qubit_phis(module)?;
     let changed = lowered_selects || lowered_phis;
     if changed {
-        simp_cfg(module);
+        simp_cfg(module, target)?;
     }
     verify_module(module)?;
     Ok(changed)
@@ -186,7 +187,7 @@ fn rebuild_terminator<'ctx>(
 
     match term.get_opcode() {
         InstructionOpcode::Br => {
-            let is_cond = term.is_conditional();
+            let is_cond = term.is_conditional().unwrap();
             if is_cond {
                 let cond = remap_value(expect_inst_operand_value(term, 0)).into_int_value();
 
@@ -282,9 +283,7 @@ fn prepare_module(module: &Module) -> Result<()> {
 /// If such a block already exists and is the only return point in the function,
 /// newly discovered record-output calls are appended to the start of that block
 /// rather than creating another sink.
-fn move_record_output_calls_to_function_end<'ctx>(
-    function: inkwell::values::FunctionValue<'ctx>,
-) -> Result<bool> {
+fn move_record_output_calls_to_function_end<'ctx>(function: FunctionValue<'ctx>) -> Result<bool> {
     let Some(first_block) = function.get_first_basic_block() else {
         return Ok(false);
     };
@@ -414,7 +413,7 @@ fn move_record_output_calls_to_function_end<'ctx>(
 }
 
 fn find_prepare_module_record_final_block<'ctx>(
-    function: inkwell::values::FunctionValue<'ctx>,
+    function: FunctionValue<'ctx>,
 ) -> Result<Option<BasicBlock<'ctx>>> {
     let mut matching_blocks = Vec::new();
     let mut return_blocks = Vec::new();
@@ -649,7 +648,7 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
     let Some(source_term) = source_bb.get_terminator() else {
         return Ok(());
     };
-    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional() {
+    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional().unwrap() {
         return Ok(());
     }
 
@@ -767,7 +766,7 @@ fn fix_successor_phis_block_rename<'ctx>(
 ) -> Result<()> {
     match term.get_opcode() {
         Op::Br => {
-            let is_cond = term.is_conditional();
+            let is_cond = term.is_conditional().unwrap();
             let succs: Vec<BasicBlock> = if is_cond {
                 [
                     required_block_operand(term, 1, "fix_successor_phis_block_rename")?,
@@ -1231,7 +1230,7 @@ fn rewrite_phi_user_as_call<'ctx>(
     let callee = required_called_function(cs, "rewrite_phi_user_as_call")?;
 
     let old_val_ref = phi.as_basic_value().as_value_ref();
-    let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
+    let mut args: Vec<BasicMetadataValueEnum> = Vec::new();
     for i in 0..cs.count_arguments() {
         if let Some(op_bv) = inst_operand_value(user_inst, i) {
             let vref = op_bv.as_value_ref();
@@ -1411,7 +1410,7 @@ fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
             match term.get_opcode() {
                 Op::Br => {
                     // Unconditional: operand 0 = target BB
-                    if !term.is_conditional() {
+                    if !term.is_conditional().unwrap() {
                         if operand_as_bb(term, 0) == Some(to) {
                             preds.push(b);
                         }
@@ -1464,7 +1463,7 @@ fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
 
     match term.get_opcode() {
         Op::Br => {
-            if !term.is_conditional() {
+            if !term.is_conditional().unwrap() {
                 Ok(operand_as_bb(term, 0) == Some(to))
             } else {
                 Ok(operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to))
@@ -1492,7 +1491,7 @@ fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
 
     match term.get_opcode() {
         Op::Br => {
-            if !term.is_conditional() {
+            if !term.is_conditional().unwrap() {
                 Ok(vec![required_block_operand(term, 0, "direct_successors")?])
             } else {
                 Ok(vec![
@@ -1531,7 +1530,7 @@ fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
     let Some(term) = bb.get_terminator() else {
         return false;
     };
-    if term.get_opcode() != Op::Br || term.is_conditional() {
+    if term.get_opcode() != Op::Br || term.is_conditional().unwrap() {
         return false;
     }
 
@@ -2199,7 +2198,7 @@ fn redirect_edge<'ctx>(
         builder.position_at_end(from);
         match term.get_opcode() {
             Op::Br => {
-                if term.is_conditional() {
+                if term.is_conditional().unwrap() {
                     let cond = expect_inst_operand_value(term, 0).into_int_value();
                     let then_bb = operand_as_bb(term, 1).unwrap();
                     let else_bb = operand_as_bb(term, 2).unwrap();
@@ -2243,7 +2242,8 @@ pub fn rebuild_inst<'ctx>(
                 let idx = expect_inst_operand_value(inst, i);
                 indices.push(remap(vmap, idx).into_int_value());
             }
-            let built = builder.build_gep(base.into_pointer_value(), &indices, &name)?;
+            let gep_ty = inst.get_gep_source_element_type().unwrap();
+            let built = builder.build_gep(gep_ty, base.into_pointer_value(), &indices, &name)?;
             Ok(RebuildOutcome::Value(built.as_basic_value_enum()))
         },
 
@@ -2368,8 +2368,11 @@ pub fn rebuild_inst<'ctx>(
         // ---------------- Memory ops ----------------
         Op::Load => {
             let addr = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
-            //let ty   = inst.get_type();
-            let load = builder.build_load(addr, &name)?;
+            let ty: BasicTypeEnum = inst
+                .get_type()
+                .try_into()
+                .expect("the result type of a load should be a BasicType");
+            let load = builder.build_load(ty, addr, &name)?;
             Ok(RebuildOutcome::Value(load))
         }
 
@@ -2509,18 +2512,10 @@ fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
 }
 
 /// Runs LLVM's CFG simplification pass over every function in the module.
-fn simp_cfg(module: &Module) -> bool {
-    let pm = PassManager::create(module);
-    let mut changed = false;
-    pm.add_cfg_simplification_pass();
-    pm.initialize();
-    for func in module.get_functions() {
-        if pm.run_on(&func) {
-            changed = true;
-        }
-    }
-    pm.finalize();
-    changed
+fn simp_cfg(module: &Module, target: &TargetMachine) -> Result<()> {
+    module
+        .run_passes("simplifycfg", target, PassBuilderOptions::create())
+        .map_err(|e| anyhow!("Error running simplifycfg: {e}"))
 }
 
 /// Produces a stable key for instruction-produced SSA values.
@@ -2612,7 +2607,7 @@ fn required_parent_block<'ctx>(
 fn required_parent_function<'ctx>(
     bb: BasicBlock<'ctx>,
     context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
+) -> Result<FunctionValue<'ctx>> {
     bb.get_parent()
         .ok_or_else(|| anyhow!("{context}: block has no parent function"))
 }
@@ -2630,7 +2625,7 @@ fn required_block_operand<'ctx>(
 fn required_called_function<'ctx>(
     callsite: CallSiteValue<'ctx>,
     context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
+) -> Result<FunctionValue<'ctx>> {
     callsite
         .get_called_fn_value()
         .ok_or_else(|| anyhow!("{context}: indirect call is not supported"))

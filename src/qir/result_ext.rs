@@ -26,19 +26,11 @@ impl QirCodegenExtension {
             bail!("Empty result tag received")
         }
 
-        let i8_ptr_ty = context
+        let ptr_ty = context
             .iw_context()
-            .i8_type()
             .ptr_type(Default::default())
             .as_basic_type_enum();
-        let tag_ptr = {
-            let x = emit_value(context, &ConstString::new(tag_str).into())?;
-            if x.get_type() == i8_ptr_ty {
-                x
-            } else {
-                context.builder().build_bit_cast(x, i8_ptr_ty, "tag_ptr")?
-            }
-        };
+        let tag_ptr = emit_value(context, &ConstString::new(tag_str).into())?;
 
         match op {
             ResultOpDef::Bool => {
@@ -55,7 +47,7 @@ impl QirCodegenExtension {
                 let print_fn_ty = context
                     .iw_context()
                     .void_type()
-                    .fn_type(&[i1_ty.into(), i8_ptr_ty.into()], false);
+                    .fn_type(&[i1_ty.into(), ptr_ty.into()], false);
                 let print_fn =
                     context.get_extern_func("__quantum__rt__bool_record_output", print_fn_ty)?;
                 context.builder().build_call(
@@ -86,7 +78,7 @@ impl QirCodegenExtension {
                 let print_fn_ty = context
                     .iw_context()
                     .void_type()
-                    .fn_type(&[i64_ty.into(), i8_ptr_ty.into()], false);
+                    .fn_type(&[i64_ty.into(), ptr_ty.into()], false);
                 let print_fn =
                     context.get_extern_func("__quantum__rt__int_record_output", print_fn_ty)?;
                 context.builder().build_call(
@@ -105,7 +97,7 @@ impl QirCodegenExtension {
                 let print_fn_ty = context
                     .iw_context()
                     .void_type()
-                    .fn_type(&[f64_ty.into(), i8_ptr_ty.into()], false);
+                    .fn_type(&[f64_ty.into(), ptr_ty.into()], false);
                 let print_fn =
                     context.get_extern_func("__quantum__rt__double_record_output", print_fn_ty)?;
                 context.builder().build_call(

@@ -13,11 +13,11 @@ anyhow = "1.0"
 clap = "4.6"
 clap-verbosity-flag = "3.0"
 clio = { version = "0.3.5", features = ["clap-parse"] }
-hugr = { version = "0.25.6", features = ["llvm"] }
-hugr-cli = "0.25.6"
-hugr-core = "0.25.7"
-hugr-llvm = { version = "0.25.7", features = ["test-utils"] }
-inkwell = { version = "0.8.0", features = ["llvm14-0"] }
+hugr = { version = "0.27", features = ["llvm"] }
+hugr-cli = "0.27"
+hugr-core = "0.27"
+hugr-llvm = { version = "0.27", features = ["test-utils"] }
+#inkwell = { version = "0.8.0", features = ["llvm21-1"] }
 itertools = "0.14.0"
 lazy_static = "1.5.0"
 pyo3 = { version = "0.28", features = [
@@ -25,8 +25,10 @@ pyo3 = { version = "0.28", features = [
     "anyhow",
 ], optional = true }
 serde = "1.0"
-tket = "0.17.0"
-tket-qsystem = { version = "0.23.0", features = ["cli"] }
+# this needs to match the version used by tket so we can implement its traits.
+strum = "0.27.2"
+tket = "0.18.0"
+tket-qsystem = { version = "0.24.0", features = ["cli"] }
 wasmparser = { version = "0.248", default-features = false }
 
 [dev-dependencies]

@@ -98,7 +98,7 @@ impl QirCodegenExtension {
             ),
             TryQAlloc => {
                 let qb = emit_qis_qalloc(context)?;
-                let option_ty = context.llvm_sum_type(option_type(qb_t()))?;
+                let option_ty = context.llvm_sum_type(option_type(vec![qb_t()]))?;
                 let qb = option_ty.build_tag(context.builder(), 1, vec![qb])?.into();
                 args.outputs.finish(context.builder(), [qb])
             }

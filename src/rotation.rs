@@ -170,7 +170,7 @@ impl<PCG: PreludeCodegen> RotationCodegenExtension<PCG> {
                     self.emit_from_halfturns(context, half_turns.into_float_value())?;
 
                 let builder = context.builder();
-                let result_sum_type = ts.llvm_sum_type(option_type(rotation_type()))?;
+                let result_sum_type = ts.llvm_sum_type(option_type(vec![rotation_type()]))?;
                 let success = result_sum_type.build_tag(builder, 1, vec![half_turns.into()])?;
                 let failure = result_sum_type.build_tag(builder, 0, vec![])?;
                 let result = builder.build_select(half_turns_ok, success, failure, "")?;
