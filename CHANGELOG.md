@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.0.27
+
+- don't generate qir basic blocks with purely numerical names
+
 ### v0.0.26
 
 - clean up generation of phi and select operations containing floats

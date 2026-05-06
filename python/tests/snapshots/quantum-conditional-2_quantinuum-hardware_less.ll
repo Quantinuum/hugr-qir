@@ -16,24 +16,24 @@ alloca_block:
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
   call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
   %0 = call i1 @__quantum__rt__read_result(%Result* null)
-  br i1 %0, label %cond_64_case_1, label %1
+  br i1 %0, label %cond_64_case_1, label %bb
 
-cond_exit_178:                                    ; preds = %cond_64_case_1, %1
-  %"55_1.sroa.5.0" = phi i1 [ false, %cond_64_case_1 ], [ %2, %1 ]
+cond_exit_178:                                    ; preds = %cond_64_case_1, %bb
+  %"55_1.sroa.5.0" = phi i1 [ false, %cond_64_case_1 ], [ %1, %bb ]
   call void @__quantum__rt__bool_record_output(i1 %0, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i64 0, i64 0))
   call void @__quantum__rt__bool_record_output(i1 %"55_1.sroa.5.0", i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i64 0, i64 0))
   ret void
 
-1:                                                ; preds = %alloca_block
+bb:                                               ; preds = %alloca_block
   call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
-  %2 = call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
+  %1 = call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
   br label %cond_exit_178
 
 cond_64_case_1:                                   ; preds = %alloca_block
   call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 2 to %Result*))
-  %3 = call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 2 to %Result*))
+  %2 = call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 2 to %Result*))
   br label %cond_exit_178
 }
 

@@ -24,7 +24,9 @@ pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
-use crate::lower_ssa_vars::{lower_float_selects_and_phis, lower_qubit_selects_and_phis};
+use crate::lower_ssa_vars::{
+    lower_float_selects_and_phis, lower_qubit_selects_and_phis, normalize_block_names,
+};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -175,6 +177,7 @@ impl CompileArgs {
         self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module)?;
         lower_float_selects_and_phis(&module)?;
+        normalize_block_names(&module);
         Ok(module)
     }
 }

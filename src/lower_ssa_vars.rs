@@ -1585,11 +1585,56 @@ fn synthetic_block_base_name(bb: BasicBlock<'_>) -> String {
         }
     }
 
-    if base.is_empty() {
+    normalized_synthetic_block_base_name(base)
+}
+
+fn is_purely_numeric_block_name(name: &str) -> bool {
+    !name.is_empty() && name.chars().all(|ch| ch.is_ascii_digit())
+}
+
+fn normalized_synthetic_block_base_name(name: &str) -> String {
+    if name.is_empty() {
         "bb".to_string()
     } else {
-        base.to_string()
+        name.to_string()
     }
+}
+
+pub fn normalize_block_names(module: &Module) -> bool {
+    let mut changed = false;
+
+    for function in module.get_functions() {
+        let blocks = function.get_basic_blocks();
+        let mut used_names: HashSet<String> = blocks
+            .iter()
+            .map(|bb| name_of_block(*bb))
+            .filter(|name| !name.is_empty() && !is_purely_numeric_block_name(name))
+            .collect();
+        let mut counter = 0usize;
+
+        for block in blocks {
+            let current_name = name_of_block(block);
+            if !current_name.is_empty() && !is_purely_numeric_block_name(&current_name) {
+                continue;
+            }
+
+            let mut candidate = if current_name.is_empty() {
+                "bb".to_string()
+            } else {
+                format!("bb{current_name}")
+            };
+            while candidate.is_empty() || used_names.contains(&candidate) {
+                candidate = format!("bb{counter}");
+                counter += 1;
+            }
+
+            block.set_name(&candidate);
+            used_names.insert(candidate);
+            changed = true;
+        }
+    }
+
+    changed
 }
 
 fn incoming_for_predecessor<'ctx>(
@@ -2952,5 +2997,49 @@ merge:
         let after_second_prepare = module.to_string();
 
         assert_eq!(after_first_prepare, after_second_prepare);
+    }
+
+    #[test]
+    fn normalize_block_names_renames_only_purely_numeric_labels() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "normalize_block_names",
+            r#"
+define void @main(i1 %cond) {
+entry:
+  br i1 %cond, label %0, label %_kept
+
+0:
+  br label %1
+
+_kept:
+  br label %1
+
+1:
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        assert!(normalize_block_names(&module));
+
+        let main_fn = module.get_function("main").unwrap();
+        for block in main_fn.get_basic_blocks() {
+            let block_name = name_of_block(block);
+            assert!(
+                !is_purely_numeric_block_name(&block_name),
+                "block name is still purely numeric: {block_name}"
+            );
+        }
+
+        assert!(
+            main_fn
+                .get_basic_blocks()
+                .into_iter()
+                .any(|block| name_of_block(block) == "_kept"),
+            "underscore-prefixed block name was renamed"
+        );
     }
 }
