@@ -63,7 +63,7 @@ alloca_block.dup1892:                             ; preds = %alloca_block.dup188
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
   %10 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
-  br label %29
+  br label %bb
 
 alloca_block.dup1889:                             ; preds = %alloca_block
   br i1 %0, label %alloca_block.dup1893, label %alloca_block.dup1904
@@ -98,13 +98,13 @@ alloca_block.dup1893:                             ; preds = %alloca_block.dup188
   call void @__quantum__qis__mz__body(%Qubit* inttoptr (i64 3 to %Qubit*), %Result* inttoptr (i64 5 to %Result*))
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
   %18 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 5 to %Result*))
-  br label %29
+  br label %bb
 
-cond_336_case_1:                                  ; preds = %cond_exit_620, %30
-  %phi.calluser.edge1869 = phi i1 [ %phi.edge, %cond_exit_620 ], [ %phi.calluser.edge1872, %30 ]
-  %phi.calluser.edge1856 = phi i1 [ %phi.edge1906, %cond_exit_620 ], [ %phi.calluser.edge1859, %30 ]
-  %phi.calluser.edge1843 = phi i1 [ %phi.edge1907, %cond_exit_620 ], [ %phi.calluser.edge1846, %30 ]
-  %phi.calluser.edge1830 = phi i1 [ %phi.edge1908, %cond_exit_620 ], [ %phi.calluser.edge1833, %30 ]
+cond_336_case_1:                                  ; preds = %cond_exit_620, %bb0
+  %phi.calluser.edge1869 = phi i1 [ %phi.edge, %cond_exit_620 ], [ %phi.calluser.edge1872, %bb0 ]
+  %phi.calluser.edge1856 = phi i1 [ %phi.edge1906, %cond_exit_620 ], [ %phi.calluser.edge1859, %bb0 ]
+  %phi.calluser.edge1843 = phi i1 [ %phi.edge1907, %cond_exit_620 ], [ %phi.calluser.edge1846, %bb0 ]
+  %phi.calluser.edge1830 = phi i1 [ %phi.edge1908, %cond_exit_620 ], [ %phi.calluser.edge1833, %bb0 ]
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* nonnull inttoptr (i64 6 to %Result*))
   %19 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 6 to %Result*))
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 7 to %Result*))
@@ -174,7 +174,7 @@ cond_704_case_1:                                  ; preds = %LeafBlock, %cond_70
   call void @__quantum__rt__bool_record_output(i1 %28, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @9, i64 0, i64 0))
   ret void
 
-29:                                               ; preds = %alloca_block.dup1893, %alloca_block.dup1892
+bb:                                               ; preds = %alloca_block.dup1893, %alloca_block.dup1892
   %phi.edge1909 = phi i1 [ %10, %alloca_block.dup1892 ], [ %18, %alloca_block.dup1893 ]
   %phi.edge1910 = phi i1 [ %9, %alloca_block.dup1892 ], [ %17, %alloca_block.dup1893 ]
   %phi.edge1911 = phi i1 [ %8, %alloca_block.dup1892 ], [ %16, %alloca_block.dup1893 ]
@@ -182,14 +182,14 @@ cond_704_case_1:                                  ; preds = %LeafBlock, %cond_70
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
   br label %cond_exit_620
 
-cond_exit_620:                                    ; preds = %alloca_block.dup1904, %alloca_block.dup1903, %29
-  %phi.edge = phi i1 [ %6, %alloca_block.dup1903 ], [ %14, %alloca_block.dup1904 ], [ %phi.edge1909, %29 ]
-  %phi.edge1906 = phi i1 [ %5, %alloca_block.dup1903 ], [ %13, %alloca_block.dup1904 ], [ %phi.edge1910, %29 ]
-  %phi.edge1907 = phi i1 [ %4, %alloca_block.dup1903 ], [ %12, %alloca_block.dup1904 ], [ %phi.edge1911, %29 ]
-  %phi.edge1908 = phi i1 [ %3, %alloca_block.dup1903 ], [ %11, %alloca_block.dup1904 ], [ %phi.edge1912, %29 ]
-  br i1 %1, label %30, label %cond_336_case_1
+cond_exit_620:                                    ; preds = %alloca_block.dup1904, %alloca_block.dup1903, %bb
+  %phi.edge = phi i1 [ %6, %alloca_block.dup1903 ], [ %14, %alloca_block.dup1904 ], [ %phi.edge1909, %bb ]
+  %phi.edge1906 = phi i1 [ %5, %alloca_block.dup1903 ], [ %13, %alloca_block.dup1904 ], [ %phi.edge1910, %bb ]
+  %phi.edge1907 = phi i1 [ %4, %alloca_block.dup1903 ], [ %12, %alloca_block.dup1904 ], [ %phi.edge1911, %bb ]
+  %phi.edge1908 = phi i1 [ %3, %alloca_block.dup1903 ], [ %11, %alloca_block.dup1904 ], [ %phi.edge1912, %bb ]
+  br i1 %1, label %bb0, label %cond_336_case_1
 
-30:                                               ; preds = %cond_exit_620
+bb0:                                              ; preds = %cond_exit_620
   %phi.calluser.edge1872 = phi i1 [ %phi.edge, %cond_exit_620 ]
   %phi.calluser.edge1859 = phi i1 [ %phi.edge1906, %cond_exit_620 ]
   %phi.calluser.edge1846 = phi i1 [ %phi.edge1907, %cond_exit_620 ]
