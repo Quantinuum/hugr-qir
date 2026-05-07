@@ -128,6 +128,7 @@ mod test {
     };
     use rstest::rstest;
 
+    use tket::passes::ComposablePass;
     use tket_qsystem::extension::qsystem::QSystemOp;
 
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};

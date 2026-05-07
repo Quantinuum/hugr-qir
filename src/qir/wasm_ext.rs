@@ -293,10 +293,10 @@ mod test {
         })]
     #[case::call_ret_int(WasmOp::Call {
         inputs: type_row![],
-        outputs: TypeRow::from(INT_TYPES[5].clone()),
+        outputs: TypeRow::from(vec![INT_TYPES[5].clone()]),
         })]
     #[case::read_result_int(WasmOp::ReadResult {
-        outputs: TypeRow::from(INT_TYPES[5].clone()),
+        outputs: TypeRow::from(vec![INT_TYPES[5].clone()]),
         })]
     fn wasm_codegen(#[context] ctx: Context, mut llvm_ctx: TestContext, #[case] op: WasmOp) {
         let _g = {

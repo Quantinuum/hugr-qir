@@ -247,7 +247,7 @@ mod test {
                 let [rot2] = {
                     let mb_rot = builder.add_from_halfturns(half_turns).unwrap();
                     builder
-                        .build_unwrap_sum(1, option_type(rotation_type()), mb_rot)
+                        .build_unwrap_sum(1, option_type(vec![rotation_type()]), mb_rot)
                         .unwrap()
                 };
                 let _ = builder
@@ -273,7 +273,7 @@ mod test {
         #[case] expected_half_turns: f64,
     ) {
         let hugr = SimpleHugrConfig::new()
-            .with_outs(float64_type())
+            .with_outs(vec![float64_type()])
             .finish(|mut builder| {
                 let rot2 = builder.add_load_value(angle1);
                 let rot1 = builder.add_load_value(angle2);
@@ -309,7 +309,7 @@ mod test {
         #[case] expected_halfturns: f64,
     ) {
         let hugr = SimpleHugrConfig::new()
-            .with_outs(float64_type())
+            .with_outs(vec![float64_type()])
             .finish(|mut builder| {
                 let rot = builder.add_load_value(angle);
                 let halfturns = builder.add_to_halfturns(rot).unwrap();
@@ -377,7 +377,7 @@ mod test {
         use tket::hugr::ops::Value;
 
         let hugr = SimpleHugrConfig::new()
-            .with_outs(float64_type())
+            .with_outs(vec![float64_type()])
             .finish(|mut builder| {
                 let konst: Value = if halfturns.is_finite() {
                     ConstF64::new(halfturns).into()
