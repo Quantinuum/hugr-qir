@@ -47,7 +47,7 @@ alloca_block.dup78:                               ; preds = %alloca_block.dup60
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   %6 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
-  br i1 %1, label %33, label %cond_336_case_1
+  br label %cond_exit_620
 
 alloca_block.dup67:                               ; preds = %alloca_block.dup60
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
@@ -63,7 +63,7 @@ alloca_block.dup67:                               ; preds = %alloca_block.dup60
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   %10 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
-  br label %cond_exit_620.dup109
+  br label %29
 
 alloca_block.dup64:                               ; preds = %alloca_block
   br i1 %0, label %alloca_block.dup68, label %alloca_block.dup79
@@ -82,7 +82,7 @@ alloca_block.dup79:                               ; preds = %alloca_block.dup64
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   %14 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
-  br i1 %1, label %33, label %cond_336_case_1
+  br label %cond_exit_620
 
 alloca_block.dup68:                               ; preds = %alloca_block.dup64
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
@@ -98,13 +98,13 @@ alloca_block.dup68:                               ; preds = %alloca_block.dup64
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   %18 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
-  br label %cond_exit_620.dup109
+  br label %29
 
-cond_336_case_1:                                  ; preds = %cond_exit_620.dup109, %alloca_block.dup79, %alloca_block.dup78, %33
-  %phi.edge110 = phi i1 [ %phi.edge84, %cond_exit_620.dup109 ], [ %6, %alloca_block.dup78 ], [ %14, %alloca_block.dup79 ], [ %phi.edge114, %33 ]
-  %phi.edge111 = phi i1 [ %phi.edge85, %cond_exit_620.dup109 ], [ %5, %alloca_block.dup78 ], [ %13, %alloca_block.dup79 ], [ %phi.edge115, %33 ]
-  %phi.edge112 = phi i1 [ %phi.edge86, %cond_exit_620.dup109 ], [ %4, %alloca_block.dup78 ], [ %12, %alloca_block.dup79 ], [ %phi.edge116, %33 ]
-  %phi.edge113 = phi i1 [ %phi.edge87, %cond_exit_620.dup109 ], [ %3, %alloca_block.dup78 ], [ %11, %alloca_block.dup79 ], [ %phi.edge117, %33 ]
+cond_336_case_1:                                  ; preds = %30, %cond_exit_620
+  %phi.calluser.edge44 = phi i1 [ %phi.edge, %cond_exit_620 ], [ %phi.calluser.edge47, %30 ]
+  %phi.calluser.edge31 = phi i1 [ %phi.edge81, %cond_exit_620 ], [ %phi.calluser.edge34, %30 ]
+  %phi.calluser.edge18 = phi i1 [ %phi.edge82, %cond_exit_620 ], [ %phi.calluser.edge21, %30 ]
+  %phi.calluser.edge5 = phi i1 [ %phi.edge83, %cond_exit_620 ], [ %phi.calluser.edge8, %30 ]
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 6 to ptr))
   %19 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 6 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
@@ -127,17 +127,13 @@ cond_336_case_1:                                  ; preds = %cond_exit_620.dup10
 
 cond_704_case_1.sink.split.dup:                   ; preds = %cond_336_case_1
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
-  %27 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
-  %28 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  br label %__prepare_module_record_output_final
+  br label %cond_704_case_1
 
 NodeBlock:                                        ; preds = %cond_336_case_1
-  %phi.calluser.edge49 = phi i1 [ %phi.edge110, %cond_336_case_1 ]
-  %phi.calluser.edge36 = phi i1 [ %phi.edge111, %cond_336_case_1 ]
-  %phi.calluser.edge23 = phi i1 [ %phi.edge112, %cond_336_case_1 ]
-  %phi.calluser.edge10 = phi i1 [ %phi.edge113, %cond_336_case_1 ]
+  %phi.calluser.edge49 = phi i1 [ %phi.calluser.edge44, %cond_336_case_1 ]
+  %phi.calluser.edge36 = phi i1 [ %phi.calluser.edge31, %cond_336_case_1 ]
+  %phi.calluser.edge23 = phi i1 [ %phi.calluser.edge18, %cond_336_case_1 ]
+  %phi.calluser.edge10 = phi i1 [ %phi.calluser.edge5, %cond_336_case_1 ]
   %Pivot = icmp slt i64 %26, 2
   br i1 %Pivot, label %cond_704_case_1.sink.split.dup88, label %LeafBlock
 
@@ -147,7 +143,7 @@ LeafBlock:                                        ; preds = %NodeBlock
   %phi.calluser.edge25 = phi i1 [ %phi.calluser.edge23, %NodeBlock ]
   %phi.calluser.edge12 = phi i1 [ %phi.calluser.edge10, %NodeBlock ]
   %SwitchLeaf = icmp eq i64 %26, 2
-  br i1 %SwitchLeaf, label %cond_704_case_1.sink.split.dup89, label %cond_704_case_1.dup95
+  br i1 %SwitchLeaf, label %cond_704_case_1.sink.split.dup89, label %cond_704_case_1
 
 cond_704_case_1.sink.split.dup88:                 ; preds = %NodeBlock
   %phi.calluser.edge48 = phi i1 [ %phi.calluser.edge49, %NodeBlock ]
@@ -155,36 +151,39 @@ cond_704_case_1.sink.split.dup88:                 ; preds = %NodeBlock
   %phi.calluser.edge22 = phi i1 [ %phi.calluser.edge23, %NodeBlock ]
   %phi.calluser.edge9 = phi i1 [ %phi.calluser.edge10, %NodeBlock ]
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
-  %29 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
-  %30 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
+  br label %cond_704_case_1
+
+cond_704_case_1:                                  ; preds = %LeafBlock, %cond_704_case_1.sink.split.dup89, %cond_704_case_1.sink.split.dup88, %cond_704_case_1.sink.split.dup
+  %phi.edge90 = phi i1 [ %phi.calluser.edge50, %cond_704_case_1.sink.split.dup89 ], [ %phi.calluser.edge44, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge48, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge51, %LeafBlock ]
+  %phi.edge91 = phi i1 [ %phi.calluser.edge37, %cond_704_case_1.sink.split.dup89 ], [ %phi.calluser.edge31, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge35, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge38, %LeafBlock ]
+  %phi.edge92 = phi i1 [ %phi.calluser.edge24, %cond_704_case_1.sink.split.dup89 ], [ %phi.calluser.edge18, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge22, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge25, %LeafBlock ]
+  %phi.edge93 = phi i1 [ %phi.calluser.edge11, %cond_704_case_1.sink.split.dup89 ], [ %phi.calluser.edge5, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge9, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge12, %LeafBlock ]
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
+  %27 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 10 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
+  %28 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 11 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_704_case_1.dup95:                            ; preds = %LeafBlock
-  %phi.calluser.edge52 = phi i1 [ %phi.calluser.edge51, %LeafBlock ]
-  %phi.calluser.edge39 = phi i1 [ %phi.calluser.edge38, %LeafBlock ]
-  %phi.calluser.edge26 = phi i1 [ %phi.calluser.edge25, %LeafBlock ]
-  %phi.calluser.edge13 = phi i1 [ %phi.calluser.edge12, %LeafBlock ]
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
-  %31 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
-  %32 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  br label %__prepare_module_record_output_final
-
-cond_exit_620.dup109:                             ; preds = %alloca_block.dup68, %alloca_block.dup67
+29:                                               ; preds = %alloca_block.dup68, %alloca_block.dup67
   %phi.edge84 = phi i1 [ %10, %alloca_block.dup67 ], [ %18, %alloca_block.dup68 ]
   %phi.edge85 = phi i1 [ %9, %alloca_block.dup67 ], [ %17, %alloca_block.dup68 ]
   %phi.edge86 = phi i1 [ %8, %alloca_block.dup67 ], [ %16, %alloca_block.dup68 ]
   %phi.edge87 = phi i1 [ %7, %alloca_block.dup67 ], [ %15, %alloca_block.dup68 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
-  br i1 %1, label %33, label %cond_336_case_1
+  br label %cond_exit_620
 
-33:                                               ; preds = %cond_exit_620.dup109, %alloca_block.dup79, %alloca_block.dup78
-  %phi.edge114 = phi i1 [ %phi.edge84, %cond_exit_620.dup109 ], [ %6, %alloca_block.dup78 ], [ %14, %alloca_block.dup79 ]
-  %phi.edge115 = phi i1 [ %phi.edge85, %cond_exit_620.dup109 ], [ %5, %alloca_block.dup78 ], [ %13, %alloca_block.dup79 ]
-  %phi.edge116 = phi i1 [ %phi.edge86, %cond_exit_620.dup109 ], [ %4, %alloca_block.dup78 ], [ %12, %alloca_block.dup79 ]
-  %phi.edge117 = phi i1 [ %phi.edge87, %cond_exit_620.dup109 ], [ %3, %alloca_block.dup78 ], [ %11, %alloca_block.dup79 ]
+cond_exit_620:                                    ; preds = %alloca_block.dup79, %alloca_block.dup78, %29
+  %phi.edge = phi i1 [ %6, %alloca_block.dup78 ], [ %14, %alloca_block.dup79 ], [ %phi.edge84, %29 ]
+  %phi.edge81 = phi i1 [ %5, %alloca_block.dup78 ], [ %13, %alloca_block.dup79 ], [ %phi.edge85, %29 ]
+  %phi.edge82 = phi i1 [ %4, %alloca_block.dup78 ], [ %12, %alloca_block.dup79 ], [ %phi.edge86, %29 ]
+  %phi.edge83 = phi i1 [ %3, %alloca_block.dup78 ], [ %11, %alloca_block.dup79 ], [ %phi.edge87, %29 ]
+  br i1 %1, label %30, label %cond_336_case_1
+
+30:                                               ; preds = %cond_exit_620
+  %phi.calluser.edge47 = phi i1 [ %phi.edge, %cond_exit_620 ]
+  %phi.calluser.edge34 = phi i1 [ %phi.edge81, %cond_exit_620 ]
+  %phi.calluser.edge21 = phi i1 [ %phi.edge82, %cond_exit_620 ]
+  %phi.calluser.edge8 = phi i1 [ %phi.edge83, %cond_exit_620 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
   br label %cond_336_case_1
 
@@ -195,29 +194,19 @@ cond_704_case_1.sink.split.dup89:                 ; preds = %LeafBlock
   %phi.calluser.edge11 = phi i1 [ %phi.calluser.edge12, %LeafBlock ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
-  %34 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
-  %35 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  br label %__prepare_module_record_output_final
+  br label %cond_704_case_1
 
-__prepare_module_record_output_final:             ; preds = %cond_704_case_1.sink.split.dup89, %cond_704_case_1.dup95, %cond_704_case_1.sink.split.dup88, %cond_704_case_1.sink.split.dup
-  %phi.calluser.edge101 = phi i1 [ %28, %cond_704_case_1.sink.split.dup ], [ %30, %cond_704_case_1.sink.split.dup88 ], [ %32, %cond_704_case_1.dup95 ], [ %35, %cond_704_case_1.sink.split.dup89 ]
-  %phi.calluser.edge = phi i1 [ %27, %cond_704_case_1.sink.split.dup ], [ %29, %cond_704_case_1.sink.split.dup88 ], [ %31, %cond_704_case_1.dup95 ], [ %34, %cond_704_case_1.sink.split.dup89 ]
-  %phi.edge97 = phi i1 [ %phi.calluser.edge52, %cond_704_case_1.dup95 ], [ %phi.edge110, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge48, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge50, %cond_704_case_1.sink.split.dup89 ]
-  %phi.edge98 = phi i1 [ %phi.calluser.edge39, %cond_704_case_1.dup95 ], [ %phi.edge111, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge35, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge37, %cond_704_case_1.sink.split.dup89 ]
-  %phi.edge99 = phi i1 [ %phi.calluser.edge26, %cond_704_case_1.dup95 ], [ %phi.edge112, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge22, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge24, %cond_704_case_1.sink.split.dup89 ]
-  %phi.edge100 = phi i1 [ %phi.calluser.edge13, %cond_704_case_1.dup95 ], [ %phi.edge113, %cond_704_case_1.sink.split.dup ], [ %phi.calluser.edge9, %cond_704_case_1.sink.split.dup88 ], [ %phi.calluser.edge11, %cond_704_case_1.sink.split.dup89 ]
+__prepare_module_record_output_final:             ; preds = %cond_704_case_1
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge100, ptr @2)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge99, ptr @3)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge98, ptr @4)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge97, ptr @5)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge93, ptr @2)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge92, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge91, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge90, ptr @5)
   call void @__quantum__rt__int_record_output(i64 %"61_2.0", ptr @6)
   call void @__quantum__rt__int_record_output(i64 %25, ptr @7)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge, ptr @8)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge101, ptr @9)
+  call void @__quantum__rt__bool_record_output(i1 %27, ptr @8)
+  call void @__quantum__rt__bool_record_output(i1 %28, ptr @9)
   ret void
 }
 

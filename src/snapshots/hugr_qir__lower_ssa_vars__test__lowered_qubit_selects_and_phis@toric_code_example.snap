@@ -601,14 +601,17 @@ cond_10152_case_1:                                ; preds = %62, %cond_10117_cas
   %59 = or i64 %58, %"10602_0.0"
   %60 = or i64 %59, %"10637_0.0"
   %61 = or i64 %60, %"10672_0.0"
-  call void @__quantum__rt__int_record_output(i64 %6, ptr @0)
-  call void @__quantum__rt__int_record_output(i64 %17, ptr @1)
-  call void @__quantum__rt__int_record_output(i64 %61, ptr @2)
-  ret void
+  br label %__prepare_module_record_output_final
 
 62:                                               ; preds = %cond_10117_case_0
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 15 to ptr))
   br label %cond_10152_case_1
+
+__prepare_module_record_output_final:             ; preds = %cond_10152_case_1
+  call void @__quantum__rt__int_record_output(i64 %6, ptr @0)
+  call void @__quantum__rt__int_record_output(i64 %17, ptr @1)
+  call void @__quantum__rt__int_record_output(i64 %61, ptr @2)
+  ret void
 }
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr

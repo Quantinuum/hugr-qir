@@ -20,19 +20,22 @@ entry:
 
 exit.dup:                                         ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
-  call void @__quantum__rt__int_record_output(i64 0, ptr @0)
   br label %common.ret
 
 common.ret:                                       ; preds = %exit.dup1, %exit.dup
-  ret void
+  br label %__prepare_module_record_output_final
 
 exit.dup1:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
-  call void @__quantum__rt__int_record_output(i64 1, ptr @0)
   br label %common.ret
 
 entry.unreachabledefault:                         ; preds = %entry
   unreachable
+
+__prepare_module_record_output_final:             ; preds = %common.ret
+  call void @__quantum__rt__int_record_output(i64 0, ptr @0)
+  call void @__quantum__rt__int_record_output(i64 1, ptr @0)
+  ret void
 }
 
 declare void @__quantum__rt__int_record_output(i64, ptr)

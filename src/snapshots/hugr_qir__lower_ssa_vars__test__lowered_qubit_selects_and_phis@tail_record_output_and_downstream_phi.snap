@@ -31,6 +31,9 @@ join:                                             ; preds = %entry.dup, %entry.d
   %phi.calluser.edge6 = phi i1 [ %phi.calluser.edge7, %right ], [ %flag12, %entry.dup ], [ %flag14, %entry.dup3 ]
   %phi.calluser = phi i1 [ true, %right ], [ %flag12, %entry.dup ], [ %flag14, %entry.dup3 ]
   tail call void @__test__consume_bool(i1 %phi.calluser)
+  br label %__prepare_module_record_output_final
+
+__prepare_module_record_output_final:             ; preds = %join
   call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge6, ptr @0)
   ret void
 }

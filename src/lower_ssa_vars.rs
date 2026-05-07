@@ -43,6 +43,9 @@ pub fn lower_qubit_selects_and_phis(module: &Module, target: &TargetMachine) -> 
     let changed = lowered_selects || lowered_phis;
     if changed {
         simp_cfg(module, target)?;
+        // `simplifycfg` can (legally) move/duplicate the final record-output block.
+        // Re-run `prepare_module` to re-canonicalize record-output calls into a single sink.
+        prepare_module(module)?;
     }
     verify_module(module)?;
     Ok(changed)
@@ -726,6 +729,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
     builder.position_at_end(bb);
     for &i in tail.iter().rev() {
+        forget_qubit_value(i, qubit_values);
         i.erase_from_basic_block();
     }
     builder.build_conditional_branch(cond, then_bb, else_bb)?;
@@ -737,6 +741,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     if let Some(merge_term) = merge_bb.get_terminator() {
         fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap, qubit_values)?;
     }
+    forget_qubit_value(sel, qubit_values);
     sel.erase_from_basic_block();
     lower_successive_phis_in_block(module, builder, merge_bb, vec![phi], qubit_values)?;
     collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
@@ -971,6 +976,7 @@ fn rename_incoming_block_in_phis<'ctx>(
         }
 
         phi.replace_all_uses_with(&new_phi);
+        forget_qubit_value(inst, qubit_values);
         inst.erase_from_basic_block();
         it = new_phi.as_instruction().get_next_instruction();
     }
@@ -1130,10 +1136,13 @@ pub fn lower_successive_phis_in_block(
     // , e.g. function calls on the variable or additional phis
     for phi in phis {
         handle_phi_users(phi, block, &clone_map, qubit_values)?;
-        phi.as_instruction().erase_from_basic_block();
+        let inst = phi.as_instruction();
+        forget_qubit_value(inst, qubit_values);
+        inst.erase_from_basic_block();
     }
 
     // Delete no longer needed block
+    forget_qubit_values_in_block(block, qubit_values);
     unsafe {
         block
             .delete()
@@ -1371,6 +1380,7 @@ fn rewrite_phi_user_as_phi<'ctx>(
     }
 
     user_phi.replace_all_uses_with(&new_phi);
+    forget_qubit_value(user_inst, qubit_values);
     user_inst.erase_from_basic_block();
     Ok(())
 }
@@ -1432,6 +1442,7 @@ fn rewrite_phi_user_as_call<'ctx>(
             "rewrite_phi_user_as_call",
         )?);
     }
+    forget_qubit_value(user_inst, qubit_values);
     user_inst.erase_from_basic_block();
     Ok(())
 }
@@ -1599,7 +1610,7 @@ fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
                             preds.push(b);
                         }
                     } else {
-                        // Conditional: operand 1 = then BB, operand 2 = else BB
+                        // Conditional: operand 1 = false-dest BB, operand 2 = true-dest BB
                         if operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to)
                         {
                             preds.push(b);
@@ -1637,6 +1648,18 @@ fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
         }
     }
     Ok(preds)
+}
+
+/// Remove a just-erased instruction's key from `qubit_values` to avoid
+/// pointer-address reuse causing nondeterministic misclassification.
+fn forget_qubit_value(inst: InstructionValue, qubit_values: &mut HashSet<ValueKey>) {
+    qubit_values.remove(&value_key_from_instruction(inst));
+}
+
+fn forget_qubit_values_in_block(block: BasicBlock, qubit_values: &mut HashSet<ValueKey>) {
+    for inst in block.get_instructions() {
+        forget_qubit_value(inst, qubit_values);
+    }
 }
 
 /// Returns whether `from` has `to` as a direct successor through a supported terminator.
@@ -1996,6 +2019,7 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
             }
 
             phi.replace_all_uses_with(&replacement_phi);
+            forget_qubit_value(phi_inst, qubit_values);
             phi_inst.erase_from_basic_block();
         }
     }
@@ -2077,6 +2101,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                 }
 
                 user_phi.replace_all_uses_with(&replacement_phi);
+                forget_qubit_value(user, qubit_values);
                 user.erase_from_basic_block();
                 continue;
             }
@@ -2411,8 +2436,9 @@ fn redirect_edge<'ctx>(
                     let new_then = if then_bb == old_to { new_to } else { then_bb };
                     let new_else = if else_bb == old_to { new_to } else { else_bb };
 
-                    // This order of fbb and tbb is not what I would expect but
-                    // if you do it the other way the branches get switched...
+                    // In this LLVM/in-inkwell setup, operand(1) is the *false* target and
+                    // operand(2) is the *true* target. Keep the same ordering here so we don't
+                    // invert the branch when rebuilding.
                     builder
                         .build_conditional_branch(cond, new_else, new_then)
                         .ok();
@@ -3267,5 +3293,42 @@ _kept:
                 .any(|block| name_of_block(block) == "_kept"),
             "underscore-prefixed block name was renamed"
         );
+    }
+
+    #[test]
+    fn conditional_branch_operand_order_matches_ir() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "condbr_operand_order",
+            r#"
+define void @main(i1 %cond) {
+entry:
+  br i1 %cond, label %then_block, label %else_block
+
+then_block:
+  ret void
+
+else_block:
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        let main_fn = module.get_function("main").unwrap();
+        let entry = main_fn.get_first_basic_block().unwrap();
+        let term = entry.get_terminator().unwrap();
+        assert!(term.is_conditional().unwrap());
+
+        let op1 = required_block_operand(term, 1, "conditional_branch_operand_order_matches_ir")
+            .unwrap();
+        let op2 = required_block_operand(term, 2, "conditional_branch_operand_order_matches_ir")
+            .unwrap();
+
+        // NOTE: In this build of LLVM/inkwell, conditional `br` operands are ordered
+        // as (cond, false_dest, true_dest).
+        assert_eq!(name_of_block(op1), "else_block");
+        assert_eq!(name_of_block(op2), "then_block");
     }
 }
