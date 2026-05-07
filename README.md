@@ -10,15 +10,24 @@ A tool for converting Hierarchical Unified Graph Representation (HUGR, pronounce
 
 ## Documentation
 
-Project documentation lives in [docs/](docs/) and is organized as a small Sphinx site using the Furo theme.
+Project documentation lives in [docs/](docs/) and is organized as a small Sphinx site using the shared `pytket-docs-theming` configuration.
 
 - Getting started: [docs/getting-started.md](docs/getting-started.md)
 - Examples: [docs/examples/index.md](docs/examples/index.md)
+- Guppylang support: [docs/guppylang-support.md](docs/guppylang-support.md)
 - Python API: [docs/python-api.md](docs/python-api.md)
 - CLI: [docs/cli.md](docs/cli.md)
 - WASM support: [docs/wasm.md](docs/wasm.md)
-- Guppylang support: [docs/guppylang-support.md](docs/guppylang-support.md)
 - Development: [docs/development.md](docs/development.md)
+
+To build the documentation locally:
+
+```bash
+uv run --group docs sphinx-build -M html docs docs/_build
+```
+
+Then open `docs/_build/html/index.html` in a browser.
+
 
 ## Installation
 
@@ -112,12 +121,6 @@ If you want to update the snapshots you can do that via:
 
 ```bash
 uv run pytest --snapshot-update
-```
-
-To preview the documentation site locally:
-
-```bash
-uv run --group docs sphinx-build -M html docs docs/_build
 ```
 
 ## License
