@@ -7,31 +7,28 @@ source_filename = "select_with_record_output"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Result = type opaque
-%Qubit = type opaque
-
 @0 = private unnamed_addr constant [5 x i8] c"flag\00", align 1
 
 define void @__hugr__.main.1() {
 entry:
-  %flag = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  %flag = tail call i1 @__quantum__qis__read_result__body(ptr null)
   br i1 %flag, label %entry.dup, label %entry.dup1
 
 entry.dup:                                        ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* null)
+  call void @__quantum__qis__reset__body(ptr null)
   br label %__prepare_module_record_output_final
 
 entry.dup1:                                       ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %__prepare_module_record_output_final
 
 __prepare_module_record_output_final:             ; preds = %entry.dup1, %entry.dup
-  call void @__quantum__rt__bool_record_output(i1 %flag, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i64 0, i64 0))
+  call void @__quantum__rt__bool_record_output(i1 %flag, ptr @0)
   ret void
 }
 
-declare i1 @__quantum__qis__read_result__body(%Result*)
+declare i1 @__quantum__qis__read_result__body(ptr)
 
-declare void @__quantum__rt__bool_record_output(i1, i8*)
+declare void @__quantum__rt__bool_record_output(i1, ptr)
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

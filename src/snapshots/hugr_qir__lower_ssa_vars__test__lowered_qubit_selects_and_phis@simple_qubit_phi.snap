@@ -7,8 +7,6 @@ source_filename = "simple_qubit_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond) {
 entry:
   br i1 %cond, label %merge.dup, label %merge.dup1
@@ -17,12 +15,12 @@ common.ret:                                       ; preds = %merge.dup1, %merge.
   ret void
 
 merge.dup:                                        ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* null)
+  call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 
 merge.dup1:                                       ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 }
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

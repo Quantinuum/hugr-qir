@@ -1,7 +1,7 @@
 use hugr::{
     Hugr,
-    core::Visibility,
     builder::{Dataflow, DataflowSubContainer, HugrBuilder, ModuleBuilder},
+    core::Visibility,
     ops::{OpTrait, OpType},
     types::PolyFuncType,
 };

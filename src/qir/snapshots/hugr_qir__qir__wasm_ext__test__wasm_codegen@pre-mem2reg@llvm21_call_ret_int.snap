@@ -1,0 +1,27 @@
+---
+source: src/qir/wasm_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define internal i32 @_hl.main.1({} %0, ptr %1) {
+alloca_block:
+  %"0" = alloca i32, align 4
+  %"2_0" = alloca {}, align 8
+  %"2_1" = alloca ptr, align 8
+  %"4_0" = alloca i32, align 4
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store {} %0, ptr %"2_0", align 1
+  store ptr %1, ptr %"2_1", align 8
+  %"2_01" = load {}, ptr %"2_0", align 1
+  %"2_12" = load ptr, ptr %"2_1", align 8
+  %2 = call i32 %"2_12"()
+  store i32 %2, ptr %"4_0", align 4
+  %"4_03" = load i32, ptr %"4_0", align 4
+  store i32 %"4_03", ptr %"0", align 4
+  %"04" = load i32, ptr %"0", align 4
+  ret i32 %"04"
+}

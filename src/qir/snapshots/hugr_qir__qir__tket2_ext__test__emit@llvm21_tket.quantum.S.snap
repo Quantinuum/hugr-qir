@@ -1,0 +1,17 @@
+---
+source: src/qir/tket2_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define ptr @_hl.main.1(ptr %0) {
+alloca_block:
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  call void @__quantum__qis__s__body(ptr %0)
+  ret ptr %0
+}
+
+declare void @__quantum__qis__s__body(ptr)

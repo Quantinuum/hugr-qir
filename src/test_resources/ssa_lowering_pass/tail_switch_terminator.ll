@@ -28,8 +28,11 @@ default:
 
 exit:
   %which = phi i64 [ 0, %case0 ], [ 1, %case1 ], [ 2, %default ]
+  %which_qubit = inttoptr i64 %which to %Qubit*
   tail call void @__quantum__rt__int_record_output(i64 %which, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i64 0, i64 0))
+  call void @__quantum__qis__reset__body(%Qubit* %which_qubit)
   ret void
 }
 
 declare void @__quantum__rt__int_record_output(i64, i8*)
+declare void @__quantum__qis__reset__body(%Qubit*)
