@@ -1,0 +1,38 @@
+---
+source: src/lower_ssa_vars.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:qubit_phi_with_constant_successor_incoming>'
+source_filename = "qubit_phi_with_constant_successor_incoming"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+%Qubit = type opaque
+
+define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+entry:
+  br i1 %cond0, label %merge.dup, label %merge.dup1
+
+merge.dup:                                        ; preds = %entry
+  br i1 %cond1, label %succ.dup, label %succ.dup3
+
+common.ret:                                       ; preds = %succ.dup3, %succ.dup2, %succ.dup
+  ret void
+
+succ.dup:                                         ; preds = %merge.dup
+  call void @use_qubit(%Qubit* inttoptr (i64 3 to %Qubit*))
+  br label %common.ret
+
+merge.dup1:                                       ; preds = %entry
+  br i1 %cond1, label %succ.dup2, label %succ.dup3
+
+succ.dup2:                                        ; preds = %merge.dup1
+  call void @use_qubit(%Qubit* inttoptr (i64 3 to %Qubit*))
+  br label %common.ret
+
+succ.dup3:                                        ; preds = %merge.dup, %merge.dup1
+  call void @use_qubit(%Qubit* inttoptr (i64 4 to %Qubit*))
+  br label %common.ret
+}
+
+declare void @use_qubit(%Qubit*)

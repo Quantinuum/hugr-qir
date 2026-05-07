@@ -11,37 +11,38 @@ target triple = "aarch64-unknown-linux-gnu"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
+  tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__rt__int_record_output(i64 101, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i64 0, i64 0))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, %Qubit* null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, %Qubit* null)
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* null)
   tail call void @__quantum__qis__mz__body(%Qubit* null, %Result* null)
-  %0 = tail call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %0, label %1, label %__hugr__.guppy_example_mod.b_function.22.exit
+  %0 = tail call i1 @__quantum__rt__read_result(%Result* null)
+  br i1 %0, label %bb, label %__hugr__.guppy_example_mod.b_function.22.exit
 
-1:                                                ; preds = %alloca_block
+bb:                                               ; preds = %alloca_block
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, %Qubit* nonnull inttoptr (i64 1 to %Qubit*))
   br label %__hugr__.guppy_example_mod.b_function.22.exit
 
-__hugr__.guppy_example_mod.b_function.22.exit:    ; preds = %alloca_block, %1
+__hugr__.guppy_example_mod.b_function.22.exit:    ; preds = %alloca_block, %bb
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 1 to %Qubit*), %Result* nonnull inttoptr (i64 1 to %Result*))
-  %2 = tail call i1 @__quantum__qis__read_result__body(%Result* nonnull inttoptr (i64 1 to %Result*))
-  tail call void @__quantum__rt__bool_record_output(i1 %2, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i64 0, i64 0))
+  %1 = tail call i1 @__quantum__rt__read_result(%Result* nonnull inttoptr (i64 1 to %Result*))
+  tail call void @__quantum__rt__bool_record_output(i1 %1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i64 0, i64 0))
   ret void
 }
 
 declare void @__quantum__rt__int_record_output(i64, i8*) local_unnamed_addr
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result*) local_unnamed_addr
+declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) local_unnamed_addr #1
 
-declare i1 @__quantum__qis__read_result__body(%Result*) local_unnamed_addr
+declare i1 @__quantum__rt__read_result(%Result* readonly) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, i8*) local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, %Qubit*) local_unnamed_addr
 
-declare void @__quantum__qis__rz__body(double, %Qubit*) local_unnamed_addr
+declare void @__quantum__rt__initialize(i8*) local_unnamed_addr
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="2" "required_num_results"="2" }
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="2" "required_num_results"="2" }
+attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 

@@ -1,5 +1,5 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:tail_int_ptr_casts>'
@@ -11,12 +11,12 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond, i1 %flag) {
 entry:
-  br i1 %cond, label %entry.select.merge.dup, label %entry.select.merge.dup12
+  br i1 %cond, label %entry.dup, label %entry.dup12
 
-common.ret:                                       ; preds = %entry.select.merge.dup12, %entry.select.merge.dup
+common.ret:                                       ; preds = %entry.dup12, %entry.dup
   ret void
 
-entry.select.merge.dup:                           ; preds = %entry
+entry.dup:                                        ; preds = %entry
   %flag.ext27 = zext i1 %flag to i64
   %shifted38 = shl i64 %flag.ext27, 1
   %mixed49 = or i64 0, %shifted38
@@ -25,7 +25,7 @@ entry.select.merge.dup:                           ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* %selected.next611)
   br label %common.ret
 
-entry.select.merge.dup12:                         ; preds = %entry
+entry.dup12:                                      ; preds = %entry
   %flag.ext213 = zext i1 %flag to i64
   %shifted314 = shl i64 %flag.ext213, 1
   %mixed415 = or i64 8, %shifted314

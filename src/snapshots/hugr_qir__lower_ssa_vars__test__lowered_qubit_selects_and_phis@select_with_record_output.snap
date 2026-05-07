@@ -1,5 +1,5 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:select_with_record_output>'
@@ -15,17 +15,17 @@ target triple = "<normalized>"
 define void @__hugr__.main.1() {
 entry:
   %flag = tail call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %flag, label %entry.select.merge.dup, label %entry.select.merge.dup1
+  br i1 %flag, label %entry.dup, label %entry.dup1
 
-entry.select.merge.dup:                           ; preds = %entry
+entry.dup:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* null)
-  br label %record_block
+  br label %__prepare_module_record_output_final
 
-entry.select.merge.dup1:                          ; preds = %entry
+entry.dup1:                                       ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
-  br label %record_block
+  br label %__prepare_module_record_output_final
 
-record_block:                                     ; preds = %entry.select.merge.dup1, %entry.select.merge.dup
+__prepare_module_record_output_final:             ; preds = %entry.dup1, %entry.dup
   call void @__quantum__rt__bool_record_output(i1 %flag, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i64 0, i64 0))
   ret void
 }

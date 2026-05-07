@@ -1,9 +1,9 @@
 ---
-source: src/lower_qubit_ssa_vars.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '<fixture:simple_qubit_phi>'
-source_filename = "simple_qubit_phi"
+; ModuleID = '<fixture:simple_qubit_select>'
+source_filename = "simple_qubit_select"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
@@ -11,16 +11,16 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %merge.dup, label %merge.dup1
+  br i1 %cond, label %entry.dup, label %entry.dup1
 
-common.ret:                                       ; preds = %merge.dup1, %merge.dup
+common.ret:                                       ; preds = %entry.dup1, %entry.dup
   ret void
 
-merge.dup:                                        ; preds = %entry
+entry.dup:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* null)
   br label %common.ret
 
-merge.dup1:                                       ; preds = %entry
+entry.dup1:                                       ; preds = %entry
   call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
   br label %common.ret
 }

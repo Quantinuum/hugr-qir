@@ -3,7 +3,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import qubit, result
-from guppylang.std.quantum import h, measure, x
+from guppylang.std.quantum import measure, x
 
 
 @guppy
@@ -19,7 +19,7 @@ def recursive_func(q: qubit, n: int) -> None:
 @no_type_check
 def main() -> None:
     q = qubit()
-    h(q)
+    x(q)
     recursive_func(q, 0)
     result("q", measure(q))
 

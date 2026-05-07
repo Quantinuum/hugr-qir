@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, no_type_check
 
 from guppylang.decorator import guppy
 from guppylang.std.builtins import qubit, result
-from guppylang.std.quantum import cx, cz, h, measure, x
+from guppylang.std.quantum import cx, cz, measure, x
 
 if TYPE_CHECKING:
     from guppylang.std.lang import owned
@@ -22,15 +22,15 @@ class SteaneQubit:
     pq6: qubit
 
     @guppy
-    def h_all(self) -> None:
+    def x_all(self) -> None:
         """Single Steane Qubit op"""
-        h(self.pq0)
-        h(self.pq1)
-        h(self.pq2)
-        h(self.pq3)
-        h(self.pq4)
-        h(self.pq5)
-        h(self.pq6)
+        x(self.pq0)
+        x(self.pq1)
+        x(self.pq2)
+        x(self.pq3)
+        x(self.pq4)
+        x(self.pq5)
+        x(self.pq6)
 
     @guppy
     def cx_all(self, other: SteaneQubit) -> None:
@@ -84,9 +84,9 @@ def steane_cz(q1: SteaneQubit, q2: SteaneQubit) -> None:
 def main() -> None:
     steane = SteaneQubit(*[qubit() for _ in range(7)])
     other_steane = SteaneQubit(*[qubit() for _ in range(7)])
-    h(steane.pq0)
+    x(steane.pq0)
     x(steane.pq2)
-    steane.h_all()
+    steane.x_all()
     steane.cx_all(other_steane)
     steane_cz(steane, other_steane)
     steane_measure_result(steane, "q1")
