@@ -14,6 +14,8 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+      - name: Install lint dependencies
+        run: uv sync --frozen --group dev --no-install-project
       - name: Run prek hooks
         run: >-
           uvx prek run --all-files
