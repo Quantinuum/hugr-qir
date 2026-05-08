@@ -156,8 +156,10 @@ impl CompileArgs {
             CliOptimizationLevel::Default => "default<O2>",
             CliOptimizationLevel::Aggressive => "default<O3>",
         });
-        opt_str.push_str(",lowerswitch");
-        let _ = module.run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create());
+        opt_str.push_str(",lower-switch");
+        module
+            .run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create())
+            .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
         Ok(ctm)
     }
 

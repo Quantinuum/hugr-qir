@@ -1,23 +1,20 @@
 ; ModuleID = 'hugr-qir'
 source_filename = "hugr-qir"
-target datalayout = "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
-
-%Qubit = type opaque
-%Result = type opaque
 
 @0 = private unnamed_addr constant [38 x i8] c"No more qubits available to allocate.\00", align 1
 @1 = private unnamed_addr constant [38 x i8] c"No more qubits available to allocate.\00", align 1
 @2 = private unnamed_addr constant [2 x i8] c"a\00", align 1
 @3 = private unnamed_addr constant [2 x i8] c"b\00", align 1
 
-define dso_local void @__hugr__.guppy_example_mod.main.1() #0 {
+define void @__hugr__.guppy_example_mod.main.1() #0 {
 alloca_block:
-  call void @__quantum__rt__initialize(i8* null)
+  call void @__quantum__rt__initialize(ptr null)
   %"20_0" = alloca { i1, i1 }, align 8
-  %"20_1" = alloca %Qubit*, align 8
+  %"20_1" = alloca ptr, align 8
   %"36_0" = alloca { i1, i1 }, align 8
-  %"36_1" = alloca %Qubit*, align 8
+  %"36_1" = alloca ptr, align 8
   %"41_0" = alloca { i1, i1 }, align 8
   %"47_0" = alloca { i1, i1 }, align 8
   %"47_1" = alloca { i1, i1 }, align 8
@@ -27,934 +24,853 @@ alloca_block:
   %"55_1" = alloca { i1, i1 }, align 8
   %"17_0" = alloca i1, align 1
   %"65_0" = alloca { i1, i1 }, align 8
-  %"11_1" = alloca %Qubit*, align 8
-  %"15_0" = alloca { i1, i1 }, align 8
-  %"0" = alloca i1, align 1
-  %"117_0" = alloca i1, align 1
-  %"03" = alloca i1, align 1
-  %"119_0" = alloca i1, align 1
-  %"13_0" = alloca {}, align 8
-  %"8_0" = alloca %Qubit*, align 8
-  %"201_0" = alloca { i1, %Qubit* }, align 8
-  %"202_0" = alloca %Qubit*, align 8
-  %"07" = alloca %Qubit*, align 8
-  %"208_0" = alloca { i32, i8* }, align 8
-  %"209_0" = alloca %Qubit*, align 8
-  %"011" = alloca %Qubit*, align 8
-  %"210_0" = alloca %Qubit*, align 8
-  %"9_0" = alloca %Qubit*, align 8
-  %"214_0" = alloca { i1, %Qubit* }, align 8
-  %"215_0" = alloca %Qubit*, align 8
-  %"016" = alloca %Qubit*, align 8
-  %"221_0" = alloca { i32, i8* }, align 8
-  %"222_0" = alloca %Qubit*, align 8
-  %"020" = alloca %Qubit*, align 8
-  %"223_0" = alloca %Qubit*, align 8
-  %"10_0" = alloca { %Qubit*, %Qubit* }, align 8
-  %"11_0" = alloca %Qubit*, align 8
-  %"12_0" = alloca %Qubit*, align 8
-  %"225_0" = alloca %Qubit*, align 8
-  %"232_0" = alloca double, align 8
-  %"230_0" = alloca double, align 8
-  %"233_0" = alloca %Qubit*, align 8
-  %"228_0" = alloca double, align 8
-  %"234_0" = alloca %Qubit*, align 8
+  %"11_1" = alloca ptr, align 8
+  %"8_0" = alloca ptr, align 8
+  %"139_0" = alloca { i1, ptr }, align 8
+  %"138_0" = alloca ptr, align 8
+  %"0" = alloca ptr, align 8
+  %"45_0" = alloca { i32, ptr }, align 8
+  %"39_0" = alloca ptr, align 8
+  %"05" = alloca ptr, align 8
+  %"23_0" = alloca ptr, align 8
+  %"9_0" = alloca ptr, align 8
+  %"13_0" = alloca { i1, ptr }, align 8
+  %"228_0" = alloca ptr, align 8
+  %"010" = alloca ptr, align 8
+  %"234_0" = alloca { i32, ptr }, align 8
+  %"235_0" = alloca ptr, align 8
+  %"014" = alloca ptr, align 8
+  %"236_0" = alloca ptr, align 8
+  %"10_0" = alloca { ptr, ptr }, align 8
+  %"11_0" = alloca ptr, align 8
+  %"12_0" = alloca ptr, align 8
+  %"238_0" = alloca ptr, align 8
+  %"245_0" = alloca double, align 8
+  %"243_0" = alloca double, align 8
+  %"246_0" = alloca ptr, align 8
+  %"241_0" = alloca double, align 8
+  %"247_0" = alloca ptr, align 8
   %"14_0" = alloca { i1, i1 }, align 8
-  %"96_0" = alloca %Qubit*, align 8
-  %"98_0" = alloca i1, align 1
-  %"99_0" = alloca { i1, i1 }, align 8
+  %"119_0" = alloca ptr, align 8
+  %"121_0" = alloca i1, align 1
+  %"122_0" = alloca { i1, i1 }, align 8
   %"65_1" = alloca { i1, i1 }, align 8
-  %"039" = alloca { i1, i1 }, align 8
+  %"033" = alloca { i1, i1 }, align 8
   %"1" = alloca { i1, i1 }, align 8
+  %"036" = alloca i1, align 1
+  %"124_0" = alloca i1, align 1
+  %"127_0" = alloca { i1, i1 }, align 8
+  %"126_0" = alloca { i1, i1 }, align 8
   %"042" = alloca i1, align 1
-  %"101_0" = alloca i1, align 1
-  %"104_0" = alloca { i1, i1 }, align 8
-  %"103_0" = alloca { i1, i1 }, align 8
-  %"048" = alloca i1, align 1
-  %"106_0" = alloca i1, align 1
-  %"108_0" = alloca i1, align 1
-  %"108_1" = alloca i1, align 1
-  %"111_0" = alloca i1, align 1
-  %"113_0" = alloca i1, align 1
-  %"113_1" = alloca i1, align 1
-  %"110_0" = alloca { i1, i1 }, align 8
-  %"109_0" = alloca { i1, i1 }, align 8
-  %"123_0" = alloca { i1, i1 }, align 8
-  %"125_0" = alloca i1, align 1
-  %"060" = alloca i1, align 1
-  %"062" = alloca i1, align 1
-  %"128_0" = alloca i1, align 1
-  %"065" = alloca i1, align 1
-  %"130_0" = alloca i1, align 1
-  %"132_0" = alloca i1, align 1
+  %"129_0" = alloca i1, align 1
+  %"131_0" = alloca i1, align 1
+  %"131_1" = alloca i1, align 1
+  %"134_0" = alloca i1, align 1
+  %"136_0" = alloca i1, align 1
+  %"136_1" = alloca i1, align 1
+  %"133_0" = alloca { i1, i1 }, align 8
+  %"132_0" = alloca { i1, i1 }, align 8
+  %"146_0" = alloca { i1, i1 }, align 8
+  %"148_0" = alloca i1, align 1
+  %"054" = alloca i1, align 1
+  %"056" = alloca i1, align 1
+  %"151_0" = alloca i1, align 1
+  %"059" = alloca i1, align 1
+  %"153_0" = alloca i1, align 1
+  %"155_0" = alloca i1, align 1
   %"26_0" = alloca { i1, { i1, i1 }, { i1, i1 } }, align 8
-  %"23_0" = alloca {}, align 8
-  %"22_0" = alloca %Qubit*, align 8
-  %"235_0" = alloca %Qubit*, align 8
-  %"242_0" = alloca double, align 8
-  %"240_0" = alloca double, align 8
-  %"243_0" = alloca %Qubit*, align 8
-  %"238_0" = alloca double, align 8
-  %"244_0" = alloca %Qubit*, align 8
+  %"22_0" = alloca ptr, align 8
+  %"248_0" = alloca ptr, align 8
+  %"255_0" = alloca double, align 8
+  %"253_0" = alloca double, align 8
+  %"256_0" = alloca ptr, align 8
+  %"251_0" = alloca double, align 8
+  %"257_0" = alloca ptr, align 8
   %"24_0" = alloca { i1, i1 }, align 8
-  %"133_0" = alloca %Qubit*, align 8
-  %"135_0" = alloca i1, align 1
-  %"136_0" = alloca { i1, i1 }, align 8
+  %"156_0" = alloca ptr, align 8
+  %"158_0" = alloca i1, align 1
+  %"159_0" = alloca { i1, i1 }, align 8
   %"64_0" = alloca { i1, i1 }, align 8
   %"64_1" = alloca { i1, i1 }, align 8
-  %"090" = alloca { i1, i1 }, align 8
-  %"191" = alloca { i1, i1 }, align 8
-  %"094" = alloca i1, align 1
-  %"138_0" = alloca i1, align 1
-  %"141_0" = alloca { i1, i1 }, align 8
-  %"140_0" = alloca { i1, i1 }, align 8
-  %"0100" = alloca i1, align 1
-  %"143_0" = alloca i1, align 1
-  %"145_0" = alloca i1, align 1
-  %"145_1" = alloca i1, align 1
-  %"148_0" = alloca i1, align 1
-  %"150_0" = alloca i1, align 1
-  %"150_1" = alloca i1, align 1
-  %"147_0" = alloca { i1, i1 }, align 8
-  %"146_0" = alloca { i1, i1 }, align 8
-  %"25_0" = alloca i1, align 1
-  %"152_0" = alloca { i1, i1 }, align 8
-  %"154_0" = alloca i1, align 1
-  %"0112" = alloca i1, align 1
-  %"0114" = alloca i1, align 1
-  %"157_0" = alloca i1, align 1
-  %"0117" = alloca i1, align 1
-  %"159_0" = alloca i1, align 1
+  %"084" = alloca { i1, i1 }, align 8
+  %"185" = alloca { i1, i1 }, align 8
+  %"088" = alloca i1, align 1
   %"161_0" = alloca i1, align 1
-  %"0125" = alloca { i1, { i1, i1 }, { i1, i1 } }, align 8
-  %"0127" = alloca { i1, i1 }, align 8
-  %"1128" = alloca { i1, i1 }, align 8
+  %"164_0" = alloca { i1, i1 }, align 8
+  %"163_0" = alloca { i1, i1 }, align 8
+  %"094" = alloca i1, align 1
+  %"166_0" = alloca i1, align 1
+  %"168_0" = alloca i1, align 1
+  %"168_1" = alloca i1, align 1
+  %"171_0" = alloca i1, align 1
+  %"173_0" = alloca i1, align 1
+  %"173_1" = alloca i1, align 1
+  %"170_0" = alloca { i1, i1 }, align 8
+  %"169_0" = alloca { i1, i1 }, align 8
+  %"25_0" = alloca i1, align 1
+  %"175_0" = alloca { i1, i1 }, align 8
+  %"177_0" = alloca i1, align 1
+  %"0106" = alloca i1, align 1
+  %"0108" = alloca i1, align 1
+  %"180_0" = alloca i1, align 1
+  %"0111" = alloca i1, align 1
+  %"182_0" = alloca i1, align 1
+  %"184_0" = alloca i1, align 1
+  %"0119" = alloca { i1, { i1, i1 }, { i1, i1 } }, align 8
+  %"0121" = alloca { i1, i1 }, align 8
+  %"1122" = alloca { i1, i1 }, align 8
   %"28_0" = alloca { i1, i1 }, align 8
   %"28_1" = alloca { i1, i1 }, align 8
   %"30_0" = alloca { i1, { i1, i1 }, { i1, i1 } }, align 8
-  %"0134" = alloca { i1, i1 }, align 8
-  %"1135" = alloca { i1, i1 }, align 8
+  %"0128" = alloca { i1, i1 }, align 8
+  %"1129" = alloca { i1, i1 }, align 8
   %"32_0" = alloca { i1, i1 }, align 8
   %"32_1" = alloca { i1, i1 }, align 8
-  %"0139" = alloca i1, align 1
-  %"188_0" = alloca i1, align 1
-  %"0141" = alloca i1, align 1
-  %"190_0" = alloca i1, align 1
+  %"0133" = alloca i1, align 1
+  %"211_0" = alloca i1, align 1
+  %"0135" = alloca i1, align 1
+  %"213_0" = alloca i1, align 1
   %"34_0" = alloca { i1, { i1, i1 }, { i1, i1 } }, align 8
-  %"39_0" = alloca {}, align 8
+  %"217_0" = alloca {}, align 8
   %"38_0" = alloca { i1, i1 }, align 8
-  %"162_0" = alloca %Qubit*, align 8
-  %"164_0" = alloca i1, align 1
-  %"165_0" = alloca { i1, i1 }, align 8
-  %"45_0" = alloca {}, align 8
+  %"185_0" = alloca ptr, align 8
+  %"187_0" = alloca i1, align 1
+  %"188_0" = alloca { i1, i1 }, align 8
+  %"219_0" = alloca {}, align 8
   %"43_0" = alloca { i1, i1 }, align 8
-  %"49_0" = alloca {}, align 8
-  %"53_0" = alloca {}, align 8
-  %"63_0" = alloca {}, align 8
-  %"62_0" = alloca {}, align 8
+  %"221_0" = alloca {}, align 8
+  %"223_0" = alloca {}, align 8
+  %"225_0" = alloca {}, align 8
   %"60_0" = alloca i1, align 1
-  %"176_0" = alloca { i1, i1 }, align 8
-  %"178_0" = alloca i1, align 1
-  %"0187" = alloca i1, align 1
-  %"0189" = alloca i1, align 1
-  %"181_0" = alloca i1, align 1
-  %"0192" = alloca i1, align 1
-  %"183_0" = alloca i1, align 1
-  %"185_0" = alloca i1, align 1
-  %"59_0" = alloca {}, align 8
+  %"199_0" = alloca { i1, i1 }, align 8
+  %"201_0" = alloca i1, align 1
+  %"0181" = alloca i1, align 1
+  %"0183" = alloca i1, align 1
+  %"204_0" = alloca i1, align 1
+  %"227_0" = alloca i1, align 1
+  %"0186" = alloca i1, align 1
+  %"206_0" = alloca i1, align 1
+  %"208_0" = alloca i1, align 1
   %"57_0" = alloca i1, align 1
-  %"166_0" = alloca { i1, i1 }, align 8
-  %"168_0" = alloca i1, align 1
-  %"0199" = alloca i1, align 1
-  %"0201" = alloca i1, align 1
-  %"171_0" = alloca i1, align 1
-  %"0204" = alloca i1, align 1
-  %"173_0" = alloca i1, align 1
-  %"175_0" = alloca i1, align 1
+  %"189_0" = alloca { i1, i1 }, align 8
+  %"191_0" = alloca i1, align 1
+  %"0193" = alloca i1, align 1
+  %"0195" = alloca i1, align 1
+  %"194_0" = alloca i1, align 1
+  %"0198" = alloca i1, align 1
+  %"196_0" = alloca i1, align 1
+  %"198_0" = alloca i1, align 1
   br label %entry_block
 
 entry_block:                                      ; preds = %alloca_block
   br label %bb
 
 bb:                                               ; preds = %entry_block
-  store { i1, i1 } zeroinitializer, { i1, i1 }* %"15_0", align 1
-  %"15_01" = load { i1, i1 }, { i1, i1 }* %"15_0", align 1
-  %0 = extractvalue { i1, i1 } %"15_01", 0
+  %0 = insertvalue { i1, ptr } { i1 true, ptr poison }, ptr null, 1
+  store { i1, ptr } %0, ptr %"139_0", align 8
+  %"139_01" = load { i1, ptr }, ptr %"139_0", align 8
+  %1 = extractvalue { i1, ptr } %"139_01", 0
   br label %LeafBlock
 
 LeafBlock:                                        ; preds = %bb
-  %SwitchLeaf = icmp eq i1 %0, true
-  br i1 %SwitchLeaf, label %bb1, label %NewDefault
+  %SwitchLeaf = icmp eq i1 %1, true
+  br i1 %SwitchLeaf, label %bb1, label %bb0
 
-NewDefault:                                       ; preds = %LeafBlock
-  br label %bb0
-
-bb0:                                              ; preds = %NewDefault
-  %1 = extractvalue { i1, i1 } %"15_01", 1
-  store i1 %1, i1* %"0", align 1
-  br label %cond_114_case_0
+bb0:                                              ; preds = %LeafBlock
+  br label %cond_138_case_0
 
 bb1:                                              ; preds = %LeafBlock
-  %2 = extractvalue { i1, i1 } %"15_01", 1
-  store i1 %2, i1* %"03", align 1
-  br label %cond_114_case_1
+  %2 = extractvalue { i1, ptr } %"139_01", 1
+  store ptr %2, ptr %"05", align 8
+  br label %cond_138_case_1
 
-bb2:                                              ; preds = %bb26
-  %"20_076" = load { i1, i1 }, { i1, i1 }* %"20_0", align 1
-  %"20_177" = load %Qubit*, %Qubit** %"20_1", align 8
-  store { i1, i1 } %"20_076", { i1, i1 }* %"20_0", align 1
-  store %Qubit* %"20_177", %Qubit** %"20_1", align 8
-  store {} undef, {}* %"23_0", align 1
-  %"20_178" = load %Qubit*, %Qubit** %"20_1", align 8
-  store %Qubit* %"20_178", %Qubit** %"235_0", align 8
-  store double 0xBFF921FB54442D18, double* %"242_0", align 8
-  store double 0x3FF921FB54442D18, double* %"240_0", align 8
-  %"235_079" = load %Qubit*, %Qubit** %"235_0", align 8
-  %"240_080" = load double, double* %"240_0", align 8
-  %"242_081" = load double, double* %"242_0", align 8
-  call void @__quantum__qis__phasedx__body(double %"240_080", double %"242_081", %Qubit* %"235_079")
-  store %Qubit* %"235_079", %Qubit** %"243_0", align 8
-  store double 0x400921FB54442D18, double* %"238_0", align 8
-  %"243_082" = load %Qubit*, %Qubit** %"243_0", align 8
-  %"238_083" = load double, double* %"238_0", align 8
-  call void @__quantum__qis__rz__body(double %"238_083", %Qubit* %"243_082")
-  store %Qubit* %"243_082", %Qubit** %"244_0", align 8
-  %"244_084" = load %Qubit*, %Qubit** %"244_0", align 8
-  store %Qubit* %"244_084", %Qubit** %"22_0", align 8
-  %"22_085" = load %Qubit*, %Qubit** %"22_0", align 8
-  store %Qubit* %"22_085", %Qubit** %"133_0", align 8
-  %"133_086" = load %Qubit*, %Qubit** %"133_0", align 8
-  call void @__quantum__qis__mz__body(%Qubit* %"133_086", %Result* null)
-  %3 = call i1 @__quantum__rt__read_result(%Result* null)
+bb2:                                              ; preds = %bb24
+  %"20_070" = load { i1, i1 }, ptr %"20_0", align 1
+  %"20_171" = load ptr, ptr %"20_1", align 8
+  store { i1, i1 } %"20_070", ptr %"20_0", align 1
+  store ptr %"20_171", ptr %"20_1", align 8
+  %"20_172" = load ptr, ptr %"20_1", align 8
+  store ptr %"20_172", ptr %"248_0", align 8
+  store double 0xBFF921FB54442D18, ptr %"255_0", align 8
+  store double 0x3FF921FB54442D18, ptr %"253_0", align 8
+  %"248_073" = load ptr, ptr %"248_0", align 8
+  %"253_074" = load double, ptr %"253_0", align 8
+  %"255_075" = load double, ptr %"255_0", align 8
+  call void @__quantum__qis__phasedx__body(double %"253_074", double %"255_075", ptr %"248_073")
+  store ptr %"248_073", ptr %"256_0", align 8
+  store double 0x400921FB54442D18, ptr %"251_0", align 8
+  %"256_076" = load ptr, ptr %"256_0", align 8
+  %"251_077" = load double, ptr %"251_0", align 8
+  call void @__quantum__qis__rz__body(double %"251_077", ptr %"256_076")
+  store ptr %"256_076", ptr %"257_0", align 8
+  %"257_078" = load ptr, ptr %"257_0", align 8
+  store ptr %"257_078", ptr %"22_0", align 8
+  %"22_079" = load ptr, ptr %"22_0", align 8
+  store ptr %"22_079", ptr %"156_0", align 8
+  %"156_080" = load ptr, ptr %"156_0", align 8
+  call void @__quantum__qis__mz__body(ptr %"156_080", ptr null)
+  %3 = call i1 @__quantum__rt__read_result(ptr null)
   %4 = select i1 %3, i1 true, i1 false
-  store i1 %4, i1* %"135_0", align 1
-  %"135_087" = load i1, i1* %"135_0", align 1
-  %5 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"135_087", 1
-  store { i1, i1 } %5, { i1, i1 }* %"136_0", align 1
-  %"136_088" = load { i1, i1 }, { i1, i1 }* %"136_0", align 1
-  store { i1, i1 } %"136_088", { i1, i1 }* %"24_0", align 1
-  %"24_089" = load { i1, i1 }, { i1, i1 }* %"24_0", align 1
-  %6 = extractvalue { i1, i1 } %"24_089", 0
-  br label %LeafBlock214
+  store i1 %4, ptr %"158_0", align 1
+  %"158_081" = load i1, ptr %"158_0", align 1
+  %5 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"158_081", 1
+  store { i1, i1 } %5, ptr %"159_0", align 1
+  %"159_082" = load { i1, i1 }, ptr %"159_0", align 1
+  store { i1, i1 } %"159_082", ptr %"24_0", align 1
+  %"24_083" = load { i1, i1 }, ptr %"24_0", align 1
+  %6 = extractvalue { i1, i1 } %"24_083", 0
+  br label %LeafBlock207
 
-LeafBlock214:                                     ; preds = %bb2
-  %SwitchLeaf215 = icmp eq i1 %6, true
-  br i1 %SwitchLeaf215, label %bb4, label %NewDefault213
+LeafBlock207:                                     ; preds = %bb2
+  %SwitchLeaf208 = icmp eq i1 %6, true
+  br i1 %SwitchLeaf208, label %bb4, label %bb3
 
-NewDefault213:                                    ; preds = %LeafBlock214
-  br label %bb3
-
-bb3:                                              ; preds = %NewDefault213
-  %7 = extractvalue { i1, i1 } %"24_089", 1
-  store i1 %7, i1* %"094", align 1
+bb3:                                              ; preds = %LeafBlock207
+  %7 = extractvalue { i1, i1 } %"24_083", 1
+  store i1 %7, ptr %"088", align 1
   br label %cond_64_case_0
 
-bb4:                                              ; preds = %LeafBlock214
-  %8 = extractvalue { i1, i1 } %"24_089", 1
-  store i1 %8, i1* %"0100", align 1
+bb4:                                              ; preds = %LeafBlock207
+  %8 = extractvalue { i1, i1 } %"24_083", 1
+  store i1 %8, ptr %"094", align 1
   br label %cond_64_case_1
 
-bb5:                                              ; preds = %bb25
-  %"36_0148" = load { i1, i1 }, { i1, i1 }* %"36_0", align 1
-  %"36_1149" = load %Qubit*, %Qubit** %"36_1", align 8
-  store { i1, i1 } %"36_0148", { i1, i1 }* %"36_0", align 1
-  store %Qubit* %"36_1149", %Qubit** %"36_1", align 8
-  store {} undef, {}* %"39_0", align 1
-  %"36_1150" = load %Qubit*, %Qubit** %"36_1", align 8
-  store %Qubit* %"36_1150", %Qubit** %"162_0", align 8
-  %"162_0151" = load %Qubit*, %Qubit** %"162_0", align 8
-  call void @__quantum__qis__mz__body(%Qubit* %"162_0151", %Result* inttoptr (i64 1 to %Result*))
-  %9 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 1 to %Result*))
+bb5:                                              ; preds = %bb23
+  %"36_0142" = load { i1, i1 }, ptr %"36_0", align 1
+  %"36_1143" = load ptr, ptr %"36_1", align 8
+  store { i1, i1 } %"36_0142", ptr %"36_0", align 1
+  store ptr %"36_1143", ptr %"36_1", align 8
+  store {} undef, ptr %"217_0", align 1
+  %"36_1144" = load ptr, ptr %"36_1", align 8
+  store ptr %"36_1144", ptr %"185_0", align 8
+  %"185_0145" = load ptr, ptr %"185_0", align 8
+  call void @__quantum__qis__mz__body(ptr %"185_0145", ptr inttoptr (i64 1 to ptr))
+  %9 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 1 to ptr))
   %10 = select i1 %9, i1 true, i1 false
-  store i1 %10, i1* %"164_0", align 1
-  %"164_0152" = load i1, i1* %"164_0", align 1
-  %11 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"164_0152", 1
-  store { i1, i1 } %11, { i1, i1 }* %"165_0", align 1
-  %"165_0153" = load { i1, i1 }, { i1, i1 }* %"165_0", align 1
-  store { i1, i1 } %"165_0153", { i1, i1 }* %"38_0", align 1
-  %"39_0154" = load {}, {}* %"39_0", align 1
-  %"36_0155" = load { i1, i1 }, { i1, i1 }* %"36_0", align 1
-  %"38_0156" = load { i1, i1 }, { i1, i1 }* %"38_0", align 1
-  store {} %"39_0154", {}* %"39_0", align 1
-  store { i1, i1 } %"36_0155", { i1, i1 }* %"36_0", align 1
-  store { i1, i1 } %"38_0156", { i1, i1 }* %"38_0", align 1
-  %"39_0157" = load {}, {}* %"39_0", align 1
-  %"36_0158" = load { i1, i1 }, { i1, i1 }* %"36_0", align 1
-  %"38_0159" = load { i1, i1 }, { i1, i1 }* %"38_0", align 1
+  store i1 %10, ptr %"187_0", align 1
+  %"187_0146" = load i1, ptr %"187_0", align 1
+  %11 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"187_0146", 1
+  store { i1, i1 } %11, ptr %"188_0", align 1
+  %"188_0147" = load { i1, i1 }, ptr %"188_0", align 1
+  store { i1, i1 } %"188_0147", ptr %"38_0", align 1
+  %"217_0148" = load {}, ptr %"217_0", align 1
+  %"36_0149" = load { i1, i1 }, ptr %"36_0", align 1
+  %"38_0150" = load { i1, i1 }, ptr %"38_0", align 1
+  store {} %"217_0148", ptr %"217_0", align 1
+  store { i1, i1 } %"36_0149", ptr %"36_0", align 1
+  store { i1, i1 } %"38_0150", ptr %"38_0", align 1
+  %"217_0151" = load {}, ptr %"217_0", align 1
+  %"36_0152" = load { i1, i1 }, ptr %"36_0", align 1
+  %"38_0153" = load { i1, i1 }, ptr %"38_0", align 1
   br label %bb6
 
 bb6:                                              ; preds = %bb5
-  store { i1, i1 } %"36_0158", { i1, i1 }* %"55_0", align 1
-  store { i1, i1 } %"38_0159", { i1, i1 }* %"55_1", align 1
+  store { i1, i1 } %"36_0152", ptr %"55_0", align 1
+  store { i1, i1 } %"38_0153", ptr %"55_1", align 1
   br label %bb13
 
-bb7:                                              ; preds = %bb34
-  %"41_0160" = load { i1, i1 }, { i1, i1 }* %"41_0", align 1
-  store { i1, i1 } %"41_0160", { i1, i1 }* %"41_0", align 1
-  store {} undef, {}* %"45_0", align 1
-  store { i1, i1 } zeroinitializer, { i1, i1 }* %"43_0", align 1
-  %"45_0161" = load {}, {}* %"45_0", align 1
-  %"41_0162" = load { i1, i1 }, { i1, i1 }* %"41_0", align 1
-  %"43_0163" = load { i1, i1 }, { i1, i1 }* %"43_0", align 1
-  store {} %"45_0161", {}* %"45_0", align 1
-  store { i1, i1 } %"41_0162", { i1, i1 }* %"41_0", align 1
-  store { i1, i1 } %"43_0163", { i1, i1 }* %"43_0", align 1
-  %"45_0164" = load {}, {}* %"45_0", align 1
-  %"41_0165" = load { i1, i1 }, { i1, i1 }* %"41_0", align 1
-  %"43_0166" = load { i1, i1 }, { i1, i1 }* %"43_0", align 1
+bb7:                                              ; preds = %bb32
+  %"41_0154" = load { i1, i1 }, ptr %"41_0", align 1
+  store { i1, i1 } %"41_0154", ptr %"41_0", align 1
+  store {} undef, ptr %"219_0", align 1
+  store { i1, i1 } zeroinitializer, ptr %"43_0", align 1
+  %"219_0155" = load {}, ptr %"219_0", align 1
+  %"41_0156" = load { i1, i1 }, ptr %"41_0", align 1
+  %"43_0157" = load { i1, i1 }, ptr %"43_0", align 1
+  store {} %"219_0155", ptr %"219_0", align 1
+  store { i1, i1 } %"41_0156", ptr %"41_0", align 1
+  store { i1, i1 } %"43_0157", ptr %"43_0", align 1
+  %"219_0158" = load {}, ptr %"219_0", align 1
+  %"41_0159" = load { i1, i1 }, ptr %"41_0", align 1
+  %"43_0160" = load { i1, i1 }, ptr %"43_0", align 1
   br label %bb8
 
 bb8:                                              ; preds = %bb7
-  store { i1, i1 } %"41_0165", { i1, i1 }* %"51_0", align 1
-  store { i1, i1 } %"43_0166", { i1, i1 }* %"51_1", align 1
+  store { i1, i1 } %"41_0159", ptr %"51_0", align 1
+  store { i1, i1 } %"43_0160", ptr %"51_1", align 1
   br label %bb11
 
-bb9:                                              ; preds = %bb33
-  %"47_0167" = load { i1, i1 }, { i1, i1 }* %"47_0", align 1
-  %"47_1168" = load { i1, i1 }, { i1, i1 }* %"47_1", align 1
-  store { i1, i1 } %"47_0167", { i1, i1 }* %"47_0", align 1
-  store { i1, i1 } %"47_1168", { i1, i1 }* %"47_1", align 1
-  store {} undef, {}* %"49_0", align 1
-  %"49_0169" = load {}, {}* %"49_0", align 1
-  %"47_0170" = load { i1, i1 }, { i1, i1 }* %"47_0", align 1
-  %"47_1171" = load { i1, i1 }, { i1, i1 }* %"47_1", align 1
-  store {} %"49_0169", {}* %"49_0", align 1
-  store { i1, i1 } %"47_0170", { i1, i1 }* %"47_0", align 1
-  store { i1, i1 } %"47_1171", { i1, i1 }* %"47_1", align 1
-  %"49_0172" = load {}, {}* %"49_0", align 1
-  %"47_0173" = load { i1, i1 }, { i1, i1 }* %"47_0", align 1
-  %"47_1174" = load { i1, i1 }, { i1, i1 }* %"47_1", align 1
+bb9:                                              ; preds = %bb31
+  %"47_0161" = load { i1, i1 }, ptr %"47_0", align 1
+  %"47_1162" = load { i1, i1 }, ptr %"47_1", align 1
+  store { i1, i1 } %"47_0161", ptr %"47_0", align 1
+  store { i1, i1 } %"47_1162", ptr %"47_1", align 1
+  store {} undef, ptr %"221_0", align 1
+  %"221_0163" = load {}, ptr %"221_0", align 1
+  %"47_0164" = load { i1, i1 }, ptr %"47_0", align 1
+  %"47_1165" = load { i1, i1 }, ptr %"47_1", align 1
+  store {} %"221_0163", ptr %"221_0", align 1
+  store { i1, i1 } %"47_0164", ptr %"47_0", align 1
+  store { i1, i1 } %"47_1165", ptr %"47_1", align 1
+  %"221_0166" = load {}, ptr %"221_0", align 1
+  %"47_0167" = load { i1, i1 }, ptr %"47_0", align 1
+  %"47_1168" = load { i1, i1 }, ptr %"47_1", align 1
   br label %bb10
 
 bb10:                                             ; preds = %bb9
-  store { i1, i1 } %"47_0173", { i1, i1 }* %"51_0", align 1
-  store { i1, i1 } %"47_1174", { i1, i1 }* %"51_1", align 1
+  store { i1, i1 } %"47_0167", ptr %"51_0", align 1
+  store { i1, i1 } %"47_1168", ptr %"51_1", align 1
   br label %bb11
 
 bb11:                                             ; preds = %bb10, %bb8
-  %"51_0175" = load { i1, i1 }, { i1, i1 }* %"51_0", align 1
-  %"51_1176" = load { i1, i1 }, { i1, i1 }* %"51_1", align 1
-  store { i1, i1 } %"51_0175", { i1, i1 }* %"51_0", align 1
-  store { i1, i1 } %"51_1176", { i1, i1 }* %"51_1", align 1
-  store {} undef, {}* %"53_0", align 1
-  %"53_0177" = load {}, {}* %"53_0", align 1
-  %"51_0178" = load { i1, i1 }, { i1, i1 }* %"51_0", align 1
-  %"51_1179" = load { i1, i1 }, { i1, i1 }* %"51_1", align 1
-  store {} %"53_0177", {}* %"53_0", align 1
-  store { i1, i1 } %"51_0178", { i1, i1 }* %"51_0", align 1
-  store { i1, i1 } %"51_1179", { i1, i1 }* %"51_1", align 1
-  %"53_0180" = load {}, {}* %"53_0", align 1
-  %"51_0181" = load { i1, i1 }, { i1, i1 }* %"51_0", align 1
-  %"51_1182" = load { i1, i1 }, { i1, i1 }* %"51_1", align 1
+  %"51_0169" = load { i1, i1 }, ptr %"51_0", align 1
+  %"51_1170" = load { i1, i1 }, ptr %"51_1", align 1
+  store { i1, i1 } %"51_0169", ptr %"51_0", align 1
+  store { i1, i1 } %"51_1170", ptr %"51_1", align 1
+  store {} undef, ptr %"223_0", align 1
+  %"223_0171" = load {}, ptr %"223_0", align 1
+  %"51_0172" = load { i1, i1 }, ptr %"51_0", align 1
+  %"51_1173" = load { i1, i1 }, ptr %"51_1", align 1
+  store {} %"223_0171", ptr %"223_0", align 1
+  store { i1, i1 } %"51_0172", ptr %"51_0", align 1
+  store { i1, i1 } %"51_1173", ptr %"51_1", align 1
+  %"223_0174" = load {}, ptr %"223_0", align 1
+  %"51_0175" = load { i1, i1 }, ptr %"51_0", align 1
+  %"51_1176" = load { i1, i1 }, ptr %"51_1", align 1
   br label %bb12
 
 bb12:                                             ; preds = %bb11
-  store { i1, i1 } %"51_0181", { i1, i1 }* %"55_0", align 1
-  store { i1, i1 } %"51_1182", { i1, i1 }* %"55_1", align 1
+  store { i1, i1 } %"51_0175", ptr %"55_0", align 1
+  store { i1, i1 } %"51_1176", ptr %"55_1", align 1
   br label %bb13
 
 bb13:                                             ; preds = %bb12, %bb6
-  %"55_0183" = load { i1, i1 }, { i1, i1 }* %"55_0", align 1
-  %"55_1184" = load { i1, i1 }, { i1, i1 }* %"55_1", align 1
-  store { i1, i1 } %"55_0183", { i1, i1 }* %"55_0", align 1
-  store { i1, i1 } %"55_1184", { i1, i1 }* %"55_1", align 1
-  store {} undef, {}* %"63_0", align 1
-  store {} undef, {}* %"62_0", align 1
-  %"55_1185" = load { i1, i1 }, { i1, i1 }* %"55_1", align 1
-  store { i1, i1 } %"55_1185", { i1, i1 }* %"176_0", align 1
-  %"176_0186" = load { i1, i1 }, { i1, i1 }* %"176_0", align 1
-  %12 = extractvalue { i1, i1 } %"176_0186", 0
-  br label %LeafBlock217
+  %"55_0177" = load { i1, i1 }, ptr %"55_0", align 1
+  %"55_1178" = load { i1, i1 }, ptr %"55_1", align 1
+  store { i1, i1 } %"55_0177", ptr %"55_0", align 1
+  store { i1, i1 } %"55_1178", ptr %"55_1", align 1
+  store {} undef, ptr %"225_0", align 1
+  %"55_1179" = load { i1, i1 }, ptr %"55_1", align 1
+  store { i1, i1 } %"55_1179", ptr %"199_0", align 1
+  %"199_0180" = load { i1, i1 }, ptr %"199_0", align 1
+  %12 = extractvalue { i1, i1 } %"199_0180", 0
+  br label %LeafBlock209
 
-LeafBlock217:                                     ; preds = %bb13
-  %SwitchLeaf218 = icmp eq i1 %12, true
-  br i1 %SwitchLeaf218, label %bb15, label %NewDefault216
+LeafBlock209:                                     ; preds = %bb13
+  %SwitchLeaf210 = icmp eq i1 %12, true
+  br i1 %SwitchLeaf210, label %bb15, label %bb14
 
-NewDefault216:                                    ; preds = %LeafBlock217
-  br label %bb14
+bb14:                                             ; preds = %LeafBlock209
+  %13 = extractvalue { i1, i1 } %"199_0180", 1
+  store i1 %13, ptr %"0183", align 1
+  br label %cond_201_case_0
 
-bb14:                                             ; preds = %NewDefault216
-  %13 = extractvalue { i1, i1 } %"176_0186", 1
-  store i1 %13, i1* %"0189", align 1
-  br label %cond_178_case_0
+bb15:                                             ; preds = %LeafBlock209
+  %14 = extractvalue { i1, i1 } %"199_0180", 1
+  store i1 %14, ptr %"0186", align 1
+  br label %cond_201_case_1
 
-bb15:                                             ; preds = %LeafBlock217
-  %14 = extractvalue { i1, i1 } %"176_0186", 1
-  store i1 %14, i1* %"0192", align 1
-  br label %cond_178_case_1
-
-bb16:                                             ; preds = %bb37
+bb16:                                             ; preds = %bb35
   ret void
 
-cond_114_case_0:                                  ; preds = %bb0
-  %"02" = load i1, i1* %"0", align 1
-  store i1 %"02", i1* %"117_0", align 1
-  br label %cond_exit_114
-
-cond_114_case_1:                                  ; preds = %bb1
-  %"04" = load i1, i1* %"03", align 1
-  store i1 %"04", i1* %"119_0", align 1
-  %"119_05" = load i1, i1* %"119_0", align 1
-  br label %cond_exit_114
-
-cond_exit_114:                                    ; preds = %cond_114_case_1, %cond_114_case_0
-  store {} undef, {}* %"13_0", align 1
-  %15 = insertvalue { i1, %Qubit* } { i1 true, %Qubit* poison }, %Qubit* null, 1
-  store { i1, %Qubit* } %15, { i1, %Qubit* }* %"201_0", align 8
-  %"201_06" = load { i1, %Qubit* }, { i1, %Qubit* }* %"201_0", align 8
-  %16 = extractvalue { i1, %Qubit* } %"201_06", 0
-  br label %LeafBlock220
-
-LeafBlock220:                                     ; preds = %cond_exit_114
-  %SwitchLeaf221 = icmp eq i1 %16, true
-  br i1 %SwitchLeaf221, label %bb18, label %NewDefault219
-
-NewDefault219:                                    ; preds = %LeafBlock220
-  br label %bb17
-
-bb17:                                             ; preds = %NewDefault219
-  br label %cond_202_case_0
-
-bb18:                                             ; preds = %LeafBlock220
-  %17 = extractvalue { i1, %Qubit* } %"201_06", 1
-  store %Qubit* %17, %Qubit** %"011", align 8
-  br label %cond_202_case_1
-
-cond_202_case_0:                                  ; preds = %bb17
-  store { i32, i8* } { i32 1, i8* getelementptr inbounds ([38 x i8], [38 x i8]* @0, i32 0, i32 0) }, { i32, i8* }* %"208_0", align 8
-  %"208_09" = load { i32, i8* }, { i32, i8* }* %"208_0", align 8
+cond_138_case_0:                                  ; preds = %bb0
+  store { i32, ptr } { i32 1, ptr @0 }, ptr %"45_0", align 8
+  %"45_03" = load { i32, ptr }, ptr %"45_0", align 8
   call void @abort()
-  store %Qubit* null, %Qubit** %"209_0", align 8
-  %"209_010" = load %Qubit*, %Qubit** %"209_0", align 8
-  store %Qubit* %"209_010", %Qubit** %"07", align 8
-  br label %cond_exit_202
+  store ptr null, ptr %"39_0", align 8
+  %"39_04" = load ptr, ptr %"39_0", align 8
+  store ptr %"39_04", ptr %"0", align 8
+  br label %cond_exit_138
 
-cond_202_case_1:                                  ; preds = %bb18
-  %"012" = load %Qubit*, %Qubit** %"011", align 8
-  store %Qubit* %"012", %Qubit** %"210_0", align 8
-  %"210_013" = load %Qubit*, %Qubit** %"210_0", align 8
-  store %Qubit* %"210_013", %Qubit** %"07", align 8
-  br label %cond_exit_202
+cond_138_case_1:                                  ; preds = %bb1
+  %"06" = load ptr, ptr %"05", align 8
+  store ptr %"06", ptr %"23_0", align 8
+  %"23_07" = load ptr, ptr %"23_0", align 8
+  store ptr %"23_07", ptr %"0", align 8
+  br label %cond_exit_138
 
-cond_exit_202:                                    ; preds = %cond_202_case_1, %cond_202_case_0
-  %"08" = load %Qubit*, %Qubit** %"07", align 8
-  store %Qubit* %"08", %Qubit** %"202_0", align 8
-  %"202_014" = load %Qubit*, %Qubit** %"202_0", align 8
-  store %Qubit* %"202_014", %Qubit** %"8_0", align 8
-  %18 = insertvalue { i1, %Qubit* } { i1 true, %Qubit* poison }, %Qubit* inttoptr (i64 1 to %Qubit*), 1
-  store { i1, %Qubit* } %18, { i1, %Qubit* }* %"214_0", align 8
-  %"214_015" = load { i1, %Qubit* }, { i1, %Qubit* }* %"214_0", align 8
-  %19 = extractvalue { i1, %Qubit* } %"214_015", 0
-  br label %LeafBlock223
+cond_exit_138:                                    ; preds = %cond_138_case_1, %cond_138_case_0
+  %"02" = load ptr, ptr %"0", align 8
+  store ptr %"02", ptr %"138_0", align 8
+  %"138_08" = load ptr, ptr %"138_0", align 8
+  store ptr %"138_08", ptr %"8_0", align 8
+  %15 = insertvalue { i1, ptr } { i1 true, ptr poison }, ptr inttoptr (i64 1 to ptr), 1
+  store { i1, ptr } %15, ptr %"13_0", align 8
+  %"13_09" = load { i1, ptr }, ptr %"13_0", align 8
+  %16 = extractvalue { i1, ptr } %"13_09", 0
+  br label %LeafBlock211
 
-LeafBlock223:                                     ; preds = %cond_exit_202
-  %SwitchLeaf224 = icmp eq i1 %19, true
-  br i1 %SwitchLeaf224, label %bb20, label %NewDefault222
+LeafBlock211:                                     ; preds = %cond_exit_138
+  %SwitchLeaf212 = icmp eq i1 %16, true
+  br i1 %SwitchLeaf212, label %bb18, label %bb17
 
-NewDefault222:                                    ; preds = %LeafBlock223
-  br label %bb19
+bb17:                                             ; preds = %LeafBlock211
+  br label %cond_228_case_0
 
-bb19:                                             ; preds = %NewDefault222
-  br label %cond_215_case_0
+bb18:                                             ; preds = %LeafBlock211
+  %17 = extractvalue { i1, ptr } %"13_09", 1
+  store ptr %17, ptr %"014", align 8
+  br label %cond_228_case_1
 
-bb20:                                             ; preds = %LeafBlock223
-  %20 = extractvalue { i1, %Qubit* } %"214_015", 1
-  store %Qubit* %20, %Qubit** %"020", align 8
-  br label %cond_215_case_1
-
-cond_215_case_0:                                  ; preds = %bb19
-  store { i32, i8* } { i32 1, i8* getelementptr inbounds ([38 x i8], [38 x i8]* @1, i32 0, i32 0) }, { i32, i8* }* %"221_0", align 8
-  %"221_018" = load { i32, i8* }, { i32, i8* }* %"221_0", align 8
+cond_228_case_0:                                  ; preds = %bb17
+  store { i32, ptr } { i32 1, ptr @1 }, ptr %"234_0", align 8
+  %"234_012" = load { i32, ptr }, ptr %"234_0", align 8
   call void @abort()
-  store %Qubit* null, %Qubit** %"222_0", align 8
-  %"222_019" = load %Qubit*, %Qubit** %"222_0", align 8
-  store %Qubit* %"222_019", %Qubit** %"016", align 8
-  br label %cond_exit_215
+  store ptr null, ptr %"235_0", align 8
+  %"235_013" = load ptr, ptr %"235_0", align 8
+  store ptr %"235_013", ptr %"010", align 8
+  br label %cond_exit_228
 
-cond_215_case_1:                                  ; preds = %bb20
-  %"021" = load %Qubit*, %Qubit** %"020", align 8
-  store %Qubit* %"021", %Qubit** %"223_0", align 8
-  %"223_022" = load %Qubit*, %Qubit** %"223_0", align 8
-  store %Qubit* %"223_022", %Qubit** %"016", align 8
-  br label %cond_exit_215
+cond_228_case_1:                                  ; preds = %bb18
+  %"015" = load ptr, ptr %"014", align 8
+  store ptr %"015", ptr %"236_0", align 8
+  %"236_016" = load ptr, ptr %"236_0", align 8
+  store ptr %"236_016", ptr %"010", align 8
+  br label %cond_exit_228
 
-cond_exit_215:                                    ; preds = %cond_215_case_1, %cond_215_case_0
-  %"017" = load %Qubit*, %Qubit** %"016", align 8
-  store %Qubit* %"017", %Qubit** %"215_0", align 8
-  %"215_023" = load %Qubit*, %Qubit** %"215_0", align 8
-  store %Qubit* %"215_023", %Qubit** %"9_0", align 8
-  %"8_024" = load %Qubit*, %Qubit** %"8_0", align 8
-  %"9_025" = load %Qubit*, %Qubit** %"9_0", align 8
-  %21 = insertvalue { %Qubit*, %Qubit* } poison, %Qubit* %"8_024", 0
-  %22 = insertvalue { %Qubit*, %Qubit* } %21, %Qubit* %"9_025", 1
-  store { %Qubit*, %Qubit* } %22, { %Qubit*, %Qubit* }* %"10_0", align 8
-  %"10_026" = load { %Qubit*, %Qubit* }, { %Qubit*, %Qubit* }* %"10_0", align 8
-  %23 = extractvalue { %Qubit*, %Qubit* } %"10_026", 0
-  %24 = extractvalue { %Qubit*, %Qubit* } %"10_026", 1
-  store %Qubit* %23, %Qubit** %"11_0", align 8
-  store %Qubit* %24, %Qubit** %"11_1", align 8
-  %"11_027" = load %Qubit*, %Qubit** %"11_0", align 8
-  store %Qubit* %"11_027", %Qubit** %"225_0", align 8
-  store double 0xBFF921FB54442D18, double* %"232_0", align 8
-  store double 0x3FF921FB54442D18, double* %"230_0", align 8
-  %"225_028" = load %Qubit*, %Qubit** %"225_0", align 8
-  %"230_029" = load double, double* %"230_0", align 8
-  %"232_030" = load double, double* %"232_0", align 8
-  call void @__quantum__qis__phasedx__body(double %"230_029", double %"232_030", %Qubit* %"225_028")
-  store %Qubit* %"225_028", %Qubit** %"233_0", align 8
-  store double 0x400921FB54442D18, double* %"228_0", align 8
-  %"233_031" = load %Qubit*, %Qubit** %"233_0", align 8
-  %"228_032" = load double, double* %"228_0", align 8
-  call void @__quantum__qis__rz__body(double %"228_032", %Qubit* %"233_031")
-  store %Qubit* %"233_031", %Qubit** %"234_0", align 8
-  %"234_033" = load %Qubit*, %Qubit** %"234_0", align 8
-  store %Qubit* %"234_033", %Qubit** %"12_0", align 8
-  %"12_034" = load %Qubit*, %Qubit** %"12_0", align 8
-  store %Qubit* %"12_034", %Qubit** %"96_0", align 8
-  %"96_035" = load %Qubit*, %Qubit** %"96_0", align 8
-  call void @__quantum__qis__mz__body(%Qubit* %"96_035", %Result* inttoptr (i64 2 to %Result*))
-  %25 = call i1 @__quantum__rt__read_result(%Result* inttoptr (i64 2 to %Result*))
-  %26 = select i1 %25, i1 true, i1 false
-  store i1 %26, i1* %"98_0", align 1
-  %"98_036" = load i1, i1* %"98_0", align 1
-  %27 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"98_036", 1
-  store { i1, i1 } %27, { i1, i1 }* %"99_0", align 1
-  %"99_037" = load { i1, i1 }, { i1, i1 }* %"99_0", align 1
-  store { i1, i1 } %"99_037", { i1, i1 }* %"14_0", align 1
-  %"14_038" = load { i1, i1 }, { i1, i1 }* %"14_0", align 1
-  %28 = extractvalue { i1, i1 } %"14_038", 0
-  br label %LeafBlock226
+cond_exit_228:                                    ; preds = %cond_228_case_1, %cond_228_case_0
+  %"011" = load ptr, ptr %"010", align 8
+  store ptr %"011", ptr %"228_0", align 8
+  %"228_017" = load ptr, ptr %"228_0", align 8
+  store ptr %"228_017", ptr %"9_0", align 8
+  %"8_018" = load ptr, ptr %"8_0", align 8
+  %"9_019" = load ptr, ptr %"9_0", align 8
+  %18 = insertvalue { ptr, ptr } poison, ptr %"8_018", 0
+  %19 = insertvalue { ptr, ptr } %18, ptr %"9_019", 1
+  store { ptr, ptr } %19, ptr %"10_0", align 8
+  %"10_020" = load { ptr, ptr }, ptr %"10_0", align 8
+  %20 = extractvalue { ptr, ptr } %"10_020", 0
+  %21 = extractvalue { ptr, ptr } %"10_020", 1
+  store ptr %20, ptr %"11_0", align 8
+  store ptr %21, ptr %"11_1", align 8
+  %"11_021" = load ptr, ptr %"11_0", align 8
+  store ptr %"11_021", ptr %"238_0", align 8
+  store double 0xBFF921FB54442D18, ptr %"245_0", align 8
+  store double 0x3FF921FB54442D18, ptr %"243_0", align 8
+  %"238_022" = load ptr, ptr %"238_0", align 8
+  %"243_023" = load double, ptr %"243_0", align 8
+  %"245_024" = load double, ptr %"245_0", align 8
+  call void @__quantum__qis__phasedx__body(double %"243_023", double %"245_024", ptr %"238_022")
+  store ptr %"238_022", ptr %"246_0", align 8
+  store double 0x400921FB54442D18, ptr %"241_0", align 8
+  %"246_025" = load ptr, ptr %"246_0", align 8
+  %"241_026" = load double, ptr %"241_0", align 8
+  call void @__quantum__qis__rz__body(double %"241_026", ptr %"246_025")
+  store ptr %"246_025", ptr %"247_0", align 8
+  %"247_027" = load ptr, ptr %"247_0", align 8
+  store ptr %"247_027", ptr %"12_0", align 8
+  %"12_028" = load ptr, ptr %"12_0", align 8
+  store ptr %"12_028", ptr %"119_0", align 8
+  %"119_029" = load ptr, ptr %"119_0", align 8
+  call void @__quantum__qis__mz__body(ptr %"119_029", ptr inttoptr (i64 2 to ptr))
+  %22 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
+  %23 = select i1 %22, i1 true, i1 false
+  store i1 %23, ptr %"121_0", align 1
+  %"121_030" = load i1, ptr %"121_0", align 1
+  %24 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"121_030", 1
+  store { i1, i1 } %24, ptr %"122_0", align 1
+  %"122_031" = load { i1, i1 }, ptr %"122_0", align 1
+  store { i1, i1 } %"122_031", ptr %"14_0", align 1
+  %"14_032" = load { i1, i1 }, ptr %"14_0", align 1
+  %25 = extractvalue { i1, i1 } %"14_032", 0
+  br label %LeafBlock213
 
-LeafBlock226:                                     ; preds = %cond_exit_215
-  %SwitchLeaf227 = icmp eq i1 %28, true
-  br i1 %SwitchLeaf227, label %bb22, label %NewDefault225
+LeafBlock213:                                     ; preds = %cond_exit_228
+  %SwitchLeaf214 = icmp eq i1 %25, true
+  br i1 %SwitchLeaf214, label %bb20, label %bb19
 
-NewDefault225:                                    ; preds = %LeafBlock226
-  br label %bb21
-
-bb21:                                             ; preds = %NewDefault225
-  %29 = extractvalue { i1, i1 } %"14_038", 1
-  store i1 %29, i1* %"042", align 1
+bb19:                                             ; preds = %LeafBlock213
+  %26 = extractvalue { i1, i1 } %"14_032", 1
+  store i1 %26, ptr %"036", align 1
   br label %cond_65_case_0
 
-bb22:                                             ; preds = %LeafBlock226
-  %30 = extractvalue { i1, i1 } %"14_038", 1
-  store i1 %30, i1* %"048", align 1
+bb20:                                             ; preds = %LeafBlock213
+  %27 = extractvalue { i1, i1 } %"14_032", 1
+  store i1 %27, ptr %"042", align 1
   br label %cond_65_case_1
 
-cond_65_case_0:                                   ; preds = %bb21
-  %"043" = load i1, i1* %"042", align 1
-  store i1 %"043", i1* %"101_0", align 1
-  %"101_044" = load i1, i1* %"101_0", align 1
-  %31 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"101_044", 1
-  store { i1, i1 } %31, { i1, i1 }* %"104_0", align 1
-  %"101_045" = load i1, i1* %"101_0", align 1
-  %32 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"101_045", 1
-  store { i1, i1 } %32, { i1, i1 }* %"103_0", align 1
-  %"103_046" = load { i1, i1 }, { i1, i1 }* %"103_0", align 1
-  %"104_047" = load { i1, i1 }, { i1, i1 }* %"104_0", align 1
-  store { i1, i1 } %"103_046", { i1, i1 }* %"039", align 1
-  store { i1, i1 } %"104_047", { i1, i1 }* %"1", align 1
+cond_65_case_0:                                   ; preds = %bb19
+  %"037" = load i1, ptr %"036", align 1
+  store i1 %"037", ptr %"124_0", align 1
+  %"124_038" = load i1, ptr %"124_0", align 1
+  %28 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"124_038", 1
+  store { i1, i1 } %28, ptr %"127_0", align 1
+  %"124_039" = load i1, ptr %"124_0", align 1
+  %29 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"124_039", 1
+  store { i1, i1 } %29, ptr %"126_0", align 1
+  %"126_040" = load { i1, i1 }, ptr %"126_0", align 1
+  %"127_041" = load { i1, i1 }, ptr %"127_0", align 1
+  store { i1, i1 } %"126_040", ptr %"033", align 1
+  store { i1, i1 } %"127_041", ptr %"1", align 1
   br label %cond_exit_65
 
-cond_65_case_1:                                   ; preds = %bb22
-  %"049" = load i1, i1* %"048", align 1
-  store i1 %"049", i1* %"106_0", align 1
-  %"106_050" = load i1, i1* %"106_0", align 1
-  store i1 %"106_050", i1* %"111_0", align 1
-  %"111_051" = load i1, i1* %"111_0", align 1
-  store i1 %"111_051", i1* %"113_0", align 1
-  store i1 %"111_051", i1* %"113_1", align 1
-  %"113_052" = load i1, i1* %"113_0", align 1
-  %"113_153" = load i1, i1* %"113_1", align 1
-  store i1 %"113_052", i1* %"108_0", align 1
-  store i1 %"113_153", i1* %"108_1", align 1
-  %"108_154" = load i1, i1* %"108_1", align 1
-  %33 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"108_154", 1
-  store { i1, i1 } %33, { i1, i1 }* %"110_0", align 1
-  %"108_055" = load i1, i1* %"108_0", align 1
-  %34 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"108_055", 1
-  store { i1, i1 } %34, { i1, i1 }* %"109_0", align 1
-  %"109_056" = load { i1, i1 }, { i1, i1 }* %"109_0", align 1
-  %"110_057" = load { i1, i1 }, { i1, i1 }* %"110_0", align 1
-  store { i1, i1 } %"109_056", { i1, i1 }* %"039", align 1
-  store { i1, i1 } %"110_057", { i1, i1 }* %"1", align 1
+cond_65_case_1:                                   ; preds = %bb20
+  %"043" = load i1, ptr %"042", align 1
+  store i1 %"043", ptr %"129_0", align 1
+  %"129_044" = load i1, ptr %"129_0", align 1
+  store i1 %"129_044", ptr %"134_0", align 1
+  %"134_045" = load i1, ptr %"134_0", align 1
+  store i1 %"134_045", ptr %"136_0", align 1
+  store i1 %"134_045", ptr %"136_1", align 1
+  %"136_046" = load i1, ptr %"136_0", align 1
+  %"136_147" = load i1, ptr %"136_1", align 1
+  store i1 %"136_046", ptr %"131_0", align 1
+  store i1 %"136_147", ptr %"131_1", align 1
+  %"131_148" = load i1, ptr %"131_1", align 1
+  %30 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"131_148", 1
+  store { i1, i1 } %30, ptr %"133_0", align 1
+  %"131_049" = load i1, ptr %"131_0", align 1
+  %31 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"131_049", 1
+  store { i1, i1 } %31, ptr %"132_0", align 1
+  %"132_050" = load { i1, i1 }, ptr %"132_0", align 1
+  %"133_051" = load { i1, i1 }, ptr %"133_0", align 1
+  store { i1, i1 } %"132_050", ptr %"033", align 1
+  store { i1, i1 } %"133_051", ptr %"1", align 1
   br label %cond_exit_65
 
 cond_exit_65:                                     ; preds = %cond_65_case_1, %cond_65_case_0
-  %"040" = load { i1, i1 }, { i1, i1 }* %"039", align 1
-  %"141" = load { i1, i1 }, { i1, i1 }* %"1", align 1
-  store { i1, i1 } %"040", { i1, i1 }* %"65_0", align 1
-  store { i1, i1 } %"141", { i1, i1 }* %"65_1", align 1
-  %"65_158" = load { i1, i1 }, { i1, i1 }* %"65_1", align 1
-  store { i1, i1 } %"65_158", { i1, i1 }* %"123_0", align 1
-  %"123_059" = load { i1, i1 }, { i1, i1 }* %"123_0", align 1
-  %35 = extractvalue { i1, i1 } %"123_059", 0
-  br label %LeafBlock229
+  %"034" = load { i1, i1 }, ptr %"033", align 1
+  %"135" = load { i1, i1 }, ptr %"1", align 1
+  store { i1, i1 } %"034", ptr %"65_0", align 1
+  store { i1, i1 } %"135", ptr %"65_1", align 1
+  %"65_152" = load { i1, i1 }, ptr %"65_1", align 1
+  store { i1, i1 } %"65_152", ptr %"146_0", align 1
+  %"146_053" = load { i1, i1 }, ptr %"146_0", align 1
+  %32 = extractvalue { i1, i1 } %"146_053", 0
+  br label %LeafBlock215
 
-LeafBlock229:                                     ; preds = %cond_exit_65
-  %SwitchLeaf230 = icmp eq i1 %35, true
-  br i1 %SwitchLeaf230, label %bb24, label %NewDefault228
+LeafBlock215:                                     ; preds = %cond_exit_65
+  %SwitchLeaf216 = icmp eq i1 %32, true
+  br i1 %SwitchLeaf216, label %bb22, label %bb21
 
-NewDefault228:                                    ; preds = %LeafBlock229
-  br label %bb23
+bb21:                                             ; preds = %LeafBlock215
+  %33 = extractvalue { i1, i1 } %"146_053", 1
+  store i1 %33, ptr %"056", align 1
+  br label %cond_148_case_0
 
-bb23:                                             ; preds = %NewDefault228
-  %36 = extractvalue { i1, i1 } %"123_059", 1
-  store i1 %36, i1* %"062", align 1
-  br label %cond_125_case_0
+bb22:                                             ; preds = %LeafBlock215
+  %34 = extractvalue { i1, i1 } %"146_053", 1
+  store i1 %34, ptr %"059", align 1
+  br label %cond_148_case_1
 
-bb24:                                             ; preds = %LeafBlock229
-  %37 = extractvalue { i1, i1 } %"123_059", 1
-  store i1 %37, i1* %"065", align 1
-  br label %cond_125_case_1
+cond_148_case_0:                                  ; preds = %bb21
+  %"057" = load i1, ptr %"056", align 1
+  store i1 %"057", ptr %"151_0", align 1
+  %"151_058" = load i1, ptr %"151_0", align 1
+  store i1 %"151_058", ptr %"054", align 1
+  br label %cond_exit_148
 
-cond_125_case_0:                                  ; preds = %bb23
-  %"063" = load i1, i1* %"062", align 1
-  store i1 %"063", i1* %"128_0", align 1
-  %"128_064" = load i1, i1* %"128_0", align 1
-  store i1 %"128_064", i1* %"060", align 1
-  br label %cond_exit_125
+cond_148_case_1:                                  ; preds = %bb22
+  %"060" = load i1, ptr %"059", align 1
+  store i1 %"060", ptr %"153_0", align 1
+  %"153_061" = load i1, ptr %"153_0", align 1
+  %35 = select i1 %"153_061", i1 true, i1 false
+  store i1 %35, ptr %"155_0", align 1
+  %"155_062" = load i1, ptr %"155_0", align 1
+  store i1 %"155_062", ptr %"054", align 1
+  br label %cond_exit_148
 
-cond_125_case_1:                                  ; preds = %bb24
-  %"066" = load i1, i1* %"065", align 1
-  store i1 %"066", i1* %"130_0", align 1
-  %"130_067" = load i1, i1* %"130_0", align 1
-  %38 = select i1 %"130_067", i1 true, i1 false
-  store i1 %38, i1* %"132_0", align 1
-  %"132_068" = load i1, i1* %"132_0", align 1
-  store i1 %"132_068", i1* %"060", align 1
-  br label %cond_exit_125
+cond_exit_148:                                    ; preds = %cond_148_case_1, %cond_148_case_0
+  %"055" = load i1, ptr %"054", align 1
+  store i1 %"055", ptr %"148_0", align 1
+  %"148_063" = load i1, ptr %"148_0", align 1
+  store i1 %"148_063", ptr %"17_0", align 1
+  %"17_064" = load i1, ptr %"17_0", align 1
+  %"65_065" = load { i1, i1 }, ptr %"65_0", align 1
+  %"11_166" = load ptr, ptr %"11_1", align 8
+  store i1 %"17_064", ptr %"17_0", align 1
+  store { i1, i1 } %"65_065", ptr %"65_0", align 1
+  store ptr %"11_166", ptr %"11_1", align 8
+  %"17_067" = load i1, ptr %"17_0", align 1
+  %"65_068" = load { i1, i1 }, ptr %"65_0", align 1
+  %"11_169" = load ptr, ptr %"11_1", align 8
+  br label %LeafBlock217
 
-cond_exit_125:                                    ; preds = %cond_125_case_1, %cond_125_case_0
-  %"061" = load i1, i1* %"060", align 1
-  store i1 %"061", i1* %"125_0", align 1
-  %"125_069" = load i1, i1* %"125_0", align 1
-  store i1 %"125_069", i1* %"17_0", align 1
-  %"17_070" = load i1, i1* %"17_0", align 1
-  %"65_071" = load { i1, i1 }, { i1, i1 }* %"65_0", align 1
-  %"11_172" = load %Qubit*, %Qubit** %"11_1", align 8
-  store i1 %"17_070", i1* %"17_0", align 1
-  store { i1, i1 } %"65_071", { i1, i1 }* %"65_0", align 1
-  store %Qubit* %"11_172", %Qubit** %"11_1", align 8
-  %"17_073" = load i1, i1* %"17_0", align 1
-  %"65_074" = load { i1, i1 }, { i1, i1 }* %"65_0", align 1
-  %"11_175" = load %Qubit*, %Qubit** %"11_1", align 8
-  br label %LeafBlock232
+LeafBlock217:                                     ; preds = %cond_exit_148
+  %SwitchLeaf218 = icmp eq i1 %"17_067", true
+  br i1 %SwitchLeaf218, label %bb24, label %bb23
 
-LeafBlock232:                                     ; preds = %cond_exit_125
-  %SwitchLeaf233 = icmp eq i1 %"17_073", true
-  br i1 %SwitchLeaf233, label %bb26, label %NewDefault231
-
-NewDefault231:                                    ; preds = %LeafBlock232
-  br label %bb25
-
-bb25:                                             ; preds = %NewDefault231
-  store { i1, i1 } %"65_074", { i1, i1 }* %"36_0", align 1
-  store %Qubit* %"11_175", %Qubit** %"36_1", align 8
+bb23:                                             ; preds = %LeafBlock217
+  store { i1, i1 } %"65_068", ptr %"36_0", align 1
+  store ptr %"11_169", ptr %"36_1", align 8
   br label %bb5
 
-bb26:                                             ; preds = %LeafBlock232
-  store { i1, i1 } %"65_074", { i1, i1 }* %"20_0", align 1
-  store %Qubit* %"11_175", %Qubit** %"20_1", align 8
+bb24:                                             ; preds = %LeafBlock217
+  store { i1, i1 } %"65_068", ptr %"20_0", align 1
+  store ptr %"11_169", ptr %"20_1", align 8
   br label %bb2
 
 cond_64_case_0:                                   ; preds = %bb3
-  %"095" = load i1, i1* %"094", align 1
-  store i1 %"095", i1* %"138_0", align 1
-  %"138_096" = load i1, i1* %"138_0", align 1
-  %39 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"138_096", 1
-  store { i1, i1 } %39, { i1, i1 }* %"141_0", align 1
-  %"138_097" = load i1, i1* %"138_0", align 1
-  %40 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"138_097", 1
-  store { i1, i1 } %40, { i1, i1 }* %"140_0", align 1
-  %"140_098" = load { i1, i1 }, { i1, i1 }* %"140_0", align 1
-  %"141_099" = load { i1, i1 }, { i1, i1 }* %"141_0", align 1
-  store { i1, i1 } %"140_098", { i1, i1 }* %"090", align 1
-  store { i1, i1 } %"141_099", { i1, i1 }* %"191", align 1
+  %"089" = load i1, ptr %"088", align 1
+  store i1 %"089", ptr %"161_0", align 1
+  %"161_090" = load i1, ptr %"161_0", align 1
+  %36 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"161_090", 1
+  store { i1, i1 } %36, ptr %"164_0", align 1
+  %"161_091" = load i1, ptr %"161_0", align 1
+  %37 = insertvalue { i1, i1 } { i1 false, i1 poison }, i1 %"161_091", 1
+  store { i1, i1 } %37, ptr %"163_0", align 1
+  %"163_092" = load { i1, i1 }, ptr %"163_0", align 1
+  %"164_093" = load { i1, i1 }, ptr %"164_0", align 1
+  store { i1, i1 } %"163_092", ptr %"084", align 1
+  store { i1, i1 } %"164_093", ptr %"185", align 1
   br label %cond_exit_64
 
 cond_64_case_1:                                   ; preds = %bb4
-  %"0101" = load i1, i1* %"0100", align 1
-  store i1 %"0101", i1* %"143_0", align 1
-  %"143_0102" = load i1, i1* %"143_0", align 1
-  store i1 %"143_0102", i1* %"148_0", align 1
-  %"148_0103" = load i1, i1* %"148_0", align 1
-  store i1 %"148_0103", i1* %"150_0", align 1
-  store i1 %"148_0103", i1* %"150_1", align 1
-  %"150_0104" = load i1, i1* %"150_0", align 1
-  %"150_1105" = load i1, i1* %"150_1", align 1
-  store i1 %"150_0104", i1* %"145_0", align 1
-  store i1 %"150_1105", i1* %"145_1", align 1
-  %"145_1106" = load i1, i1* %"145_1", align 1
-  %41 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"145_1106", 1
-  store { i1, i1 } %41, { i1, i1 }* %"147_0", align 1
-  %"145_0107" = load i1, i1* %"145_0", align 1
-  %42 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"145_0107", 1
-  store { i1, i1 } %42, { i1, i1 }* %"146_0", align 1
-  %"146_0108" = load { i1, i1 }, { i1, i1 }* %"146_0", align 1
-  %"147_0109" = load { i1, i1 }, { i1, i1 }* %"147_0", align 1
-  store { i1, i1 } %"146_0108", { i1, i1 }* %"090", align 1
-  store { i1, i1 } %"147_0109", { i1, i1 }* %"191", align 1
+  %"095" = load i1, ptr %"094", align 1
+  store i1 %"095", ptr %"166_0", align 1
+  %"166_096" = load i1, ptr %"166_0", align 1
+  store i1 %"166_096", ptr %"171_0", align 1
+  %"171_097" = load i1, ptr %"171_0", align 1
+  store i1 %"171_097", ptr %"173_0", align 1
+  store i1 %"171_097", ptr %"173_1", align 1
+  %"173_098" = load i1, ptr %"173_0", align 1
+  %"173_199" = load i1, ptr %"173_1", align 1
+  store i1 %"173_098", ptr %"168_0", align 1
+  store i1 %"173_199", ptr %"168_1", align 1
+  %"168_1100" = load i1, ptr %"168_1", align 1
+  %38 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"168_1100", 1
+  store { i1, i1 } %38, ptr %"170_0", align 1
+  %"168_0101" = load i1, ptr %"168_0", align 1
+  %39 = insertvalue { i1, i1 } { i1 true, i1 poison }, i1 %"168_0101", 1
+  store { i1, i1 } %39, ptr %"169_0", align 1
+  %"169_0102" = load { i1, i1 }, ptr %"169_0", align 1
+  %"170_0103" = load { i1, i1 }, ptr %"170_0", align 1
+  store { i1, i1 } %"169_0102", ptr %"084", align 1
+  store { i1, i1 } %"170_0103", ptr %"185", align 1
   br label %cond_exit_64
 
 cond_exit_64:                                     ; preds = %cond_64_case_1, %cond_64_case_0
-  %"092" = load { i1, i1 }, { i1, i1 }* %"090", align 1
-  %"193" = load { i1, i1 }, { i1, i1 }* %"191", align 1
-  store { i1, i1 } %"092", { i1, i1 }* %"64_0", align 1
-  store { i1, i1 } %"193", { i1, i1 }* %"64_1", align 1
-  %"64_0110" = load { i1, i1 }, { i1, i1 }* %"64_0", align 1
-  store { i1, i1 } %"64_0110", { i1, i1 }* %"152_0", align 1
-  %"152_0111" = load { i1, i1 }, { i1, i1 }* %"152_0", align 1
-  %43 = extractvalue { i1, i1 } %"152_0111", 0
-  br label %LeafBlock235
+  %"086" = load { i1, i1 }, ptr %"084", align 1
+  %"187" = load { i1, i1 }, ptr %"185", align 1
+  store { i1, i1 } %"086", ptr %"64_0", align 1
+  store { i1, i1 } %"187", ptr %"64_1", align 1
+  %"64_0104" = load { i1, i1 }, ptr %"64_0", align 1
+  store { i1, i1 } %"64_0104", ptr %"175_0", align 1
+  %"175_0105" = load { i1, i1 }, ptr %"175_0", align 1
+  %40 = extractvalue { i1, i1 } %"175_0105", 0
+  br label %LeafBlock219
 
-LeafBlock235:                                     ; preds = %cond_exit_64
-  %SwitchLeaf236 = icmp eq i1 %43, true
-  br i1 %SwitchLeaf236, label %bb28, label %NewDefault234
+LeafBlock219:                                     ; preds = %cond_exit_64
+  %SwitchLeaf220 = icmp eq i1 %40, true
+  br i1 %SwitchLeaf220, label %bb26, label %bb25
 
-NewDefault234:                                    ; preds = %LeafBlock235
-  br label %bb27
+bb25:                                             ; preds = %LeafBlock219
+  %41 = extractvalue { i1, i1 } %"175_0105", 1
+  store i1 %41, ptr %"0108", align 1
+  br label %cond_177_case_0
 
-bb27:                                             ; preds = %NewDefault234
-  %44 = extractvalue { i1, i1 } %"152_0111", 1
-  store i1 %44, i1* %"0114", align 1
-  br label %cond_154_case_0
+bb26:                                             ; preds = %LeafBlock219
+  %42 = extractvalue { i1, i1 } %"175_0105", 1
+  store i1 %42, ptr %"0111", align 1
+  br label %cond_177_case_1
 
-bb28:                                             ; preds = %LeafBlock235
-  %45 = extractvalue { i1, i1 } %"152_0111", 1
-  store i1 %45, i1* %"0117", align 1
-  br label %cond_154_case_1
+cond_177_case_0:                                  ; preds = %bb25
+  %"0109" = load i1, ptr %"0108", align 1
+  store i1 %"0109", ptr %"180_0", align 1
+  %"180_0110" = load i1, ptr %"180_0", align 1
+  store i1 %"180_0110", ptr %"0106", align 1
+  br label %cond_exit_177
 
-cond_154_case_0:                                  ; preds = %bb27
-  %"0115" = load i1, i1* %"0114", align 1
-  store i1 %"0115", i1* %"157_0", align 1
-  %"157_0116" = load i1, i1* %"157_0", align 1
-  store i1 %"157_0116", i1* %"0112", align 1
-  br label %cond_exit_154
+cond_177_case_1:                                  ; preds = %bb26
+  %"0112" = load i1, ptr %"0111", align 1
+  store i1 %"0112", ptr %"182_0", align 1
+  %"182_0113" = load i1, ptr %"182_0", align 1
+  %43 = select i1 %"182_0113", i1 true, i1 false
+  store i1 %43, ptr %"184_0", align 1
+  %"184_0114" = load i1, ptr %"184_0", align 1
+  store i1 %"184_0114", ptr %"0106", align 1
+  br label %cond_exit_177
 
-cond_154_case_1:                                  ; preds = %bb28
-  %"0118" = load i1, i1* %"0117", align 1
-  store i1 %"0118", i1* %"159_0", align 1
-  %"159_0119" = load i1, i1* %"159_0", align 1
-  %46 = select i1 %"159_0119", i1 true, i1 false
-  store i1 %46, i1* %"161_0", align 1
-  %"161_0120" = load i1, i1* %"161_0", align 1
-  store i1 %"161_0120", i1* %"0112", align 1
-  br label %cond_exit_154
+cond_exit_177:                                    ; preds = %cond_177_case_1, %cond_177_case_0
+  %"0107" = load i1, ptr %"0106", align 1
+  store i1 %"0107", ptr %"177_0", align 1
+  %"177_0115" = load i1, ptr %"177_0", align 1
+  store i1 %"177_0115", ptr %"25_0", align 1
+  %"25_0116" = load i1, ptr %"25_0", align 1
+  %"20_0117" = load { i1, i1 }, ptr %"20_0", align 1
+  %"64_1118" = load { i1, i1 }, ptr %"64_1", align 1
+  br label %LeafBlock221
 
-cond_exit_154:                                    ; preds = %cond_154_case_1, %cond_154_case_0
-  %"0113" = load i1, i1* %"0112", align 1
-  store i1 %"0113", i1* %"154_0", align 1
-  %"154_0121" = load i1, i1* %"154_0", align 1
-  store i1 %"154_0121", i1* %"25_0", align 1
-  %"25_0122" = load i1, i1* %"25_0", align 1
-  %"20_0123" = load { i1, i1 }, { i1, i1 }* %"20_0", align 1
-  %"64_1124" = load { i1, i1 }, { i1, i1 }* %"64_1", align 1
-  br label %LeafBlock238
+LeafBlock221:                                     ; preds = %cond_exit_177
+  %SwitchLeaf222 = icmp eq i1 %"25_0116", true
+  br i1 %SwitchLeaf222, label %bb28, label %bb27
 
-LeafBlock238:                                     ; preds = %cond_exit_154
-  %SwitchLeaf239 = icmp eq i1 %"25_0122", true
-  br i1 %SwitchLeaf239, label %bb30, label %NewDefault237
-
-NewDefault237:                                    ; preds = %LeafBlock238
-  br label %bb29
-
-bb29:                                             ; preds = %NewDefault237
-  store { i1, i1 } %"20_0123", { i1, i1 }* %"0127", align 1
-  store { i1, i1 } %"64_1124", { i1, i1 }* %"1128", align 1
+bb27:                                             ; preds = %LeafBlock221
+  store { i1, i1 } %"20_0117", ptr %"0121", align 1
+  store { i1, i1 } %"64_1118", ptr %"1122", align 1
   br label %cond_26_case_0
 
-bb30:                                             ; preds = %LeafBlock238
-  store { i1, i1 } %"20_0123", { i1, i1 }* %"0134", align 1
-  store { i1, i1 } %"64_1124", { i1, i1 }* %"1135", align 1
+bb28:                                             ; preds = %LeafBlock221
+  store { i1, i1 } %"20_0117", ptr %"0128", align 1
+  store { i1, i1 } %"64_1118", ptr %"1129", align 1
   br label %cond_26_case_1
 
-cond_26_case_0:                                   ; preds = %bb29
-  %"0129" = load { i1, i1 }, { i1, i1 }* %"0127", align 1
-  %"1130" = load { i1, i1 }, { i1, i1 }* %"1128", align 1
-  store { i1, i1 } %"0129", { i1, i1 }* %"28_0", align 1
-  store { i1, i1 } %"1130", { i1, i1 }* %"28_1", align 1
-  %"28_0131" = load { i1, i1 }, { i1, i1 }* %"28_0", align 1
-  %"28_1132" = load { i1, i1 }, { i1, i1 }* %"28_1", align 1
-  %47 = insertvalue { i1, { i1, i1 }, { i1, i1 } } { i1 false, { i1, i1 } poison, { i1, i1 } poison }, { i1, i1 } %"28_0131", 1
-  %48 = insertvalue { i1, { i1, i1 }, { i1, i1 } } %47, { i1, i1 } %"28_1132", 2
-  store { i1, { i1, i1 }, { i1, i1 } } %48, { i1, { i1, i1 }, { i1, i1 } }* %"30_0", align 1
-  %"30_0133" = load { i1, { i1, i1 }, { i1, i1 } }, { i1, { i1, i1 }, { i1, i1 } }* %"30_0", align 1
-  store { i1, { i1, i1 }, { i1, i1 } } %"30_0133", { i1, { i1, i1 }, { i1, i1 } }* %"0125", align 1
+cond_26_case_0:                                   ; preds = %bb27
+  %"0123" = load { i1, i1 }, ptr %"0121", align 1
+  %"1124" = load { i1, i1 }, ptr %"1122", align 1
+  store { i1, i1 } %"0123", ptr %"28_0", align 1
+  store { i1, i1 } %"1124", ptr %"28_1", align 1
+  %"28_0125" = load { i1, i1 }, ptr %"28_0", align 1
+  %"28_1126" = load { i1, i1 }, ptr %"28_1", align 1
+  %44 = insertvalue { i1, { i1, i1 }, { i1, i1 } } { i1 false, { i1, i1 } poison, { i1, i1 } poison }, { i1, i1 } %"28_0125", 1
+  %45 = insertvalue { i1, { i1, i1 }, { i1, i1 } } %44, { i1, i1 } %"28_1126", 2
+  store { i1, { i1, i1 }, { i1, i1 } } %45, ptr %"30_0", align 1
+  %"30_0127" = load { i1, { i1, i1 }, { i1, i1 } }, ptr %"30_0", align 1
+  store { i1, { i1, i1 }, { i1, i1 } } %"30_0127", ptr %"0119", align 1
   br label %cond_exit_26
 
-cond_26_case_1:                                   ; preds = %bb30
-  %"0136" = load { i1, i1 }, { i1, i1 }* %"0134", align 1
-  %"1137" = load { i1, i1 }, { i1, i1 }* %"1135", align 1
-  store { i1, i1 } %"0136", { i1, i1 }* %"32_0", align 1
-  store { i1, i1 } %"1137", { i1, i1 }* %"32_1", align 1
-  %"32_1138" = load { i1, i1 }, { i1, i1 }* %"32_1", align 1
-  %49 = extractvalue { i1, i1 } %"32_1138", 0
-  br label %LeafBlock241
+cond_26_case_1:                                   ; preds = %bb28
+  %"0130" = load { i1, i1 }, ptr %"0128", align 1
+  %"1131" = load { i1, i1 }, ptr %"1129", align 1
+  store { i1, i1 } %"0130", ptr %"32_0", align 1
+  store { i1, i1 } %"1131", ptr %"32_1", align 1
+  %"32_1132" = load { i1, i1 }, ptr %"32_1", align 1
+  %46 = extractvalue { i1, i1 } %"32_1132", 0
+  br label %LeafBlock223
 
-LeafBlock241:                                     ; preds = %cond_26_case_1
-  %SwitchLeaf242 = icmp eq i1 %49, true
-  br i1 %SwitchLeaf242, label %bb32, label %NewDefault240
+LeafBlock223:                                     ; preds = %cond_26_case_1
+  %SwitchLeaf224 = icmp eq i1 %46, true
+  br i1 %SwitchLeaf224, label %bb30, label %bb29
 
-NewDefault240:                                    ; preds = %LeafBlock241
-  br label %bb31
+bb29:                                             ; preds = %LeafBlock223
+  %47 = extractvalue { i1, i1 } %"32_1132", 1
+  store i1 %47, ptr %"0133", align 1
+  br label %cond_174_case_0
 
-bb31:                                             ; preds = %NewDefault240
-  %50 = extractvalue { i1, i1 } %"32_1138", 1
-  store i1 %50, i1* %"0139", align 1
-  br label %cond_151_case_0
+bb30:                                             ; preds = %LeafBlock223
+  %48 = extractvalue { i1, i1 } %"32_1132", 1
+  store i1 %48, ptr %"0135", align 1
+  br label %cond_174_case_1
 
-bb32:                                             ; preds = %LeafBlock241
-  %51 = extractvalue { i1, i1 } %"32_1138", 1
-  store i1 %51, i1* %"0141", align 1
-  br label %cond_151_case_1
+cond_exit_26:                                     ; preds = %cond_exit_174, %cond_26_case_0
+  %"0120" = load { i1, { i1, i1 }, { i1, i1 } }, ptr %"0119", align 1
+  store { i1, { i1, i1 }, { i1, i1 } } %"0120", ptr %"26_0", align 1
+  %"26_0140" = load { i1, { i1, i1 }, { i1, i1 } }, ptr %"26_0", align 1
+  store { i1, { i1, i1 }, { i1, i1 } } %"26_0140", ptr %"26_0", align 1
+  %"26_0141" = load { i1, { i1, i1 }, { i1, i1 } }, ptr %"26_0", align 1
+  %49 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0141", 0
+  br label %LeafBlock225
 
-cond_exit_26:                                     ; preds = %cond_exit_151, %cond_26_case_0
-  %"0126" = load { i1, { i1, i1 }, { i1, i1 } }, { i1, { i1, i1 }, { i1, i1 } }* %"0125", align 1
-  store { i1, { i1, i1 }, { i1, i1 } } %"0126", { i1, { i1, i1 }, { i1, i1 } }* %"26_0", align 1
-  %"26_0146" = load { i1, { i1, i1 }, { i1, i1 } }, { i1, { i1, i1 }, { i1, i1 } }* %"26_0", align 1
-  store { i1, { i1, i1 }, { i1, i1 } } %"26_0146", { i1, { i1, i1 }, { i1, i1 } }* %"26_0", align 1
-  %"26_0147" = load { i1, { i1, i1 }, { i1, i1 } }, { i1, { i1, i1 }, { i1, i1 } }* %"26_0", align 1
-  %52 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0147", 0
-  br label %LeafBlock244
+LeafBlock225:                                     ; preds = %cond_exit_26
+  %SwitchLeaf226 = icmp eq i1 %49, true
+  br i1 %SwitchLeaf226, label %bb32, label %bb31
 
-LeafBlock244:                                     ; preds = %cond_exit_26
-  %SwitchLeaf245 = icmp eq i1 %52, true
-  br i1 %SwitchLeaf245, label %bb34, label %NewDefault243
-
-NewDefault243:                                    ; preds = %LeafBlock244
-  br label %bb33
-
-bb33:                                             ; preds = %NewDefault243
-  %53 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0147", 1
-  %54 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0147", 2
-  store { i1, i1 } %53, { i1, i1 }* %"47_0", align 1
-  store { i1, i1 } %54, { i1, i1 }* %"47_1", align 1
+bb31:                                             ; preds = %LeafBlock225
+  %50 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0141", 1
+  %51 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0141", 2
+  store { i1, i1 } %50, ptr %"47_0", align 1
+  store { i1, i1 } %51, ptr %"47_1", align 1
   br label %bb9
 
-bb34:                                             ; preds = %LeafBlock244
-  %55 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0147", 1
-  store { i1, i1 } %55, { i1, i1 }* %"41_0", align 1
+bb32:                                             ; preds = %LeafBlock225
+  %52 = extractvalue { i1, { i1, i1 }, { i1, i1 } } %"26_0141", 1
+  store { i1, i1 } %52, ptr %"41_0", align 1
   br label %bb7
 
-cond_151_case_0:                                  ; preds = %bb31
-  %"0140" = load i1, i1* %"0139", align 1
-  store i1 %"0140", i1* %"188_0", align 1
-  br label %cond_exit_151
+cond_174_case_0:                                  ; preds = %bb29
+  %"0134" = load i1, ptr %"0133", align 1
+  store i1 %"0134", ptr %"211_0", align 1
+  br label %cond_exit_174
 
-cond_151_case_1:                                  ; preds = %bb32
-  %"0142" = load i1, i1* %"0141", align 1
-  store i1 %"0142", i1* %"190_0", align 1
-  %"190_0143" = load i1, i1* %"190_0", align 1
-  br label %cond_exit_151
+cond_174_case_1:                                  ; preds = %bb30
+  %"0136" = load i1, ptr %"0135", align 1
+  store i1 %"0136", ptr %"213_0", align 1
+  %"213_0137" = load i1, ptr %"213_0", align 1
+  br label %cond_exit_174
 
-cond_exit_151:                                    ; preds = %cond_151_case_1, %cond_151_case_0
-  %"32_0144" = load { i1, i1 }, { i1, i1 }* %"32_0", align 1
-  %56 = insertvalue { i1, { i1, i1 }, { i1, i1 } } { i1 true, { i1, i1 } poison, { i1, i1 } poison }, { i1, i1 } %"32_0144", 1
-  store { i1, { i1, i1 }, { i1, i1 } } %56, { i1, { i1, i1 }, { i1, i1 } }* %"34_0", align 1
-  %"34_0145" = load { i1, { i1, i1 }, { i1, i1 } }, { i1, { i1, i1 }, { i1, i1 } }* %"34_0", align 1
-  store { i1, { i1, i1 }, { i1, i1 } } %"34_0145", { i1, { i1, i1 }, { i1, i1 } }* %"0125", align 1
+cond_exit_174:                                    ; preds = %cond_174_case_1, %cond_174_case_0
+  %"32_0138" = load { i1, i1 }, ptr %"32_0", align 1
+  %53 = insertvalue { i1, { i1, i1 }, { i1, i1 } } { i1 true, { i1, i1 } poison, { i1, i1 } poison }, { i1, i1 } %"32_0138", 1
+  store { i1, { i1, i1 }, { i1, i1 } } %53, ptr %"34_0", align 1
+  %"34_0139" = load { i1, { i1, i1 }, { i1, i1 } }, ptr %"34_0", align 1
+  store { i1, { i1, i1 }, { i1, i1 } } %"34_0139", ptr %"0119", align 1
   br label %cond_exit_26
 
-cond_178_case_0:                                  ; preds = %bb14
-  %"0190" = load i1, i1* %"0189", align 1
-  store i1 %"0190", i1* %"181_0", align 1
-  %"181_0191" = load i1, i1* %"181_0", align 1
-  store i1 %"181_0191", i1* %"0187", align 1
-  br label %cond_exit_178
+cond_201_case_0:                                  ; preds = %bb14
+  %"0184" = load i1, ptr %"0183", align 1
+  store i1 %"0184", ptr %"204_0", align 1
+  store i1 false, ptr %"227_0", align 1
+  %"227_0185" = load i1, ptr %"227_0", align 1
+  store i1 %"227_0185", ptr %"0181", align 1
+  br label %cond_exit_201
 
-cond_178_case_1:                                  ; preds = %bb15
-  %"0193" = load i1, i1* %"0192", align 1
-  store i1 %"0193", i1* %"183_0", align 1
-  %"183_0194" = load i1, i1* %"183_0", align 1
-  %57 = select i1 %"183_0194", i1 true, i1 false
-  store i1 %57, i1* %"185_0", align 1
-  %"185_0195" = load i1, i1* %"185_0", align 1
-  store i1 %"185_0195", i1* %"0187", align 1
-  br label %cond_exit_178
+cond_201_case_1:                                  ; preds = %bb15
+  %"0187" = load i1, ptr %"0186", align 1
+  store i1 %"0187", ptr %"206_0", align 1
+  %"206_0188" = load i1, ptr %"206_0", align 1
+  %54 = select i1 %"206_0188", i1 true, i1 false
+  store i1 %54, ptr %"208_0", align 1
+  %"208_0189" = load i1, ptr %"208_0", align 1
+  store i1 %"208_0189", ptr %"0181", align 1
+  br label %cond_exit_201
 
-cond_exit_178:                                    ; preds = %cond_178_case_1, %cond_178_case_0
-  %"0188" = load i1, i1* %"0187", align 1
-  store i1 %"0188", i1* %"178_0", align 1
-  %"178_0196" = load i1, i1* %"178_0", align 1
-  store i1 %"178_0196", i1* %"60_0", align 1
-  store {} undef, {}* %"59_0", align 1
-  %"55_0197" = load { i1, i1 }, { i1, i1 }* %"55_0", align 1
-  store { i1, i1 } %"55_0197", { i1, i1 }* %"166_0", align 1
-  %"166_0198" = load { i1, i1 }, { i1, i1 }* %"166_0", align 1
-  %58 = extractvalue { i1, i1 } %"166_0198", 0
-  br label %LeafBlock247
+cond_exit_201:                                    ; preds = %cond_201_case_1, %cond_201_case_0
+  %"0182" = load i1, ptr %"0181", align 1
+  store i1 %"0182", ptr %"201_0", align 1
+  %"201_0190" = load i1, ptr %"201_0", align 1
+  store i1 %"201_0190", ptr %"60_0", align 1
+  %"55_0191" = load { i1, i1 }, ptr %"55_0", align 1
+  store { i1, i1 } %"55_0191", ptr %"189_0", align 1
+  %"189_0192" = load { i1, i1 }, ptr %"189_0", align 1
+  %55 = extractvalue { i1, i1 } %"189_0192", 0
+  br label %LeafBlock227
 
-LeafBlock247:                                     ; preds = %cond_exit_178
-  %SwitchLeaf248 = icmp eq i1 %58, true
-  br i1 %SwitchLeaf248, label %bb36, label %NewDefault246
+LeafBlock227:                                     ; preds = %cond_exit_201
+  %SwitchLeaf228 = icmp eq i1 %55, true
+  br i1 %SwitchLeaf228, label %bb34, label %bb33
 
-NewDefault246:                                    ; preds = %LeafBlock247
+bb33:                                             ; preds = %LeafBlock227
+  %56 = extractvalue { i1, i1 } %"189_0192", 1
+  store i1 %56, ptr %"0195", align 1
+  br label %cond_191_case_0
+
+bb34:                                             ; preds = %LeafBlock227
+  %57 = extractvalue { i1, i1 } %"189_0192", 1
+  store i1 %57, ptr %"0198", align 1
+  br label %cond_191_case_1
+
+cond_191_case_0:                                  ; preds = %bb33
+  %"0196" = load i1, ptr %"0195", align 1
+  store i1 %"0196", ptr %"194_0", align 1
+  %"194_0197" = load i1, ptr %"194_0", align 1
+  store i1 %"194_0197", ptr %"0193", align 1
+  br label %cond_exit_191
+
+cond_191_case_1:                                  ; preds = %bb34
+  %"0199" = load i1, ptr %"0198", align 1
+  store i1 %"0199", ptr %"196_0", align 1
+  %"196_0200" = load i1, ptr %"196_0", align 1
+  %58 = select i1 %"196_0200", i1 true, i1 false
+  store i1 %58, ptr %"198_0", align 1
+  %"198_0201" = load i1, ptr %"198_0", align 1
+  store i1 %"198_0201", ptr %"0193", align 1
+  br label %cond_exit_191
+
+cond_exit_191:                                    ; preds = %cond_191_case_1, %cond_191_case_0
+  %"0194" = load i1, ptr %"0193", align 1
+  store i1 %"0194", ptr %"191_0", align 1
+  %"191_0202" = load i1, ptr %"191_0", align 1
+  store i1 %"191_0202", ptr %"57_0", align 1
+  %"57_0203" = load i1, ptr %"57_0", align 1
+  call void @__quantum__rt__bool_record_output(i1 %"57_0203", ptr @2)
+  %"60_0204" = load i1, ptr %"60_0", align 1
+  call void @__quantum__rt__bool_record_output(i1 %"60_0204", ptr @3)
+  %"225_0205" = load {}, ptr %"225_0", align 1
+  store {} %"225_0205", ptr %"225_0", align 1
+  %"225_0206" = load {}, ptr %"225_0", align 1
   br label %bb35
 
-bb35:                                             ; preds = %NewDefault246
-  %59 = extractvalue { i1, i1 } %"166_0198", 1
-  store i1 %59, i1* %"0201", align 1
-  br label %cond_168_case_0
-
-bb36:                                             ; preds = %LeafBlock247
-  %60 = extractvalue { i1, i1 } %"166_0198", 1
-  store i1 %60, i1* %"0204", align 1
-  br label %cond_168_case_1
-
-cond_168_case_0:                                  ; preds = %bb35
-  %"0202" = load i1, i1* %"0201", align 1
-  store i1 %"0202", i1* %"171_0", align 1
-  %"171_0203" = load i1, i1* %"171_0", align 1
-  store i1 %"171_0203", i1* %"0199", align 1
-  br label %cond_exit_168
-
-cond_168_case_1:                                  ; preds = %bb36
-  %"0205" = load i1, i1* %"0204", align 1
-  store i1 %"0205", i1* %"173_0", align 1
-  %"173_0206" = load i1, i1* %"173_0", align 1
-  %61 = select i1 %"173_0206", i1 true, i1 false
-  store i1 %61, i1* %"175_0", align 1
-  %"175_0207" = load i1, i1* %"175_0", align 1
-  store i1 %"175_0207", i1* %"0199", align 1
-  br label %cond_exit_168
-
-cond_exit_168:                                    ; preds = %cond_168_case_1, %cond_168_case_0
-  %"0200" = load i1, i1* %"0199", align 1
-  store i1 %"0200", i1* %"168_0", align 1
-  %"168_0208" = load i1, i1* %"168_0", align 1
-  store i1 %"168_0208", i1* %"57_0", align 1
-  %"57_0209" = load i1, i1* %"57_0", align 1
-  call void @__quantum__rt__bool_record_output(i1 %"57_0209", i8* getelementptr inbounds ([2 x i8], [2 x i8]* @2, i32 0, i32 0))
-  %"60_0210" = load i1, i1* %"60_0", align 1
-  call void @__quantum__rt__bool_record_output(i1 %"60_0210", i8* getelementptr inbounds ([2 x i8], [2 x i8]* @3, i32 0, i32 0))
-  %"63_0211" = load {}, {}* %"63_0", align 1
-  store {} %"63_0211", {}* %"63_0", align 1
-  %"63_0212" = load {}, {}* %"63_0", align 1
-  br label %bb37
-
-bb37:                                             ; preds = %cond_exit_168
+bb35:                                             ; preds = %cond_exit_191
   br label %bb16
 }
 
-declare %Qubit* @__quantum__rt__qubit_allocate()
+declare ptr @__quantum__rt__qubit_allocate()
 
 declare void @abort()
 
-declare void @__quantum__qis__phasedx__body(double, double, %Qubit*)
+declare void @__quantum__qis__phasedx__body(double, double, ptr)
 
-declare void @__quantum__qis__rz__body(double, %Qubit*)
+declare void @__quantum__qis__rz__body(double, ptr)
 
-declare %Result* @__QIR__CONV_Qubit_TO_Result(%Qubit*)
+declare ptr @__QIR__CONV_Qubit_TO_Result(ptr)
 
-declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly) #1
+declare void @__quantum__qis__mz__body(ptr, ptr writeonly) #1
 
-declare i1 @__quantum__rt__read_result(%Result* readonly)
+declare i1 @__quantum__rt__read_result(ptr readonly)
 
-declare void @__quantum__rt__bool_record_output(i1, i8*)
+declare void @__quantum__rt__bool_record_output(i1, ptr)
 
-declare void @__quantum__rt__initialize(i8*)
+declare void @__quantum__rt__initialize(ptr)
 
 attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="2" "required_num_results"="3" }
 attributes #1 = { "irreversible" }
