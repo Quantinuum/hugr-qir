@@ -6,6 +6,15 @@ use hugr::{
     types::PolyFuncType,
 };
 
+use std::sync::Mutex;
+
+/// Global mutex to serialize LLVM/inkwell usage in tests.
+///
+/// LLVM's IR parsing / printing and some transformations are not reliably safe
+/// to run concurrently across threads in this environment, and can manifest as
+/// flaky verifier errors, snapshot diffs, or SIGSEGV.
+pub(crate) static LLVM_TEST_LOCK: Mutex<()> = Mutex::new(());
+
 pub fn single_op_hugr(op: OpType) -> Hugr {
     let Some(sig) = op.dataflow_signature() else {
         panic!("not a dataflow op")

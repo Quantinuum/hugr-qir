@@ -1823,8 +1823,11 @@ fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
     }
 }
 
-/// Returns whether a block contains no non-terminator instructions and ends in
-/// an unconditional branch.
+/// Returns whether a block contains *only* an unconditional branch terminator.
+///
+/// Important: we must not remove forwarding blocks that still contain PHIs,
+/// because those PHI results can be used by downstream blocks. Deleting the block
+/// would then leave dangling (`<badref>`) values.
 fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
     let Some(term) = bb.get_terminator() else {
         return false;
@@ -1833,8 +1836,7 @@ fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
         return false;
     }
 
-    bb.get_instructions()
-        .all(|inst| inst == term || inst.get_opcode() == InstructionOpcode::Phi)
+    bb.get_first_instruction() == Some(term)
 }
 
 /// First non‑PHI in a block
@@ -1948,18 +1950,28 @@ fn incoming_for_predecessor<'ctx>(
 }
 
 /// Seeds the value map for one duplicated predecessor edge using the incoming
-/// values that each eliminated phi contributes on that edge.
-fn phi_incoming_vmap_for_predecessor<'ctx>(
-    phis: &[PhiValue<'ctx>],
+/// values for *all* leading PHIs in `block` on that edge.
+///
+/// We may be lowering only a subset of those PHIs (e.g. float-only), but we still
+/// delete the entire block after tail duplication. Any remaining PHI values that
+/// are referenced in the duplicated tail must therefore be remapped too.
+fn phi_incoming_vmap_for_block_predecessor<'ctx>(
+    block: BasicBlock<'ctx>,
     pred: BasicBlock<'ctx>,
 ) -> Result<HashMap<ValueKey, BasicValueEnum<'ctx>>> {
     let mut vmap = HashMap::new();
-    for phi in phis {
-        let (val, _) = incoming_for_predecessor(*phi, pred)
+
+    for inst in block
+        .get_instructions()
+        .take_while(|inst| inst.get_opcode() == InstructionOpcode::Phi)
+    {
+        let phi: PhiValue<'ctx> = inst.try_into().unwrap();
+        let (val, _) = incoming_for_predecessor(phi, pred)
             .ok_or_else(|| anyhow!("Missing phi incoming for predecessor during lowering"))?;
-        let key = value_key_from_instruction(phi.as_instruction());
+        let key = value_key_from_instruction(inst);
         vmap.insert(key, val);
     }
+
     Ok(vmap)
 }
 
@@ -1968,10 +1980,10 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
     builder: &Builder<'ctx>,
     original_block: BasicBlock<'ctx>,
     pred: BasicBlock<'ctx>,
-    phis: &[PhiValue<'ctx>],
+    _phis: &[PhiValue<'ctx>],
     duplicated_tail: &[InstructionValue<'ctx>],
 ) -> Result<(BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>)> {
-    let mut vmap = phi_incoming_vmap_for_predecessor(phis, pred)?;
+    let mut vmap = phi_incoming_vmap_for_block_predecessor(original_block, pred)?;
     let mut cloned_values: HashMap<ValueKey, BasicValueEnum<'ctx>> = HashMap::new();
 
     let clone_block = pred.get_context().insert_basic_block_after(
@@ -3134,6 +3146,7 @@ mod test {
         expected_kind: &str,
         snapshot_name: &str,
     ) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = load_module_from_fixture(&context, fixture).unwrap();
 
@@ -3165,9 +3178,6 @@ mod test {
                 normalized_module_ir_for_snapshot(&module, fixture)
             );
         });
-
-        std::mem::forget(module);
-        std::mem::forget(context);
     }
 
     #[rstest]

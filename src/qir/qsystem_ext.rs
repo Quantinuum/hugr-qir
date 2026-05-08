@@ -161,6 +161,7 @@ mod test {
     #[case(QSystemOp::LazyMeasureReset)]
     #[case(QSystemOp::Measure)]
     fn emit(ctx: TestContext, #[case] op: impl Into<OpType>) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let op = op.into();
         let mut insta = insta::Settings::clone_current();
         insta.set_snapshot_suffix(format!("{}_{}", insta.snapshot_suffix().unwrap_or(""), op));
