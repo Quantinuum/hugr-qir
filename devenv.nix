@@ -14,6 +14,7 @@ in {
     packages = [
       pkgs.pre-commit
       # These are required for hugr-llvm to be able to link to llvm.
+      pkgs.libcxx
       pkgs.libffi
       pkgs.libxml2
       pkgs.libz

@@ -44,8 +44,13 @@ def cli_on_hugr(hugr_file: Path, *args: str) -> None:
 
 
 @pytest.fixture
-def wasm_file() -> Path:
-    return TEST_DIR / Path("resources/test.wasm")
+def helios_wasm_file() -> Path:
+    return TEST_DIR / Path("resources/helios.wasm")
+
+
+@pytest.fixture
+def h2_wasm_file() -> Path:
+    return TEST_DIR / Path("resources/h2.wasm")
 
 
 guppy_example_dict = generate_guppy_example_dict(get_guppy_files())
