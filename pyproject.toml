@@ -3,7 +3,7 @@ name = "hugr-qir"
 dynamic = ["version"]
 description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "click~=8.3.1",
     "guppylang==0.21.11", # see https://github.com/Quantinuum/hugr-qir/issues/252
@@ -32,7 +32,7 @@ docs = [
     "myst-nb>=1.2.0",
     "quantinuum-sphinx~=0.6",
     "sphinx>=8,<9",
-    "sphinx-autodoc-typehints<3.2",
+    "sphinx-autodoc-typehints>=3.2",
     "sphinx-copybutton>=0.5.2,<1",
     "sphinxcontrib-googleanalytics>=0.5",
 ]
