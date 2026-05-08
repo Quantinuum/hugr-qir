@@ -13,7 +13,7 @@ use hugr_llvm::{
 use std::collections::BTreeMap;
 use std::fs;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use hugr_core::extension::prelude::option_type;
 use hugr_core::std_extensions::arithmetic::int_types::INT_TYPES;
 use inkwell::attributes::AttributeLoc;
@@ -45,7 +45,8 @@ impl WasmCodegen {
         let mut funcs = BTreeMap::new();
         if let Some(wasm_file) = wasm_file {
             // This is the only place the wasm file is actually read
-            funcs = wasm_funcs_from_wasm_file(wasm_file).unwrap();
+            funcs = wasm_funcs_from_wasm_file(wasm_file)
+                .unwrap_or_else(|err| panic!("Failed to load WASM file `{wasm_file}`: {err}"));
         }
         WasmCodegen {
             funcs,
@@ -57,7 +58,8 @@ impl WasmCodegen {
 // Read in the wasm functions from the wasm file
 // Save signatures for later validation if a function is actually required
 pub fn wasm_funcs_from_wasm_file(wasm_file_path: &String) -> Result<BTreeMap<u64, WasmFuncInfo>> {
-    let bytes = fs::read(wasm_file_path)?;
+    let bytes = fs::read(wasm_file_path)
+        .with_context(|| format!("Could not read WASM file `{wasm_file_path}`"))?;
     let mut types: Vec<FuncType> = Vec::new();
     let mut imported_func_type_idxs = Vec::new();
     let mut defined_func_type_idxs = Vec::new();
@@ -92,11 +94,7 @@ pub fn wasm_funcs_from_wasm_file(wasm_file_path: &String) -> Result<BTreeMap<u64
                     if kind != ExternalKind::Func {
                         continue;
                     }
-                    let None =
-                        function_exports.insert(export_index as u64, (name.to_string(), index))
-                    else {
-                        bail!("Duplicate function export found in wasm module: {name}");
-                    };
+                    function_exports.insert(export_index as u64, (name.to_string(), index));
                 }
             }
             _ => {}
@@ -115,16 +113,14 @@ pub fn wasm_funcs_from_wasm_file(wasm_file_path: &String) -> Result<BTreeMap<u64
         let Some(ty) = types.get(*type_idx as usize) else {
             bail!("Invalid wasm type index {type_idx} for function export {name}");
         };
-        let None = funcs.insert(
+        funcs.insert(
             export_index,
             WasmFuncInfo {
                 export_name: Some(name),
                 params: ty.params().to_vec(),
                 results: ty.results().to_vec(),
             },
-        ) else {
-            bail!("Duplicate function export index found in wasm module: {export_index}");
-        };
+        );
     }
 
     Ok(funcs)
