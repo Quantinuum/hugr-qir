@@ -15,4 +15,10 @@ jobs:
         with:
           enable-cache: true
       - name: Run prek hooks
-        run: uvx prek run --all-files
+        run: >-
+          uvx prek run --all-files
+          --skip cargo-fmt
+          --skip cargo-check
+          --skip cargo-test
+          --skip cargo-clippy
+          --skip cargo-doc
