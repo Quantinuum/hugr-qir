@@ -6,12 +6,12 @@ import pytest
 from hugr_qir._hugr_qir import compile_target_choices, opt_level_choices
 from hugr_qir.hugr_to_qir import hugr_to_qir
 from hugr_qir.output import OutputFormat, expected_file_extension
-from llvmlite.binding import (  # type: ignore
+from llvmlite.binding import (
     create_context,
     parse_assembly,
     parse_bitcode,
 )
-from pytest_snapshot.plugin import Snapshot  # type: ignore
+from pytest_snapshot.plugin import Snapshot
 
 from .conftest import (
     SNAPSHOT_DIR,

@@ -6,18 +6,13 @@ on:
 
 jobs:
   lint:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up Python 3.x
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.x'
-    - name: Install ruff
-      run: pip install ruff
-    - name: ruff check
-      run: |
-        ruff check
-        ruff format
+      - uses: actions/checkout@v6
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Run prek hooks
+        run: uvx prek run --all-files

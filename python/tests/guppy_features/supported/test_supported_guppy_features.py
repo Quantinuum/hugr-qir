@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from hugr_qir.hugr_to_qir import to_qir_str
-from pytest_snapshot.plugin import Snapshot  # type: ignore
+from pytest_snapshot.plugin import Snapshot
 
 from tests.conftest import GUPPY_EXAMPLES_DIR, skip_snapshot_checks
 from tests.hugr_generation import guppy_to_hugr_binary
