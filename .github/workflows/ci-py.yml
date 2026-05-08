@@ -48,7 +48,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.11', '3.14']
+        python-version: ['3.10', '3.13']
 
     steps:
       - uses: actions/checkout@v6
@@ -111,8 +111,8 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - { py: '3.11', coverage: false }
-          - { py: '3.14', coverage: true }
+          - { py: '3.10', coverage: false }
+          - { py: '3.13', coverage: true }
     steps:
       - uses: actions/checkout@v6
 
