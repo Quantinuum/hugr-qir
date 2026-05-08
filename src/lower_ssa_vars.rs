@@ -204,10 +204,10 @@ fn add_qubit_value_transitively(inst: InstructionValue, qubit_values: &mut HashS
     match inst.get_opcode() {
         InstructionOpcode::IntToPtr | InstructionOpcode::PtrToInt => {
             // Transparent: follow through the cast to find upstream selects/phis.
-            if let Some(operand) = inst_operand_value(inst, 0) {
-                if let Some(operand_inst) = operand.as_instruction_value() {
-                    add_qubit_value_transitively(operand_inst, qubit_values);
-                }
+            if let Some(operand) = inst_operand_value(inst, 0)
+                && let Some(operand_inst) = operand.as_instruction_value()
+            {
+                add_qubit_value_transitively(operand_inst, qubit_values);
             }
         }
         InstructionOpcode::Select | InstructionOpcode::Phi => {
@@ -223,10 +223,10 @@ fn add_qubit_value_transitively(inst: InstructionValue, qubit_values: &mut HashS
                 0
             };
             for i in start..n {
-                if let Some(operand) = inst_operand_value(inst, i) {
-                    if let Some(operand_inst) = operand.as_instruction_value() {
-                        add_qubit_value_transitively(operand_inst, qubit_values);
-                    }
+                if let Some(operand) = inst_operand_value(inst, i)
+                    && let Some(operand_inst) = operand.as_instruction_value()
+                {
+                    add_qubit_value_transitively(operand_inst, qubit_values);
                 }
             }
         }
@@ -744,7 +744,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     forget_qubit_value(sel, qubit_values);
     sel.erase_from_basic_block();
     lower_successive_phis_in_block(module, builder, merge_bb, vec![phi], qubit_values)?;
-    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
+    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb, qubit_values)?;
     Ok(())
 }
 
@@ -760,6 +760,7 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
     source_bb: BasicBlock<'ctx>,
     then_bb: BasicBlock<'ctx>,
     else_bb: BasicBlock<'ctx>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let Some(source_term) = source_bb.get_terminator() else {
         return Ok(());
@@ -790,22 +791,32 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
         "collapse_trivial_select_dispatch_blocks",
     )?;
 
-    builder.position_at_end(source_bb);
-    source_term.erase_from_basic_block();
+    // If both forwarding blocks jump to the same destination, then they may be
+    // deliberately distinguishing control-flow for PHIs in that destination. Don't
+    // collapse in that case.
     if direct_then == direct_else {
-        builder.build_unconditional_branch(direct_then)?;
-    } else {
-        builder.build_conditional_branch(cond, direct_then, direct_else)?;
+        return Ok(());
     }
 
-    unsafe {
-        then_bb
-            .delete()
-            .expect("collapse_trivial_select_dispatch_blocks: failed to delete then block");
-        else_bb
-            .delete()
-            .expect("collapse_trivial_select_dispatch_blocks: failed to delete else block");
-    }
+    builder.position_at_end(source_bb);
+    source_term.erase_from_basic_block();
+    builder.build_conditional_branch(cond, direct_then, direct_else)?;
+
+    // The branch now targets `direct_then`/`direct_else` from `source_bb`, so any PHIs
+    // in those destination blocks must update their incoming blocks accordingly.
+    rewrite_successor_phis_for_edge_change(direct_then, then_bb, Some(source_bb), qubit_values)?;
+    rewrite_successor_phis_for_edge_change(direct_else, else_bb, Some(source_bb), qubit_values)?;
+
+    erase_all_instructions_in_block(then_bb, qubit_values);
+    erase_all_instructions_in_block(else_bb, qubit_values);
+    then_bb
+        .remove_from_function()
+        .expect("collapse_trivial_select_dispatch_blocks: failed to remove then block");
+    else_bb
+        .remove_from_function()
+        .expect("collapse_trivial_select_dispatch_blocks: failed to remove else block");
+    let _ = then_bb;
+    let _ = else_bb;
 
     Ok(())
 }
@@ -947,7 +958,7 @@ fn rename_incoming_block_in_phis<'ctx>(
         if inst.get_opcode() != Op::Phi {
             break;
         }
-        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        let phi: PhiValue = inst.try_into().unwrap();
         let incomings = phi.get_incomings();
 
         if !incomings.into_iter().any(|(_, b)| b == old_bb) {
@@ -980,6 +991,75 @@ fn rename_incoming_block_in_phis<'ctx>(
         inst.erase_from_basic_block();
         it = new_phi.as_instruction().get_next_instruction();
     }
+    Ok(())
+}
+
+/// Rewrites leading PHIs in `succ_bb` so that any incoming edge from `old_bb`
+/// is rewritten to come from `new_bb` (or dropped when `new_bb` is `None`).
+///
+/// This is used when we retarget branches and then remove now-dead forwarding
+/// blocks from the function.
+fn rewrite_successor_phis_for_edge_change<'ctx>(
+    succ_bb: BasicBlock<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: Option<BasicBlock<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
+) -> Result<()> {
+    let mut it = succ_bb.get_first_instruction();
+    while let Some(inst) = it {
+        if inst.get_opcode() != Op::Phi {
+            break;
+        }
+
+        let phi: PhiValue = inst.try_into().unwrap();
+        let incomings: Vec<_> = phi.get_incomings().collect();
+
+        if !incomings.iter().any(|(_, b)| *b == old_bb) {
+            it = inst.get_next_instruction();
+            continue;
+        }
+
+        let ty: BasicTypeEnum = phi.as_basic_value().get_type();
+        let old_phi_key = value_key_from_instruction(inst);
+        let builder = succ_bb.get_context().create_builder();
+        builder.position_before(&inst);
+        let new_phi = builder.build_phi(ty, "phi.edge")?;
+        if qubit_values.contains(&old_phi_key) {
+            qubit_values.insert(value_key_from_instruction(new_phi.as_instruction()));
+        }
+
+        let mut incoming_by_block: HashMap<usize, BasicValueEnum<'ctx>> = HashMap::new();
+        for (val, inc_bb) in incomings {
+            let mapped_bb = if inc_bb == old_bb {
+                new_bb
+            } else {
+                Some(inc_bb)
+            };
+            let Some(mapped_bb) = mapped_bb else {
+                continue;
+            };
+            let key = mapped_bb.as_mut_ptr() as usize;
+            match incoming_by_block.entry(key) {
+                std::collections::hash_map::Entry::Vacant(e) => {
+                    e.insert(val);
+                    new_phi.add_incoming(&[(&val, mapped_bb)]);
+                }
+                std::collections::hash_map::Entry::Occupied(e) => {
+                    if e.get().as_value_ref() != val.as_value_ref() {
+                        bail!(
+                            "rewrite_successor_phis_for_edge_change: multiple distinct incoming values for the same predecessor block"
+                        );
+                    }
+                }
+            }
+        }
+
+        phi.replace_all_uses_with(&new_phi);
+        forget_qubit_value(inst, qubit_values);
+        inst.erase_from_basic_block();
+        it = new_phi.as_instruction().get_next_instruction();
+    }
+
     Ok(())
 }
 
@@ -1089,11 +1169,16 @@ pub fn lower_successive_phis_in_block(
     // If none, remove this block and continue
     let preds = predecessors(block)?;
     if preds.is_empty() {
-        unsafe {
-            block
-                .delete()
-                .expect("Tried to delete block without parent")
-        };
+        // Remove any incoming-from-`block` entries in successor PHIs before detaching.
+        for succ in direct_successors(block)? {
+            rewrite_successor_phis_for_edge_change(succ, block, None, qubit_values)?;
+        }
+
+        erase_all_instructions_in_block(block, qubit_values);
+        block
+            .remove_from_function()
+            .expect("Tried to remove block without parent");
+        let _ = block;
         return Ok(false);
     }
 
@@ -1142,12 +1227,11 @@ pub fn lower_successive_phis_in_block(
     }
 
     // Delete no longer needed block
-    forget_qubit_values_in_block(block, qubit_values);
-    unsafe {
-        block
-            .delete()
-            .expect("Tried to delete block without parent")
-    };
+    erase_all_instructions_in_block(block, qubit_values);
+    block
+        .remove_from_function()
+        .expect("Tried to remove block without parent");
+    let _ = block;
     Ok(true)
 }
 
@@ -1198,7 +1282,7 @@ fn get_block_matching_phis(
         if inst.get_opcode() != InstructionOpcode::Phi {
             break;
         }
-        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        let phi: PhiValue = inst.try_into().unwrap();
         if matches_phi(phi) {
             phi_candidates.push(phi);
         }
@@ -1341,7 +1425,7 @@ fn rewrite_phi_user_as_phi<'ctx>(
     available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
     qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
-    let user_phi = unsafe { PhiValue::new(user_inst.as_value_ref()) };
+    let user_phi: PhiValue = user_inst.try_into().unwrap();
     let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_phi")?;
     let incomings = user_phi.get_incomings();
 
@@ -1656,9 +1740,17 @@ fn forget_qubit_value(inst: InstructionValue, qubit_values: &mut HashSet<ValueKe
     qubit_values.remove(&value_key_from_instruction(inst));
 }
 
-fn forget_qubit_values_in_block(block: BasicBlock, qubit_values: &mut HashSet<ValueKey>) {
-    for inst in block.get_instructions() {
+/// Erases all instructions in `block` (including its terminator) in reverse order.
+///
+/// This is required before detaching a block from its parent function: otherwise the
+/// now-parentless instructions can continue to reference globals and/or successor
+/// blocks, breaking verification and potentially leading to LLVM crashes.
+fn erase_all_instructions_in_block(block: BasicBlock, qubit_values: &mut HashSet<ValueKey>) {
+    let mut inst_opt = block.get_last_instruction();
+    while let Some(inst) = inst_opt {
+        inst_opt = inst.get_previous_instruction();
         forget_qubit_value(inst, qubit_values);
+        inst.erase_from_basic_block();
     }
 }
 
@@ -1895,11 +1987,11 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
         Some(&mut cloned_values),
         "duplicated phi tail",
     ) {
-        unsafe {
-            clone_block
-                .delete()
-                .expect("Tried to delete failed clone block without parent")
-        };
+        erase_all_instructions_in_block(clone_block, &mut HashSet::new());
+        clone_block
+            .remove_from_function()
+            .expect("Tried to delete failed clone block without parent");
+        let _ = clone_block;
         bail!("Failed to rebuild duplicated phi tail: {err}");
     }
 
@@ -1985,7 +2077,7 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
             .collect();
 
         for phi_inst in phi_insts {
-            let phi = unsafe { PhiValue::new(phi_inst.as_value_ref()) };
+            let phi: PhiValue = phi_inst.try_into().unwrap();
             let incomings: Vec<_> = phi.get_incomings().collect();
             if !incomings
                 .iter()
@@ -2054,7 +2146,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 
         for user in external_users {
             if user.get_opcode() == InstructionOpcode::Phi {
-                let user_phi = unsafe { PhiValue::new(user.as_value_ref()) };
+                let user_phi: PhiValue = user.try_into().unwrap();
                 let user_block =
                     required_parent_block(user, "reconcile_external_uses_after_duplication")?;
                 let incomings = user_phi.get_incomings();
@@ -2197,7 +2289,7 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             .copied()
             .or_else(|| {
                 (original_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
-                    let phi = unsafe { PhiValue::new(original_inst.as_value_ref()) };
+                    let phi: PhiValue = original_inst.try_into().unwrap();
                     incoming_for_predecessor(phi, original_pred).map(|(val, _)| val)
                 })?
             })
@@ -3321,10 +3413,10 @@ else_block:
         let term = entry.get_terminator().unwrap();
         assert!(term.is_conditional().unwrap());
 
-        let op1 = required_block_operand(term, 1, "conditional_branch_operand_order_matches_ir")
-            .unwrap();
-        let op2 = required_block_operand(term, 2, "conditional_branch_operand_order_matches_ir")
-            .unwrap();
+        let op1 =
+            required_block_operand(term, 1, "conditional_branch_operand_order_matches_ir").unwrap();
+        let op2 =
+            required_block_operand(term, 2, "conditional_branch_operand_order_matches_ir").unwrap();
 
         // NOTE: In this build of LLVM/inkwell, conditional `br` operands are ordered
         // as (cond, false_dest, true_dest).

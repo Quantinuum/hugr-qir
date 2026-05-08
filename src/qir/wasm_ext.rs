@@ -22,7 +22,6 @@ use crate::inkwell::{
 };
 use anyhow::{Result, bail};
 use hugr_core::extension::prelude::option_type;
-use itertools::Itertools;
 use tket_qsystem::extension::classical_compute::wasm;
 use tket_qsystem::extension::wasm::WasmType;
 use wasmparser::{Export, ExternalKind, Payload};
