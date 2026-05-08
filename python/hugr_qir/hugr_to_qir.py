@@ -48,17 +48,24 @@ def hugr_to_qir(  # noqa: PLR0913
         with Path.open(tmp_infile_path, "wb") as cli_input:
             cli_input.write(hugr_bytes)
         # Write to tmp file as llvmir (text) and convert after if necessary
+        if output_format == OutputFormat.LLVM_IR:
+            tmp_format = OutputFormat.LLVM_IR
+            read_mode = "r"
+        else:
+            tmp_format = OutputFormat.BITCODE
+            read_mode = "rb"
+
         hugr_qir_impl(
             validate_qir,
             validate_hugr,
             target,
             opt_level,
-            OutputFormat.LLVM_IR,
+            tmp_format,
             tmp_infile_path,
             tmp_outfile_path,
             wasm_file,
         )
-        with Path.open(tmp_outfile_path, "r") as cli_output:
+        with Path.open(tmp_outfile_path, mode=read_mode) as cli_output:
             qir_ir = cli_output.read()
 
         return ir_string_to_output_format(qir_ir, output_format)
