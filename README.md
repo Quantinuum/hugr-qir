@@ -117,6 +117,25 @@ You can run the Python test with:
 uv run pytest -n auto
 ```
 
+You can type-check the Python sources with:
+
+```bash
+uv run ty check
+```
+
+You can run the Python formatter and linter with:
+
+```bash
+uv run ruff format --check python guppy_examples
+uv run ruff check python guppy_examples
+```
+
+You can run the configured Git hooks with:
+
+```bash
+uvx prek run --all-files
+```
+
 If you want to update the snapshots you can do that via:
 
 ```bash

@@ -67,14 +67,14 @@ jobs:
       - name: Setup dependencies.
         run: uv sync --python ${{ matrix.python-version }}
 
-      - name: Type check with mypy
-        run: uv run mypy .
+      - name: Type check with ty
+        run: uv run ty check
 
       - name: Check formatting with ruff
-        run: uv run ruff format --check
+        run: uv run ruff format --check python guppy_examples
 
       - name: Lint with ruff
-        run: uv run ruff check
+        run: uv run ruff check python guppy_examples
 
   build_binary:
     needs: changes
