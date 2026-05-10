@@ -4,10 +4,10 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 
 import guppylang
 import hugr
-from mypy.moduleinspect import ModuleType
 
 
 def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:

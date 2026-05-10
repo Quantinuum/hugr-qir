@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from hugr_qir._hugr_qir import compile_target_choices, opt_level_choices
 from hugr_qir.output import OutputFormat, expected_file_extension
-from pytest_snapshot.plugin import Snapshot  # type: ignore
+from pytest_snapshot.plugin import Snapshot
 
 from .conftest import (
     SNAPSHOT_DIR,
