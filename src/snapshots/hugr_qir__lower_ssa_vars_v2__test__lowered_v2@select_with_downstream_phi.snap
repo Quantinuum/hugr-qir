@@ -1,0 +1,40 @@
+---
+source: src/lower_ssa_vars_v2.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:select_with_downstream_phi>'
+source_filename = "select_with_downstream_phi"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+entry:
+  br i1 %cond0, label %entry.leaf.1, label %entry.leaf.0
+
+entry.leaf.0:                                     ; preds = %entry
+  br i1 %cond1, label %merge.leaf.p0.0, label %merge.leaf.p2.0
+
+entry.leaf.1:                                     ; preds = %entry
+  br i1 %cond1, label %merge.leaf.p1.0, label %merge.leaf.p3.0
+
+common.ret:                                       ; preds = %merge.leaf.p3.0, %merge.leaf.p2.0, %merge.leaf.p1.0, %merge.leaf.p0.0
+  ret void
+
+merge.leaf.p0.0:                                  ; preds = %entry.leaf.0
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  br label %common.ret
+
+merge.leaf.p1.0:                                  ; preds = %entry.leaf.1
+  call void @__quantum__qis__reset__body(ptr null)
+  br label %common.ret
+
+merge.leaf.p2.0:                                  ; preds = %entry.leaf.0
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  br label %common.ret
+
+merge.leaf.p3.0:                                  ; preds = %entry.leaf.1
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  br label %common.ret
+}
+
+declare void @__quantum__qis__reset__body(ptr)

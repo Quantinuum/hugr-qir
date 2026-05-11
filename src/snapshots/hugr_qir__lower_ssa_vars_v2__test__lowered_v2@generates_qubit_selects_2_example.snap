@@ -1,0 +1,232 @@
+---
+source: src/lower_ssa_vars_v2.rs
+expression: "normalized_module_ir_for_snapshot(&module, fixture)"
+---
+; ModuleID = '<fixture:generates-qubit-selects-2-example>'
+source_filename = "hugr-qir"
+target datalayout = "<normalized>"
+target triple = "<normalized>"
+
+@0 = private unnamed_addr constant [3 x i8] c"c0\00", align 1
+@1 = private unnamed_addr constant [3 x i8] c"c1\00", align 1
+@2 = private unnamed_addr constant [3 x i8] c"q0\00", align 1
+@3 = private unnamed_addr constant [3 x i8] c"q1\00", align 1
+@4 = private unnamed_addr constant [3 x i8] c"q2\00", align 1
+@5 = private unnamed_addr constant [3 x i8] c"q3\00", align 1
+@6 = private unnamed_addr constant [8 x i8] c"c0 + c1\00", align 1
+@7 = private unnamed_addr constant [18 x i8] c"2nd result as int\00", align 1
+@8 = private unnamed_addr constant [3 x i8] c"q4\00", align 1
+@9 = private unnamed_addr constant [3 x i8] c"q5\00", align 1
+
+define dso_local void @__hugr__.main.1() local_unnamed_addr #0 {
+alloca_block:
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 4 to ptr), ptr null)
+  %0 = tail call i1 @__quantum__qis__read_result__body(ptr null)
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 5 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 5 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
+  %1 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 1 to ptr))
+  %"46_2.0" = zext i1 %0 to i64
+  %2 = select i1 %0, i64 2, i64 1
+  %"61_2.0" = select i1 %1, i64 %2, i64 %"46_2.0"
+  br i1 %0, label %alloca_block.route.true, label %alloca_block.route.false
+
+cond_336_case_1:                                  ; preds = %bb0, %cond_exit_620
+  %val.available6 = phi i1 [ %val.merge, %cond_exit_620 ], [ %val.available7, %bb0 ]
+  %val.available20 = phi i1 [ %val.merge13, %cond_exit_620 ], [ %val.available21, %bb0 ]
+  %val.available34 = phi i1 [ %val.merge27, %cond_exit_620 ], [ %val.available35, %bb0 ]
+  %val.available48 = phi i1 [ %val.merge41, %cond_exit_620 ], [ %val.available49, %bb0 ]
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 6 to ptr))
+  %3 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 6 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
+  %4 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 7 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 8 to ptr))
+  %5 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 8 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 9 to ptr))
+  %6 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 9 to ptr))
+  %"1071_0.0" = select i1 %3, i64 8, i64 0
+  %"1106_0.0" = select i1 %4, i64 4, i64 0
+  %"1141_0.0" = select i1 %5, i64 2, i64 0
+  %"1176_0.0" = zext i1 %6 to i64
+  %7 = or i64 %"1106_0.0", %"1071_0.0"
+  %8 = or i64 %7, %"1141_0.0"
+  %9 = or i64 %8, %"1176_0.0"
+  %"1008_0.0" = zext i1 %5 to i64
+  %10 = add nuw nsw i64 %"61_2.0", %"1008_0.0"
+  %Pivot1825 = icmp slt i64 %10, 1
+  br i1 %Pivot1825, label %cond_704_case_1.sink.split.leaf.p0.0, label %NodeBlock
+
+NodeBlock:                                        ; preds = %cond_336_case_1
+  %val.available9 = phi i1 [ %val.available6, %cond_336_case_1 ]
+  %val.available23 = phi i1 [ %val.available20, %cond_336_case_1 ]
+  %val.available37 = phi i1 [ %val.available34, %cond_336_case_1 ]
+  %val.available51 = phi i1 [ %val.available48, %cond_336_case_1 ]
+  %Pivot = icmp slt i64 %10, 2
+  br i1 %Pivot, label %cond_704_case_1.sink.split.leaf.p1.0, label %LeafBlock
+
+LeafBlock:                                        ; preds = %NodeBlock
+  %val.available11 = phi i1 [ %val.available9, %NodeBlock ]
+  %val.available25 = phi i1 [ %val.available23, %NodeBlock ]
+  %val.available39 = phi i1 [ %val.available37, %NodeBlock ]
+  %val.available53 = phi i1 [ %val.available51, %NodeBlock ]
+  %SwitchLeaf = icmp eq i64 %10, 2
+  br i1 %SwitchLeaf, label %cond_704_case_1.sink.split.leaf.p2.0, label %cond_704_case_1
+
+cond_704_case_1:                                  ; preds = %LeafBlock, %cond_704_case_1.sink.split.leaf.p2.0, %cond_704_case_1.sink.split.leaf.p1.0, %cond_704_case_1.sink.split.leaf.p0.0
+  %phi.fix = phi i1 [ %val.available6, %cond_704_case_1.sink.split.leaf.p0.0 ], [ %val.available8, %cond_704_case_1.sink.split.leaf.p1.0 ], [ %val.available10, %cond_704_case_1.sink.split.leaf.p2.0 ], [ %val.available11, %LeafBlock ]
+  %phi.fix55 = phi i1 [ %val.available20, %cond_704_case_1.sink.split.leaf.p0.0 ], [ %val.available22, %cond_704_case_1.sink.split.leaf.p1.0 ], [ %val.available24, %cond_704_case_1.sink.split.leaf.p2.0 ], [ %val.available25, %LeafBlock ]
+  %phi.fix56 = phi i1 [ %val.available34, %cond_704_case_1.sink.split.leaf.p0.0 ], [ %val.available36, %cond_704_case_1.sink.split.leaf.p1.0 ], [ %val.available38, %cond_704_case_1.sink.split.leaf.p2.0 ], [ %val.available39, %LeafBlock ]
+  %phi.fix57 = phi i1 [ %val.available48, %cond_704_case_1.sink.split.leaf.p0.0 ], [ %val.available50, %cond_704_case_1.sink.split.leaf.p1.0 ], [ %val.available52, %cond_704_case_1.sink.split.leaf.p2.0 ], [ %val.available53, %LeafBlock ]
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
+  %11 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 10 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
+  %12 = tail call i1 @__quantum__qis__read_result__body(ptr nonnull inttoptr (i64 11 to ptr))
+  br label %__prepare_module_record_output_final
+
+bb:                                               ; preds = %alloca_block.leaf.3, %alloca_block.leaf.2, %alloca_block.leaf.1, %alloca_block.leaf.0
+  %val.available = phi i1 [ %13, %alloca_block.leaf.0 ], [ %17, %alloca_block.leaf.1 ], [ %21, %alloca_block.leaf.2 ], [ %25, %alloca_block.leaf.3 ]
+  %val.available14 = phi i1 [ %14, %alloca_block.leaf.0 ], [ %18, %alloca_block.leaf.1 ], [ %22, %alloca_block.leaf.2 ], [ %26, %alloca_block.leaf.3 ]
+  %val.available28 = phi i1 [ %15, %alloca_block.leaf.0 ], [ %19, %alloca_block.leaf.1 ], [ %23, %alloca_block.leaf.2 ], [ %27, %alloca_block.leaf.3 ]
+  %val.available42 = phi i1 [ %16, %alloca_block.leaf.0 ], [ %20, %alloca_block.leaf.1 ], [ %24, %alloca_block.leaf.2 ], [ %28, %alloca_block.leaf.3 ]
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
+  br label %cond_exit_620
+
+cond_exit_620:                                    ; preds = %alloca_block.leaf.3, %alloca_block.leaf.2, %alloca_block.leaf.1, %alloca_block.leaf.0, %bb
+  %val.merge = phi i1 [ %13, %alloca_block.leaf.0 ], [ %17, %alloca_block.leaf.1 ], [ %21, %alloca_block.leaf.2 ], [ %25, %alloca_block.leaf.3 ], [ %val.available, %bb ]
+  %val.merge13 = phi i1 [ %14, %alloca_block.leaf.0 ], [ %18, %alloca_block.leaf.1 ], [ %22, %alloca_block.leaf.2 ], [ %26, %alloca_block.leaf.3 ], [ %val.available14, %bb ]
+  %val.merge27 = phi i1 [ %15, %alloca_block.leaf.0 ], [ %19, %alloca_block.leaf.1 ], [ %23, %alloca_block.leaf.2 ], [ %27, %alloca_block.leaf.3 ], [ %val.available28, %bb ]
+  %val.merge41 = phi i1 [ %16, %alloca_block.leaf.0 ], [ %20, %alloca_block.leaf.1 ], [ %24, %alloca_block.leaf.2 ], [ %28, %alloca_block.leaf.3 ], [ %val.available42, %bb ]
+  br i1 %1, label %bb0, label %cond_336_case_1
+
+bb0:                                              ; preds = %cond_exit_620
+  %val.available7 = phi i1 [ %val.merge, %cond_exit_620 ]
+  %val.available21 = phi i1 [ %val.merge13, %cond_exit_620 ]
+  %val.available35 = phi i1 [ %val.merge27, %cond_exit_620 ]
+  %val.available49 = phi i1 [ %val.merge41, %cond_exit_620 ]
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
+  br label %cond_336_case_1
+
+cond_704_case_1.sink.split.leaf.p2.0:             ; preds = %LeafBlock
+  %val.available10 = phi i1 [ %val.available11, %LeafBlock ]
+  %val.available24 = phi i1 [ %val.available25, %LeafBlock ]
+  %val.available38 = phi i1 [ %val.available39, %LeafBlock ]
+  %val.available52 = phi i1 [ %val.available53, %LeafBlock ]
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 7 to ptr))
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
+  br label %cond_704_case_1
+
+alloca_block.leaf.0:                              ; preds = %alloca_block.route.false
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__reset__body(ptr null)
+  %13 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  %14 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  %15 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  %16 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
+  br i1 %0, label %bb, label %cond_exit_620
+
+alloca_block.leaf.1:                              ; preds = %alloca_block.route.false
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__reset__body(ptr null)
+  %17 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  %18 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  %19 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  %20 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
+  br i1 %0, label %bb, label %cond_exit_620
+
+alloca_block.leaf.2:                              ; preds = %alloca_block.route.true
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
+  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__reset__body(ptr null)
+  %21 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  %22 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  %23 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  %24 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
+  br i1 %0, label %bb, label %cond_exit_620
+
+alloca_block.leaf.3:                              ; preds = %alloca_block.route.true
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
+  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__reset__body(ptr null)
+  %25 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  %26 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  %27 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 4 to ptr))
+  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  %28 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 5 to ptr))
+  br i1 %0, label %bb, label %cond_exit_620
+
+alloca_block.route.false:                         ; preds = %alloca_block
+  br i1 %1, label %alloca_block.leaf.1, label %alloca_block.leaf.0
+
+alloca_block.route.true:                          ; preds = %alloca_block
+  br i1 %1, label %alloca_block.leaf.3, label %alloca_block.leaf.2
+
+cond_704_case_1.sink.split.leaf.p0.0:             ; preds = %cond_336_case_1
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
+  br label %cond_704_case_1
+
+cond_704_case_1.sink.split.leaf.p1.0:             ; preds = %NodeBlock
+  %val.available8 = phi i1 [ %val.available9, %NodeBlock ]
+  %val.available22 = phi i1 [ %val.available23, %NodeBlock ]
+  %val.available36 = phi i1 [ %val.available37, %NodeBlock ]
+  %val.available50 = phi i1 [ %val.available51, %NodeBlock ]
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
+  br label %cond_704_case_1
+
+__prepare_module_record_output_final:             ; preds = %cond_704_case_1
+  call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
+  call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix, ptr @2)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix55, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix56, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix57, ptr @5)
+  call void @__quantum__rt__int_record_output(i64 %"61_2.0", ptr @6)
+  call void @__quantum__rt__int_record_output(i64 %9, ptr @7)
+  call void @__quantum__rt__bool_record_output(i1 %11, ptr @8)
+  call void @__quantum__rt__bool_record_output(i1 %12, ptr @9)
+  ret void
+}
+
+declare void @__quantum__qis__mz__body(ptr, ptr) local_unnamed_addr
+
+declare i1 @__quantum__qis__read_result__body(ptr) local_unnamed_addr
+
+declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
+
+declare void @__quantum__rt__bool_record_output(i1, ptr) local_unnamed_addr
+
+declare void @__quantum__qis__reset__body(ptr) local_unnamed_addr
+
+declare void @__quantum__rt__int_record_output(i64, ptr) local_unnamed_addr
+
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="custom" "required_num_qubits"="8" "required_num_results"="12" }
+
+!llvm.module.flags = !{!0, !1, !2, !3}
+
+!0 = !{i32 1, !"qir_major_version", i32 1}
+!1 = !{i32 7, !"qir_minor_version", i32 0}
+!2 = !{i32 1, !"dynamic_qubit_management", i1 false}
+!3 = !{i32 1, !"dynamic_result_management", i1 false}
