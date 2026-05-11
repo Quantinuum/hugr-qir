@@ -6,18 +6,21 @@ on:
 
 jobs:
   lint:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up Python 3.x
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.x'
-    - name: Install ruff
-      run: pip install ruff
-    - name: ruff check
-      run: |
-        ruff check
-        ruff format
+      - uses: actions/checkout@v6
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install lint dependencies
+        run: uv sync --frozen --group dev --no-install-project
+      - name: Run prek hooks
+        run: >-
+          uvx prek run --all-files
+          --skip cargo-fmt
+          --skip cargo-check
+          --skip cargo-test
+          --skip cargo-clippy
+          --skip cargo-doc
