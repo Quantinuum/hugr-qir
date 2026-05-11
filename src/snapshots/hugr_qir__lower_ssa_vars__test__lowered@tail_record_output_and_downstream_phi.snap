@@ -11,24 +11,24 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.leaf.1, label %entry.leaf.0
+  br i1 %cond0, label %entry.dup.1, label %entry.dup.0
 
-right:                                            ; preds = %entry.leaf.1, %entry.leaf.0
-  %val.merge = phi i1 [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
+right:                                            ; preds = %entry.dup.1, %entry.dup.0
+  %val.merge = phi i1 [ %flag1, %entry.dup.0 ], [ %flag2, %entry.dup.1 ]
   br label %join
 
-join:                                             ; preds = %entry.leaf.0, %entry.leaf.1, %right
-  %phi.external = phi i1 [ true, %right ], [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
-  %val.available4 = phi i1 [ %val.merge, %right ], [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
+join:                                             ; preds = %entry.dup.0, %entry.dup.1, %right
+  %phi.external = phi i1 [ true, %right ], [ %flag1, %entry.dup.0 ], [ %flag2, %entry.dup.1 ]
+  %val.available4 = phi i1 [ %val.merge, %right ], [ %flag1, %entry.dup.0 ], [ %flag2, %entry.dup.1 ]
   tail call void @__test__consume_bool(i1 %phi.external)
   br label %__prepare_module_record_output_final
 
-entry.leaf.0:                                     ; preds = %entry
+entry.dup.0:                                      ; preds = %entry
   %flag1 = call i1 @__quantum__qis__read_result__body(ptr null)
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 6 to ptr))
   br i1 %cond1, label %join, label %right
 
-entry.leaf.1:                                     ; preds = %entry
+entry.dup.1:                                      ; preds = %entry
   %flag2 = call i1 @__quantum__qis__read_result__body(ptr null)
   call void @__quantum__qis__reset__body(ptr null)
   br i1 %cond1, label %join, label %right

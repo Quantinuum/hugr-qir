@@ -447,35 +447,35 @@ NodeBlock12899:                                   ; preds = %bb5, %cond_7817_cas
 
 NodeBlock12897:                                   ; preds = %NodeBlock12899
   %brmerge = or i1 %Pivot12898, %SwitchLeaf12896
-  br i1 %Pivot12898, label %cond_8553_case_0.sink.split.leaf.p0.0, label %NodeBlock12897.leaf.0
+  br i1 %Pivot12898, label %cond_8553_case_0.sink.split.dup.p0.0, label %NodeBlock12897.dup.0
 
 LeafBlock12893:                                   ; preds = %NodeBlock12899
-  br i1 %SwitchLeaf12894, label %cond_8553_case_0.sink.split.leaf.p2.0, label %NodeBlock12908
+  br i1 %SwitchLeaf12894, label %cond_8553_case_0.sink.split.dup.p2.0, label %NodeBlock12908
 
-NodeBlock12908:                                   ; preds = %LeafBlock12893, %NodeBlock12897.leaf.0, %cond_8553_case_0.sink.split.leaf.p2.0, %cond_8553_case_0.sink.split.leaf.p1.0, %cond_8553_case_0.sink.split.leaf.p0.0
+NodeBlock12908:                                   ; preds = %LeafBlock12893, %NodeBlock12897.dup.0, %cond_8553_case_0.sink.split.dup.p2.0, %cond_8553_case_0.sink.split.dup.p1.0, %cond_8553_case_0.sink.split.dup.p0.0
   br i1 %Pivot12909, label %LeafBlock12902, label %NodeBlock12906
 
 NodeBlock12906:                                   ; preds = %NodeBlock12908
   %brmerge12917 = or i1 %Pivot12907, %SwitchLeaf12905
-  br i1 %Pivot12907, label %cond_9059_case_0.sink.split.leaf.p0.0, label %NodeBlock12906.leaf.0
+  br i1 %Pivot12907, label %cond_9059_case_0.sink.split.dup.p0.0, label %NodeBlock12906.dup.0
 
 LeafBlock12902:                                   ; preds = %NodeBlock12908
-  br i1 %SwitchLeaf12896, label %cond_9059_case_0.sink.split.leaf.p2.0, label %cond_9059_case_0
+  br i1 %SwitchLeaf12896, label %cond_9059_case_0.sink.split.dup.p2.0, label %cond_9059_case_0
 
-cond_9059_case_0:                                 ; preds = %LeafBlock12902, %NodeBlock12906.leaf.0, %cond_9059_case_0.sink.split.leaf.p2.0, %cond_9059_case_0.sink.split.leaf.p1.0, %cond_9059_case_0.sink.split.leaf.p0.0
+cond_9059_case_0:                                 ; preds = %LeafBlock12902, %NodeBlock12906.dup.0, %cond_9059_case_0.sink.split.dup.p2.0, %cond_9059_case_0.sink.split.dup.p1.0, %cond_9059_case_0.sink.split.dup.p0.0
   br i1 %21, label %NodeBlock12915, label %NodeBlock12915.thread
 
 NodeBlock12915:                                   ; preds = %cond_9059_case_0
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 10 to ptr))
   %brmerge12920 = or i1 %Pivot12916, %19
-  br i1 %Pivot12916, label %cond_9887_case_0.sink.split.leaf.p0.0, label %NodeBlock12915.leaf.0
+  br i1 %Pivot12916, label %cond_9887_case_0.sink.split.dup.p0.0, label %NodeBlock12915.dup.0
 
 NodeBlock12915.thread:                            ; preds = %cond_9059_case_0
   %.not = xor i1 %19, true
   %brmerge12919 = or i1 %Pivot12916, %.not
-  br i1 %brmerge12919, label %cond_9887_case_0, label %cond_9887_case_0.sink.split.leaf.p2.0
+  br i1 %brmerge12919, label %cond_9887_case_0, label %cond_9887_case_0.sink.split.dup.p2.0
 
-cond_9887_case_0:                                 ; preds = %NodeBlock12915.thread, %NodeBlock12915.leaf.0, %cond_9887_case_0.sink.split.leaf.p2.0, %cond_9887_case_0.sink.split.leaf.p1.0, %cond_9887_case_0.sink.split.leaf.p0.0
+cond_9887_case_0:                                 ; preds = %NodeBlock12915.thread, %NodeBlock12915.dup.0, %cond_9887_case_0.sink.split.dup.p2.0, %cond_9887_case_0.sink.split.dup.p1.0, %cond_9887_case_0.sink.split.dup.p0.0
   br i1 %17, label %bb6, label %cond_10025_case_0
 
 bb6:                                              ; preds = %cond_9887_case_0
@@ -562,48 +562,48 @@ bb8:                                              ; preds = %cond_10117_case_0
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 15 to ptr))
   br label %cond_10152_case_1
 
-NodeBlock12897.leaf.0:                            ; preds = %NodeBlock12897
-  br i1 %brmerge, label %cond_8553_case_0.sink.split.leaf.p1.0, label %NodeBlock12908
+NodeBlock12897.dup.0:                             ; preds = %NodeBlock12897
+  br i1 %brmerge, label %cond_8553_case_0.sink.split.dup.p1.0, label %NodeBlock12908
 
-cond_8553_case_0.sink.split.leaf.p0.0:            ; preds = %NodeBlock12897
+cond_8553_case_0.sink.split.dup.p0.0:             ; preds = %NodeBlock12897
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 5 to ptr))
   br label %NodeBlock12908
 
-cond_8553_case_0.sink.split.leaf.p1.0:            ; preds = %NodeBlock12897.leaf.0
+cond_8553_case_0.sink.split.dup.p1.0:             ; preds = %NodeBlock12897.dup.0
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 6 to ptr))
   br label %NodeBlock12908
 
-cond_8553_case_0.sink.split.leaf.p2.0:            ; preds = %LeafBlock12893
+cond_8553_case_0.sink.split.dup.p2.0:             ; preds = %LeafBlock12893
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 4 to ptr))
   br label %NodeBlock12908
 
-NodeBlock12906.leaf.0:                            ; preds = %NodeBlock12906
-  br i1 %brmerge12917, label %cond_9059_case_0.sink.split.leaf.p1.0, label %cond_9059_case_0
+NodeBlock12906.dup.0:                             ; preds = %NodeBlock12906
+  br i1 %brmerge12917, label %cond_9059_case_0.sink.split.dup.p1.0, label %cond_9059_case_0
 
-cond_9059_case_0.sink.split.leaf.p0.0:            ; preds = %NodeBlock12906
+cond_9059_case_0.sink.split.dup.p0.0:             ; preds = %NodeBlock12906
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 8 to ptr))
   br label %cond_9059_case_0
 
-cond_9059_case_0.sink.split.leaf.p1.0:            ; preds = %NodeBlock12906.leaf.0
+cond_9059_case_0.sink.split.dup.p1.0:             ; preds = %NodeBlock12906.dup.0
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 9 to ptr))
   br label %cond_9059_case_0
 
-cond_9059_case_0.sink.split.leaf.p2.0:            ; preds = %LeafBlock12902
+cond_9059_case_0.sink.split.dup.p2.0:             ; preds = %LeafBlock12902
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 7 to ptr))
   br label %cond_9059_case_0
 
-NodeBlock12915.leaf.0:                            ; preds = %NodeBlock12915
-  br i1 %brmerge12920, label %cond_9887_case_0.sink.split.leaf.p1.0, label %cond_9887_case_0
+NodeBlock12915.dup.0:                             ; preds = %NodeBlock12915
+  br i1 %brmerge12920, label %cond_9887_case_0.sink.split.dup.p1.0, label %cond_9887_case_0
 
-cond_9887_case_0.sink.split.leaf.p0.0:            ; preds = %NodeBlock12915
+cond_9887_case_0.sink.split.dup.p0.0:             ; preds = %NodeBlock12915
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 11 to ptr))
   br label %cond_9887_case_0
 
-cond_9887_case_0.sink.split.leaf.p1.0:            ; preds = %NodeBlock12915.leaf.0
+cond_9887_case_0.sink.split.dup.p1.0:             ; preds = %NodeBlock12915.dup.0
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
   br label %cond_9887_case_0
 
-cond_9887_case_0.sink.split.leaf.p2.0:            ; preds = %NodeBlock12915.thread
+cond_9887_case_0.sink.split.dup.p2.0:             ; preds = %NodeBlock12915.thread
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
   br label %cond_9887_case_0
 

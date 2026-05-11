@@ -27,14 +27,15 @@
 //!      lowerable values and calls `lower_block`, which:
 //!      - Collects the lowerable phis and selects and the distinct select
 //!        conditions (S conditions total).
-//!      - Creates P × 2^S *leaf blocks* (P predecessors × 2^S truth
-//!        assignments), each with all phis and selects resolved to concrete
-//!        values.
+//!      - Creates P × 2^S *duplicated successor blocks* (P predecessors ×
+//!        2^S truth assignments), each with all phis and selects resolved to
+//!        concrete values.
 //!      - Builds a binary *routing tree* (`build_routing_subtree`) that
-//!        dispatches to the correct leaf based on the select conditions.
+//!        dispatches to the correct duplicated successor based on the select
+//!        conditions.
 //!      - Fixes downstream phis (`fix_successor_phis`) and external value
-//!        users (`fix_external_value_uses`) to reference the new leaf
-//!        blocks.
+//!        users (`fix_external_value_uses`) to reference the new duplicated
+//!        successor blocks.
 //!      - Deletes the original block (full-block mode) or erases its
 //!        lowered tail (select-only mode).
 //!
@@ -57,10 +58,10 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 type ValueKey = usize;
 
-/// Maximum number of leaf blocks that may be created when lowering a single
-/// block (across all predecessors). Lowering is aborted with an error if this
-/// limit would be exceeded.
-const MAX_LOWERED_LEAF_BLOCKS: usize = 16;
+/// Maximum number of duplicated successor blocks that may be created when
+/// lowering a single block (across all predecessors). Lowering is aborted with
+/// an error if this limit would be exceeded.
+const MAX_LOWERED_DUP_BLOCKS: usize = 16;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Entry point
@@ -342,18 +343,18 @@ fn detect_loops(func: FunctionValue) -> Result<()> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Lowers a single basic block by replacing its lowerable phis and selects
-/// with specialized leaf blocks.
+/// with duplicated successor blocks.
 ///
 /// Operates in one of two modes:
 ///
 /// - **Full-block mode** (block has leading phis): the entire block is replaced
-///   by P × 2^S leaf blocks, one per predecessor × condition truth assignment.
-///   A routing tree per predecessor dispatches to the correct leaf. The
-///   original block is deleted.
+///   by P × 2^S duplicated successor blocks, one per predecessor × condition
+///   truth assignment. A routing tree per predecessor dispatches to the correct
+///   duplicate. The original block is deleted.
 ///
 /// - **Select-only mode** (no leading phis): the block is split at the first
-///   lowerable select. The prefix is kept, and 2^S leaf blocks are created for
-///   the tail. A routing tree is appended to the prefix block.
+///   lowerable select. The prefix is kept, and 2^S duplicated successor blocks
+///   are created for the tail. A routing tree is appended to the prefix block.
 fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<()> {
     let func = required_parent_function(block, "lower_block")?;
     let context = block.get_context();
@@ -398,16 +399,16 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         }
     }
 
-    let leaves_per_pred = 1usize << conditions.len();
+    let dups_per_pred = 1usize << conditions.len();
 
     if has_any_phis {
         let preds = predecessors(block)?;
-        let total_leaves = preds.len() * leaves_per_pred;
-        if total_leaves > MAX_LOWERED_LEAF_BLOCKS {
+        let total_dups = preds.len() * dups_per_pred;
+        if total_dups > MAX_LOWERED_DUP_BLOCKS {
             bail!(
-                "lower_block: lowering block {} would create {total_leaves} leaf blocks \
+                "lower_block: lowering block {} would create {total_dups} duplicated successor blocks \
                  ({} predecessors × 2^{} select conditions), exceeding the limit of \
-                 {MAX_LOWERED_LEAF_BLOCKS}",
+                 {MAX_LOWERED_DUP_BLOCKS}",
                 name_of_block(block),
                 preds.len(),
                 conditions.len(),
@@ -437,7 +438,7 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
 
         for (pred_idx, pred) in preds.iter().enumerate() {
-            for bits in 0..leaves_per_pred {
+            for bits in 0..dups_per_pred {
                 let mut vmap = HashMap::new();
 
                 for phi_inst in &leading_phi_insts {
@@ -461,22 +462,22 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
                     vmap.insert(value_key_from_instruction(*sel), resolved);
                 }
 
-                let leaf_bb = context
-                    .append_basic_block(func, &format!("{base_name}.leaf.p{pred_idx}.{bits}"));
-                rebuild_tail(&builder, leaf_bb, &body, &mut vmap, None, "leaf")?;
-                leaves.push((leaf_bb, vmap));
+                let dup_bb = context
+                    .append_basic_block(func, &format!("{base_name}.dup.p{pred_idx}.{bits}"));
+                rebuild_tail(&builder, dup_bb, &body, &mut vmap, None, "dup_succ")?;
+                leaves.push((dup_bb, vmap));
             }
         }
 
         for (pred_idx, pred) in preds.iter().enumerate() {
-            let start = pred_idx * leaves_per_pred;
-            let end = start + leaves_per_pred;
-            let pred_leaves = &leaves[start..end];
-            let leaf_blocks: Vec<_> = pred_leaves.iter().map(|(bb, _)| *bb).collect();
+            let start = pred_idx * dups_per_pred;
+            let end = start + dups_per_pred;
+            let pred_dups = &leaves[start..end];
+            let dup_blocks: Vec<_> = pred_dups.iter().map(|(bb, _)| *bb).collect();
             let mut pred_conditions = Vec::new();
             for cond in &conditions {
                 let remapped =
-                    remap(&pred_leaves[0].1, (*cond).as_basic_value_enum()).into_int_value();
+                    remap(&pred_dups[0].1, (*cond).as_basic_value_enum()).into_int_value();
                 if let Some(cond_inst) = remapped.as_instruction_value()
                     && cond_inst.get_parent() == Some(block)
                 {
@@ -493,7 +494,7 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
                 func,
                 &format!("{base_name}.route.p{pred_idx}"),
                 &pred_conditions,
-                &leaf_blocks,
+                &dup_blocks,
             )?;
             redirect_edge(&builder, *pred, block, root);
         }
@@ -526,10 +527,10 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         return Ok(());
     }
 
-    if leaves_per_pred > MAX_LOWERED_LEAF_BLOCKS {
+    if dups_per_pred > MAX_LOWERED_DUP_BLOCKS {
         bail!(
-            "lower_block: lowering block {} would create {leaves_per_pred} leaf blocks \
-             (2^{} select conditions), exceeding the limit of {MAX_LOWERED_LEAF_BLOCKS}",
+            "lower_block: lowering block {} would create {dups_per_pred} duplicated successor blocks \
+             (2^{} select conditions), exceeding the limit of {MAX_LOWERED_DUP_BLOCKS}",
             name_of_block(block),
             conditions.len(),
         );
@@ -573,7 +574,7 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
     validate_rebuildable_tail_slice(&body)?;
 
     let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
-    for bits in 0..leaves_per_pred {
+    for bits in 0..dups_per_pred {
         let mut vmap = HashMap::new();
         for sel in &lo_selects {
             let cond_idx =
@@ -588,9 +589,9 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
             vmap.insert(value_key_from_instruction(*sel), resolved);
         }
 
-        let leaf_bb = context.append_basic_block(func, &format!("{base_name}.leaf.{bits}"));
-        rebuild_tail(&builder, leaf_bb, &body, &mut vmap, None, "leaf")?;
-        leaves.push((leaf_bb, vmap));
+        let dup_bb = context.append_basic_block(func, &format!("{base_name}.dup.{bits}"));
+        rebuild_tail(&builder, dup_bb, &body, &mut vmap, None, "dup_succ")?;
+        leaves.push((dup_bb, vmap));
     }
 
     fix_successor_phis(block, &leaves, lowerable)?;
@@ -606,25 +607,25 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         inst.erase_from_basic_block();
     }
 
-    let leaf_blocks: Vec<_> = leaves.iter().map(|(bb, _)| *bb).collect();
+    let dup_blocks: Vec<_> = leaves.iter().map(|(bb, _)| *bb).collect();
     if conditions.len() == 1 {
         builder.position_at_end(block);
-        builder.build_conditional_branch(conditions[0], leaf_blocks[1], leaf_blocks[0])?;
+        builder.build_conditional_branch(conditions[0], dup_blocks[1], dup_blocks[0])?;
     } else {
-        let half = leaf_blocks.len() / 2;
+        let half = dup_blocks.len() / 2;
         let false_subtree = build_routing_subtree(
             &builder,
             func,
             &format!("{base_name}.route.false"),
             &conditions[..conditions.len() - 1],
-            &leaf_blocks[..half],
+            &dup_blocks[..half],
         )?;
         let true_subtree = build_routing_subtree(
             &builder,
             func,
             &format!("{base_name}.route.true"),
             &conditions[..conditions.len() - 1],
-            &leaf_blocks[half..],
+            &dup_blocks[half..],
         )?;
         builder.position_at_end(block);
         builder.build_conditional_branch(
@@ -642,11 +643,11 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
 }
 
 /// Recursively builds a binary routing tree that dispatches to the correct
-/// leaf block based on a sequence of boolean conditions.
+/// duplicated successor block based on a sequence of boolean conditions.
 ///
-/// The tree tests the *last* condition first, splitting `leaves` in half:
+/// The tree tests the *last* condition first, splitting `dup_succs` in half:
 /// the lower half is reached when the last condition is false, the upper half
-/// when true. This recurses until a single leaf remains (base case).
+/// when true. This recurses until a single block remains (base case).
 ///
 /// Returns the root block of the routing tree.
 fn build_routing_subtree<'ctx>(
@@ -660,7 +661,7 @@ fn build_routing_subtree<'ctx>(
         return leaves
             .first()
             .copied()
-            .ok_or_else(|| anyhow!("build_routing_subtree: missing leaf"));
+            .ok_or_else(|| anyhow!("build_routing_subtree: empty dup_succs"));
     }
 
     let context = leaves[0].get_context();
@@ -677,8 +678,8 @@ fn build_routing_subtree<'ctx>(
 }
 
 /// Rewrites phi instructions in direct successors of `original_block` to
-/// replace incoming edges from the original block with per-leaf incoming
-/// edges, resolving values through each leaf's value map.
+/// replace incoming edges from the original block with per-duplicate incoming
+/// edges, resolving values through each duplicate's value map.
 fn fix_successor_phis<'ctx>(
     original_block: BasicBlock<'ctx>,
     leaves: &[(BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>)],
@@ -711,10 +712,10 @@ fn fix_successor_phis<'ctx>(
 
             for (val, incoming_bb) in incomings {
                 if incoming_bb == original_block {
-                    for (leaf_bb, leaf_vmap) in leaves {
-                        if block_has_successor(*leaf_bb, succ)? {
-                            let resolved = remap(leaf_vmap, val);
-                            new_phi.add_incoming(&[(&resolved, *leaf_bb)]);
+                    for (dup_bb, dup_vmap) in leaves {
+                        if block_has_successor(*dup_bb, succ)? {
+                            let resolved = remap(dup_vmap, val);
+                            new_phi.add_incoming(&[(&resolved, *dup_bb)]);
                         }
                     }
                 } else {
@@ -744,9 +745,9 @@ fn fix_external_value_uses<'ctx>(
     only_keys: Option<&HashSet<ValueKey>>,
 ) -> Result<()> {
     let succs = direct_successors(original_block)?;
-    let leaf_keys: HashSet<_> = leaves
+    let dup_keys: HashSet<_> = leaves
         .iter()
-        .map(|(leaf, _)| leaf.as_mut_ptr() as usize)
+        .map(|(dup, _)| dup.as_mut_ptr() as usize)
         .collect();
 
     for inst in original_block.get_instructions() {
@@ -768,16 +769,16 @@ fn fix_external_value_uses<'ctx>(
         for succ in &succs {
             let incomings: Vec<_> = leaves
                 .iter()
-                .filter_map(|(leaf, vmap)| {
-                    block_has_successor(*leaf, *succ)
+                .filter_map(|(dup, vmap)| {
+                    block_has_successor(*dup, *succ)
                         .ok()
-                        .and_then(|reaches| reaches.then_some((*leaf, vmap)))
+                        .and_then(|reaches| reaches.then_some((*dup, vmap)))
                 })
-                .map(|(leaf, vmap)| {
+                .map(|(dup, vmap)| {
                     let resolved = vmap.get(&key).copied().expect(
-                        "fix_external_value_uses: leaf vmap missing key for value from original block",
+                        "fix_external_value_uses: dup successor vmap missing key for value from original block",
                     );
-                    (resolved, leaf)
+                    (resolved, dup)
                 })
                 .collect();
             if incomings.is_empty() {
@@ -791,13 +792,13 @@ fn fix_external_value_uses<'ctx>(
                 builder.position_at_end(*succ);
             }
             let merge = builder.build_phi(value.get_type(), "val.merge")?;
-            for (incoming_val, leaf) in incomings {
-                merge.add_incoming(&[(&incoming_val, leaf)]);
+            for (incoming_val, dup) in incomings {
+                merge.add_incoming(&[(&incoming_val, dup)]);
             }
 
             for pred in predecessors(*succ)? {
                 let pred_key = pred.as_mut_ptr() as usize;
-                if leaf_keys.contains(&pred_key) {
+                if dup_keys.contains(&pred_key) {
                     continue;
                 }
                 if pred == original_block {
@@ -893,13 +894,13 @@ fn fix_external_value_uses<'ctx>(
 }
 
 /// Returns a value available in `block` that represents a value originally
-/// defined in `original_block` after that block has been replaced by leaf
-/// blocks.
+/// defined in `original_block` after that block has been replaced by
+/// duplicated successor blocks.
 ///
-/// If `block` is a leaf or direct successor with a merge phi, returns that
-/// directly. Otherwise, creates a helper phi in `block` that merges values
-/// from its predecessors, recursing as needed. Results are cached to avoid
-/// duplicate helper phis.
+/// If `block` is a duplicated successor or direct successor with a merge phi,
+/// returns that directly. Otherwise, creates a helper phi in `block` that
+/// merges values from its predecessors, recursing as needed. Results are
+/// cached to avoid duplicate helper phis.
 #[allow(clippy::too_many_arguments)]
 fn resolve_available_value_in_block<'ctx>(
     original_block: BasicBlock<'ctx>,
@@ -937,10 +938,10 @@ fn resolve_available_value_in_block<'ctx>(
             merge_phi
         } else if let Some((_, vmap)) = leaves
             .iter()
-            .find(|(leaf, _)| leaf.as_mut_ptr() as usize == pred_key)
+            .find(|(dup, _)| dup.as_mut_ptr() as usize == pred_key)
         {
             vmap.get(&key).copied().expect(
-                "resolve_available_value_in_block: leaf vmap missing key for value from original block",
+                "resolve_available_value_in_block: dup successor vmap missing key for value from original block",
             )
         } else {
             if pred == original_block {
@@ -1477,13 +1478,13 @@ fn name_of_block(bb: BasicBlock<'_>) -> String {
     bb.get_name().to_string_lossy().to_string()
 }
 
-/// Strips synthetic suffixes (`.sel.`, `.leaf`, `.route`, etc.) from a block
+/// Strips synthetic suffixes (`.sel.`, `.dup.`, `.route`, etc.) from a block
 /// name to recover the base name of the original block it was derived from.
 fn synthetic_block_base_name(bb: BasicBlock<'_>) -> String {
     let name = name_of_block(bb);
     let mut base = name.as_str();
 
-    for marker in [".sel.", ".select.", ".dup", ".record", ".leaf", ".route"] {
+    for marker in [".sel.", ".select.", ".dup", ".record", ".route"] {
         if let Some((prefix, _)) = base.split_once(marker) {
             base = prefix;
             break;
@@ -2363,8 +2364,8 @@ mod test {
 
     #[test]
     fn rejects_too_many_select_conditions_select_only() {
-        // 5 distinct select conditions → 2^5 = 32 leaf blocks, exceeding
-        // MAX_LOWERED_LEAF_BLOCKS. This exercises the select-only code path
+        // 5 distinct select conditions → 2^5 = 32 duplicated successor blocks, exceeding
+        // MAX_LOWERED_DUP_BLOCKS. This exercises the select-only code path
         // (no leading phis).
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
@@ -2400,14 +2401,14 @@ declare void @__quantum__qis__h__body(%Qubit*)
             .to_string();
         assert!(
             err.contains("exceeding the limit"),
-            "expected leaf-block limit error, got: {err}"
+            "expected dup-block limit error, got: {err}"
         );
     }
 
     #[test]
     fn rejects_too_many_select_conditions_full_block() {
-        // 2 predecessors × 2^4 = 32 leaf blocks, exceeding
-        // MAX_LOWERED_LEAF_BLOCKS. This exercises the full-block code path
+        // 2 predecessors × 2^4 = 32 duplicated successor blocks, exceeding
+        // MAX_LOWERED_DUP_BLOCKS. This exercises the full-block code path
         // (block has leading phis).
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
@@ -2452,7 +2453,7 @@ declare void @__quantum__qis__h__body(%Qubit*)
             .to_string();
         assert!(
             err.contains("exceeding the limit"),
-            "expected leaf-block limit error, got: {err}"
+            "expected dup-block limit error, got: {err}"
         );
     }
 

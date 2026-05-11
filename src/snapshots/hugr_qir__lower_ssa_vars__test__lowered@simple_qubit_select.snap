@@ -9,16 +9,16 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %entry.leaf.1, label %entry.leaf.0
+  br i1 %cond, label %entry.dup.1, label %entry.dup.0
 
-common.ret:                                       ; preds = %entry.leaf.1, %entry.leaf.0
+common.ret:                                       ; preds = %entry.dup.1, %entry.dup.0
   ret void
 
-entry.leaf.0:                                     ; preds = %entry
+entry.dup.0:                                      ; preds = %entry
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 
-entry.leaf.1:                                     ; preds = %entry
+entry.dup.1:                                      ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 }

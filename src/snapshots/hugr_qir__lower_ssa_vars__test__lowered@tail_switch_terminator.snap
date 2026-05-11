@@ -14,22 +14,22 @@ entry:
   %selected = select i1 %cond, ptr null, ptr inttoptr (i64 4 to ptr)
   %idx = zext i1 %flag to i64
   switch i64 %idx, label %entry.unreachabledefault [
-    i64 0, label %exit.leaf.p2.0
-    i64 1, label %exit.leaf.p1.0
+    i64 0, label %exit.dup.p2.0
+    i64 1, label %exit.dup.p1.0
   ]
 
 entry.unreachabledefault:                         ; preds = %entry
   unreachable
 
-exit.leaf.p1.0:                                   ; preds = %entry
+exit.dup.p1.0:                                    ; preds = %entry
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 
-exit.leaf.p2.0:                                   ; preds = %entry
+exit.dup.p2.0:                                    ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 
-common.ret:                                       ; preds = %exit.leaf.p1.0, %exit.leaf.p2.0
+common.ret:                                       ; preds = %exit.dup.p1.0, %exit.dup.p2.0
   br label %__prepare_module_record_output_final
 
 __prepare_module_record_output_final:             ; preds = %common.ret
