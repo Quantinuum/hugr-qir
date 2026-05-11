@@ -88,32 +88,25 @@ pub fn lower_qubit_and_float_selects_and_phis(
 
     prepare_module(module)?;
 
-    const MAX_ITERATIONS: usize = 10;
     let mut changed = false;
     for func in module.get_functions() {
         changed |= lower_function(func)?;
     }
 
-    for _ in 1..MAX_ITERATIONS {
-        if !changed {
-            break;
-        }
+    // A second pass may be needed if "simplifycfg" reintroduces phis or selects.
+    // In that case we don't re-run `simp_cfg` after the second pass.
+    if changed {
         simp_cfg(module, target)?;
         prepare_module(module)?;
-        if !module_has_lowerable_values(module)? {
-            break;
-        }
-        changed = false;
-        for func in module.get_functions() {
-            changed |= lower_function(func)?;
+        if module_has_lowerable_values(module)? {
+            for func in module.get_functions() {
+                lower_function(func)?;
+            }
         }
     }
 
     if module_has_lowerable_values(module)? {
-        bail!(
-            "lower_qubit_and_float_selects_and_phis: module still has lowerable values \
-             after {MAX_ITERATIONS} iterations"
-        );
+        bail!("lower_qubit_and_float_selects_and_phis: lowerable values remain after two passes");
     }
 
     normalize_block_names(module);
