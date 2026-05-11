@@ -1711,8 +1711,8 @@ fn redirect_edge<'ctx>(
 /// inserted into `vmap` keyed by the original instruction's `ValueKey`.
 ///
 /// Supports arithmetic, comparison, conversion, GEP, call, store, load,
-/// alloca, and several other LLVM opcodes. Returns [`RebuildOutcome`]
-/// indicating whether a value was produced.
+/// and select opcodes. Returns [`RebuildOutcome`] indicating whether a
+/// value was produced.
 pub fn rebuild_inst<'ctx>(
     builder: &Builder<'ctx>,
     into_block: BasicBlock<'ctx>,
@@ -1721,200 +1721,10 @@ pub fn rebuild_inst<'ctx>(
 ) -> Result<RebuildOutcome<'ctx>> {
     let name = inst.get_name().unwrap_or(c"").to_string_lossy();
     builder.position_at_end(into_block);
-    match inst.get_opcode() {
-        // ---------------- Pointer / aggregate ops ----------------
-        Op::GetElementPtr => unsafe {
-            let base = remap(vmap, expect_inst_operand_value(inst, 0));
-            let num_ops = inst.get_num_operands();
-            let mut indices = Vec::new();
-            for i in 1..num_ops {
-                let idx = expect_inst_operand_value(inst, i);
-                indices.push(remap(vmap, idx).into_int_value());
-            }
-            let gep_ty = inst.get_gep_source_element_type().unwrap();
-            let built = builder.build_gep(gep_ty, base.into_pointer_value(), &indices, &name)?;
-            Ok(RebuildOutcome::Value(built.as_basic_value_enum()))
-        },
+    let op = |i: u32| -> BasicValueEnum<'ctx> { remap(vmap, expect_inst_operand_value(inst, i)) };
 
-        // ---------------- Casts (no `build_bitcast` fallback) ----------------
-        Op::BitCast => {
-            // We implement bitcast via specialized casts. See comments in our previous message.
-            let src_val = remap(vmap, expect_inst_operand_value(inst, 0));
-            let dst_any = inst.get_type(); // LLVM 14: typed pointers still exist
-
-            match dst_any.try_into() {
-                Ok(BasicTypeEnum::PointerType(dst_ptr_ty)) => {
-                    let src_ptr = match src_val {
-                        BasicValueEnum::PointerValue(p) => p,
-                        _ => bail!("Could not cast to PointerType"),
-                    };
-                    let cast = builder.build_pointer_cast(src_ptr, dst_ptr_ty, &name)?;
-                    Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-                }
-                Ok(BasicTypeEnum::IntType(dst_int_ty)) => {
-                    let src_int = match src_val {
-                        BasicValueEnum::IntValue(i) => i,
-                        _ => bail!("Could not cast to IntValue"),
-                    };
-                    if src_int.get_type().get_bit_width() != dst_int_ty.get_bit_width() {
-                        bail!("Bit width mismatch");
-                    }
-                    let cast = builder.build_int_cast(src_int, dst_int_ty, &name)?;
-                    Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-                }
-                Ok(BasicTypeEnum::FloatType(dst_fp_ty)) => {
-                    let src_fp = match src_val {
-                        BasicValueEnum::FloatValue(f) => f,
-                        _ => bail!("Could not cast to FloatValue"),
-                    };
-                    if src_fp.get_type() != dst_fp_ty {
-                        bail!("Floating type mismatch");
-                    }
-                    let cast = builder.build_float_cast(src_fp, dst_fp_ty, &name)?;
-                    Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-                }
-                _ => bail!("Unsupported BitCase type"),
-            }
-        }
-
-        Op::Trunc => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_int_truncate(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::ZExt => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_int_z_extend(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::SExt => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_int_s_extend(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::FPTrunc => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let dst_ty = inst.get_type().into_float_type();
-            let cast = builder.build_float_trunc(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::FPExt => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let dst_ty = inst.get_type().into_float_type();
-            let cast = builder.build_float_ext(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::UIToFP => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_float_type();
-            let cast = builder.build_unsigned_int_to_float(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::SIToFP => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_float_type();
-            let cast = builder.build_signed_int_to_float(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::FPToUI => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_float_to_unsigned_int(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::FPToSI => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_float_to_signed_int(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::PtrToInt => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
-            let dst_ty = inst.get_type().into_int_type();
-            let cast = builder.build_ptr_to_int(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        Op::IntToPtr => {
-            let src = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let dst_ty = inst.get_type().into_pointer_type();
-            let cast = builder.build_int_to_ptr(src, dst_ty, &name)?;
-            Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
-        }
-
-        // ---------------- Memory ops ----------------
-        Op::Load => {
-            let addr = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
-            let ty: BasicTypeEnum = inst
-                .get_type()
-                .try_into()
-                .expect("the result type of a load should be a BasicType");
-            let load = builder.build_load(ty, addr, &name)?;
-            Ok(RebuildOutcome::Value(load))
-        }
-
-        Op::Store => {
-            let val = remap(vmap, expect_inst_operand_value(inst, 0));
-            let addr = remap(vmap, expect_inst_operand_value(inst, 1)).into_pointer_value();
-            builder.build_store(addr, val)?;
-            Ok(RebuildOutcome::Void)
-        }
-
-        // ---------------- Comparisons / select ----------------
-        Op::ICmp => {
-            let pred = inst.get_icmp_predicate().expect("Failed to get predicate");
-            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_int_value();
-            let cmp = builder.build_int_compare(pred, lhs, rhs, &name)?;
-            Ok(RebuildOutcome::Value(cmp.as_basic_value_enum()))
-        }
-
-        Op::FCmp => {
-            let pred = inst
-                .get_fcmp_predicate()
-                .ok_or_else(|| anyhow!("Failed to get fcmp predicate"))?;
-            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_float_value();
-            let cmp = builder.build_float_compare(pred, lhs, rhs, &name)?;
-            Ok(RebuildOutcome::Value(cmp.as_basic_value_enum()))
-        }
-
-        Op::Select => {
-            let cond = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let tval = remap(vmap, expect_inst_operand_value(inst, 1));
-            let fval = remap(vmap, expect_inst_operand_value(inst, 2));
-            let sel = builder.build_select(cond, tval, fval, &name)?;
-            Ok(RebuildOutcome::Value(sel))
-        }
-
-        // ---------------- Floating-point arithmetic ----------------
-        Op::FAdd | Op::FSub | Op::FMul | Op::FDiv | Op::FRem => {
-            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_float_value();
-            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_float_value();
-            let res = match inst.get_opcode() {
-                Op::FAdd => builder.build_float_add(lhs, rhs, &name),
-                Op::FSub => builder.build_float_sub(lhs, rhs, &name),
-                Op::FMul => builder.build_float_mul(lhs, rhs, &name),
-                Op::FDiv => builder.build_float_div(lhs, rhs, &name),
-                Op::FRem => builder.build_float_rem(lhs, rhs, &name),
-                _ => unreachable!(),
-            }?;
-            Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
-        }
-
-        // ---------------- Integer arithmetic ----------------
+    let result: BasicValueEnum = match inst.get_opcode() {
+        // ── Integer binary arithmetic & bitwise ─────────────────────────
         Op::Add
         | Op::Sub
         | Op::Mul
@@ -1928,9 +1738,8 @@ pub fn rebuild_inst<'ctx>(
         | Op::And
         | Op::Or
         | Op::Xor => {
-            let lhs = remap(vmap, expect_inst_operand_value(inst, 0)).into_int_value();
-            let rhs = remap(vmap, expect_inst_operand_value(inst, 1)).into_int_value();
-            let res = match inst.get_opcode() {
+            let (lhs, rhs) = (op(0).into_int_value(), op(1).into_int_value());
+            match inst.get_opcode() {
                 Op::Add => builder.build_int_add(lhs, rhs, &name),
                 Op::Sub => builder.build_int_sub(lhs, rhs, &name),
                 Op::Mul => builder.build_int_mul(lhs, rhs, &name),
@@ -1945,35 +1754,194 @@ pub fn rebuild_inst<'ctx>(
                 Op::Or => builder.build_or(lhs, rhs, &name),
                 Op::Xor => builder.build_xor(lhs, rhs, &name),
                 _ => unreachable!(),
-            }?;
-            Ok(RebuildOutcome::Value(res.as_basic_value_enum()))
+            }?
+            .as_basic_value_enum()
         }
 
-        // ---------------- Calls ----------------
+        // ── Float binary arithmetic ─────────────────────────────────────
+        Op::FAdd | Op::FSub | Op::FMul | Op::FDiv | Op::FRem => {
+            let (lhs, rhs) = (op(0).into_float_value(), op(1).into_float_value());
+            match inst.get_opcode() {
+                Op::FAdd => builder.build_float_add(lhs, rhs, &name),
+                Op::FSub => builder.build_float_sub(lhs, rhs, &name),
+                Op::FMul => builder.build_float_mul(lhs, rhs, &name),
+                Op::FDiv => builder.build_float_div(lhs, rhs, &name),
+                Op::FRem => builder.build_float_rem(lhs, rhs, &name),
+                _ => unreachable!(),
+            }?
+            .as_basic_value_enum()
+        }
+
+        // ── Integer ↔ integer casts ─────────────────────────────────────
+        Op::Trunc | Op::ZExt | Op::SExt => {
+            let (src, dst_ty) = (op(0).into_int_value(), inst.get_type().into_int_type());
+            match inst.get_opcode() {
+                Op::Trunc => builder.build_int_truncate(src, dst_ty, &name),
+                Op::ZExt => builder.build_int_z_extend(src, dst_ty, &name),
+                Op::SExt => builder.build_int_s_extend(src, dst_ty, &name),
+                _ => unreachable!(),
+            }?
+            .as_basic_value_enum()
+        }
+
+        // ── Float ↔ float casts ─────────────────────────────────────────
+        Op::FPTrunc | Op::FPExt => {
+            let (src, dst_ty) = (op(0).into_float_value(), inst.get_type().into_float_type());
+            match inst.get_opcode() {
+                Op::FPTrunc => builder.build_float_trunc(src, dst_ty, &name),
+                Op::FPExt => builder.build_float_ext(src, dst_ty, &name),
+                _ => unreachable!(),
+            }?
+            .as_basic_value_enum()
+        }
+
+        // ── Integer → float casts ───────────────────────────────────────
+        Op::UIToFP | Op::SIToFP => {
+            let (src, dst_ty) = (op(0).into_int_value(), inst.get_type().into_float_type());
+            match inst.get_opcode() {
+                Op::UIToFP => builder.build_unsigned_int_to_float(src, dst_ty, &name),
+                Op::SIToFP => builder.build_signed_int_to_float(src, dst_ty, &name),
+                _ => unreachable!(),
+            }?
+            .as_basic_value_enum()
+        }
+
+        // ── Float → integer casts ───────────────────────────────────────
+        Op::FPToUI | Op::FPToSI => {
+            let (src, dst_ty) = (op(0).into_float_value(), inst.get_type().into_int_type());
+            match inst.get_opcode() {
+                Op::FPToUI => builder.build_float_to_unsigned_int(src, dst_ty, &name),
+                Op::FPToSI => builder.build_float_to_signed_int(src, dst_ty, &name),
+                _ => unreachable!(),
+            }?
+            .as_basic_value_enum()
+        }
+
+        // ── Pointer ↔ integer casts ─────────────────────────────────────
+        Op::PtrToInt => builder
+            .build_ptr_to_int(
+                op(0).into_pointer_value(),
+                inst.get_type().into_int_type(),
+                &name,
+            )?
+            .as_basic_value_enum(),
+        Op::IntToPtr => builder
+            .build_int_to_ptr(
+                op(0).into_int_value(),
+                inst.get_type().into_pointer_type(),
+                &name,
+            )?
+            .as_basic_value_enum(),
+
+        // ── BitCast (dispatch by destination type) ───────────────────────
+        Op::BitCast => {
+            let src_val = op(0);
+            match inst.get_type().try_into() {
+                Ok(BasicTypeEnum::PointerType(dst_ty)) => {
+                    let BasicValueEnum::PointerValue(src) = src_val else {
+                        bail!("BitCast: source is not a pointer")
+                    };
+                    builder
+                        .build_pointer_cast(src, dst_ty, &name)?
+                        .as_basic_value_enum()
+                }
+                Ok(BasicTypeEnum::IntType(dst_ty)) => {
+                    let BasicValueEnum::IntValue(src) = src_val else {
+                        bail!("BitCast: source is not an integer")
+                    };
+                    if src.get_type().get_bit_width() != dst_ty.get_bit_width() {
+                        bail!("BitCast: bit width mismatch");
+                    }
+                    builder
+                        .build_int_cast(src, dst_ty, &name)?
+                        .as_basic_value_enum()
+                }
+                Ok(BasicTypeEnum::FloatType(dst_ty)) => {
+                    let BasicValueEnum::FloatValue(src) = src_val else {
+                        bail!("BitCast: source is not a float")
+                    };
+                    if src.get_type() != dst_ty {
+                        bail!("BitCast: float type mismatch");
+                    }
+                    builder
+                        .build_float_cast(src, dst_ty, &name)?
+                        .as_basic_value_enum()
+                }
+                _ => bail!("Unsupported BitCast destination type"),
+            }
+        }
+
+        // ── Comparisons ─────────────────────────────────────────────────
+        Op::ICmp => {
+            let pred = inst.get_icmp_predicate().expect("ICmp missing predicate");
+            builder
+                .build_int_compare(pred, op(0).into_int_value(), op(1).into_int_value(), &name)?
+                .as_basic_value_enum()
+        }
+        Op::FCmp => {
+            let pred = inst
+                .get_fcmp_predicate()
+                .ok_or_else(|| anyhow!("FCmp missing predicate"))?;
+            builder
+                .build_float_compare(
+                    pred,
+                    op(0).into_float_value(),
+                    op(1).into_float_value(),
+                    &name,
+                )?
+                .as_basic_value_enum()
+        }
+
+        // ── Select ──────────────────────────────────────────────────────
+        Op::Select => builder.build_select(op(0).into_int_value(), op(1), op(2), &name)?,
+
+        // ── GEP ─────────────────────────────────────────────────────────
+        Op::GetElementPtr => {
+            let mut indices: Vec<IntValue> = Vec::new();
+            for i in 1..inst.get_num_operands() {
+                indices.push(op(i).into_int_value());
+            }
+            let gep_ty = inst.get_gep_source_element_type().unwrap();
+            unsafe { builder.build_gep(gep_ty, op(0).into_pointer_value(), &indices, &name)? }
+                .as_basic_value_enum()
+        }
+
+        // ── Memory ──────────────────────────────────────────────────────
+        Op::Load => {
+            let ty: BasicTypeEnum = inst
+                .get_type()
+                .try_into()
+                .expect("Load result type should be a BasicType");
+            builder.build_load(ty, op(0).into_pointer_value(), &name)?
+        }
+        Op::Store => {
+            builder.build_store(op(1).into_pointer_value(), op(0))?;
+            return Ok(RebuildOutcome::Void);
+        }
+
+        // ── Calls ───────────────────────────────────────────────────────
         Op::Call => {
             let orig_callsite = CallSiteValue::try_from(inst)
                 .map_err(|_| anyhow!("rebuild_inst: could not convert to CallSiteValue"))?;
             let orig_callee = required_called_function(orig_callsite, "rebuild_inst")?;
-
-            // Collect value operands as args (calls don't have block operands).
             let mut args = Vec::new();
             for i in 0..orig_callsite.count_arguments() {
                 if let Some(v) = inst_operand_value(inst, i) {
                     args.push(remap(vmap, v).into());
                 }
             }
-            let dup_callsite = builder.build_call(orig_callee, &args, &name)?;
-            let dup_value = dup_callsite.try_as_basic_value();
+            let new_callsite = builder.build_call(orig_callee, &args, &name)?;
             builder.position_at_end(into_block);
-
-            // If return type is void → Void; else produce the resulting SSA value
-            match dup_value {
+            return match new_callsite.try_as_basic_value() {
                 ValueKind::Basic(bv) => Ok(RebuildOutcome::Value(bv)),
                 ValueKind::Instruction(_) => Ok(RebuildOutcome::Void),
-            }
+            };
         }
+
         _ => bail!("Instruction type not yet supported for rebuild: {}", inst),
-    }
+    };
+
+    Ok(RebuildOutcome::Value(result))
 }
 
 fn operand_as_value(op: Operand) -> Option<BasicValueEnum> {
