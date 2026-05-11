@@ -9,11 +9,14 @@ target triple = "<normalized>"
 
 define double @__hugr__.main.1(i1 %cond0) {
 entry:
-  br i1 %cond0, label %entry.dup.1, label %entry.dup.0
+  br label %entry.route
 
-entry.dup.0:                                      ; preds = %entry
+entry.dup.0:                                      ; preds = %entry.route
   ret double 5.000000e+00
 
-entry.dup.1:                                      ; preds = %entry
+entry.dup.1:                                      ; preds = %entry.route
   ret double 4.000000e+00
+
+entry.route:                                      ; preds = %entry
+  br i1 %cond0, label %entry.dup.1, label %entry.dup.0
 }

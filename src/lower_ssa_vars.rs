@@ -345,16 +345,12 @@ fn detect_loops(func: FunctionValue) -> Result<()> {
 /// Lowers a single basic block by replacing its lowerable phis and selects
 /// with duplicated successor blocks.
 ///
-/// Operates in one of two modes:
-///
-/// - **Full-block mode** (block has leading phis): the entire block is replaced
-///   by P × 2^S duplicated successor blocks, one per predecessor × condition
-///   truth assignment. A routing tree per predecessor dispatches to the correct
-///   duplicate. The original block is deleted.
-///
-/// - **Select-only mode** (no leading phis): the block is split at the first
-///   lowerable select. The prefix is kept, and 2^S duplicated successor blocks
-///   are created for the tail. A routing tree is appended to the prefix block.
+/// When the block has leading phis, the entire block is replaced: P × 2^S
+/// duplicated successor blocks are created (one per predecessor × condition
+/// truth assignment), and the original block is deleted. When there are no
+/// phis, the block is split at the first lowerable select and the suffix is
+/// duplicated into 2^S blocks while the prefix is retained. Both cases are
+/// handled by a single code path parameterized by split point and base vmaps.
 fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<()> {
     let func = required_parent_function(block, "lower_block")?;
     let context = block.get_context();
@@ -384,9 +380,6 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         return Ok(());
     }
 
-    // Determine mode: any phis at all (even non-lowerable) force full-block mode,
-    // because the block cannot be split at a point before the phis.
-    let has_any_phis = !leading_phi_insts.is_empty();
     let lo_select_keys: HashSet<_> = lo_selects
         .iter()
         .map(|inst| value_key_from_instruction(*inst))
@@ -407,60 +400,39 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
     }
 
     let dups_per_pred = 1usize << conditions.len();
+    let has_phis = !leading_phi_insts.is_empty();
 
-    // ── Full-block mode (block has leading phis) ────────────────────────
-    if has_any_phis {
-        let preds = predecessors(block)?;
-        let total_dups = preds.len() * dups_per_pred;
-        if total_dups > MAX_LOWERED_DUP_BLOCKS {
-            bail!(
-                "lower_block: lowering block {} would create {total_dups} duplicated successor blocks \
-                 ({} predecessors × 2^{} select conditions), exceeding the limit of \
-                 {MAX_LOWERED_DUP_BLOCKS}",
-                name_of_block(block),
-                preds.len(),
-                conditions.len(),
-            );
-        }
+    // ── Mode-aware setup ────────────────────────────────────────────────
+    // Compute the split point, body, and base vmaps. With phis, the entire
+    // block is replaced (split at the first non-phi instruction, one base
+    // vmap per predecessor resolving all phis). Without phis, only the
+    // suffix starting at the first lowerable select is replaced (one empty
+    // base vmap shared by all predecessors).
+    let split_inst: Option<InstructionValue<'_>>;
+    let body: Vec<InstructionValue<'_>>;
+    let base_vmaps: Vec<HashMap<ValueKey, BasicValueEnum<'_>>>;
 
-        // Select conditions must be available before entering this block
-        // (i.e., defined in a predecessor or as a phi). A non-phi condition
-        // defined inside the block would depend on phis we're removing.
-        for cond in &conditions {
-            if let Some(cond_inst) = cond.as_instruction_value()
-                && cond_inst.get_parent() == Some(block)
-                && cond_inst.get_opcode() != InstructionOpcode::Phi
-            {
-                bail!(
-                    "lower_block: select condition {} is defined inside phi block {}",
-                    cond_inst,
-                    name_of_block(block)
-                );
-            }
-        }
+    // Predecessors are needed at connection time (phi case only).
+    let original_preds: Vec<BasicBlock<'_>>;
 
-        // The body to duplicate is all non-phi, non-lowerable-select instructions.
-        // Phis are resolved per-predecessor in the vmap; selects are resolved
-        // per-truth-assignment. The remaining instructions are rebuilt verbatim
-        // (with values remapped through the vmap).
-        let body: Vec<_> = block
+    if has_phis {
+        // Split at the first non-phi instruction (replace entire block body).
+        split_inst = block
+            .get_instructions()
+            .find(|inst| inst.get_opcode() != InstructionOpcode::Phi);
+        body = block
             .get_instructions()
             .filter(|inst| inst.get_opcode() != InstructionOpcode::Phi)
             .filter(|inst| !lo_select_keys.contains(&value_key_from_instruction(*inst)))
             .collect();
-        validate_rebuildable_tail_slice(&body)?;
 
-        // Create P × 2^S duplicated successor blocks. For each predecessor and
-        // each truth assignment over the select conditions, build a vmap that
-        // resolves all phis (to the predecessor's incoming value) and all selects
-        // (to the branch selected by the truth assignment), then rebuild the body.
-        let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
-        for (pred_idx, pred) in preds.iter().enumerate() {
-            for bits in 0..dups_per_pred {
+        // Resolve ALL phis (not just lowerable ones) for each predecessor,
+        // so that the body can reference non-lowerable phi values too.
+        original_preds = predecessors(block)?;
+        base_vmaps = original_preds
+            .iter()
+            .map(|pred| {
                 let mut vmap = HashMap::new();
-
-                // Resolve ALL phis (not just lowerable ones) for this predecessor,
-                // so that the body can reference non-lowerable phi values too.
                 for phi_inst in &leading_phi_insts {
                     let phi: PhiValue = (*phi_inst).try_into().unwrap();
                     let (val, _) = incoming_for_predecessor(phi, *pred).ok_or_else(|| {
@@ -468,142 +440,47 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
                     })?;
                     vmap.insert(value_key_from_instruction(*phi_inst), val);
                 }
-
-                // Resolve each lowerable select: `bits` encodes a truth assignment
-                // where bit `cond_idx` controls which arm (true=operand 1,
-                // false=operand 2) is selected. The selected value is remapped
-                // through the vmap in case it references a phi resolved above.
-                for sel in &lo_selects {
-                    let cond_idx =
-                        cond_map[&(expect_inst_operand_value(*sel, 0).as_value_ref() as ValueKey)];
-                    let is_true = ((bits >> cond_idx) & 1) == 1;
-                    let selected = if is_true {
-                        expect_inst_operand_value(*sel, 1)
-                    } else {
-                        expect_inst_operand_value(*sel, 2)
-                    };
-                    let resolved = remap(&vmap, selected);
-                    vmap.insert(value_key_from_instruction(*sel), resolved);
-                }
-
-                let dup_bb = context
-                    .append_basic_block(func, &format!("{base_name}.dup.p{pred_idx}.{bits}"));
-                rebuild_tail(&builder, dup_bb, &body, &mut vmap, None, "dup_succ")?;
-                leaves.push((dup_bb, vmap));
-            }
-        }
-
-        // Build a routing tree per predecessor. The routing tree is a binary
-        // tree of conditional branches that dispatches to the correct dup'd block
-        // based on the select conditions. Conditions may be defined by phis in
-        // the original block, so remap them through the vmap (using any
-        // duplicate's vmap — they all resolve phis identically for a given
-        // predecessor, only selects differ).
-        for (pred_idx, pred) in preds.iter().enumerate() {
-            let start = pred_idx * dups_per_pred;
-            let end = start + dups_per_pred;
-            let pred_dups = &leaves[start..end];
-            let dup_blocks: Vec<_> = pred_dups.iter().map(|(bb, _)| *bb).collect();
-            let mut pred_conditions = Vec::new();
-            for cond in &conditions {
-                let remapped =
-                    remap(&pred_dups[0].1, (*cond).as_basic_value_enum()).into_int_value();
-                if let Some(cond_inst) = remapped.as_instruction_value()
-                    && cond_inst.get_parent() == Some(block)
-                {
-                    bail!(
-                        "lower_block: unresolved routing condition {} in block {}",
-                        cond_inst,
-                        name_of_block(block)
-                    );
-                }
-                pred_conditions.push(remapped);
-            }
-            let root = build_routing_subtree(
-                &builder,
-                func,
-                &format!("{base_name}.route.p{pred_idx}"),
-                &pred_conditions,
-                &dup_blocks,
-            )?;
-            redirect_edge(&builder, *pred, block, root);
-        }
-
-        // Rewrite phis in successor blocks that had incoming edges from the
-        // original block to instead have per-duplicate incoming edges.
-        fix_successor_phis(block, &leaves, lowerable)?;
-        // For non-phi values defined in this block that are used outside it,
-        // insert merge phis in successor blocks so the correct per-duplicate
-        // value reaches each external user.
-        fix_external_value_uses(block, &leaves, lowerable, None)?;
-
-        // Safety check: all external uses should have been rewritten above.
-        for inst in block.get_instructions() {
-            let Ok(value): Result<BasicValueEnum, ()> = inst.as_any_value_enum().try_into() else {
-                continue;
-            };
-            if !collect_external_instruction_users(value, block)?.is_empty() {
-                bail!(
-                    "lower_block: value still has external users after full-block lowering: {}",
-                    inst
-                );
-            }
-        }
-
-        // The original block is fully replaced; erase it from the function.
-        for inst in block.get_instructions() {
-            lowerable.remove(&value_key_from_instruction(inst));
-        }
-        erase_all_instructions(block);
-        block.remove_from_function().map_err(|_| {
-            anyhow!(
-                "lower_block: failed to remove fully lowered block {}",
-                name_of_block(block)
-            )
-        })?;
-        return Ok(());
+                Ok(vmap)
+            })
+            .collect::<Result<Vec<_>>>()?;
+    } else {
+        let first_lo = block
+            .get_instructions()
+            .find(|inst| lo_select_keys.contains(&value_key_from_instruction(*inst)))
+            .ok_or_else(|| anyhow!("lower_block: expected at least one lowerable select"))?;
+        split_inst = Some(first_lo);
+        body = collect_instruction_tail(Some(first_lo))
+            .into_iter()
+            .filter(|inst| !lo_select_keys.contains(&value_key_from_instruction(*inst)))
+            .collect();
+        base_vmaps = vec![HashMap::new()];
+        original_preds = vec![];
     }
+    validate_rebuildable_tail_slice(&body)?;
 
-    // ── Select-only mode (no leading phis) ─────────────────────────────
-    // The block is split at the first lowerable select. Instructions before
-    // the split point stay in the original block; the tail is duplicated.
-    // No predecessor dimension since there are no phis to resolve.
-
-    if dups_per_pred > MAX_LOWERED_DUP_BLOCKS {
-        bail!(
-            "lower_block: lowering block {} would create {dups_per_pred} duplicated successor blocks \
-             (2^{} select conditions), exceeding the limit of {MAX_LOWERED_DUP_BLOCKS}",
-            name_of_block(block),
-            conditions.len(),
-        );
-    }
-
-    let first_lo = block
-        .get_instructions()
-        .find(|inst| lo_select_keys.contains(&value_key_from_instruction(*inst)))
-        .ok_or_else(|| anyhow!("lower_block: expected at least one lowerable select"))?;
-
-    // Verify all select conditions are defined before the split point,
-    // since they must be available in the prefix to build the routing tree.
+    // ── Validate conditions ─────────────────────────────────────────────
+    // Each select condition defined in this block must appear before the
+    // split point, so it's available for routing after the suffix is erased.
     for cond in &conditions {
         if let Some(cond_inst) = cond.as_instruction_value()
             && cond_inst.get_parent() == Some(block)
         {
-            let mut current = block.get_first_instruction();
-            let mut available = false;
-            while let Some(inst) = current {
-                if inst == first_lo {
-                    break;
+            let before_split = split_inst.is_none_or(|split| {
+                let mut cur = block.get_first_instruction();
+                while let Some(inst) = cur {
+                    if inst == split {
+                        return false;
+                    }
+                    if inst == cond_inst {
+                        return true;
+                    }
+                    cur = inst.get_next_instruction();
                 }
-                if inst == cond_inst {
-                    available = true;
-                    break;
-                }
-                current = inst.get_next_instruction();
-            }
-            if !available {
+                false
+            });
+            if !before_split {
                 bail!(
-                    "lower_block: select condition {} is not available before block split in {}",
+                    "lower_block: select condition {} is not available before split point in {}",
                     cond_inst,
                     name_of_block(block)
                 );
@@ -611,86 +488,129 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         }
     }
 
-    // The tail to duplicate starts at the first lowerable select and
-    // excludes all lowerable selects (their values are resolved in the vmap).
-    let body: Vec<_> = collect_instruction_tail(Some(first_lo))
-        .into_iter()
-        .filter(|inst| !lo_select_keys.contains(&value_key_from_instruction(*inst)))
-        .collect();
-    validate_rebuildable_tail_slice(&body)?;
-
-    // Create 2^S duplicated successor blocks, one per truth assignment.
-    // No predecessor dimension here — only selects need resolving.
-    let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
-    for bits in 0..dups_per_pred {
-        let mut vmap = HashMap::new();
-        for sel in &lo_selects {
-            let cond_idx =
-                cond_map[&(expect_inst_operand_value(*sel, 0).as_value_ref() as ValueKey)];
-            let is_true = ((bits >> cond_idx) & 1) == 1;
-            let selected = if is_true {
-                expect_inst_operand_value(*sel, 1)
-            } else {
-                expect_inst_operand_value(*sel, 2)
-            };
-            let resolved = remap(&vmap, selected);
-            vmap.insert(value_key_from_instruction(*sel), resolved);
-        }
-
-        let dup_bb = context.append_basic_block(func, &format!("{base_name}.dup.{bits}"));
-        rebuild_tail(&builder, dup_bb, &body, &mut vmap, None, "dup_succ")?;
-        leaves.push((dup_bb, vmap));
+    // ── Limit check ─────────────────────────────────────────────────────
+    let total_dups = base_vmaps.len() * dups_per_pred;
+    if total_dups > MAX_LOWERED_DUP_BLOCKS {
+        bail!(
+            "lower_block: lowering block {} would create {total_dups} duplicated successor blocks \
+             ({} contexts × 2^{} select conditions), exceeding the limit of \
+             {MAX_LOWERED_DUP_BLOCKS}",
+            name_of_block(block),
+            base_vmaps.len(),
+            conditions.len(),
+        );
     }
 
+    // ── Create duplicated successor blocks ───────────────────────────────
+    // For each base vmap (predecessor context) and each truth assignment
+    // over the select conditions, clone the base vmap, resolve selects into
+    // it, and rebuild the body.
+    let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
+    for (ctx_idx, base_vmap) in base_vmaps.iter().enumerate() {
+        for bits in 0..dups_per_pred {
+            let mut vmap = base_vmap.clone();
+
+            // Resolve each lowerable select: `bits` encodes a truth assignment
+            // where bit `cond_idx` controls which arm (true=operand 1,
+            // false=operand 2) is selected. The selected value is remapped
+            // through the vmap in case it references a phi resolved above.
+            for sel in &lo_selects {
+                let cond_idx =
+                    cond_map[&(expect_inst_operand_value(*sel, 0).as_value_ref() as ValueKey)];
+                let is_true = ((bits >> cond_idx) & 1) == 1;
+                let selected = if is_true {
+                    expect_inst_operand_value(*sel, 1)
+                } else {
+                    expect_inst_operand_value(*sel, 2)
+                };
+                let resolved = remap(&vmap, selected);
+                vmap.insert(value_key_from_instruction(*sel), resolved);
+            }
+
+            let name = if base_vmaps.len() > 1 {
+                format!("{base_name}.dup.p{ctx_idx}.{bits}")
+            } else {
+                format!("{base_name}.dup.{bits}")
+            };
+            let dup_bb = context.append_basic_block(func, &name);
+            rebuild_tail(&builder, dup_bb, &body, &mut vmap, None, "dup_succ")?;
+            leaves.push((dup_bb, vmap));
+        }
+    }
+
+    // ── Fix successor phis ──────────────────────────────────────────────
     fix_successor_phis(block, &leaves, lowerable)?;
-    // Collect the tail instructions again (first collection was consumed
-    // building `body`). Only fix external uses for values being erased.
-    let to_erase = collect_instruction_tail(Some(first_lo));
+
+    // ── Build routing trees ─────────────────────────────────────────────
+    // One routing tree per base vmap context. Conditions are remapped through
+    // the base vmap (resolving any phi-defined conditions for that predecessor).
+    let mut routing_roots = Vec::new();
+    for (ctx_idx, base_vmap) in base_vmaps.iter().enumerate() {
+        let start = ctx_idx * dups_per_pred;
+        let dup_blocks: Vec<_> = leaves[start..start + dups_per_pred]
+            .iter()
+            .map(|(bb, _)| *bb)
+            .collect();
+        let ctx_conditions: Vec<_> = conditions
+            .iter()
+            .map(|cond| remap(base_vmap, (*cond).as_basic_value_enum()).into_int_value())
+            .collect();
+        let name = if base_vmaps.len() > 1 {
+            format!("{base_name}.route.p{ctx_idx}")
+        } else {
+            format!("{base_name}.route")
+        };
+        let root = build_routing_subtree(&builder, func, &name, &ctx_conditions, &dup_blocks)?;
+        routing_roots.push(root);
+    }
+
+    // ── Fix external value uses ─────────────────────────────────────────
+    // When the entire block is being erased (split_inst is None), all values
+    // need fixup (only_keys = None). When only the suffix is erased, limit
+    // fixup to the erased instructions.
+    let to_erase = collect_instruction_tail(split_inst);
     let erased_keys: HashSet<_> = to_erase
         .iter()
         .map(|inst| value_key_from_instruction(*inst))
         .collect();
-    fix_external_value_uses(block, &leaves, lowerable, Some(&erased_keys))?;
+    // When the block has phis, all values (including phis) need external fixup,
+    // so pass None (universal set). When only the suffix is erased (no phis),
+    // limit fixup to the erased instructions.
+    let only_keys = if has_phis { None } else { Some(&erased_keys) };
+    fix_external_value_uses(block, &leaves, lowerable, only_keys)?;
 
-    // Erase the original tail (reverse order to satisfy LLVM use-before-delete).
+    // ── Erase replaced instructions ─────────────────────────────────────
     for inst in to_erase.iter().rev() {
         lowerable.remove(&value_key_from_instruction(*inst));
         inst.erase_from_basic_block();
     }
-
-    // Append routing logic to the prefix block. With one condition, a single
-    // conditional branch suffices. With multiple conditions, build a binary
-    // routing tree that tests conditions from last to first.
-    let dup_blocks: Vec<_> = leaves.iter().map(|(bb, _)| *bb).collect();
-    if conditions.len() == 1 {
-        builder.position_at_end(block);
-        builder.build_conditional_branch(conditions[0], dup_blocks[1], dup_blocks[0])?;
-    } else {
-        let half = dup_blocks.len() / 2;
-        let false_subtree = build_routing_subtree(
-            &builder,
-            func,
-            &format!("{base_name}.route.false"),
-            &conditions[..conditions.len() - 1],
-            &dup_blocks[..half],
-        )?;
-        let true_subtree = build_routing_subtree(
-            &builder,
-            func,
-            &format!("{base_name}.route.true"),
-            &conditions[..conditions.len() - 1],
-            &dup_blocks[half..],
-        )?;
-        builder.position_at_end(block);
-        builder.build_conditional_branch(
-            conditions[conditions.len() - 1],
-            true_subtree,
-            false_subtree,
-        )?;
+    // Also remove any leading phis (not in to_erase since they precede split).
+    for phi_inst in leading_phi_insts.iter().rev() {
+        lowerable.remove(&value_key_from_instruction(*phi_inst));
+        phi_inst.erase_from_basic_block();
+    }
+    // Remove lowerable-select keys that weren't in the instruction tail.
+    for sel in &lo_selects {
+        lowerable.remove(&value_key_from_instruction(*sel));
     }
 
-    for sel in lo_selects {
-        lowerable.remove(&value_key_from_instruction(sel));
+    // ── Connect routing to graph ────────────────────────────────────────
+    if block.get_first_instruction().is_none() && !original_preds.is_empty() {
+        // Block is empty and has predecessors: redirect each predecessor to its
+        // routing root and remove the block from the function.
+        for (pred, root) in original_preds.iter().zip(&routing_roots) {
+            redirect_edge(&builder, *pred, block, *root);
+        }
+        block.remove_from_function().map_err(|_| {
+            anyhow!(
+                "lower_block: failed to remove fully lowered block {}",
+                name_of_block(block)
+            )
+        })?;
+    } else {
+        // Block has a surviving prefix: append a branch to the routing root.
+        builder.position_at_end(block);
+        builder.build_unconditional_branch(routing_roots[0])?;
     }
 
     Ok(())
@@ -1047,14 +967,6 @@ fn resolve_available_value_in_block<'ctx>(
 // ═══════════════════════════════════════════════════════════════════════════
 // Utilities
 // ═══════════════════════════════════════════════════════════════════════════
-
-fn erase_all_instructions(block: BasicBlock) {
-    let mut inst_opt = block.get_last_instruction();
-    while let Some(inst) = inst_opt {
-        inst_opt = inst.get_previous_instruction();
-        inst.erase_from_basic_block();
-    }
-}
 
 fn is_float_type(ty: BasicTypeEnum) -> bool {
     matches!(ty, BasicTypeEnum::FloatType(_))
