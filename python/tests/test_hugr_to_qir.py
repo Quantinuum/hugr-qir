@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 
 import pytest
-from hugr_qir._hugr_qir import compile_target_choices, opt_level_choices
+from hugr_qir._hugr_qir import compile_target_choices
 from hugr_qir.hugr_to_qir import hugr_to_qir
 from hugr_qir.output import OutputFormat, expected_file_extension
 from llvmlite.binding import (
@@ -18,6 +18,7 @@ from .conftest import (
     guppy_example_dict,
     guppy_examples,
     skip_snapshot_checks,
+    supported_opt_level_choices,
 )
 from .hugr_generation import GuppyExample
 
@@ -63,7 +64,7 @@ def test_guppy_file_snapshots(guppy_example: GuppyExample, snapshot: Snapshot) -
     guppy_examples,
     ids=[str(guppy_example.guppy_filepath.stem) for guppy_example in guppy_examples],
 )
-def test_bitcode_and_assembly_output_match(guppy_example: GuppyExample) -> None:
+def test_textir_and_bitcode_output_match(guppy_example: GuppyExample) -> None:
     hugr = guppy_example.hugr_binary
     guppy_file = guppy_example.guppy_filepath
     wasm_binary_filepath = None
@@ -95,7 +96,7 @@ def test_bitcode_and_assembly_output_match(guppy_example: GuppyExample) -> None:
     [
         (t, opt, form)
         for t in compile_target_choices()
-        for opt in opt_level_choices()
+        for opt in supported_opt_level_choices()
         for form in [c.value for c in OutputFormat]
     ],
 )

@@ -3,9 +3,18 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from hugr_qir._hugr_qir import opt_level_choices
 from hugr_qir.cli import hugr_qir
 
 from tests.hugr_generation import GuppyExample, generate_guppy_example_dict
+
+
+# The `none` optimization level is not supported (in particular, we need mem2reg).
+def supported_opt_level_choices() -> list[str]:
+    choices = opt_level_choices()
+    choices.remove("none")
+    return choices
+
 
 GUPPY_EXAMPLES_DIR = Path(__file__).parent / "../../guppy_examples"
 GUPPY_EXAMPLES_DIR_GENERAL = Path(__file__).parent / "../../guppy_examples/general"

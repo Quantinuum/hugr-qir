@@ -1,3 +1,4 @@
+import sys
 from typing import no_type_check
 
 from guppylang import guppy, qubit
@@ -91,3 +92,7 @@ def to_int(mtup: tuple[bool, bool, bool, bool]) -> int:
         b = mtup[i]
         integer_value = (integer_value << 1) | int(b)  # for big-endian
     return integer_value
+
+
+if __name__ == "__main__":
+    sys.stdout.buffer.write(main.compile().to_bytes())

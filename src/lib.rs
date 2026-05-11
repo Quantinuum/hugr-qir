@@ -186,6 +186,7 @@ impl CompileArgs {
     pub fn compile<'c>(&self, hugr: &mut Hugr, context: &'c Context) -> Result<Module<'c>> {
         self.hugr_to_hugr(hugr)?;
         let module = self.hugr_to_llvm(hugr, context)?;
+        print!("ORIGINAL: {}", module.to_string());
 
         let target = self.optimize_module_llvm(&module)?;
         lower_qubit_and_float_selects_and_phis(&module, &target)?;

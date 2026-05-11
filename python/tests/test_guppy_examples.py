@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from hugr_qir._hugr_qir import compile_target_choices, opt_level_choices
+from hugr_qir._hugr_qir import compile_target_choices
 from hugr_qir.output import OutputFormat, expected_file_extension
 from pytest_snapshot.plugin import Snapshot
 
@@ -11,6 +11,7 @@ from .conftest import (
     guppy_example_dict,
     guppy_examples,
     skip_snapshot_checks,
+    supported_opt_level_choices,
 )
 from .hugr_generation import GuppyExample
 
@@ -61,7 +62,7 @@ def test_guppy_file_snapshots(
     [
         (t, opt, form)
         for t in compile_target_choices()
-        for opt in opt_level_choices()
+        for opt in supported_opt_level_choices()
         for form in [c.value for c in OutputFormat]
     ],
 )
