@@ -1,5 +1,6 @@
 ---
 source: src/lower_ssa_vars.rs
+assertion_line: 2272
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
 ; ModuleID = '<fixture:simple_qubit_phi>'
@@ -9,16 +10,16 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %merge.dup, label %merge.dup1
+  br i1 %cond, label %merge.leaf.p0.0, label %merge.leaf.p1.0
 
-common.ret:                                       ; preds = %merge.dup1, %merge.dup
+common.ret:                                       ; preds = %merge.leaf.p1.0, %merge.leaf.p0.0
   ret void
 
-merge.dup:                                        ; preds = %entry
+merge.leaf.p0.0:                                  ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 
-merge.dup1:                                       ; preds = %entry
+merge.leaf.p1.0:                                  ; preds = %entry
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 }

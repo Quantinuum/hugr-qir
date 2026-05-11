@@ -1,23 +1,26 @@
 ---
-source: src/lower_ssa_vars_v2.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '<fixture:tail_unreachable_terminator>'
-source_filename = "tail_unreachable_terminator"
+; ModuleID = '<fixture:tail_float_casts_and_cmp>'
+source_filename = "tail_float_casts_and_cmp"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-define void @__hugr__.main.1(i1 %cond) {
+define void @__hugr__.main.1(i1 %cond, i1 %flag) {
 entry:
   br i1 %cond, label %entry.leaf.1, label %entry.leaf.0
 
 entry.leaf.0:                                     ; preds = %entry
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 9 to ptr))
-  unreachable
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  br label %common.ret
 
 entry.leaf.1:                                     ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
-  unreachable
+  br label %common.ret
+
+common.ret:                                       ; preds = %entry.leaf.1, %entry.leaf.0
+  ret void
 }
 
 declare void @__quantum__qis__reset__body(ptr)

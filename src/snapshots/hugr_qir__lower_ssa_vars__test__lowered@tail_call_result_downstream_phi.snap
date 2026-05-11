@@ -1,13 +1,13 @@
 ---
-source: src/lower_ssa_vars_v2.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '<fixture:tail_record_output_and_downstream_phi>'
-source_filename = "tail_record_output_and_downstream_phi"
+; ModuleID = '<fixture:tail_call_result_downstream_phi>'
+source_filename = "tail_call_result_downstream_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-@0 = private unnamed_addr constant [8 x i8] c"first\00\00\00", align 1
+@0 = private unnamed_addr constant [5 x i8] c"flag\00", align 1
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
@@ -18,29 +18,22 @@ right:                                            ; preds = %entry.leaf.1, %entr
   br label %join
 
 join:                                             ; preds = %entry.leaf.0, %entry.leaf.1, %right
-  %phi.external = phi i1 [ true, %right ], [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
-  %val.available4 = phi i1 [ %val.merge, %right ], [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
+  %phi.external = phi i1 [ false, %right ], [ %flag1, %entry.leaf.0 ], [ %flag2, %entry.leaf.1 ]
   tail call void @__test__consume_bool(i1 %phi.external)
-  br label %__prepare_module_record_output_final
+  ret void
 
 entry.leaf.0:                                     ; preds = %entry
   %flag1 = call i1 @__quantum__qis__read_result__body(ptr null)
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 6 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br i1 %cond1, label %join, label %right
 
 entry.leaf.1:                                     ; preds = %entry
   %flag2 = call i1 @__quantum__qis__read_result__body(ptr null)
   call void @__quantum__qis__reset__body(ptr null)
   br i1 %cond1, label %join, label %right
-
-__prepare_module_record_output_final:             ; preds = %join
-  call void @__quantum__rt__bool_record_output(i1 %val.available4, ptr @0)
-  ret void
 }
 
 declare i1 @__quantum__qis__read_result__body(ptr)
-
-declare void @__quantum__rt__bool_record_output(i1, ptr)
 
 declare void @__quantum__qis__reset__body(ptr)
 

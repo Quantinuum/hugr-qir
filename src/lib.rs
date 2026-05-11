@@ -28,12 +28,11 @@ use tket::passes::{
 };
 pub mod cli;
 pub mod lower_ssa_vars;
-pub mod lower_ssa_vars_v2;
 pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
-use crate::lower_ssa_vars_v2::{lower_qubit_and_float_selects_and_phis, normalize_block_names};
+use crate::lower_ssa_vars::{lower_qubit_and_float_selects_and_phis, normalize_block_names};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;

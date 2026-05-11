@@ -1,26 +1,26 @@
 ---
-source: src/lower_ssa_vars_v2.rs
+source: src/lower_ssa_vars.rs
 expression: "normalized_module_ir_for_snapshot(&module, fixture)"
 ---
-; ModuleID = '<fixture:tail_float_casts_and_cmp>'
-source_filename = "tail_float_casts_and_cmp"
+; ModuleID = '<fixture:simple_qubit_select>'
+source_filename = "simple_qubit_select"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-define void @__hugr__.main.1(i1 %cond, i1 %flag) {
+define void @__hugr__.main.1(i1 %cond) {
 entry:
   br i1 %cond, label %entry.leaf.1, label %entry.leaf.0
 
+common.ret:                                       ; preds = %entry.leaf.1, %entry.leaf.0
+  ret void
+
 entry.leaf.0:                                     ; preds = %entry
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 
 entry.leaf.1:                                     ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
-
-common.ret:                                       ; preds = %entry.leaf.1, %entry.leaf.0
-  ret void
 }
 
 declare void @__quantum__qis__reset__body(ptr)
