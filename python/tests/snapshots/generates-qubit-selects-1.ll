@@ -18,15 +18,22 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 5 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
   %2 = select i1 %0, i1 %1, i1 false
-  br i1 %2, label %alloca_block.dup627, label %alloca_block.dup628
+  br i1 %0, label %alloca_block.route.true, label %alloca_block.route.false
 
-alloca_block.dup627:                              ; preds = %alloca_block
-  br i1 %1, label %alloca_block.dup632, label %alloca_block.dup635
+__prepare_module_record_output_final:             ; preds = %alloca_block.route.false625, %alloca_block.leaf.7, %alloca_block.leaf.6, %alloca_block.leaf.4, %alloca_block.leaf.0
+  %val.merge = phi i1 [ %3, %alloca_block.leaf.0 ], [ %7, %alloca_block.leaf.4 ], [ %11, %alloca_block.leaf.6 ], [ %15, %alloca_block.leaf.7 ], [ %19, %alloca_block.route.false625 ]
+  %val.merge621 = phi i1 [ %4, %alloca_block.leaf.0 ], [ %8, %alloca_block.leaf.4 ], [ %12, %alloca_block.leaf.6 ], [ %16, %alloca_block.leaf.7 ], [ %20, %alloca_block.route.false625 ]
+  %val.merge622 = phi i1 [ %5, %alloca_block.leaf.0 ], [ %9, %alloca_block.leaf.4 ], [ %13, %alloca_block.leaf.6 ], [ %17, %alloca_block.leaf.7 ], [ %21, %alloca_block.route.false625 ]
+  %val.merge623 = phi i1 [ %6, %alloca_block.leaf.0 ], [ %10, %alloca_block.leaf.4 ], [ %14, %alloca_block.leaf.6 ], [ %18, %alloca_block.leaf.7 ], [ %22, %alloca_block.route.false625 ]
+  call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
+  call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
+  call void @__quantum__rt__bool_record_output(i1 %val.merge, ptr @2)
+  call void @__quantum__rt__bool_record_output(i1 %val.merge621, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %val.merge622, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %val.merge623, ptr @5)
+  ret void
 
-alloca_block.dup635:                              ; preds = %alloca_block.dup627
-  br i1 %0, label %alloca_block.dup638, label %alloca_block.dup
-
-alloca_block.dup:                                 ; preds = %alloca_block.dup635
+alloca_block.leaf.0:                              ; preds = %alloca_block.route.false
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 3 to ptr))
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
   %3 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
@@ -38,8 +45,8 @@ alloca_block.dup:                                 ; preds = %alloca_block.dup635
   %6 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %__prepare_module_record_output_final
 
-alloca_block.dup638:                              ; preds = %alloca_block.dup635
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
+alloca_block.leaf.4:                              ; preds = %alloca_block.route.true
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
   %7 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
@@ -50,11 +57,8 @@ alloca_block.dup638:                              ; preds = %alloca_block.dup635
   %10 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %__prepare_module_record_output_final
 
-alloca_block.dup632:                              ; preds = %alloca_block.dup627
-  br i1 %0, label %alloca_block.dup639, label %alloca_block.dup646
-
-alloca_block.dup646:                              ; preds = %alloca_block.dup632
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 2 to ptr))
+alloca_block.leaf.6:                              ; preds = %alloca_block.route.true627
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
   %11 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
@@ -65,7 +69,7 @@ alloca_block.dup646:                              ; preds = %alloca_block.dup632
   %14 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %__prepare_module_record_output_final
 
-alloca_block.dup639:                              ; preds = %alloca_block.dup632
+alloca_block.leaf.7:                              ; preds = %alloca_block.route.true627
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
   %15 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
@@ -77,14 +81,11 @@ alloca_block.dup639:                              ; preds = %alloca_block.dup632
   %18 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %__prepare_module_record_output_final
 
-alloca_block.dup628:                              ; preds = %alloca_block
-  br i1 %1, label %alloca_block.dup633, label %alloca_block.dup636
+alloca_block.route.false:                         ; preds = %alloca_block
+  br i1 %1, label %alloca_block.route.false625, label %alloca_block.leaf.0
 
-alloca_block.dup636:                              ; preds = %alloca_block.dup628
-  br i1 %0, label %alloca_block.dup640, label %alloca_block.dup647
-
-alloca_block.dup647:                              ; preds = %alloca_block.dup636
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 3 to ptr))
+alloca_block.route.false625:                      ; preds = %alloca_block.route.false
+  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
   %19 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
@@ -95,57 +96,11 @@ alloca_block.dup647:                              ; preds = %alloca_block.dup636
   %22 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %__prepare_module_record_output_final
 
-alloca_block.dup640:                              ; preds = %alloca_block.dup636
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
-  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
-  %23 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
-  %24 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 3 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
-  %25 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 4 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
-  %26 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
-  br label %__prepare_module_record_output_final
+alloca_block.route.true:                          ; preds = %alloca_block
+  br i1 %1, label %alloca_block.route.true627, label %alloca_block.leaf.4
 
-alloca_block.dup633:                              ; preds = %alloca_block.dup628
-  br i1 %0, label %alloca_block.dup641, label %alloca_block.dup648
-
-alloca_block.dup648:                              ; preds = %alloca_block.dup633
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 2 to ptr))
-  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
-  %27 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
-  %28 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 3 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
-  %29 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 4 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
-  %30 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
-  br label %__prepare_module_record_output_final
-
-alloca_block.dup641:                              ; preds = %alloca_block.dup633
-  call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 1 to ptr))
-  call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 2 to ptr))
-  %31 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 3 to ptr))
-  %32 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 3 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 2 to ptr), ptr inttoptr (i64 4 to ptr))
-  %33 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 4 to ptr))
-  call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 5 to ptr))
-  %34 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
-  br label %__prepare_module_record_output_final
-
-__prepare_module_record_output_final:             ; preds = %alloca_block.dup648, %alloca_block.dup647, %alloca_block.dup646, %alloca_block.dup, %alloca_block.dup641, %alloca_block.dup640, %alloca_block.dup639, %alloca_block.dup638
-  %phi.edge = phi i1 [ %18, %alloca_block.dup639 ], [ %34, %alloca_block.dup641 ], [ %10, %alloca_block.dup638 ], [ %26, %alloca_block.dup640 ], [ %14, %alloca_block.dup646 ], [ %30, %alloca_block.dup648 ], [ %6, %alloca_block.dup ], [ %22, %alloca_block.dup647 ]
-  %phi.edge649 = phi i1 [ %17, %alloca_block.dup639 ], [ %33, %alloca_block.dup641 ], [ %9, %alloca_block.dup638 ], [ %25, %alloca_block.dup640 ], [ %13, %alloca_block.dup646 ], [ %29, %alloca_block.dup648 ], [ %5, %alloca_block.dup ], [ %21, %alloca_block.dup647 ]
-  %phi.edge650 = phi i1 [ %16, %alloca_block.dup639 ], [ %32, %alloca_block.dup641 ], [ %8, %alloca_block.dup638 ], [ %24, %alloca_block.dup640 ], [ %12, %alloca_block.dup646 ], [ %28, %alloca_block.dup648 ], [ %4, %alloca_block.dup ], [ %20, %alloca_block.dup647 ]
-  %phi.edge651 = phi i1 [ %15, %alloca_block.dup639 ], [ %31, %alloca_block.dup641 ], [ %7, %alloca_block.dup638 ], [ %23, %alloca_block.dup640 ], [ %11, %alloca_block.dup646 ], [ %27, %alloca_block.dup648 ], [ %3, %alloca_block.dup ], [ %19, %alloca_block.dup647 ]
-  call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
-  call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge651, ptr @2)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge650, ptr @3)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge649, ptr @4)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge, ptr @5)
-  ret void
+alloca_block.route.true627:                       ; preds = %alloca_block.route.true
+  br i1 %2, label %alloca_block.leaf.7, label %alloca_block.leaf.6
 }
 
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1

@@ -444,80 +444,35 @@ NodeBlock12801:                                   ; preds = %bb5, %cond_9740_cas
 
 NodeBlock12799:                                   ; preds = %NodeBlock12801
   %brmerge = or i1 %Pivot12800, %SwitchLeaf12798
-  br i1 %Pivot12800, label %cond_10524_case_0.sink.split.dup, label %NodeBlock12799.dup12833
-
-cond_10524_case_0.sink.split.dup:                 ; preds = %NodeBlock12799
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 5 to ptr))
-  br label %NodeBlock12809
-
-NodeBlock12799.dup12833:                          ; preds = %NodeBlock12799
-  br i1 %brmerge, label %cond_10524_case_0.sink.split.dup12835, label %NodeBlock12809
-
-cond_10524_case_0.sink.split.dup12835:            ; preds = %NodeBlock12799.dup12833
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 6 to ptr))
-  br label %NodeBlock12809
+  br i1 %Pivot12800, label %cond_10524_case_0.sink.split.leaf.p2.0, label %NodeBlock12799.leaf.0
 
 LeafBlock12795:                                   ; preds = %NodeBlock12801
-  br i1 %SwitchLeaf12796, label %cond_10524_case_0.sink.split.dup12836, label %NodeBlock12809
+  br i1 %SwitchLeaf12796, label %cond_10524_case_0.sink.split.leaf.p0.0, label %NodeBlock12809
 
-cond_10524_case_0.sink.split.dup12836:            ; preds = %LeafBlock12795
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 4 to ptr))
-  br label %NodeBlock12809
-
-NodeBlock12809:                                   ; preds = %LeafBlock12795, %cond_10524_case_0.sink.split.dup12836, %NodeBlock12799.dup12833, %cond_10524_case_0.sink.split.dup12835, %cond_10524_case_0.sink.split.dup
+NodeBlock12809:                                   ; preds = %NodeBlock12799.leaf.0, %LeafBlock12795, %cond_10524_case_0.sink.split.leaf.p2.0, %cond_10524_case_0.sink.split.leaf.p1.0, %cond_10524_case_0.sink.split.leaf.p0.0
   br i1 %Pivot12810, label %LeafBlock12803, label %NodeBlock12807
 
 NodeBlock12807:                                   ; preds = %NodeBlock12809
   %brmerge12818 = or i1 %Pivot12808, %SwitchLeaf12806
-  br i1 %Pivot12808, label %cond_11063_case_0.sink.split.dup, label %NodeBlock12807.dup12831
-
-cond_11063_case_0.sink.split.dup:                 ; preds = %NodeBlock12807
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 8 to ptr))
-  br label %cond_11063_case_0
-
-NodeBlock12807.dup12831:                          ; preds = %NodeBlock12807
-  br i1 %brmerge12818, label %cond_11063_case_0.sink.split.dup12837, label %cond_11063_case_0
-
-cond_11063_case_0.sink.split.dup12837:            ; preds = %NodeBlock12807.dup12831
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 9 to ptr))
-  br label %cond_11063_case_0
+  br i1 %Pivot12808, label %cond_11063_case_0.sink.split.leaf.p2.0, label %NodeBlock12807.leaf.0
 
 LeafBlock12803:                                   ; preds = %NodeBlock12809
-  br i1 %SwitchLeaf12798, label %cond_11063_case_0.sink.split.dup12838, label %cond_11063_case_0
+  br i1 %SwitchLeaf12798, label %cond_11063_case_0.sink.split.leaf.p0.0, label %cond_11063_case_0
 
-cond_11063_case_0.sink.split.dup12838:            ; preds = %LeafBlock12803
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 7 to ptr))
-  br label %cond_11063_case_0
-
-cond_11063_case_0:                                ; preds = %LeafBlock12803, %cond_11063_case_0.sink.split.dup12838, %NodeBlock12807.dup12831, %cond_11063_case_0.sink.split.dup12837, %cond_11063_case_0.sink.split.dup
+cond_11063_case_0:                                ; preds = %NodeBlock12807.leaf.0, %LeafBlock12803, %cond_11063_case_0.sink.split.leaf.p2.0, %cond_11063_case_0.sink.split.leaf.p1.0, %cond_11063_case_0.sink.split.leaf.p0.0
   br i1 %21, label %NodeBlock12815, label %NodeBlock12815.thread
 
 NodeBlock12815:                                   ; preds = %cond_11063_case_0
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 10 to ptr))
   %brmerge12821 = or i1 %Pivot12816, %19
-  br i1 %Pivot12816, label %cond_11945_case_0.sink.split.dup, label %NodeBlock12815.dup12830
-
-cond_11945_case_0.sink.split.dup:                 ; preds = %NodeBlock12815
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 11 to ptr))
-  br label %cond_11945_case_0
-
-NodeBlock12815.dup12830:                          ; preds = %NodeBlock12815
-  br i1 %brmerge12821, label %cond_11945_case_0.sink.split.dup12839, label %cond_11945_case_0
-
-cond_11945_case_0.sink.split.dup12839:            ; preds = %NodeBlock12815.dup12830
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
-  br label %cond_11945_case_0
+  br i1 %Pivot12816, label %cond_11945_case_0.sink.split.leaf.p2.0, label %NodeBlock12815.leaf.0
 
 NodeBlock12815.thread:                            ; preds = %cond_11063_case_0
   %.not = xor i1 %19, true
   %brmerge12820 = or i1 %Pivot12816, %.not
-  br i1 %brmerge12820, label %cond_11945_case_0, label %cond_11945_case_0.sink.split.dup12840
+  br i1 %brmerge12820, label %cond_11945_case_0, label %cond_11945_case_0.sink.split.leaf.p0.0
 
-cond_11945_case_0.sink.split.dup12840:            ; preds = %NodeBlock12815.thread
-  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
-  br label %cond_11945_case_0
-
-cond_11945_case_0:                                ; preds = %NodeBlock12815.thread, %cond_11945_case_0.sink.split.dup12840, %NodeBlock12815.dup12830, %cond_11945_case_0.sink.split.dup12839, %cond_11945_case_0.sink.split.dup
+cond_11945_case_0:                                ; preds = %NodeBlock12815.leaf.0, %NodeBlock12815.thread, %cond_11945_case_0.sink.split.leaf.p2.0, %cond_11945_case_0.sink.split.leaf.p1.0, %cond_11945_case_0.sink.split.leaf.p0.0
   br i1 %17, label %bb6, label %cond_12092_case_0
 
 bb6:                                              ; preds = %cond_11945_case_0
@@ -603,6 +558,51 @@ cond_12229_case_1:                                ; preds = %cond_exit_12141, %b
 bb8:                                              ; preds = %cond_exit_12141
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 15 to ptr))
   br label %cond_12229_case_1
+
+NodeBlock12799.leaf.0:                            ; preds = %NodeBlock12799
+  br i1 %brmerge, label %cond_10524_case_0.sink.split.leaf.p1.0, label %NodeBlock12809
+
+cond_10524_case_0.sink.split.leaf.p0.0:           ; preds = %LeafBlock12795
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 4 to ptr))
+  br label %NodeBlock12809
+
+cond_10524_case_0.sink.split.leaf.p1.0:           ; preds = %NodeBlock12799.leaf.0
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 6 to ptr))
+  br label %NodeBlock12809
+
+cond_10524_case_0.sink.split.leaf.p2.0:           ; preds = %NodeBlock12799
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 5 to ptr))
+  br label %NodeBlock12809
+
+NodeBlock12807.leaf.0:                            ; preds = %NodeBlock12807
+  br i1 %brmerge12818, label %cond_11063_case_0.sink.split.leaf.p1.0, label %cond_11063_case_0
+
+cond_11063_case_0.sink.split.leaf.p0.0:           ; preds = %LeafBlock12803
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 7 to ptr))
+  br label %cond_11063_case_0
+
+cond_11063_case_0.sink.split.leaf.p1.0:           ; preds = %NodeBlock12807.leaf.0
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 9 to ptr))
+  br label %cond_11063_case_0
+
+cond_11063_case_0.sink.split.leaf.p2.0:           ; preds = %NodeBlock12807
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 8 to ptr))
+  br label %cond_11063_case_0
+
+NodeBlock12815.leaf.0:                            ; preds = %NodeBlock12815
+  br i1 %brmerge12821, label %cond_11945_case_0.sink.split.leaf.p1.0, label %cond_11945_case_0
+
+cond_11945_case_0.sink.split.leaf.p0.0:           ; preds = %NodeBlock12815.thread
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
+  br label %cond_11945_case_0
+
+cond_11945_case_0.sink.split.leaf.p1.0:           ; preds = %NodeBlock12815.leaf.0
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
+  br label %cond_11945_case_0
+
+cond_11945_case_0.sink.split.leaf.p2.0:           ; preds = %NodeBlock12815
+  call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 11 to ptr))
+  br label %cond_11945_case_0
 
 __prepare_module_record_output_final:             ; preds = %cond_12229_case_1
   call void @__quantum__rt__int_record_output(i64 %6, ptr @0)
