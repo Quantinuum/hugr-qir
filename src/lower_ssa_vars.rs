@@ -57,6 +57,11 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 type ValueKey = usize;
 
+/// Maximum number of leaf blocks that may be created when lowering a single
+/// block (across all predecessors). Lowering is aborted with an error if this
+/// limit would be exceeded.
+const MAX_LOWERED_LEAF_BLOCKS: usize = 16;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Entry point
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,19 +88,32 @@ pub fn lower_qubit_and_float_selects_and_phis(
 
     prepare_module(module)?;
 
+    const MAX_ITERATIONS: usize = 10;
     let mut changed = false;
     for func in module.get_functions() {
         changed |= lower_function(func)?;
     }
 
-    if changed {
+    for _ in 1..MAX_ITERATIONS {
+        if !changed {
+            break;
+        }
         simp_cfg(module, target)?;
         prepare_module(module)?;
-        if module_has_lowerable_values(module)? {
-            for func in module.get_functions() {
-                let _ = lower_function(func)?;
-            }
+        if !module_has_lowerable_values(module)? {
+            break;
         }
+        changed = false;
+        for func in module.get_functions() {
+            changed |= lower_function(func)?;
+        }
+    }
+
+    if module_has_lowerable_values(module)? {
+        bail!(
+            "lower_qubit_and_float_selects_and_phis: module still has lowerable values \
+             after {MAX_ITERATIONS} iterations"
+        );
     }
 
     normalize_block_names(module);
@@ -390,6 +408,19 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
     let leaves_per_pred = 1usize << conditions.len();
 
     if has_any_phis {
+        let preds = predecessors(block)?;
+        let total_leaves = preds.len() * leaves_per_pred;
+        if total_leaves > MAX_LOWERED_LEAF_BLOCKS {
+            bail!(
+                "lower_block: lowering block {} would create {total_leaves} leaf blocks \
+                 ({} predecessors × 2^{} select conditions), exceeding the limit of \
+                 {MAX_LOWERED_LEAF_BLOCKS}",
+                name_of_block(block),
+                preds.len(),
+                conditions.len(),
+            );
+        }
+
         for cond in &conditions {
             if let Some(cond_inst) = cond.as_instruction_value()
                 && cond_inst.get_parent() == Some(block)
@@ -410,7 +441,6 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
             .collect();
         validate_rebuildable_tail_slice(&body)?;
 
-        let preds = predecessors(block)?;
         let mut leaves: Vec<(BasicBlock, HashMap<ValueKey, BasicValueEnum>)> = Vec::new();
 
         for (pred_idx, pred) in preds.iter().enumerate() {
@@ -501,6 +531,15 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
             )
         })?;
         return Ok(());
+    }
+
+    if leaves_per_pred > MAX_LOWERED_LEAF_BLOCKS {
+        bail!(
+            "lower_block: lowering block {} would create {leaves_per_pred} leaf blocks \
+             (2^{} select conditions), exceeding the limit of {MAX_LOWERED_LEAF_BLOCKS}",
+            name_of_block(block),
+            conditions.len(),
+        );
     }
 
     let first_lo = block
@@ -741,7 +780,12 @@ fn fix_external_value_uses<'ctx>(
                         .ok()
                         .and_then(|reaches| reaches.then_some((*leaf, vmap)))
                 })
-                .map(|(leaf, vmap)| (vmap.get(&key).copied().unwrap_or(value), leaf))
+                .map(|(leaf, vmap)| {
+                    let resolved = vmap.get(&key).copied().expect(
+                        "fix_external_value_uses: leaf vmap missing key for value from original block",
+                    );
+                    (resolved, leaf)
+                })
                 .collect();
             if incomings.is_empty() {
                 continue;
@@ -902,7 +946,9 @@ fn resolve_available_value_in_block<'ctx>(
             .iter()
             .find(|(leaf, _)| leaf.as_mut_ptr() as usize == pred_key)
         {
-            vmap.get(&key).copied().unwrap_or(value)
+            vmap.get(&key).copied().expect(
+                "resolve_available_value_in_block: leaf vmap missing key for value from original block",
+            )
         } else {
             if pred == original_block {
                 continue;
@@ -992,10 +1038,11 @@ fn rebuild_terminator<'ctx>(
             if is_cond {
                 let cond = remap_value(expect_inst_operand_value(term, 0)).into_int_value();
 
-                let then_bb = required_block_operand(term, 1, "rebuild_terminator")?;
-                let else_bb = required_block_operand(term, 2, "rebuild_terminator")?;
+                // inkwell operand(1) = false target, operand(2) = true target
+                let else_bb = required_block_operand(term, 1, "rebuild_terminator")?;
+                let then_bb = required_block_operand(term, 2, "rebuild_terminator")?;
 
-                builder.build_conditional_branch(cond, else_bb, then_bb)?;
+                builder.build_conditional_branch(cond, then_bb, else_bb)?;
             } else {
                 let dest = required_block_operand(term, 0, "rebuild_terminator")?;
                 builder.build_unconditional_branch(dest)?;
@@ -1663,16 +1710,14 @@ fn redirect_edge<'ctx>(
             Op::Br => {
                 if term.is_conditional().unwrap() {
                     let cond = expect_inst_operand_value(term, 0).into_int_value();
-                    let then_bb = operand_as_bb(term, 1).unwrap();
-                    let else_bb = operand_as_bb(term, 2).unwrap();
+                    // inkwell operand(1) = false target, operand(2) = true target
+                    let else_bb = operand_as_bb(term, 1).unwrap();
+                    let then_bb = operand_as_bb(term, 2).unwrap();
                     let new_then = if then_bb == old_to { new_to } else { then_bb };
                     let new_else = if else_bb == old_to { new_to } else { else_bb };
 
-                    // In this LLVM/in-inkwell setup, operand(1) is the *false* target and
-                    // operand(2) is the *true* target. Keep the same ordering here so we don't
-                    // invert the branch when rebuilding.
                     builder
-                        .build_conditional_branch(cond, new_else, new_then)
+                        .build_conditional_branch(cond, new_then, new_else)
                         .ok();
                 } else {
                     builder.build_unconditional_branch(new_to).ok();
@@ -1968,7 +2013,7 @@ fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> 
 fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
     inst.get_operand(i)
         .and_then(operand_as_value)
-        .expect("Cound not get operand value")
+        .expect("Could not get operand value")
 }
 
 fn simp_cfg(module: &Module, target: &TargetMachine) -> Result<()> {
@@ -2337,6 +2382,101 @@ mod test {
         assert!(
             err.contains("unsupported operation on qubit pointer value"),
             "expected unsupported-operation error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn rejects_too_many_select_conditions_select_only() {
+        // 5 distinct select conditions → 2^5 = 32 leaf blocks, exceeding
+        // MAX_LOWERED_LEAF_BLOCKS. This exercises the select-only code path
+        // (no leading phis).
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "too_many_selects",
+            r#"
+%Qubit = type opaque
+
+define void @main(i1 %c0, i1 %c1, i1 %c2, i1 %c3, i1 %c4) {
+entry:
+  %q0 = select i1 %c0, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q1 = select i1 %c1, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q2 = select i1 %c2, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q3 = select i1 %c3, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q4 = select i1 %c4, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  call void @__quantum__qis__h__body(%Qubit* %q0)
+  call void @__quantum__qis__h__body(%Qubit* %q1)
+  call void @__quantum__qis__h__body(%Qubit* %q2)
+  call void @__quantum__qis__h__body(%Qubit* %q3)
+  call void @__quantum__qis__h__body(%Qubit* %q4)
+  ret void
+}
+
+declare void @__quantum__qis__h__body(%Qubit*)
+"#,
+        )
+        .unwrap();
+
+        let tm = default_target_machine();
+        let err = lower_qubit_and_float_selects_and_phis(&module, &tm)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("exceeding the limit"),
+            "expected leaf-block limit error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn rejects_too_many_select_conditions_full_block() {
+        // 2 predecessors × 2^4 = 32 leaf blocks, exceeding
+        // MAX_LOWERED_LEAF_BLOCKS. This exercises the full-block code path
+        // (block has leading phis).
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "too_many_selects_phi",
+            r#"
+%Qubit = type opaque
+
+define void @main(i1 %c0, i1 %c1, i1 %c2, i1 %c3, i1 %entry_cond) {
+entry:
+  br i1 %entry_cond, label %left, label %right
+
+left:
+  br label %merge
+
+right:
+  br label %merge
+
+merge:
+  %phi_q = phi %Qubit* [null, %left], [inttoptr (i64 1 to %Qubit*), %right]
+  %q0 = select i1 %c0, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q1 = select i1 %c1, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q2 = select i1 %c2, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  %q3 = select i1 %c3, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
+  call void @__quantum__qis__h__body(%Qubit* %phi_q)
+  call void @__quantum__qis__h__body(%Qubit* %q0)
+  call void @__quantum__qis__h__body(%Qubit* %q1)
+  call void @__quantum__qis__h__body(%Qubit* %q2)
+  call void @__quantum__qis__h__body(%Qubit* %q3)
+  ret void
+}
+
+declare void @__quantum__qis__h__body(%Qubit*)
+"#,
+        )
+        .unwrap();
+
+        let tm = default_target_machine();
+        let err = lower_qubit_and_float_selects_and_phis(&module, &tm)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("exceeding the limit"),
+            "expected leaf-block limit error, got: {err}"
         );
     }
 
