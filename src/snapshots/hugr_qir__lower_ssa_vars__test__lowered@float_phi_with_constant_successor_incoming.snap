@@ -9,27 +9,27 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %merge.leaf.p0.0, label %merge.leaf.p1.0
+  br i1 %cond0, label %merge.leaf.p1.0, label %merge.leaf.p0.0
 
 merge.leaf.p0.0:                                  ; preds = %entry
-  br i1 %cond1, label %succ.leaf.p1.0, label %succ.leaf.p0.0
+  br i1 %cond1, label %succ.leaf.p1.0, label %succ.leaf.p2.0
 
 merge.leaf.p1.0:                                  ; preds = %entry
-  br i1 %cond1, label %succ.leaf.p2.0, label %succ.leaf.p0.0
+  br i1 %cond1, label %succ.leaf.p0.0, label %succ.leaf.p2.0
 
 common.ret:                                       ; preds = %succ.leaf.p2.0, %succ.leaf.p1.0, %succ.leaf.p0.0
   ret void
 
-succ.leaf.p0.0:                                   ; preds = %merge.leaf.p0.0, %merge.leaf.p1.0
-  call void @consume(double 4.000000e+00)
+succ.leaf.p0.0:                                   ; preds = %merge.leaf.p1.0
+  call void @consume(double 3.000000e+00)
   br label %common.ret
 
 succ.leaf.p1.0:                                   ; preds = %merge.leaf.p0.0
   call void @consume(double 3.000000e+00)
   br label %common.ret
 
-succ.leaf.p2.0:                                   ; preds = %merge.leaf.p1.0
-  call void @consume(double 3.000000e+00)
+succ.leaf.p2.0:                                   ; preds = %merge.leaf.p1.0, %merge.leaf.p0.0
+  call void @consume(double 4.000000e+00)
   br label %common.ret
 }
 

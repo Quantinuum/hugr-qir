@@ -9,19 +9,19 @@ target triple = "<normalized>"
 
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %merge.leaf.p0.0, label %merge.leaf.p1.0
+  br i1 %cond, label %merge.leaf.p1.0, label %merge.leaf.p0.0
 
 common.ret:                                       ; preds = %merge.leaf.p1.0, %merge.leaf.p0.0
   ret void
 
 merge.leaf.p0.0:                                  ; preds = %entry
-  call void @__quantum__qis__reset__body(ptr null)
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   br label %common.ret
 
 merge.leaf.p1.0:                                  ; preds = %entry
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
+  call void @__quantum__qis__reset__body(ptr null)
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
   br label %common.ret
 }
 

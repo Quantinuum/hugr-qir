@@ -113,9 +113,9 @@ bb:                                               ; preds = %alloca_block.record
   br label %cond_exit_176
 
 cond_exit_176:                                    ; preds = %bb, %alloca_block.record
-  br i1 %1, label %cond_374_case_1.leaf.p1.0, label %cond_374_case_1.leaf.p0.0
+  br i1 %1, label %cond_374_case_1.leaf.p0.0, label %cond_374_case_1.leaf.p1.0
 
-cond_374_case_1.leaf.p1.0:                        ; preds = %cond_exit_176
+cond_374_case_1.leaf.p0.0:                        ; preds = %cond_exit_176
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 6 to ptr))
   %19 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 6 to ptr))
@@ -125,23 +125,23 @@ cond_374_case_1.leaf.p1.0:                        ; preds = %cond_exit_176
   %21 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 9 to ptr))
   %22 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 9 to ptr))
-  %"1162_0.07" = select i1 %19, i64 8, i64 0
-  %"1197_0.08" = select i1 %20, i64 4, i64 0
-  %"1232_0.09" = select i1 %21, i64 2, i64 0
-  %"1267_0.010" = zext i1 %22 to i64
-  %23 = or i64 %"1197_0.08", %"1162_0.07"
-  %24 = or i64 %23, %"1232_0.09"
-  %25 = or i64 %24, %"1267_0.010"
-  %"1077_0.011" = zext i1 %21 to i64
-  %26 = add i64 %"74_2.0", %"1077_0.011"
-  %Pivot209312 = icmp slt i64 %26, 1
-  br i1 %Pivot209312, label %cond_759_case_1.sink.split.leaf.p1.0, label %NodeBlock.leaf.p1.0
+  %"1162_0.01" = select i1 %19, i64 8, i64 0
+  %"1197_0.02" = select i1 %20, i64 4, i64 0
+  %"1232_0.03" = select i1 %21, i64 2, i64 0
+  %"1267_0.04" = zext i1 %22 to i64
+  %23 = or i64 %"1197_0.02", %"1162_0.01"
+  %24 = or i64 %23, %"1232_0.03"
+  %25 = or i64 %24, %"1267_0.04"
+  %"1077_0.05" = zext i1 %21 to i64
+  %26 = add i64 %"74_2.0", %"1077_0.05"
+  %Pivot20936 = icmp slt i64 %26, 1
+  br i1 %Pivot20936, label %cond_759_case_1.sink.split.leaf.p1.0, label %NodeBlock.leaf.p0.0
 
-__prepare_module_record_output_final:             ; preds = %cond_759_case_1.sink.split.leaf.p1.045, %cond_759_case_1.sink.split.leaf.p0.044, %cond_759_case_1.sink.split.leaf.p1.041, %cond_759_case_1.sink.split.leaf.p0.040, %cond_759_case_1.leaf.p3.0, %cond_759_case_1.leaf.p2.0, %cond_759_case_1.sink.split.leaf.p1.0, %cond_759_case_1.sink.split.leaf.p0.0
-  %phi.fix47 = phi i64 [ %33, %cond_759_case_1.sink.split.leaf.p0.0 ], [ %25, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %33, %cond_759_case_1.leaf.p2.0 ], [ %25, %cond_759_case_1.leaf.p3.0 ], [ %33, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %25, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %33, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %25, %cond_759_case_1.sink.split.leaf.p1.045 ]
-  %val.merge = phi i1 [ %35, %cond_759_case_1.sink.split.leaf.p0.0 ], [ %38, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %53, %cond_759_case_1.leaf.p2.0 ], [ %56, %cond_759_case_1.leaf.p3.0 ], [ %41, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %44, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %47, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %50, %cond_759_case_1.sink.split.leaf.p1.045 ]
-  %val.merge48 = phi i1 [ %36, %cond_759_case_1.sink.split.leaf.p0.0 ], [ %39, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %54, %cond_759_case_1.leaf.p2.0 ], [ %57, %cond_759_case_1.leaf.p3.0 ], [ %42, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %45, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %48, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %51, %cond_759_case_1.sink.split.leaf.p1.045 ]
-  %val.merge49 = phi i1 [ %37, %cond_759_case_1.sink.split.leaf.p0.0 ], [ %40, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %55, %cond_759_case_1.leaf.p2.0 ], [ %58, %cond_759_case_1.leaf.p3.0 ], [ %43, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %46, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %49, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %52, %cond_759_case_1.sink.split.leaf.p1.045 ]
+__prepare_module_record_output_final:             ; preds = %cond_759_case_1.sink.split.leaf.p0.0, %cond_759_case_1.sink.split.leaf.p1.0, %cond_759_case_1.sink.split.leaf.p0.040, %cond_759_case_1.sink.split.leaf.p1.041, %cond_759_case_1.leaf.p3.0, %cond_759_case_1.leaf.p2.0, %cond_759_case_1.sink.split.leaf.p0.044, %cond_759_case_1.sink.split.leaf.p1.045
+  %phi.fix47 = phi i64 [ %33, %cond_759_case_1.sink.split.leaf.p1.045 ], [ %25, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %33, %cond_759_case_1.leaf.p2.0 ], [ %25, %cond_759_case_1.leaf.p3.0 ], [ %33, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %25, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %25, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %33, %cond_759_case_1.sink.split.leaf.p0.0 ]
+  %val.merge = phi i1 [ %50, %cond_759_case_1.sink.split.leaf.p1.045 ], [ %47, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %53, %cond_759_case_1.leaf.p2.0 ], [ %56, %cond_759_case_1.leaf.p3.0 ], [ %44, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %41, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %38, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %35, %cond_759_case_1.sink.split.leaf.p0.0 ]
+  %val.merge48 = phi i1 [ %51, %cond_759_case_1.sink.split.leaf.p1.045 ], [ %48, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %54, %cond_759_case_1.leaf.p2.0 ], [ %57, %cond_759_case_1.leaf.p3.0 ], [ %45, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %42, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %39, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %36, %cond_759_case_1.sink.split.leaf.p0.0 ]
+  %val.merge49 = phi i1 [ %52, %cond_759_case_1.sink.split.leaf.p1.045 ], [ %49, %cond_759_case_1.sink.split.leaf.p0.044 ], [ %55, %cond_759_case_1.leaf.p2.0 ], [ %58, %cond_759_case_1.leaf.p3.0 ], [ %46, %cond_759_case_1.sink.split.leaf.p1.041 ], [ %43, %cond_759_case_1.sink.split.leaf.p0.040 ], [ %40, %cond_759_case_1.sink.split.leaf.p1.0 ], [ %37, %cond_759_case_1.sink.split.leaf.p0.0 ]
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
   call void @__quantum__rt__bool_record_output(i1 %phi.edge2124, ptr @2)
@@ -155,7 +155,7 @@ __prepare_module_record_output_final:             ; preds = %cond_759_case_1.sin
   call void @__quantum__rt__bool_record_output(i1 %val.merge49, ptr @10)
   ret void
 
-cond_374_case_1.leaf.p0.0:                        ; preds = %cond_exit_176
+cond_374_case_1.leaf.p1.0:                        ; preds = %cond_exit_176
   call void @__quantum__qis__mz__body(ptr null, ptr inttoptr (i64 6 to ptr))
   %27 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 7 to ptr))
@@ -164,19 +164,19 @@ cond_374_case_1.leaf.p0.0:                        ; preds = %cond_exit_176
   %29 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 9 to ptr))
   %30 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 9 to ptr))
-  %"1162_0.01" = select i1 %27, i64 8, i64 0
-  %"1197_0.02" = select i1 %28, i64 4, i64 0
-  %"1232_0.03" = select i1 %29, i64 2, i64 0
-  %"1267_0.04" = zext i1 %30 to i64
-  %31 = or i64 %"1197_0.02", %"1162_0.01"
-  %32 = or i64 %31, %"1232_0.03"
-  %33 = or i64 %32, %"1267_0.04"
-  %"1077_0.05" = zext i1 %29 to i64
-  %34 = add i64 %"74_2.0", %"1077_0.05"
-  %Pivot20936 = icmp slt i64 %34, 1
-  br i1 %Pivot20936, label %cond_759_case_1.sink.split.leaf.p0.0, label %NodeBlock.leaf.p0.0
+  %"1162_0.07" = select i1 %27, i64 8, i64 0
+  %"1197_0.08" = select i1 %28, i64 4, i64 0
+  %"1232_0.09" = select i1 %29, i64 2, i64 0
+  %"1267_0.010" = zext i1 %30 to i64
+  %31 = or i64 %"1197_0.08", %"1162_0.07"
+  %32 = or i64 %31, %"1232_0.09"
+  %33 = or i64 %32, %"1267_0.010"
+  %"1077_0.011" = zext i1 %29 to i64
+  %34 = add i64 %"74_2.0", %"1077_0.011"
+  %Pivot209312 = icmp slt i64 %34, 1
+  br i1 %Pivot209312, label %cond_759_case_1.sink.split.leaf.p0.0, label %NodeBlock.leaf.p1.0
 
-cond_759_case_1.sink.split.leaf.p0.0:             ; preds = %cond_374_case_1.leaf.p0.0
+cond_759_case_1.sink.split.leaf.p0.0:             ; preds = %cond_374_case_1.leaf.p1.0
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
   %35 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
@@ -187,7 +187,7 @@ cond_759_case_1.sink.split.leaf.p0.0:             ; preds = %cond_374_case_1.lea
   %37 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_759_case_1.sink.split.leaf.p1.0:             ; preds = %cond_374_case_1.leaf.p1.0
+cond_759_case_1.sink.split.leaf.p1.0:             ; preds = %cond_374_case_1.leaf.p0.0
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
   %38 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
@@ -199,41 +199,41 @@ cond_759_case_1.sink.split.leaf.p1.0:             ; preds = %cond_374_case_1.lea
   br label %__prepare_module_record_output_final
 
 NodeBlock.leaf.p0.0:                              ; preds = %cond_374_case_1.leaf.p0.0
-  %Pivot28 = icmp slt i64 %34, 2
-  br i1 %Pivot28, label %cond_759_case_1.sink.split.leaf.p0.044, label %LeafBlock.leaf.p0.0
+  %Pivot28 = icmp slt i64 %26, 2
+  br i1 %Pivot28, label %cond_759_case_1.sink.split.leaf.p0.044, label %LeafBlock.leaf.p1.0
 
 NodeBlock.leaf.p1.0:                              ; preds = %cond_374_case_1.leaf.p1.0
-  %Pivot29 = icmp slt i64 %26, 2
-  br i1 %Pivot29, label %cond_759_case_1.sink.split.leaf.p1.045, label %LeafBlock.leaf.p1.0
+  %Pivot29 = icmp slt i64 %34, 2
+  br i1 %Pivot29, label %cond_759_case_1.sink.split.leaf.p1.045, label %LeafBlock.leaf.p0.0
 
-LeafBlock.leaf.p0.0:                              ; preds = %NodeBlock.leaf.p0.0
+LeafBlock.leaf.p0.0:                              ; preds = %NodeBlock.leaf.p1.0
   %SwitchLeaf35 = icmp eq i64 %34, 2
-  br i1 %SwitchLeaf35, label %cond_759_case_1.sink.split.leaf.p0.040, label %cond_759_case_1.leaf.p2.0
+  br i1 %SwitchLeaf35, label %cond_759_case_1.sink.split.leaf.p1.041, label %cond_759_case_1.leaf.p2.0
 
-LeafBlock.leaf.p1.0:                              ; preds = %NodeBlock.leaf.p1.0
+LeafBlock.leaf.p1.0:                              ; preds = %NodeBlock.leaf.p0.0
   %SwitchLeaf36 = icmp eq i64 %26, 2
-  br i1 %SwitchLeaf36, label %cond_759_case_1.sink.split.leaf.p1.041, label %cond_759_case_1.leaf.p3.0
+  br i1 %SwitchLeaf36, label %cond_759_case_1.sink.split.leaf.p0.040, label %cond_759_case_1.leaf.p3.0
 
-cond_759_case_1.sink.split.leaf.p0.040:           ; preds = %LeafBlock.leaf.p0.0
+cond_759_case_1.sink.split.leaf.p0.040:           ; preds = %LeafBlock.leaf.p1.0
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
   %41 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
   %42 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
+  call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 8 to ptr), ptr inttoptr (i64 12 to ptr))
   %43 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_759_case_1.sink.split.leaf.p1.041:           ; preds = %LeafBlock.leaf.p1.0
+cond_759_case_1.sink.split.leaf.p1.041:           ; preds = %LeafBlock.leaf.p0.0
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 6 to ptr), ptr inttoptr (i64 10 to ptr))
   %44 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
   %45 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
+  call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 8 to ptr), ptr inttoptr (i64 12 to ptr))
   %46 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
@@ -244,7 +244,7 @@ cond_759_case_1.sink.split.leaf.p0.044:           ; preds = %NodeBlock.leaf.p0.0
   %47 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
   %48 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
+  call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 8 to ptr), ptr inttoptr (i64 12 to ptr))
   %49 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
@@ -255,7 +255,7 @@ cond_759_case_1.sink.split.leaf.p1.045:           ; preds = %NodeBlock.leaf.p1.0
   %50 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 7 to ptr), ptr inttoptr (i64 11 to ptr))
   %51 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 11 to ptr))
-  call void @__quantum__qis__phasedx__body(double 0x3FE41B2F769CF0E0, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
+  call void @__quantum__qis__phasedx__body(double 0x3FEE28C731EB6950, double 0.000000e+00, ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 8 to ptr), ptr inttoptr (i64 12 to ptr))
   %52 = call i1 @__quantum__qis__read_result__body(ptr inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final

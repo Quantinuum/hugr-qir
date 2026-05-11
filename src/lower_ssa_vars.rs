@@ -1344,56 +1344,39 @@ pub enum RebuildOutcome<'ctx> {
     Void,
 }
 
-/// Returns all predecessor basic blocks of `to` by scanning every block in the
-/// parent function for outgoing edges to `to`.
+/// Returns all predecessor basic blocks of `to` by walking the LLVM use-list
+/// of `to` (as a value). Every user of a basic block value is a terminator
+/// instruction that branches to it; collecting their parent blocks gives the
+/// predecessors in O(predecessors) time rather than O(blocks).
+///
+/// # Safety
+/// Uses raw llvm-sys FFI to walk the use-list. This is safe as long as the
+/// LLVM module is well-formed (basic block values are only used by
+/// terminators).
 fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
+    use crate::inkwell::llvm_sys::core::{
+        LLVMBasicBlockAsValue, LLVMGetFirstUse, LLVMGetInstructionParent, LLVMGetNextUse,
+        LLVMGetUser, LLVMIsATerminatorInst,
+    };
+
     let mut preds = Vec::new();
-    let func = required_parent_function(to, "predecessors")?;
-    for b in func.get_basic_blocks() {
-        if let Some(term) = b.get_terminator() {
-            match term.get_opcode() {
-                Op::Br => {
-                    // Unconditional: operand 0 = target BB
-                    if !term.is_conditional().unwrap() {
-                        if operand_as_bb(term, 0) == Some(to) {
-                            preds.push(b);
-                        }
-                    } else {
-                        // Conditional: operand 1 = false-dest BB, operand 2 = true-dest BB
-                        if operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to)
-                        {
-                            preds.push(b);
-                        }
-                    }
+    let mut seen = HashSet::new();
+    unsafe {
+        let bb_value = LLVMBasicBlockAsValue(to.as_mut_ptr());
+        let mut use_ref = LLVMGetFirstUse(bb_value);
+        while !use_ref.is_null() {
+            let user = LLVMGetUser(use_ref);
+            if !LLVMIsATerminatorInst(user).is_null() {
+                let parent_bb_ref = LLVMGetInstructionParent(user);
+                if !parent_bb_ref.is_null() && seen.insert(parent_bb_ref as usize) {
+                    // SAFETY: parent_bb_ref is a valid LLVMBasicBlockRef from a well-formed module.
+                    let parent_bb = BasicBlock::new(parent_bb_ref).ok_or_else(|| {
+                        anyhow!("predecessors: LLVMGetInstructionParent returned invalid block")
+                    })?;
+                    preds.push(parent_bb);
                 }
-                Op::Switch => {
-                    if operand_as_bb(term, 1) == Some(to) {
-                        preds.push(b);
-                        continue;
-                    }
-                    let mut idx = 3;
-                    while idx < term.get_num_operands() {
-                        if operand_as_bb(term, idx) == Some(to) {
-                            preds.push(b);
-                            break;
-                        }
-                        idx += 2;
-                    }
-                }
-                Op::IndirectBr
-                | Op::Invoke
-                | Op::CallBr
-                | Op::CatchSwitch
-                | Op::CatchRet
-                | Op::CleanupRet => {
-                    // These cases could be predecessors, but we don't handle them for now
-                    // Not sure if these can occur for this pass.
-                    bail!(
-                        "Found unsupported terminal case when searching for phi predecessor blocks"
-                    );
-                }
-                _ => { /* Cases that do not point to successors cannot be predecessors */ }
             }
+            use_ref = LLVMGetNextUse(use_ref);
         }
     }
     Ok(preds)
