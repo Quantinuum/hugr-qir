@@ -5,7 +5,7 @@ from hugr.package import Package
 
 from ._hugr_qir import compile_target_default, opt_level_default
 from .cli import hugr_qir_impl
-from .output import OutputFormat, ir_string_to_output_format
+from .output import OutputFormat
 
 
 def hugr_to_qir(  # noqa: PLR0913
@@ -37,7 +37,7 @@ def hugr_to_qir(  # noqa: PLR0913
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
         hugr_bytes: bytes
         tmp_infile_path = Path(f"{tmp_dir}/tmp.hugr")  # noqa: S108
-        tmp_outfile_path = Path(f"{tmp_dir}/tmp.ll")  # noqa: S108
+        tmp_outfile_path = Path(f"{tmp_dir}/tmp_output")  # noqa: S108
 
         if type(hugr) is bytes:
             hugr_bytes = hugr
@@ -47,28 +47,22 @@ def hugr_to_qir(  # noqa: PLR0913
 
         with Path.open(tmp_infile_path, "wb") as cli_input:
             cli_input.write(hugr_bytes)
-        # Write to tmp file as llvmir (text) and convert after if necessary
-        if output_format == OutputFormat.LLVM_IR:
-            tmp_format = OutputFormat.LLVM_IR
-            read_mode = "r"
-        else:
-            tmp_format = OutputFormat.BITCODE
-            read_mode = "rb"
 
         hugr_qir_impl(
             validate_qir,
             validate_hugr,
             target,
             opt_level,
-            tmp_format,
+            output_format,
             tmp_infile_path,
             tmp_outfile_path,
             wasm_file,
         )
-        with Path.open(tmp_outfile_path, mode=read_mode) as cli_output:
-            qir_ir = cli_output.read()
 
-        return ir_string_to_output_format(qir_ir, output_format)
+        read_mode = "rb" if output_format == OutputFormat.BITCODE else "r"
+
+        with Path.open(tmp_outfile_path, mode=read_mode) as cli_output:
+            return cli_output.read()
 
 
 def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
