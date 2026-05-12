@@ -459,34 +459,38 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
     validate_rebuildable_tail_slice(&body)?;
 
     // ── Validate conditions ─────────────────────────────────────────────
-    // Each select condition defined in this block must appear before the
+    // Each condition defined in this block must appear before the
     // split point, so it's available for routing after the suffix is erased.
-    for cond in &conditions {
-        if let Some(cond_inst) = cond.as_instruction_value()
-            && cond_inst.get_parent() == Some(block)
-        {
-            let before_split = split_inst.is_none_or(|split| {
-                let mut cur = block.get_first_instruction();
-                while let Some(inst) = cur {
-                    if inst == split {
-                        return false;
+    debug_assert!(
+        conditions.iter().all(|cond| {
+            if let Some(cond_inst) = cond.as_instruction_value()
+                && cond_inst.get_parent() == Some(block)
+            {
+                if let Some(split) = split_inst {
+                    let mut maybe_inst = block.get_first_instruction();
+                    loop {
+                        let Some(inst) = maybe_inst else {
+                            panic!("internal error: split_inst not present in expected parent");
+                        };
+                        if inst == split {
+                            break false;
+                        }
+                        if inst == cond_inst {
+                            break true;
+                        }
+                        maybe_inst = inst.get_next_instruction();
                     }
-                    if inst == cond_inst {
-                        return true;
-                    }
-                    cur = inst.get_next_instruction();
+                } else {
+                    true
                 }
-                false
-            });
-            if !before_split {
-                bail!(
-                    "lower_block: select condition {} is not available before split point in {}",
-                    cond_inst,
-                    name_of_block(block)
-                );
+            } else {
+                true
             }
-        }
-    }
+        }),
+        "lower_block: some select condition in {:#?} does not dominate split point in {}",
+        conditions,
+        name_of_block(block)
+    );
 
     // ── Limit check ─────────────────────────────────────────────────────
     let total_dups = base_vmaps.len() * dups_per_pred;
@@ -542,8 +546,9 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
     fix_successor_phis(block, &leaves, lowerable)?;
 
     // ── Build routing trees ─────────────────────────────────────────────
-    // One routing tree per base vmap context. Conditions are remapped through
-    // the base vmap (resolving any phi-defined conditions for that predecessor).
+    // One routing tree per predecessor of the current block (or exactly one if we are
+    // splitting around a select). Conditions are remapped through the base vmap,
+    // resolving any phi-defined conditions for that predecessor.
     let mut routing_roots = Vec::new();
     for (ctx_idx, base_vmap) in base_vmaps.iter().enumerate() {
         let start = ctx_idx * dups_per_pred;
@@ -599,7 +604,7 @@ fn lower_block(block: BasicBlock, lowerable: &mut HashSet<ValueKey>) -> Result<(
         // Block is empty and has predecessors: redirect each predecessor to its
         // routing root and remove the block from the function.
         for (pred, root) in original_preds.iter().zip(&routing_roots) {
-            redirect_edge(&builder, *pred, block, *root);
+            redirect_edge(&builder, *pred, block, *root)?;
         }
         block.remove_from_function().map_err(|_| {
             anyhow!(
@@ -660,6 +665,7 @@ fn fix_successor_phis<'ctx>(
     lowerable: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     for succ in direct_successors(original_block)? {
+        debug_assert!(!predecessors(succ)?.is_empty());
         let phi_insts: Vec<_> = succ
             .get_instructions()
             .take_while(|inst| inst.get_opcode() == InstructionOpcode::Phi)
@@ -745,8 +751,8 @@ fn fix_external_value_uses<'ctx>(
         // merge phi that joins the per-duplicate values. This gives us a single
         // SSA value in each successor that replaces the original definition.
         let mut merge_phis: HashMap<usize, BasicValueEnum<'ctx>> = HashMap::new();
-        let mut resolver_cache = HashMap::new();
         for succ in &succs {
+            debug_assert!(!predecessors(*succ)?.is_empty());
             // Collect incoming values from duplicated successor blocks that
             // branch to this successor. Each duplicate has its own copy of
             // the value in its vmap.
@@ -784,6 +790,7 @@ fn fix_external_value_uses<'ctx>(
             // lowered block). These need incoming values too — resolved by
             // walking their predecessor chains back to a point where the value
             // is available (a duplicate block or an existing merge phi).
+            let mut resolver_cache = HashMap::new();
             for pred in predecessors(*succ)? {
                 let pred_key = pred.as_mut_ptr() as usize;
                 if dup_keys.contains(&pred_key) {
@@ -821,6 +828,7 @@ fn fix_external_value_uses<'ctx>(
             // value) for that incoming block.
             if user.get_opcode() == InstructionOpcode::Phi {
                 let user_block = required_parent_block(user, "fix_external_value_uses")?;
+                debug_assert!(!predecessors(user_block)?.is_empty());
                 let user_phi: PhiValue = user.try_into().unwrap();
                 let incomings: Vec<_> = user_phi.get_incomings().collect();
                 let builder = user_block.get_context().create_builder();
@@ -916,6 +924,15 @@ fn resolve_available_value_in_block<'ctx>(
         return Ok(cached);
     }
 
+    let preds = predecessors(block)?;
+    if preds.is_empty() {
+        // Reached a block with no predecessors (entry block). The original
+        // value hasn't been erased yet and still dominates all paths, so
+        // return it directly.
+        cache.insert(block_key, value);
+        return Ok(value);
+    }
+
     let builder = block.get_context().create_builder();
     if let Some(first_np) = first_non_phi(block) {
         builder.position_before(&first_np);
@@ -928,7 +945,7 @@ fn resolve_available_value_in_block<'ctx>(
     }
 
     let mut added_preds = HashSet::new();
-    for pred in predecessors(block)? {
+    for pred in preds {
         let pred_key = pred.as_mut_ptr() as usize;
         let incoming = if let Some(&merge_phi) = merge_phis.get(&pred_key) {
             merge_phi
@@ -1668,7 +1685,7 @@ fn redirect_edge<'ctx>(
     from: BasicBlock<'ctx>,
     old_to: BasicBlock<'ctx>,
     new_to: BasicBlock<'ctx>,
-) {
+) -> Result<()> {
     if let Some(term) = from.get_terminator() {
         builder.position_at_end(from);
         match term.get_opcode() {
@@ -1688,9 +1705,16 @@ fn redirect_edge<'ctx>(
                     builder.build_unconditional_branch(new_to).ok();
                 }
                 term.erase_from_basic_block();
+                Ok(())
             }
-            _ => { /* extend for switch if needed */ }
+            _ => Err(anyhow!(
+                "redirect_edge: unsupported terminator type: {term}"
+            )),
         }
+    } else {
+        Err(anyhow!(
+            "redirect_edge: `from` block missing terminator: {from:?}"
+        ))
     }
 }
 
