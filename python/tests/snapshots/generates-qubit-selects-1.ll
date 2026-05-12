@@ -21,16 +21,16 @@ alloca_block:
   br i1 %0, label %alloca_block.route624, label %alloca_block.route621
 
 __prepare_module_record_output_final:             ; preds = %alloca_block.route623, %alloca_block.dup.7, %alloca_block.dup.6, %alloca_block.dup.4, %alloca_block.dup.0
-  %val.merge = phi i1 [ %3, %alloca_block.dup.0 ], [ %7, %alloca_block.dup.4 ], [ %11, %alloca_block.dup.6 ], [ %15, %alloca_block.dup.7 ], [ %19, %alloca_block.route623 ]
-  %val.merge627 = phi i1 [ %4, %alloca_block.dup.0 ], [ %8, %alloca_block.dup.4 ], [ %12, %alloca_block.dup.6 ], [ %16, %alloca_block.dup.7 ], [ %20, %alloca_block.route623 ]
-  %val.merge628 = phi i1 [ %5, %alloca_block.dup.0 ], [ %9, %alloca_block.dup.4 ], [ %13, %alloca_block.dup.6 ], [ %17, %alloca_block.dup.7 ], [ %21, %alloca_block.route623 ]
-  %val.merge629 = phi i1 [ %6, %alloca_block.dup.0 ], [ %10, %alloca_block.dup.4 ], [ %14, %alloca_block.dup.6 ], [ %18, %alloca_block.dup.7 ], [ %22, %alloca_block.route623 ]
+  %val.available = phi i1 [ %15, %alloca_block.dup.7 ], [ %11, %alloca_block.dup.6 ], [ %7, %alloca_block.dup.4 ], [ %3, %alloca_block.dup.0 ], [ %19, %alloca_block.route623 ]
+  %val.available627 = phi i1 [ %16, %alloca_block.dup.7 ], [ %12, %alloca_block.dup.6 ], [ %8, %alloca_block.dup.4 ], [ %4, %alloca_block.dup.0 ], [ %20, %alloca_block.route623 ]
+  %val.available628 = phi i1 [ %17, %alloca_block.dup.7 ], [ %13, %alloca_block.dup.6 ], [ %9, %alloca_block.dup.4 ], [ %5, %alloca_block.dup.0 ], [ %21, %alloca_block.route623 ]
+  %val.available629 = phi i1 [ %18, %alloca_block.dup.7 ], [ %14, %alloca_block.dup.6 ], [ %10, %alloca_block.dup.4 ], [ %6, %alloca_block.dup.0 ], [ %22, %alloca_block.route623 ]
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge, ptr @2)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge627, ptr @3)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge628, ptr @4)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge629, ptr @5)
+  call void @__quantum__rt__bool_record_output(i1 %val.available, ptr @2)
+  call void @__quantum__rt__bool_record_output(i1 %val.available627, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %val.available628, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %val.available629, ptr @5)
   ret void
 
 alloca_block.dup.0:                               ; preds = %alloca_block.route621

@@ -139,9 +139,9 @@ cond_374_case_1.dup.p0.0:                         ; preds = %cond_exit_176
 
 __prepare_module_record_output_final:             ; preds = %cond_759_case_1.sink.split.dup.p0.0, %cond_759_case_1.sink.split.dup.p1.0, %cond_759_case_1.sink.split.dup.p0.040, %cond_759_case_1.sink.split.dup.p1.041, %cond_759_case_1.dup.p3.0, %cond_759_case_1.dup.p2.0, %cond_759_case_1.sink.split.dup.p0.044, %cond_759_case_1.sink.split.dup.p1.045
   %phi.fix47 = phi i64 [ %33, %cond_759_case_1.sink.split.dup.p1.045 ], [ %25, %cond_759_case_1.sink.split.dup.p0.044 ], [ %33, %cond_759_case_1.dup.p2.0 ], [ %25, %cond_759_case_1.dup.p3.0 ], [ %33, %cond_759_case_1.sink.split.dup.p1.041 ], [ %25, %cond_759_case_1.sink.split.dup.p0.040 ], [ %25, %cond_759_case_1.sink.split.dup.p1.0 ], [ %33, %cond_759_case_1.sink.split.dup.p0.0 ]
-  %val.merge = phi i1 [ %50, %cond_759_case_1.sink.split.dup.p1.045 ], [ %47, %cond_759_case_1.sink.split.dup.p0.044 ], [ %53, %cond_759_case_1.dup.p2.0 ], [ %56, %cond_759_case_1.dup.p3.0 ], [ %44, %cond_759_case_1.sink.split.dup.p1.041 ], [ %41, %cond_759_case_1.sink.split.dup.p0.040 ], [ %38, %cond_759_case_1.sink.split.dup.p1.0 ], [ %35, %cond_759_case_1.sink.split.dup.p0.0 ]
-  %val.merge48 = phi i1 [ %51, %cond_759_case_1.sink.split.dup.p1.045 ], [ %48, %cond_759_case_1.sink.split.dup.p0.044 ], [ %54, %cond_759_case_1.dup.p2.0 ], [ %57, %cond_759_case_1.dup.p3.0 ], [ %45, %cond_759_case_1.sink.split.dup.p1.041 ], [ %42, %cond_759_case_1.sink.split.dup.p0.040 ], [ %39, %cond_759_case_1.sink.split.dup.p1.0 ], [ %36, %cond_759_case_1.sink.split.dup.p0.0 ]
-  %val.merge49 = phi i1 [ %52, %cond_759_case_1.sink.split.dup.p1.045 ], [ %49, %cond_759_case_1.sink.split.dup.p0.044 ], [ %55, %cond_759_case_1.dup.p2.0 ], [ %58, %cond_759_case_1.dup.p3.0 ], [ %46, %cond_759_case_1.sink.split.dup.p1.041 ], [ %43, %cond_759_case_1.sink.split.dup.p0.040 ], [ %40, %cond_759_case_1.sink.split.dup.p1.0 ], [ %37, %cond_759_case_1.sink.split.dup.p0.0 ]
+  %val.available = phi i1 [ %35, %cond_759_case_1.sink.split.dup.p0.0 ], [ %38, %cond_759_case_1.sink.split.dup.p1.0 ], [ %41, %cond_759_case_1.sink.split.dup.p0.040 ], [ %44, %cond_759_case_1.sink.split.dup.p1.041 ], [ %56, %cond_759_case_1.dup.p3.0 ], [ %53, %cond_759_case_1.dup.p2.0 ], [ %47, %cond_759_case_1.sink.split.dup.p0.044 ], [ %50, %cond_759_case_1.sink.split.dup.p1.045 ]
+  %val.available48 = phi i1 [ %36, %cond_759_case_1.sink.split.dup.p0.0 ], [ %39, %cond_759_case_1.sink.split.dup.p1.0 ], [ %42, %cond_759_case_1.sink.split.dup.p0.040 ], [ %45, %cond_759_case_1.sink.split.dup.p1.041 ], [ %57, %cond_759_case_1.dup.p3.0 ], [ %54, %cond_759_case_1.dup.p2.0 ], [ %48, %cond_759_case_1.sink.split.dup.p0.044 ], [ %51, %cond_759_case_1.sink.split.dup.p1.045 ]
+  %val.available49 = phi i1 [ %37, %cond_759_case_1.sink.split.dup.p0.0 ], [ %40, %cond_759_case_1.sink.split.dup.p1.0 ], [ %43, %cond_759_case_1.sink.split.dup.p0.040 ], [ %46, %cond_759_case_1.sink.split.dup.p1.041 ], [ %58, %cond_759_case_1.dup.p3.0 ], [ %55, %cond_759_case_1.dup.p2.0 ], [ %49, %cond_759_case_1.sink.split.dup.p0.044 ], [ %52, %cond_759_case_1.sink.split.dup.p1.045 ]
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
   call void @__quantum__rt__bool_record_output(i1 %phi.edge2124, ptr @2)
@@ -150,9 +150,9 @@ __prepare_module_record_output_final:             ; preds = %cond_759_case_1.sin
   call void @__quantum__rt__bool_record_output(i1 %phi.edge, ptr @5)
   call void @__quantum__rt__int_record_output(i64 %"74_2.0", ptr @6)
   call void @__quantum__rt__int_record_output(i64 %phi.fix47, ptr @7)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge, ptr @8)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge48, ptr @9)
-  call void @__quantum__rt__bool_record_output(i1 %val.merge49, ptr @10)
+  call void @__quantum__rt__bool_record_output(i1 %val.available, ptr @8)
+  call void @__quantum__rt__bool_record_output(i1 %val.available48, ptr @9)
+  call void @__quantum__rt__bool_record_output(i1 %val.available49, ptr @10)
   ret void
 
 cond_374_case_1.dup.p1.0:                         ; preds = %cond_exit_176

@@ -724,15 +724,6 @@ fn fix_external_value_uses<'ctx>(
     lowerable: &mut HashSet<ValueKey>,
     only_keys: Option<&HashSet<ValueKey>>,
 ) -> Result<()> {
-    let succs = direct_successors(original_block)?;
-    // Identify duplicated successor blocks by pointer identity so we can
-    // skip them when iterating predecessors of successor blocks below
-    // (they already have the right values in their vmaps).
-    let dup_keys: HashSet<_> = leaves
-        .iter()
-        .map(|(dup, _)| dup.as_mut_ptr() as usize)
-        .collect();
-
     for inst in original_block.get_instructions() {
         let Ok(value): Result<BasicValueEnum<'ctx>, ()> = inst.as_any_value_enum().try_into()
         else {
@@ -747,88 +738,14 @@ fn fix_external_value_uses<'ctx>(
             continue;
         }
 
-        // Phase 1: For each direct successor of the original block, create a
-        // merge phi that joins the per-duplicate values. This gives us a single
-        // SSA value in each successor that replaces the original definition.
-        let mut merge_phis: HashMap<usize, BasicValueEnum<'ctx>> = HashMap::new();
-        for succ in &succs {
-            debug_assert!(!predecessors(*succ)?.is_empty());
-            // Collect incoming values from duplicated successor blocks that
-            // branch to this successor. Each duplicate has its own copy of
-            // the value in its vmap.
-            let incomings: Vec<_> = leaves
-                .iter()
-                .filter_map(|(dup, vmap)| {
-                    block_has_successor(*dup, *succ)
-                        .ok()
-                        .and_then(|reaches| reaches.then_some((*dup, vmap)))
-                })
-                .map(|(dup, vmap)| {
-                    let resolved = vmap.get(&key).copied().expect(
-                        "fix_external_value_uses: dup successor vmap missing key for value from original block",
-                    );
-                    (resolved, dup)
-                })
-                .collect();
-            if incomings.is_empty() {
-                continue;
-            }
-
-            let builder = succ.get_context().create_builder();
-            if let Some(first_np) = first_non_phi(*succ) {
-                builder.position_before(&first_np);
-            } else {
-                builder.position_at_end(*succ);
-            }
-            let merge = builder.build_phi(value.get_type(), "val.merge")?;
-            for (incoming_val, dup) in incomings {
-                merge.add_incoming(&[(&incoming_val, dup)]);
-            }
-
-            // The successor may also be reached from non-duplicate predecessors
-            // (e.g., if the successor has other incoming edges unrelated to the
-            // lowered block). These need incoming values too — resolved by
-            // walking their predecessor chains back to a point where the value
-            // is available (a duplicate block or an existing merge phi).
-            let mut resolver_cache = HashMap::new();
-            for pred in predecessors(*succ)? {
-                let pred_key = pred.as_mut_ptr() as usize;
-                if dup_keys.contains(&pred_key) {
-                    continue;
-                }
-                if pred == original_block {
-                    continue;
-                }
-                let incoming = resolve_available_value_in_block(
-                    original_block,
-                    pred,
-                    key,
-                    value,
-                    leaves,
-                    &merge_phis,
-                    lowerable,
-                    &mut resolver_cache,
-                )?;
-                merge.add_incoming(&[(&incoming, pred)]);
-            }
-
-            if lowerable.contains(&key) || is_float_type(value.get_type()) {
-                lowerable.insert(value_key_from_instruction(merge.as_instruction()));
-            }
-            merge_phis.insert(succ.as_mut_ptr() as usize, merge.as_basic_value());
-        }
-
-        // Phase 2: Rewrite each external user of this value. Phi users need
-        // special handling — we rebuild them with per-incoming-block resolution.
-        // Non-phi users are simply pointed at the merge phi in their block.
+        // For each external user, rewrite it to use per-duplicate values
+        // instead of the original (soon-to-be-erased) value.
         let mut cache = HashMap::new();
         for user in external_users {
-            // Phi user: rebuild the phi, replacing any incoming edge that
-            // carried the original value with the merge phi (or resolved
-            // value) for that incoming block.
             if user.get_opcode() == InstructionOpcode::Phi {
+                // Phi user: rebuild the phi. Incomings from original_block are
+                // expanded into per-dup incomings; all others are kept as-is.
                 let user_block = required_parent_block(user, "fix_external_value_uses")?;
-                debug_assert!(!predecessors(user_block)?.is_empty());
                 let user_phi: PhiValue = user.try_into().unwrap();
                 let incomings: Vec<_> = user_phi.get_incomings().collect();
                 let builder = user_block.get_context().create_builder();
@@ -843,27 +760,37 @@ fn fix_external_value_uses<'ctx>(
                 }
 
                 for (incoming_val, incoming_bb) in incomings {
-                    let mapped_val = if incoming_val.as_value_ref() == value.as_value_ref() {
-                        if let Some(&merge_phi) =
-                            merge_phis.get(&(incoming_bb.as_mut_ptr() as usize))
-                        {
-                            merge_phi
-                        } else {
-                            resolve_available_value_in_block(
-                                original_block,
-                                incoming_bb,
-                                key,
-                                value,
-                                leaves,
-                                &merge_phis,
-                                lowerable,
-                                &mut cache,
-                            )?
+                    if incoming_bb == original_block {
+                        // Replace with per-dup incomings: each dup that
+                        // branches to this block contributes its vmap value.
+                        for (dup, vmap) in leaves {
+                            if block_has_successor(*dup, user_block)? {
+                                let resolved = vmap
+                                    .get(&key)
+                                    .copied()
+                                    .expect("fix_external_value_uses: dup vmap missing key");
+                                new_phi.add_incoming(&[(&resolved, *dup)]);
+                            }
                         }
+                    } else if incoming_val.as_value_ref() == value.as_value_ref() {
+                        // Non-original predecessor carries the to-be-erased
+                        // value (it flows through this predecessor). Resolve
+                        // a surviving replacement in that predecessor's block.
+                        let resolved = resolve_available_value_in_block(
+                            original_block,
+                            incoming_bb,
+                            key,
+                            value,
+                            leaves,
+                            lowerable,
+                            &mut cache,
+                        )?;
+                        new_phi.add_incoming(&[(&resolved, incoming_bb)]);
                     } else {
-                        incoming_val
-                    };
-                    new_phi.add_incoming(&[(&mapped_val, incoming_bb)]);
+                        // Non-dup predecessor with a different value:
+                        // keep the existing incoming unchanged.
+                        new_phi.add_incoming(&[(&incoming_val, incoming_bb)]);
+                    }
                 }
 
                 user_phi.replace_all_uses_with(&new_phi);
@@ -872,12 +799,12 @@ fn fix_external_value_uses<'ctx>(
                 continue;
             }
 
-            // Non-phi user: replace uses of the original value with the
-            // merge phi (or resolved value) available in the user's block.
+            // Non-phi user: replace uses of the original value with a
+            // resolved value available in the user's block.
             let user_block = required_parent_block(user, "fix_external_value_uses")?;
             let user_block_key = user_block.as_mut_ptr() as usize;
-            let replacement = if let Some(&merge_phi) = merge_phis.get(&user_block_key) {
-                merge_phi
+            let replacement = if let Some(&cached) = cache.get(&user_block_key) {
+                cached
             } else {
                 resolve_available_value_in_block(
                     original_block,
@@ -885,7 +812,6 @@ fn fix_external_value_uses<'ctx>(
                     key,
                     value,
                     leaves,
-                    &merge_phis,
                     lowerable,
                     &mut cache,
                 )?
@@ -901,10 +827,10 @@ fn fix_external_value_uses<'ctx>(
 /// defined in `original_block` after that block has been replaced by
 /// duplicated successor blocks.
 ///
-/// If `block` is a duplicated successor or direct successor with a merge phi,
-/// returns that directly. Otherwise, creates a helper phi in `block` that
-/// merges values from its predecessors, recursing as needed. Results are
-/// cached to avoid duplicate helper phis.
+/// If `block` is a duplicated successor, returns the vmap value directly.
+/// Otherwise, creates a helper phi in `block` that merges values from its
+/// predecessors, recursing as needed. Results are cached to avoid duplicate
+/// helper phis.
 #[allow(clippy::too_many_arguments)]
 fn resolve_available_value_in_block<'ctx>(
     original_block: BasicBlock<'ctx>,
@@ -912,23 +838,31 @@ fn resolve_available_value_in_block<'ctx>(
     key: ValueKey,
     value: BasicValueEnum<'ctx>,
     leaves: &[(BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>)],
-    merge_phis: &HashMap<usize, BasicValueEnum<'ctx>>,
     lowerable: &mut HashSet<ValueKey>,
     cache: &mut HashMap<usize, BasicValueEnum<'ctx>>,
 ) -> Result<BasicValueEnum<'ctx>> {
     let block_key = block.as_mut_ptr() as usize;
-    if let Some(&merge_phi) = merge_phis.get(&block_key) {
-        return Ok(merge_phi);
-    }
     if let Some(&cached) = cache.get(&block_key) {
         return Ok(cached);
     }
 
+    // Check if this block is a dup block — return vmap value directly.
+    if let Some((_, vmap)) = leaves
+        .iter()
+        .find(|(dup, _)| dup.as_mut_ptr() as usize == block_key)
+    {
+        let val = vmap
+            .get(&key)
+            .copied()
+            .expect("resolve_available_value_in_block: dup vmap missing key");
+        cache.insert(block_key, val);
+        return Ok(val);
+    }
+
     let preds = predecessors(block)?;
     if preds.is_empty() {
-        // Reached a block with no predecessors (entry block). The original
-        // value hasn't been erased yet and still dominates all paths, so
-        // return it directly.
+        // Reached the entry block. The original value hasn't been erased yet
+        // and still dominates all paths, so return it directly.
         cache.insert(block_key, value);
         return Ok(value);
     }
@@ -947,30 +881,18 @@ fn resolve_available_value_in_block<'ctx>(
     let mut added_preds = HashSet::new();
     for pred in preds {
         let pred_key = pred.as_mut_ptr() as usize;
-        let incoming = if let Some(&merge_phi) = merge_phis.get(&pred_key) {
-            merge_phi
-        } else if let Some((_, vmap)) = leaves
-            .iter()
-            .find(|(dup, _)| dup.as_mut_ptr() as usize == pred_key)
-        {
-            vmap.get(&key).copied().expect(
-                "resolve_available_value_in_block: dup successor vmap missing key for value from original block",
-            )
-        } else {
-            if pred == original_block {
-                continue;
-            }
-            resolve_available_value_in_block(
-                original_block,
-                pred,
-                key,
-                value,
-                leaves,
-                merge_phis,
-                lowerable,
-                cache,
-            )?
-        };
+        if pred == original_block {
+            continue;
+        }
+        let incoming = resolve_available_value_in_block(
+            original_block,
+            pred,
+            key,
+            value,
+            leaves,
+            lowerable,
+            cache,
+        )?;
         if added_preds.insert(pred_key) {
             helper.add_incoming(&[(&incoming, pred)]);
         }

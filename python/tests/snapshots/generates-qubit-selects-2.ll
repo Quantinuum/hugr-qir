@@ -29,10 +29,10 @@ alloca_block:
   br i1 %0, label %alloca_block.route1828, label %alloca_block.route1825
 
 cond_336_case_1:                                  ; preds = %cond_exit_796, %bb0
-  %val.available1837 = phi i1 [ %val.merge, %cond_exit_796 ], [ %val.available1838, %bb0 ]
-  %val.available1850 = phi i1 [ %val.merge1842, %cond_exit_796 ], [ %val.available1851, %bb0 ]
-  %val.available1863 = phi i1 [ %val.merge1855, %cond_exit_796 ], [ %val.available1864, %bb0 ]
-  %val.available1876 = phi i1 [ %val.merge1868, %cond_exit_796 ], [ %val.available1877, %bb0 ]
+  %val.available1835 = phi i1 [ %val.available1836, %cond_exit_796 ], [ %val.available1838, %bb0 ]
+  %val.available1847 = phi i1 [ %val.available1848, %cond_exit_796 ], [ %val.available1850, %bb0 ]
+  %val.available1859 = phi i1 [ %val.available1860, %cond_exit_796 ], [ %val.available1862, %bb0 ]
+  %val.available1871 = phi i1 [ %val.available1872, %cond_exit_796 ], [ %val.available1874, %bb0 ]
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 6 to ptr))
   %4 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 6 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
@@ -54,26 +54,26 @@ cond_336_case_1:                                  ; preds = %cond_exit_796, %bb0
   br i1 %Pivot1824, label %cond_880_case_1.sink.split.dup.p0.0, label %NodeBlock
 
 NodeBlock:                                        ; preds = %cond_336_case_1
-  %val.available1835 = phi i1 [ %val.available1837, %cond_336_case_1 ]
-  %val.available1848 = phi i1 [ %val.available1850, %cond_336_case_1 ]
-  %val.available1861 = phi i1 [ %val.available1863, %cond_336_case_1 ]
-  %val.available1874 = phi i1 [ %val.available1876, %cond_336_case_1 ]
+  %val.available1833 = phi i1 [ %val.available1835, %cond_336_case_1 ]
+  %val.available1845 = phi i1 [ %val.available1847, %cond_336_case_1 ]
+  %val.available1857 = phi i1 [ %val.available1859, %cond_336_case_1 ]
+  %val.available1869 = phi i1 [ %val.available1871, %cond_336_case_1 ]
   %Pivot = icmp slt i64 %11, 2
   br i1 %Pivot, label %cond_880_case_1.sink.split.dup.p1.0, label %LeafBlock
 
 LeafBlock:                                        ; preds = %NodeBlock
-  %val.available1834 = phi i1 [ %val.available1835, %NodeBlock ]
-  %val.available1847 = phi i1 [ %val.available1848, %NodeBlock ]
-  %val.available1860 = phi i1 [ %val.available1861, %NodeBlock ]
-  %val.available1873 = phi i1 [ %val.available1874, %NodeBlock ]
+  %val.available1832 = phi i1 [ %val.available1833, %NodeBlock ]
+  %val.available1844 = phi i1 [ %val.available1845, %NodeBlock ]
+  %val.available1856 = phi i1 [ %val.available1857, %NodeBlock ]
+  %val.available1868 = phi i1 [ %val.available1869, %NodeBlock ]
   %SwitchLeaf = icmp eq i64 %11, 2
   br i1 %SwitchLeaf, label %cond_880_case_1.sink.split.dup.p2.0, label %cond_880_case_1
 
 cond_880_case_1:                                  ; preds = %cond_880_case_1.sink.split.dup.p2.0, %cond_880_case_1.sink.split.dup.p1.0, %cond_880_case_1.sink.split.dup.p0.0, %LeafBlock
-  %phi.fix = phi i1 [ %val.available1834, %LeafBlock ], [ %val.available1837, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1840, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1841, %cond_880_case_1.sink.split.dup.p2.0 ]
-  %phi.fix1881 = phi i1 [ %val.available1847, %LeafBlock ], [ %val.available1850, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1853, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1854, %cond_880_case_1.sink.split.dup.p2.0 ]
-  %phi.fix1882 = phi i1 [ %val.available1860, %LeafBlock ], [ %val.available1863, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1866, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1867, %cond_880_case_1.sink.split.dup.p2.0 ]
-  %phi.fix1883 = phi i1 [ %val.available1873, %LeafBlock ], [ %val.available1876, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1879, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1880, %cond_880_case_1.sink.split.dup.p2.0 ]
+  %phi.fix = phi i1 [ %val.available1832, %LeafBlock ], [ %val.available1835, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1840, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1841, %cond_880_case_1.sink.split.dup.p2.0 ]
+  %phi.fix1878 = phi i1 [ %val.available1844, %LeafBlock ], [ %val.available1847, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1852, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1853, %cond_880_case_1.sink.split.dup.p2.0 ]
+  %phi.fix1879 = phi i1 [ %val.available1856, %LeafBlock ], [ %val.available1859, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1864, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1865, %cond_880_case_1.sink.split.dup.p2.0 ]
+  %phi.fix1880 = phi i1 [ %val.available1868, %LeafBlock ], [ %val.available1871, %cond_880_case_1.sink.split.dup.p0.0 ], [ %val.available1876, %cond_880_case_1.sink.split.dup.p1.0 ], [ %val.available1877, %cond_880_case_1.sink.split.dup.p2.0 ]
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
   %12 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
@@ -81,37 +81,33 @@ cond_880_case_1:                                  ; preds = %cond_880_case_1.sin
   br label %__prepare_module_record_output_final
 
 bb:                                               ; preds = %alloca_block.route1827, %alloca_block.dup.7, %alloca_block.dup.6, %alloca_block.dup.4, %alloca_block.dup.0
-  %val.available = phi i1 [ %26, %alloca_block.dup.7 ], [ %22, %alloca_block.dup.6 ], [ %18, %alloca_block.dup.4 ], [ %14, %alloca_block.dup.0 ], [ %30, %alloca_block.route1827 ]
-  %val.merge1831 = phi i1 [ %14, %alloca_block.dup.0 ], [ %18, %alloca_block.dup.4 ], [ %22, %alloca_block.dup.6 ], [ %26, %alloca_block.dup.7 ], [ %30, %alloca_block.route1827 ]
-  %val.available1843 = phi i1 [ %27, %alloca_block.dup.7 ], [ %23, %alloca_block.dup.6 ], [ %19, %alloca_block.dup.4 ], [ %15, %alloca_block.dup.0 ], [ %31, %alloca_block.route1827 ]
-  %val.merge1844 = phi i1 [ %15, %alloca_block.dup.0 ], [ %19, %alloca_block.dup.4 ], [ %23, %alloca_block.dup.6 ], [ %27, %alloca_block.dup.7 ], [ %31, %alloca_block.route1827 ]
-  %val.available1856 = phi i1 [ %28, %alloca_block.dup.7 ], [ %24, %alloca_block.dup.6 ], [ %20, %alloca_block.dup.4 ], [ %16, %alloca_block.dup.0 ], [ %32, %alloca_block.route1827 ]
-  %val.merge1857 = phi i1 [ %16, %alloca_block.dup.0 ], [ %20, %alloca_block.dup.4 ], [ %24, %alloca_block.dup.6 ], [ %28, %alloca_block.dup.7 ], [ %32, %alloca_block.route1827 ]
-  %val.available1869 = phi i1 [ %29, %alloca_block.dup.7 ], [ %25, %alloca_block.dup.6 ], [ %21, %alloca_block.dup.4 ], [ %17, %alloca_block.dup.0 ], [ %33, %alloca_block.route1827 ]
-  %val.merge1870 = phi i1 [ %17, %alloca_block.dup.0 ], [ %21, %alloca_block.dup.4 ], [ %25, %alloca_block.dup.6 ], [ %29, %alloca_block.dup.7 ], [ %33, %alloca_block.route1827 ]
+  %val.available1837 = phi i1 [ %26, %alloca_block.dup.7 ], [ %22, %alloca_block.dup.6 ], [ %18, %alloca_block.dup.4 ], [ %14, %alloca_block.dup.0 ], [ %30, %alloca_block.route1827 ]
+  %val.available1849 = phi i1 [ %27, %alloca_block.dup.7 ], [ %23, %alloca_block.dup.6 ], [ %19, %alloca_block.dup.4 ], [ %15, %alloca_block.dup.0 ], [ %31, %alloca_block.route1827 ]
+  %val.available1861 = phi i1 [ %28, %alloca_block.dup.7 ], [ %24, %alloca_block.dup.6 ], [ %20, %alloca_block.dup.4 ], [ %16, %alloca_block.dup.0 ], [ %32, %alloca_block.route1827 ]
+  %val.available1873 = phi i1 [ %29, %alloca_block.dup.7 ], [ %25, %alloca_block.dup.6 ], [ %21, %alloca_block.dup.4 ], [ %17, %alloca_block.dup.0 ], [ %33, %alloca_block.route1827 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
   br label %cond_exit_796
 
 cond_exit_796:                                    ; preds = %alloca_block.route1827, %alloca_block.dup.7, %alloca_block.dup.6, %alloca_block.dup.4, %alloca_block.dup.0, %bb
-  %val.merge = phi i1 [ %14, %alloca_block.dup.0 ], [ %18, %alloca_block.dup.4 ], [ %22, %alloca_block.dup.6 ], [ %26, %alloca_block.dup.7 ], [ %val.available, %bb ], [ %30, %alloca_block.route1827 ]
-  %val.merge1842 = phi i1 [ %15, %alloca_block.dup.0 ], [ %19, %alloca_block.dup.4 ], [ %23, %alloca_block.dup.6 ], [ %27, %alloca_block.dup.7 ], [ %val.available1843, %bb ], [ %31, %alloca_block.route1827 ]
-  %val.merge1855 = phi i1 [ %16, %alloca_block.dup.0 ], [ %20, %alloca_block.dup.4 ], [ %24, %alloca_block.dup.6 ], [ %28, %alloca_block.dup.7 ], [ %val.available1856, %bb ], [ %32, %alloca_block.route1827 ]
-  %val.merge1868 = phi i1 [ %17, %alloca_block.dup.0 ], [ %21, %alloca_block.dup.4 ], [ %25, %alloca_block.dup.6 ], [ %29, %alloca_block.dup.7 ], [ %val.available1869, %bb ], [ %33, %alloca_block.route1827 ]
+  %val.available1836 = phi i1 [ %26, %alloca_block.dup.7 ], [ %22, %alloca_block.dup.6 ], [ %18, %alloca_block.dup.4 ], [ %14, %alloca_block.dup.0 ], [ %val.available1837, %bb ], [ %30, %alloca_block.route1827 ]
+  %val.available1848 = phi i1 [ %27, %alloca_block.dup.7 ], [ %23, %alloca_block.dup.6 ], [ %19, %alloca_block.dup.4 ], [ %15, %alloca_block.dup.0 ], [ %val.available1849, %bb ], [ %31, %alloca_block.route1827 ]
+  %val.available1860 = phi i1 [ %28, %alloca_block.dup.7 ], [ %24, %alloca_block.dup.6 ], [ %20, %alloca_block.dup.4 ], [ %16, %alloca_block.dup.0 ], [ %val.available1861, %bb ], [ %32, %alloca_block.route1827 ]
+  %val.available1872 = phi i1 [ %29, %alloca_block.dup.7 ], [ %25, %alloca_block.dup.6 ], [ %21, %alloca_block.dup.4 ], [ %17, %alloca_block.dup.0 ], [ %val.available1873, %bb ], [ %33, %alloca_block.route1827 ]
   br i1 %1, label %bb0, label %cond_336_case_1
 
 bb0:                                              ; preds = %cond_exit_796
-  %val.available1838 = phi i1 [ %val.merge, %cond_exit_796 ]
-  %val.available1851 = phi i1 [ %val.merge1842, %cond_exit_796 ]
-  %val.available1864 = phi i1 [ %val.merge1855, %cond_exit_796 ]
-  %val.available1877 = phi i1 [ %val.merge1868, %cond_exit_796 ]
+  %val.available1838 = phi i1 [ %val.available1836, %cond_exit_796 ]
+  %val.available1850 = phi i1 [ %val.available1848, %cond_exit_796 ]
+  %val.available1862 = phi i1 [ %val.available1860, %cond_exit_796 ]
+  %val.available1874 = phi i1 [ %val.available1872, %cond_exit_796 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
   br label %cond_336_case_1
 
 cond_880_case_1.sink.split.dup.p2.0:              ; preds = %LeafBlock
-  %val.available1841 = phi i1 [ %val.available1834, %LeafBlock ]
-  %val.available1854 = phi i1 [ %val.available1847, %LeafBlock ]
-  %val.available1867 = phi i1 [ %val.available1860, %LeafBlock ]
-  %val.available1880 = phi i1 [ %val.available1873, %LeafBlock ]
+  %val.available1841 = phi i1 [ %val.available1832, %LeafBlock ]
+  %val.available1853 = phi i1 [ %val.available1844, %LeafBlock ]
+  %val.available1865 = phi i1 [ %val.available1856, %LeafBlock ]
+  %val.available1877 = phi i1 [ %val.available1868, %LeafBlock ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   br label %cond_880_case_1
@@ -210,10 +206,10 @@ cond_880_case_1.sink.split.dup.p0.0:              ; preds = %cond_336_case_1
   br label %cond_880_case_1
 
 cond_880_case_1.sink.split.dup.p1.0:              ; preds = %NodeBlock
-  %val.available1840 = phi i1 [ %val.available1835, %NodeBlock ]
-  %val.available1853 = phi i1 [ %val.available1848, %NodeBlock ]
-  %val.available1866 = phi i1 [ %val.available1861, %NodeBlock ]
-  %val.available1879 = phi i1 [ %val.available1874, %NodeBlock ]
+  %val.available1840 = phi i1 [ %val.available1833, %NodeBlock ]
+  %val.available1852 = phi i1 [ %val.available1845, %NodeBlock ]
+  %val.available1864 = phi i1 [ %val.available1857, %NodeBlock ]
+  %val.available1876 = phi i1 [ %val.available1869, %NodeBlock ]
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
   br label %cond_880_case_1
 
@@ -221,9 +217,9 @@ __prepare_module_record_output_final:             ; preds = %cond_880_case_1
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
   call void @__quantum__rt__bool_record_output(i1 %phi.fix, ptr @2)
-  call void @__quantum__rt__bool_record_output(i1 %phi.fix1881, ptr @3)
-  call void @__quantum__rt__bool_record_output(i1 %phi.fix1882, ptr @4)
-  call void @__quantum__rt__bool_record_output(i1 %phi.fix1883, ptr @5)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix1878, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix1879, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %phi.fix1880, ptr @5)
   call void @__quantum__rt__int_record_output(i64 %"61_2.0", ptr @6)
   call void @__quantum__rt__int_record_output(i64 %10, ptr @7)
   call void @__quantum__rt__bool_record_output(i1 %12, ptr @8)

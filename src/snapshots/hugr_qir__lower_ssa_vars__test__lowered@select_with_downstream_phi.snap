@@ -12,28 +12,24 @@ entry:
   br i1 %cond0, label %entry.dup.1, label %entry.dup.0
 
 entry.dup.0:                                      ; preds = %entry
-  br i1 %cond1, label %merge.dup.p2.0, label %merge.dup.p1.0
+  br i1 %cond1, label %merge.dup.p0.0, label %merge.dup.p2.0
 
 entry.dup.1:                                      ; preds = %entry
-  br i1 %cond1, label %merge.dup.p3.0, label %merge.dup.p0.0
+  br i1 %cond1, label %merge.dup.p1.0, label %merge.dup.p2.0
 
-common.ret:                                       ; preds = %merge.dup.p3.0, %merge.dup.p2.0, %merge.dup.p1.0, %merge.dup.p0.0
+common.ret:                                       ; preds = %merge.dup.p2.0, %merge.dup.p1.0, %merge.dup.p0.0
   ret void
 
-merge.dup.p0.0:                                   ; preds = %entry.dup.1
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
-  br label %common.ret
-
-merge.dup.p1.0:                                   ; preds = %entry.dup.0
-  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
-  br label %common.ret
-
-merge.dup.p2.0:                                   ; preds = %entry.dup.0
+merge.dup.p0.0:                                   ; preds = %entry.dup.0
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 
-merge.dup.p3.0:                                   ; preds = %entry.dup.1
+merge.dup.p1.0:                                   ; preds = %entry.dup.1
   call void @__quantum__qis__reset__body(ptr null)
+  br label %common.ret
+
+merge.dup.p2.0:                                   ; preds = %entry.dup.1, %entry.dup.0
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
   br label %common.ret
 }
 

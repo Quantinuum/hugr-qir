@@ -2,7 +2,7 @@
   "generates-llvm-switch": "00ee2d4b045ec51fb101dadaa09c3b65516439fe2985d98ff2231d546b90c234",
   "generates-qubit-selects-1": "d9d24e527aeaf79ed39a6f820e557154b250edfdeb772702d5cf472906b2afe8",
   "generates-qubit-selects-2": "f79bc6625aab21e1999fe4169d2ffec58950817cb6248882c0a5c61385877a86",
-  "generates-qubit-selects-and-float-phi": "d6174f671d701478f4fa3c7e3bc0ee69249c60ff7fcf4eac8c1c3a94a11899ad",
+  "generates-qubit-selects-and-float-phi": "e1a2f960f6f57920cf68719b0f26157325e6476908edbb6e734c81da6ced7321",
   "guppylang_hugr_version": "guppy-v0.21.11 hugr-v0.15.5",
   "hugr_generation_module": "6e8543537797e9eef773daa340b76b85b7bf6ecdd46b00a7484aa8f725bc93ef",
   "planqc-1": "90557e381ff288343c34bd3009816ab2d90d19d56f38e1b96c17ca82b3e7e277",

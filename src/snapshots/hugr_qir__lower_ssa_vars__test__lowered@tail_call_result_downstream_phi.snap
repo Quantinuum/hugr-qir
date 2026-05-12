@@ -14,11 +14,10 @@ entry:
   br i1 %cond0, label %entry.dup.1, label %entry.dup.0
 
 right:                                            ; preds = %entry.dup.1, %entry.dup.0
-  %val.merge = phi i1 [ %flag1, %entry.dup.0 ], [ %flag2, %entry.dup.1 ]
   br label %join
 
 join:                                             ; preds = %entry.dup.0, %entry.dup.1, %right
-  %phi.external = phi i1 [ false, %right ], [ %flag1, %entry.dup.0 ], [ %flag2, %entry.dup.1 ]
+  %phi.external = phi i1 [ false, %right ], [ %flag2, %entry.dup.1 ], [ %flag1, %entry.dup.0 ]
   tail call void @__test__consume_bool(i1 %phi.external)
   ret void
 
