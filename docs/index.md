@@ -16,11 +16,11 @@ Start with [Getting Started](getting-started.md) if you are new to the project.
 :maxdepth: 2
 
 getting-started
+guppy-for-h-series/index
 examples/index
 python-api
 cli
 wasm
-guppylang-support
 development
 architecture
 ```
