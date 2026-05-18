@@ -1,12 +1,16 @@
-from base64 import b64decode
 import os
 import re
+from base64 import b64decode
 from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
 from hugr_qir.cli import hugr_qir
-from hugr_qir.output import GENERATOR_SECTION, OutputFormat, ir_string_to_output_format
+from hugr_qir.output import (
+    GENERATOR_SECTION,
+    OutputFormat,
+    ir_string_to_output_format,
+)
 from llvmlite.binding import create_context, parse_bitcode
 
 from tests.hugr_generation import GuppyExample, generate_guppy_example_dict
@@ -25,7 +29,10 @@ SNAPSHOT_DIR = TEST_DIR / "snapshots"
 skip_snapshot_checks = os.getenv("CIBUILDWHEEL") == "1"
 
 GENERATOR_VERSION_LINE_RE = re.compile(
-    rf'^@gen_version = (?:local_unnamed_addr )?global \[[0-9]+ x i8\] c"[^"]+", section "{re.escape(GENERATOR_SECTION)}"$',
+    (
+        rf"^@gen_version = (?:local_unnamed_addr )?global "
+        rf'\[[0-9]+ x i8\] c"[^"]+", section "{re.escape(GENERATOR_SECTION)}"$'
+    ),
     re.MULTILINE,
 )
 
@@ -58,15 +65,17 @@ def stabilize_qir_snapshot_output(
 ) -> str | bytes:
     match output_format:
         case OutputFormat.LLVM_IR:
-            assert isinstance(qir_output, str)  # noqa: S101
+            assert isinstance(qir_output, str)
             qir_ir = qir_output
         case OutputFormat.BITCODE:
-            assert isinstance(qir_output, bytes)  # noqa: S101
+            assert isinstance(qir_output, bytes)
             qir_ir = str(parse_bitcode(qir_output, context=create_context()))
         case OutputFormat.BASE64:
-            assert isinstance(qir_output, str)  # noqa: S101
+            assert isinstance(qir_output, str)
             qir_ir = str(
-                parse_bitcode(b64decode(qir_output.encode("utf-8")), context=create_context())
+                parse_bitcode(
+                    b64decode(qir_output.encode("utf-8")), context=create_context()
+                )
             )
     normalized_qir_ir = GENERATOR_VERSION_LINE_RE.sub(
         f'@gen_version = global [5 x i8] c"0.0.0", section "{GENERATOR_SECTION}"',

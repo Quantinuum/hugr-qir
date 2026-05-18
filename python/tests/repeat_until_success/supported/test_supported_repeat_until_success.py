@@ -27,5 +27,6 @@ def test_supported_repeat_until_success(guppy_file: Path, snapshot: Snapshot) ->
     qir = to_qir_str(hugr_bin)
     if not skip_snapshot_checks:
         snapshot.assert_match(
-            stabilize_qir_snapshot_output(qir), str(Path(guppy_file.stem).with_suffix(".ll"))
+            stabilize_qir_snapshot_output(qir),
+            str(Path(guppy_file.stem).with_suffix(".ll")),
         )

@@ -46,12 +46,21 @@ def test_generated_qir_uses_qir_1_runtime_contracts() -> None:
     assert "__quantum__rt__read_result" in qir
     assert "__quantum__qis__read_result__body" not in qir
     assert 'qir_profiles"="adaptive_profile"' in qir
-    assert re.search(
-        rf'@gen_name = (?:local_unnamed_addr )?global \[8 x i8\] c"hugr-qir", section "{re.escape(GENERATOR_SECTION)}"',
-        qir,
+    gen_name_pattern = (
+        rf"@gen_name = (?:local_unnamed_addr )?global "
+        rf'\[8 x i8\] c"hugr-qir", section "{re.escape(GENERATOR_SECTION)}"'
     )
     assert re.search(
-        rf'@gen_version = (?:local_unnamed_addr )?global \[{len(package_version)} x i8\] c"{re.escape(package_version)}", section "{re.escape(GENERATOR_SECTION)}"',
+        gen_name_pattern,
+        qir,
+    )
+    gen_version_pattern = (
+        rf"@gen_version = (?:local_unnamed_addr )?global "
+        rf'\[{len(package_version)} x i8\] c"{re.escape(package_version)}", '
+        rf'section "{re.escape(GENERATOR_SECTION)}"'
+    )
+    assert re.search(
+        gen_version_pattern,
         qir,
     )
     assert "call void @__quantum__rt__initialize(i8* null)" in qir

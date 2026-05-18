@@ -55,7 +55,8 @@ def test_guppy_file_snapshots(
         qir = f.read()
     if not skip_snapshot_checks:
         snapshot.assert_match(
-            stabilize_qir_snapshot_output(qir), str(Path(guppy_file.stem).with_suffix(".ll"))
+            stabilize_qir_snapshot_output(qir),
+            str(Path(guppy_file.stem).with_suffix(".ll")),
         )
 
 
