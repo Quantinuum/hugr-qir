@@ -15,6 +15,7 @@ use hugr::{Hugr, Node};
 use hugr_llvm::inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
 use inkwell::module::{Linkage, Module};
+use inkwell::values::UnnamedAddress;
 use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
@@ -382,6 +383,9 @@ fn add_generator_metadata(module: &Module, key: &str, value: &str) {
         .array_type(u32::try_from(value.len()).expect("generator metadata length must fit in u32"));
     let global = module.add_global(value_type, None, key);
     global.set_initializer(&context.const_string(value.as_bytes(), false));
+    global.set_linkage(Linkage::Private);
+    global.set_constant(true);
+    global.set_unnamed_address(UnnamedAddress::Global);
     global.set_section(Some(GENERATOR_SECTION));
 }
 

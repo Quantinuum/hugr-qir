@@ -47,7 +47,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts() -> None:
     assert "__quantum__qis__read_result__body" not in qir
     assert 'qir_profiles"="adaptive_profile"' in qir
     gen_name_pattern = (
-        rf"@gen_name = (?:local_unnamed_addr )?global "
+        rf"@gen_name = private unnamed_addr constant "
         rf'\[8 x i8\] c"hugr-qir", section "{re.escape(GENERATOR_SECTION)}"'
     )
     assert re.search(
@@ -55,7 +55,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts() -> None:
         qir,
     )
     gen_version_pattern = (
-        rf"@gen_version = (?:local_unnamed_addr )?global "
+        rf"@gen_version = private unnamed_addr constant "
         rf'\[{len(package_version)} x i8\] c"{re.escape(package_version)}", '
         rf'section "{re.escape(GENERATOR_SECTION)}"'
     )

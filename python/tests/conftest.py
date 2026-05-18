@@ -30,7 +30,7 @@ skip_snapshot_checks = os.getenv("CIBUILDWHEEL") == "1"
 
 GENERATOR_VERSION_LINE_RE = re.compile(
     (
-        rf"^@gen_version = (?:local_unnamed_addr )?global "
+        rf"^@gen_version = private unnamed_addr constant "
         rf'\[[0-9]+ x i8\] c"[^"]+", section "{re.escape(GENERATOR_SECTION)}"$'
     ),
     re.MULTILINE,
@@ -78,7 +78,10 @@ def stabilize_qir_snapshot_output(
                 )
             )
     normalized_qir_ir = GENERATOR_VERSION_LINE_RE.sub(
-        f'@gen_version = global [5 x i8] c"0.0.0", section "{GENERATOR_SECTION}"',
+        (
+            "@gen_version = private unnamed_addr constant [5 x i8] "
+            f'c"0.0.0", section "{GENERATOR_SECTION}"'
+        ),
         qir_ir,
     )
     return ir_string_to_output_format(normalized_qir_ir, output_format)
