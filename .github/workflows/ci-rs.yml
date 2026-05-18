@@ -19,9 +19,6 @@ env:
   CI: true # insta snapshots behave differently on ci
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
-  # different strings for install action and feature name
-  # adapted from https://github.com/TheDan64/inkwell/blob/master/.github/workflows/test.yml
-  LLVM_VERSION: "14.0"
   PYTHON_VERSION: "3.13"
 
 
@@ -72,10 +69,10 @@ jobs:
           components: rustfmt, clippy
       - name: Check formatting
         run: cargo fmt -- --check
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Run clippy
         run: cargo clippy --all-targets --all-features --workspace -- -D warnings
       - name: Build docs
@@ -99,10 +96,10 @@ jobs:
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
 
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Build with no features
         run: cargo test --verbose  --no-default-features --no-run
       - name: Tests with no features
@@ -124,10 +121,10 @@ jobs:
           toolchain: "stable"
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Build with all features
         run: cargo test --verbose  --all-features --no-run
       - name: Tests with all features
@@ -150,7 +147,7 @@ jobs:
       matrix:
         # Stable is covered by `tests-stable-no-features` and `tests-stable-all-features`
         # Nightly is covered by `tests-nightly-coverage`
-        rust: ["1.89", beta]
+        rust: ["1.91", beta]
     name: tests (Rust ${{ matrix.rust }})
     steps:
       - uses: actions/checkout@v6
@@ -161,10 +158,10 @@ jobs:
           toolchain: ${{ matrix.rust }}
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Build with no features
         run: cargo test --verbose  --no-default-features --no-run
       - name: Tests with no features
@@ -188,10 +185,10 @@ jobs:
           # Nightly is required to count doctests coverage
           toolchain: "nightly"
           components: llvm-tools-preview
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Run tests with coverage instrumentation

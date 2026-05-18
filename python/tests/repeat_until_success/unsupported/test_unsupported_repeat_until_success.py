@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from pytest_snapshot.plugin import Snapshot  # type: ignore
+from pytest_snapshot.plugin import Snapshot
 
 from tests.conftest import GUPPY_EXAMPLES_DIR
 from tests.unsupported_examples import assert_unsupported_example

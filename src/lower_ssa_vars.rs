@@ -2600,14 +2600,15 @@ fn redirect_edge<'ctx>(
             Op::Br => {
                 if term.is_conditional().unwrap() {
                     let cond = expect_inst_operand_value(term, 0).into_int_value();
+                    // NOTE: `get_operands` returns the else (false) branch as operand 1
+                    // and the then (true) branch as operand 2. But
+                    // `Builder::build_conditional_branch` takes the arguments in the
+                    // reverse order.
                     let false_bb = operand_as_bb(term, 1).unwrap();
                     let true_bb = operand_as_bb(term, 2).unwrap();
                     let new_false = if false_bb == old_to { new_to } else { false_bb };
                     let new_true = if true_bb == old_to { new_to } else { true_bb };
 
-                    // In LLVM's operand layout, operand(1) is the *false* target and
-                    // operand(2) is the *true* target. build_conditional_branch takes
-                    // (cond, then, else) so we pass true first.
                     builder
                         .build_conditional_branch(cond, new_true, new_false)
                         .ok();

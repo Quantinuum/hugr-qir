@@ -354,8 +354,6 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let Some(func_info) = wasm_module.get(&id) else {
                 bail!("{}", missing_wasm_func_id_message(wasm_file, id))
             };
-            dbg!(id);
-            dbg!(func_info);
             let Some(name) = func_info.export_name.as_deref() else {
                 bail!("Wasm module id {id} is defined but not exported");
             };
