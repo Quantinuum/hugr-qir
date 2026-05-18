@@ -1,7 +1,41 @@
-//! Utilities for squashing any ssa variables to QUBIT pointers.
+//! Lowers `select` and `phi` instructions on qubit-pointer and floating-point
+//! types into equivalent explicit control flow.
 //!
-//! For OG systems, these cannot be used as input to qis functions,
-//! because dynamic addressing of qubits is not allowed
+//! Quantinuum H-Series ("OG") targets require qubit and float arguments to `__quantum__qis__*` functions to
+//! be constant within a branch — they cannot be chosen at runtime via SSA data
+//! flow, but they can be chosen via control flow. This pass converts `phi` and `select`
+//! instructions to equivalent control flow. We assume `switch` instructions have
+//! already been eliminated (e.g. by the LLVM 'lower-switch' pass).
+//!
+//! # Pass design
+//!
+//! Two public entry points drive the lowering:
+//!
+//! - [`lower_qubit_selects_and_phis`]: lowers qubit-pointer selects then phis,
+//!   followed by LLVM `simplifycfg` cleanup.
+//! - [`lower_float_selects_and_phis`]: same strategy for floats, but uses
+//!   `constprop` cleanup instead (since `simplifycfg` can reintroduce phis).
+//!
+//! Both pipelines share the same structure:
+//!
+//! 1. **Preparation** (`prepare_module`): sinks `*_record_output` runtime calls
+//!    into a single final block per function so tail duplication cannot duplicate
+//!    measurement recording.
+//! 2. **Select lowering** (`lower_one_select_to_control_flow`): splits the
+//!    block at the select into a then/else/merge diamond, rebuilds the tail into
+//!    the merge block via `rebuild_tail`, then immediately eliminates the merge
+//!    phi via tail duplication.
+//! 3. **Phi lowering** ([`lower_successive_phis_in_block`]): for each predecessor
+//!    of a phi-bearing block, duplicates the non-phi tail into a per-predecessor
+//!    clone block (`duplicate_phi_tail_for_predecessor`), redirects edges, and
+//!    reconciles downstream phi incomings and external uses.
+//! 4. **Cleanup**: LLVM pass pipeline (`simplifycfg` or `constprop`) removes
+//!    redundant blocks / folds constants.
+//!
+//! Instruction cloning is handled by [`rebuild_inst`] (non-terminators) and
+//! `rebuild_terminator`, both of which remap operands through a value map.
+//! After phi-block duplication, `DuplicationValueResolver` resolves SSA values
+//! for downstream users that referenced the now-deleted block.
 
 use crate::inkwell::basic_block::BasicBlock;
 use crate::inkwell::builder::Builder;
