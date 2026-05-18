@@ -1353,10 +1353,18 @@ fn plan_phi_user_rewrites<'ctx>(
                 }
             }
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if can_rebuild_inst(*u_inst) {
+                    for pred in incoming_by_pred.keys() {
+                        if !clone_for_pred.contains_key(pred) {
+                            bail!("Detected error in phi predecessors");
+                        }
+                    }
+                } else {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
     }
@@ -1380,7 +1388,15 @@ fn apply_phi_user_rewrites<'ctx>(
 
     let mut rewritten = 0usize;
     for &u_inst in phi_users {
-        if required_parent_block(u_inst, "apply_phi_user_rewrites")? == phi_block {
+        // The same instruction can appear multiple times in phi_users when it uses
+        // phi in more than one operand (e.g. two incoming slots or fmul %phi,%phi).
+        // Phi/Call rewrites erase the instruction on the first encounter; skip it on
+        // subsequent encounters.
+        let parent = match u_inst.get_parent() {
+            Some(bb) => bb,
+            None => continue,
+        };
+        if parent == phi_block {
             continue;
         }
         match u_inst.get_opcode() {
@@ -1403,10 +1419,22 @@ fn apply_phi_user_rewrites<'ctx>(
                 qubit_values,
             )?,
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if can_rebuild_inst(u_inst) {
+                    rewrite_phi_user_as_inst(
+                        phi,
+                        phi_block,
+                        u_inst,
+                        clone_for_pred,
+                        &sorted_incoming_by_pred,
+                        &mut available_value_cache,
+                        qubit_values,
+                    )?
+                } else {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
         rewritten += 1;
@@ -1531,7 +1559,36 @@ fn rewrite_phi_user_as_call<'ctx>(
     Ok(())
 }
 
-/// Returns a value in `block` that represents the eliminated phi after its
+/// Rewrites a general rebuildable instruction that uses `phi` by replacing
+/// the phi operand in-place with the value available after phi lowering.
+///
+/// A helper phi is inserted at the top of the user's block (and cached) so
+/// that multiple users in the same block share the same merged value.
+fn rewrite_phi_user_as_inst<'ctx>(
+    phi: PhiValue<'ctx>,
+    phi_block: BasicBlock<'ctx>,
+    user_inst: InstructionValue<'ctx>,
+    clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+    available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
+) -> Result<()> {
+    let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_inst")?;
+    if succ_bb == phi_block {
+        bail!("rewrite_phi_user_as_inst: instruction user unexpectedly remained in phi block");
+    }
+    let replacement_value = value_available_in_block_after_phi_lowering(
+        phi,
+        succ_bb,
+        clone_for_pred,
+        sorted_incoming_by_pred,
+        available_value_cache,
+        qubit_values,
+    )?;
+    replace_value_uses_in_instruction(user_inst, phi.as_basic_value(), replacement_value);
+    Ok(())
+}
+
 /// defining block has been duplicated away.
 ///
 /// If `block` is directly reached from the clone blocks, this creates a helper
@@ -1656,10 +1713,12 @@ fn validate_phi_users<'ctx>(
                 }
             }
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if !can_rebuild_inst(user_inst) {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
 
