@@ -24,16 +24,16 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 5 to ptr), ptr noundef nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 1 to ptr))
   %"48_2.0" = zext i1 %0 to i64
-  br i1 %1, label %alloca_block.dup, label %alloca_block.dup2194
+  br i1 %1, label %alloca_block.dup2194, label %alloca_block.dup
 
-alloca_block.dup:                                 ; preds = %alloca_block
+alloca_block.dup2194:                             ; preds = %alloca_block
   %2 = select i1 %0, i64 2, i64 1
-  br i1 %0, label %cond_exit_855.dup2220, label %cond_exit_755.dup
+  br i1 %0, label %cond_exit_855.dup2221, label %cond_exit_755.dup2334
 
-cond_exit_755.dup:                                ; preds = %alloca_block.dup
+cond_exit_755.dup2334:                            ; preds = %alloca_block.dup2194
   br label %cond_exit_101
 
-cond_exit_855.dup2220:                            ; preds = %alloca_block.dup
+cond_exit_855.dup2221:                            ; preds = %alloca_block.dup2194
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef null)
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 6 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef null)
@@ -47,22 +47,22 @@ cond_exit_855.dup2220:                            ; preds = %alloca_block.dup
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 9 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef nonnull inttoptr (i64 3 to ptr))
   %6 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 9 to ptr))
-  br label %bb.dup2346
+  br label %bb.dup2348
 
-bb.dup2346:                                       ; preds = %cond_exit_855.dup2220
+bb.dup2348:                                       ; preds = %cond_exit_855.dup2221
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef null)
-  br label %cond_exit_176.dup2355
+  br label %cond_exit_176.dup2357
 
-cond_exit_176.dup2355:                            ; preds = %bb.dup2346
+cond_exit_176.dup2357:                            ; preds = %bb.dup2348
   br label %bb
 
-alloca_block.dup2194:                             ; preds = %alloca_block
-  br label %cond_exit_755.dup2333
+alloca_block.dup:                                 ; preds = %alloca_block
+  br label %cond_exit_755.dup
 
-cond_exit_755.dup2333:                            ; preds = %alloca_block.dup2194
-  br i1 %0, label %cond_exit_855.dup2337, label %cond_exit_101
+cond_exit_755.dup:                                ; preds = %alloca_block.dup
+  br i1 %0, label %cond_exit_855.dup, label %cond_exit_101
 
-cond_exit_855.dup2337:                            ; preds = %cond_exit_755.dup2333
+cond_exit_855.dup:                                ; preds = %cond_exit_755.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 1 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 6 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef null)
@@ -76,16 +76,16 @@ cond_exit_855.dup2337:                            ; preds = %cond_exit_755.dup23
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 9 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef nonnull inttoptr (i64 3 to ptr))
   %10 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 9 to ptr))
-  br label %bb.dup2347
+  br label %bb.dup2346
 
-bb.dup2347:                                       ; preds = %cond_exit_855.dup2337
+bb.dup2346:                                       ; preds = %cond_exit_855.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef null)
-  br label %cond_exit_176.dup2356
+  br label %cond_exit_176.dup
 
-cond_exit_176.dup2356:                            ; preds = %bb.dup2347
-  br label %cond_374_case_1.dup2437
+cond_exit_176.dup:                                ; preds = %bb.dup2346
+  br label %cond_374_case_1.dup2424
 
-cond_374_case_1.dup2437:                          ; preds = %cond_exit_176.dup2356
+cond_374_case_1.dup2424:                          ; preds = %cond_exit_176.dup
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 2 to ptr))
   %11 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 1 to ptr), ptr noundef nonnull inttoptr (i64 3 to ptr))
@@ -94,30 +94,30 @@ cond_374_case_1.dup2437:                          ; preds = %cond_exit_176.dup23
   %13 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 4 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 5 to ptr))
   %14 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 5 to ptr))
-  %"1370_0.022292438" = select i1 %11, i64 8, i64 0
-  %"1408_0.022302439" = select i1 %12, i64 4, i64 0
-  %"1446_0.022312440" = select i1 %13, i64 2, i64 0
-  %"1484_0.022322441" = zext i1 %14 to i64
-  %15 = or disjoint i64 %"1408_0.022302439", %"1370_0.022292438"
-  %16 = or disjoint i64 %15, %"1446_0.022312440"
-  %17 = or disjoint i64 %16, %"1484_0.022322441"
-  br label %NodeBlock.dup2505
+  %"1370_0.022362425" = select i1 %11, i64 8, i64 0
+  %"1408_0.022372426" = select i1 %12, i64 4, i64 0
+  %"1446_0.022382427" = select i1 %13, i64 2, i64 0
+  %"1484_0.022392428" = zext i1 %14 to i64
+  %15 = or disjoint i64 %"1408_0.022372426", %"1370_0.022362425"
+  %16 = or disjoint i64 %15, %"1446_0.022382427"
+  %17 = or disjoint i64 %16, %"1484_0.022392428"
+  br label %NodeBlock.dup2502
 
-NodeBlock.dup2505:                                ; preds = %cond_374_case_1.dup2437
-  br i1 %13, label %LeafBlock.dup2565, label %.sink.split.dup2534
+NodeBlock.dup2502:                                ; preds = %cond_374_case_1.dup2424
+  br i1 %13, label %LeafBlock.dup2562, label %.sink.split.dup2533
 
-LeafBlock.dup2565:                                ; preds = %NodeBlock.dup2505
-  br label %.sink.split.dup2634
+LeafBlock.dup2562:                                ; preds = %NodeBlock.dup2502
+  br label %.sink.split.dup2636
 
-.sink.split.dup2634:                              ; preds = %LeafBlock.dup2565
+.sink.split.dup2636:                              ; preds = %LeafBlock.dup2562
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %bb.dup2653
+  br label %bb.dup2655
 
-bb.dup2653:                                       ; preds = %.sink.split.dup2634
-  br label %cond_949_case_1.dup2674
+bb.dup2655:                                       ; preds = %.sink.split.dup2636
+  br label %cond_949_case_1.dup2696
 
-cond_949_case_1.dup2674:                          ; preds = %bb.dup2653
+cond_949_case_1.dup2696:                          ; preds = %bb.dup2655
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %18 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -127,14 +127,14 @@ cond_949_case_1.dup2674:                          ; preds = %bb.dup2653
   %20 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-.sink.split.dup2534:                              ; preds = %NodeBlock.dup2505
+.sink.split.dup2533:                              ; preds = %NodeBlock.dup2502
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
-  br label %bb.dup2548
+  br label %bb.dup2547
 
-bb.dup2548:                                       ; preds = %.sink.split.dup2534
-  br label %cond_949_case_1.dup2676
+bb.dup2547:                                       ; preds = %.sink.split.dup2533
+  br label %cond_949_case_1.dup2671
 
-cond_949_case_1.dup2676:                          ; preds = %bb.dup2548
+cond_949_case_1.dup2671:                          ; preds = %bb.dup2547
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %21 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -144,14 +144,14 @@ cond_949_case_1.dup2676:                          ; preds = %bb.dup2548
   %23 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_exit_101:                                    ; preds = %cond_exit_755.dup, %cond_exit_755.dup2333
-  %phi.edge2334 = phi i64 [ %2, %cond_exit_755.dup ], [ %"48_2.0", %cond_exit_755.dup2333 ]
-  br i1 %1, label %cond_exit_101.dup, label %cond_exit_101.dup2095
+cond_exit_101:                                    ; preds = %cond_exit_755.dup2334, %cond_exit_755.dup
+  %phi.edge2335 = phi i64 [ %"48_2.0", %cond_exit_755.dup ], [ %2, %cond_exit_755.dup2334 ]
+  br i1 %1, label %cond_exit_101.dup2095, label %cond_exit_101.dup
 
-cond_exit_101.dup:                                ; preds = %cond_exit_101
-  br label %cond_exit_101.dup2185
+cond_exit_101.dup2095:                            ; preds = %cond_exit_101
+  br label %cond_exit_101.dup2186
 
-cond_exit_101.dup2185:                            ; preds = %cond_exit_101.dup
+cond_exit_101.dup2186:                            ; preds = %cond_exit_101.dup2095
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 6 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef null)
@@ -165,15 +165,15 @@ cond_exit_101.dup2185:                            ; preds = %cond_exit_101.dup
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 9 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef nonnull inttoptr (i64 3 to ptr))
   %27 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 9 to ptr))
-  br label %cond_exit_176.dup2358
+  br label %cond_exit_176.dup2362
 
-cond_exit_176.dup2358:                            ; preds = %cond_exit_101.dup2185
+cond_exit_176.dup2362:                            ; preds = %cond_exit_101.dup2186
   br label %bb
 
-cond_exit_101.dup2095:                            ; preds = %cond_exit_101
-  br label %cond_exit_101.dup2174
+cond_exit_101.dup:                                ; preds = %cond_exit_101
+  br label %cond_exit_101.dup2173
 
-cond_exit_101.dup2174:                            ; preds = %cond_exit_101.dup2095
+cond_exit_101.dup2173:                            ; preds = %cond_exit_101.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 3 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 6 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef null)
@@ -187,12 +187,12 @@ cond_exit_101.dup2174:                            ; preds = %cond_exit_101.dup20
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 9 to ptr))
   call void @__quantum__qis__reset__body(ptr noundef nonnull inttoptr (i64 3 to ptr))
   %31 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 9 to ptr))
-  br label %cond_exit_176.dup2361
+  br label %cond_exit_176.dup2359
 
-cond_exit_176.dup2361:                            ; preds = %cond_exit_101.dup2174
-  br label %cond_374_case_1.dup2472
+cond_exit_176.dup2359:                            ; preds = %cond_exit_101.dup2173
+  br label %cond_374_case_1.dup2452
 
-cond_374_case_1.dup2472:                          ; preds = %cond_exit_176.dup2361
+cond_374_case_1.dup2452:                          ; preds = %cond_exit_176.dup2359
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 2 to ptr))
   %32 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 1 to ptr), ptr noundef nonnull inttoptr (i64 3 to ptr))
@@ -201,26 +201,26 @@ cond_374_case_1.dup2472:                          ; preds = %cond_exit_176.dup23
   %34 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 4 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 5 to ptr))
   %35 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 5 to ptr))
-  %"1370_0.022292473" = select i1 %32, i64 8, i64 0
-  %"1408_0.022302474" = select i1 %33, i64 4, i64 0
-  %"1446_0.022312475" = select i1 %34, i64 2, i64 0
-  %"1484_0.022322476" = zext i1 %35 to i64
-  %36 = or disjoint i64 %"1408_0.022302474", %"1370_0.022292473"
-  %37 = or disjoint i64 %36, %"1446_0.022312475"
-  %38 = or disjoint i64 %37, %"1484_0.022322476"
-  %"1282_0.022332477" = zext i1 %34 to i64
-  %39 = add nuw nsw i64 %phi.edge2334, %"1282_0.022332477"
-  %Pivot208922342478 = icmp eq i64 %39, 0
-  br i1 %Pivot208922342478, label %.sink.split.dup2610, label %NodeBlock.dup2515
+  %"1370_0.022362453" = select i1 %32, i64 8, i64 0
+  %"1408_0.022372454" = select i1 %33, i64 4, i64 0
+  %"1446_0.022382455" = select i1 %34, i64 2, i64 0
+  %"1484_0.022392456" = zext i1 %35 to i64
+  %36 = or disjoint i64 %"1408_0.022372454", %"1370_0.022362453"
+  %37 = or disjoint i64 %36, %"1446_0.022382455"
+  %38 = or disjoint i64 %37, %"1484_0.022392456"
+  %"1282_0.022402457" = zext i1 %34 to i64
+  %39 = add nuw nsw i64 %phi.edge2335, %"1282_0.022402457"
+  %Pivot208922412458 = icmp eq i64 %39, 0
+  br i1 %Pivot208922412458, label %.sink.split.dup2610, label %NodeBlock.dup2510
 
-.sink.split.dup2610:                              ; preds = %cond_374_case_1.dup2472
+.sink.split.dup2610:                              ; preds = %cond_374_case_1.dup2452
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
   br label %bb.dup2624
 
 bb.dup2624:                                       ; preds = %.sink.split.dup2610
-  br label %cond_949_case_1.dup2693
+  br label %cond_949_case_1.dup2691
 
-cond_949_case_1.dup2693:                          ; preds = %bb.dup2624
+cond_949_case_1.dup2691:                          ; preds = %bb.dup2624
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %40 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -230,23 +230,23 @@ cond_949_case_1.dup2693:                          ; preds = %bb.dup2624
   %42 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-NodeBlock.dup2515:                                ; preds = %cond_374_case_1.dup2472
-  %Pivot22772516 = icmp eq i64 %39, 1
-  br i1 %Pivot22772516, label %.sink.split.dup2539, label %LeafBlock.dup2575
+NodeBlock.dup2510:                                ; preds = %cond_374_case_1.dup2452
+  %Pivot22792511 = icmp eq i64 %39, 1
+  br i1 %Pivot22792511, label %.sink.split.dup2537, label %LeafBlock.dup2570
 
-LeafBlock.dup2575:                                ; preds = %NodeBlock.dup2515
-  %SwitchLeaf22952576 = icmp eq i64 %39, 2
-  br i1 %SwitchLeaf22952576, label %.sink.split.dup2639, label %bb.dup2596
+LeafBlock.dup2570:                                ; preds = %NodeBlock.dup2510
+  %SwitchLeaf22972571 = icmp eq i64 %39, 2
+  br i1 %SwitchLeaf22972571, label %.sink.split.dup2640, label %bb.dup2595
 
-.sink.split.dup2639:                              ; preds = %LeafBlock.dup2575
+.sink.split.dup2640:                              ; preds = %LeafBlock.dup2570
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %bb.dup2658
+  br label %bb.dup2659
 
-bb.dup2658:                                       ; preds = %.sink.split.dup2639
-  br label %cond_949_case_1.dup2694
+bb.dup2659:                                       ; preds = %.sink.split.dup2640
+  br label %cond_949_case_1.dup2700
 
-cond_949_case_1.dup2694:                          ; preds = %bb.dup2658
+cond_949_case_1.dup2700:                          ; preds = %bb.dup2659
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %43 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -256,10 +256,10 @@ cond_949_case_1.dup2694:                          ; preds = %bb.dup2658
   %45 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-bb.dup2596:                                       ; preds = %LeafBlock.dup2575
-  br label %cond_949_case_1.dup2695
+bb.dup2595:                                       ; preds = %LeafBlock.dup2570
+  br label %cond_949_case_1.dup2683
 
-cond_949_case_1.dup2695:                          ; preds = %bb.dup2596
+cond_949_case_1.dup2683:                          ; preds = %bb.dup2595
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %46 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -269,14 +269,14 @@ cond_949_case_1.dup2695:                          ; preds = %bb.dup2596
   %48 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-.sink.split.dup2539:                              ; preds = %NodeBlock.dup2515
+.sink.split.dup2537:                              ; preds = %NodeBlock.dup2510
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
-  br label %bb.dup2553
+  br label %bb.dup2551
 
-bb.dup2553:                                       ; preds = %.sink.split.dup2539
-  br label %cond_949_case_1.dup2696
+bb.dup2551:                                       ; preds = %.sink.split.dup2537
+  br label %cond_949_case_1.dup2675
 
-cond_949_case_1.dup2696:                          ; preds = %bb.dup2553
+cond_949_case_1.dup2675:                          ; preds = %bb.dup2551
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %49 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -286,16 +286,16 @@ cond_949_case_1.dup2696:                          ; preds = %bb.dup2553
   %51 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-bb:                                               ; preds = %cond_exit_176.dup2358, %cond_exit_176.dup2355
-  %phi.edge2362 = phi i64 [ %2, %cond_exit_176.dup2355 ], [ %phi.edge2334, %cond_exit_176.dup2358 ]
-  %phi.edge2363 = phi i1 [ %6, %cond_exit_176.dup2355 ], [ %27, %cond_exit_176.dup2358 ]
-  %phi.edge2364 = phi i1 [ %5, %cond_exit_176.dup2355 ], [ %26, %cond_exit_176.dup2358 ]
-  %phi.edge2365 = phi i1 [ %4, %cond_exit_176.dup2355 ], [ %25, %cond_exit_176.dup2358 ]
-  %phi.edge2366 = phi i1 [ %3, %cond_exit_176.dup2355 ], [ %24, %cond_exit_176.dup2358 ]
+bb:                                               ; preds = %cond_exit_176.dup2362, %cond_exit_176.dup2357
+  %phi.edge2363 = phi i64 [ %2, %cond_exit_176.dup2357 ], [ %phi.edge2335, %cond_exit_176.dup2362 ]
+  %phi.edge2364 = phi i1 [ %6, %cond_exit_176.dup2357 ], [ %27, %cond_exit_176.dup2362 ]
+  %phi.edge2365 = phi i1 [ %5, %cond_exit_176.dup2357 ], [ %26, %cond_exit_176.dup2362 ]
+  %phi.edge2366 = phi i1 [ %4, %cond_exit_176.dup2357 ], [ %25, %cond_exit_176.dup2362 ]
+  %phi.edge2367 = phi i1 [ %3, %cond_exit_176.dup2357 ], [ %24, %cond_exit_176.dup2362 ]
   tail call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 1 to ptr))
-  br label %cond_374_case_1.dup2235
+  br label %cond_374_case_1.dup
 
-cond_374_case_1.dup2235:                          ; preds = %bb
+cond_374_case_1.dup:                              ; preds = %bb
   call void @__quantum__qis__mz__body(ptr noundef null, ptr noundef nonnull inttoptr (i64 2 to ptr))
   %52 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 1 to ptr), ptr noundef nonnull inttoptr (i64 3 to ptr))
@@ -304,30 +304,30 @@ cond_374_case_1.dup2235:                          ; preds = %bb
   %54 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 4 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 3 to ptr), ptr noundef nonnull inttoptr (i64 5 to ptr))
   %55 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 5 to ptr))
-  %"1370_0.02236" = select i1 %52, i64 8, i64 0
-  %"1408_0.02237" = select i1 %53, i64 4, i64 0
-  %"1446_0.02238" = select i1 %54, i64 2, i64 0
-  %"1484_0.02239" = zext i1 %55 to i64
-  %56 = or disjoint i64 %"1408_0.02237", %"1370_0.02236"
-  %57 = or disjoint i64 %56, %"1446_0.02238"
-  %58 = or disjoint i64 %57, %"1484_0.02239"
-  %"1282_0.02240" = zext i1 %54 to i64
-  %59 = add nuw nsw i64 %phi.edge2362, %"1282_0.02240"
-  %Pivot20892241 = icmp slt i64 %59, 1
-  br i1 %Pivot20892241, label %.sink.split.dup2269, label %NodeBlock.dup2278
+  %"1370_0.02229" = select i1 %52, i64 8, i64 0
+  %"1408_0.02230" = select i1 %53, i64 4, i64 0
+  %"1446_0.02231" = select i1 %54, i64 2, i64 0
+  %"1484_0.02232" = zext i1 %55 to i64
+  %56 = or disjoint i64 %"1408_0.02230", %"1370_0.02229"
+  %57 = or disjoint i64 %56, %"1446_0.02231"
+  %58 = or disjoint i64 %57, %"1484_0.02232"
+  %"1282_0.02233" = zext i1 %54 to i64
+  %59 = add nuw nsw i64 %phi.edge2363, %"1282_0.02233"
+  %Pivot20892234 = icmp slt i64 %59, 1
+  br i1 %Pivot20892234, label %.sink.split.dup2268, label %NodeBlock.dup
 
-NodeBlock.dup2278:                                ; preds = %cond_374_case_1.dup2235
-  %Pivot2279 = icmp eq i64 %59, 1
-  br i1 %Pivot2279, label %.sink.split.dup2312, label %LeafBlock.dup2296
+NodeBlock.dup:                                    ; preds = %cond_374_case_1.dup
+  %Pivot2277 = icmp eq i64 %59, 1
+  br i1 %Pivot2277, label %.sink.split.dup2312, label %LeafBlock.dup
 
-.sink.split.dup2312:                              ; preds = %NodeBlock.dup2278
+.sink.split.dup2312:                              ; preds = %NodeBlock.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
-  br label %bb.dup2322
+  br label %bb.dup2323
 
-bb.dup2322:                                       ; preds = %.sink.split.dup2312
-  br label %cond_949_case_1.dup2697
+bb.dup2323:                                       ; preds = %.sink.split.dup2312
+  br label %cond_949_case_1.dup2669
 
-cond_949_case_1.dup2697:                          ; preds = %bb.dup2322
+cond_949_case_1.dup2669:                          ; preds = %bb.dup2323
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %60 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -337,19 +337,19 @@ cond_949_case_1.dup2697:                          ; preds = %bb.dup2322
   %62 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-LeafBlock.dup2296:                                ; preds = %NodeBlock.dup2278
-  %SwitchLeaf2297 = icmp eq i64 %59, 2
-  br i1 %SwitchLeaf2297, label %.sink.split.dup2640, label %bb.dup2323
+LeafBlock.dup:                                    ; preds = %NodeBlock.dup
+  %SwitchLeaf2295 = icmp eq i64 %59, 2
+  br i1 %SwitchLeaf2295, label %.sink.split.dup2635, label %bb.dup2325
 
-.sink.split.dup2640:                              ; preds = %LeafBlock.dup2296
+.sink.split.dup2635:                              ; preds = %LeafBlock.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %bb.dup2659
+  br label %bb.dup2654
 
-bb.dup2659:                                       ; preds = %.sink.split.dup2640
-  br label %cond_949_case_1.dup2698
+bb.dup2654:                                       ; preds = %.sink.split.dup2635
+  br label %cond_949_case_1.dup2695
 
-cond_949_case_1.dup2698:                          ; preds = %bb.dup2659
+cond_949_case_1.dup2695:                          ; preds = %bb.dup2654
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %63 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -359,10 +359,10 @@ cond_949_case_1.dup2698:                          ; preds = %bb.dup2659
   %65 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-bb.dup2323:                                       ; preds = %LeafBlock.dup2296
-  br label %cond_949_case_1.dup2699
+bb.dup2325:                                       ; preds = %LeafBlock.dup
+  br label %cond_949_case_1.dup2670
 
-cond_949_case_1.dup2699:                          ; preds = %bb.dup2323
+cond_949_case_1.dup2670:                          ; preds = %bb.dup2325
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %66 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -372,14 +372,14 @@ cond_949_case_1.dup2699:                          ; preds = %bb.dup2323
   %68 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-.sink.split.dup2269:                              ; preds = %cond_374_case_1.dup2235
+.sink.split.dup2268:                              ; preds = %cond_374_case_1.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %bb.dup2324
+  br label %bb.dup2321
 
-bb.dup2324:                                       ; preds = %.sink.split.dup2269
-  br label %cond_949_case_1.dup2700
+bb.dup2321:                                       ; preds = %.sink.split.dup2268
+  br label %cond_949_case_1.dup
 
-cond_949_case_1.dup2700:                          ; preds = %bb.dup2324
+cond_949_case_1.dup:                              ; preds = %bb.dup2321
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %69 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -389,27 +389,27 @@ cond_949_case_1.dup2700:                          ; preds = %bb.dup2324
   %71 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-__prepare_module_record_output_final:             ; preds = %cond_949_case_1.dup2700, %cond_949_case_1.dup2699, %cond_949_case_1.dup2698, %cond_949_case_1.dup2697, %cond_949_case_1.dup2696, %cond_949_case_1.dup2695, %cond_949_case_1.dup2694, %cond_949_case_1.dup2693, %cond_949_case_1.dup2676, %cond_949_case_1.dup2674
-  %phi.calluser.edge2708 = phi i1 [ %20, %cond_949_case_1.dup2674 ], [ %23, %cond_949_case_1.dup2676 ], [ %42, %cond_949_case_1.dup2693 ], [ %45, %cond_949_case_1.dup2694 ], [ %48, %cond_949_case_1.dup2695 ], [ %51, %cond_949_case_1.dup2696 ], [ %62, %cond_949_case_1.dup2697 ], [ %65, %cond_949_case_1.dup2698 ], [ %68, %cond_949_case_1.dup2699 ], [ %71, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge2707 = phi i1 [ %19, %cond_949_case_1.dup2674 ], [ %22, %cond_949_case_1.dup2676 ], [ %41, %cond_949_case_1.dup2693 ], [ %44, %cond_949_case_1.dup2694 ], [ %47, %cond_949_case_1.dup2695 ], [ %50, %cond_949_case_1.dup2696 ], [ %61, %cond_949_case_1.dup2697 ], [ %64, %cond_949_case_1.dup2698 ], [ %67, %cond_949_case_1.dup2699 ], [ %70, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge2706 = phi i1 [ %18, %cond_949_case_1.dup2674 ], [ %21, %cond_949_case_1.dup2676 ], [ %40, %cond_949_case_1.dup2693 ], [ %43, %cond_949_case_1.dup2694 ], [ %46, %cond_949_case_1.dup2695 ], [ %49, %cond_949_case_1.dup2696 ], [ %60, %cond_949_case_1.dup2697 ], [ %63, %cond_949_case_1.dup2698 ], [ %66, %cond_949_case_1.dup2699 ], [ %69, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge2705 = phi i1 [ %7, %cond_949_case_1.dup2674 ], [ %7, %cond_949_case_1.dup2676 ], [ %28, %cond_949_case_1.dup2693 ], [ %28, %cond_949_case_1.dup2694 ], [ %28, %cond_949_case_1.dup2695 ], [ %28, %cond_949_case_1.dup2696 ], [ %phi.edge2366, %cond_949_case_1.dup2697 ], [ %phi.edge2366, %cond_949_case_1.dup2698 ], [ %phi.edge2366, %cond_949_case_1.dup2699 ], [ %phi.edge2366, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge2704 = phi i1 [ %8, %cond_949_case_1.dup2674 ], [ %8, %cond_949_case_1.dup2676 ], [ %29, %cond_949_case_1.dup2693 ], [ %29, %cond_949_case_1.dup2694 ], [ %29, %cond_949_case_1.dup2695 ], [ %29, %cond_949_case_1.dup2696 ], [ %phi.edge2365, %cond_949_case_1.dup2697 ], [ %phi.edge2365, %cond_949_case_1.dup2698 ], [ %phi.edge2365, %cond_949_case_1.dup2699 ], [ %phi.edge2365, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge2703 = phi i1 [ %9, %cond_949_case_1.dup2674 ], [ %9, %cond_949_case_1.dup2676 ], [ %30, %cond_949_case_1.dup2693 ], [ %30, %cond_949_case_1.dup2694 ], [ %30, %cond_949_case_1.dup2695 ], [ %30, %cond_949_case_1.dup2696 ], [ %phi.edge2364, %cond_949_case_1.dup2697 ], [ %phi.edge2364, %cond_949_case_1.dup2698 ], [ %phi.edge2364, %cond_949_case_1.dup2699 ], [ %phi.edge2364, %cond_949_case_1.dup2700 ]
-  %phi.calluser.edge = phi i1 [ %10, %cond_949_case_1.dup2674 ], [ %10, %cond_949_case_1.dup2676 ], [ %31, %cond_949_case_1.dup2693 ], [ %31, %cond_949_case_1.dup2694 ], [ %31, %cond_949_case_1.dup2695 ], [ %31, %cond_949_case_1.dup2696 ], [ %phi.edge2363, %cond_949_case_1.dup2697 ], [ %phi.edge2363, %cond_949_case_1.dup2698 ], [ %phi.edge2363, %cond_949_case_1.dup2699 ], [ %phi.edge2363, %cond_949_case_1.dup2700 ]
-  %phi.edge2701 = phi i64 [ %17, %cond_949_case_1.dup2674 ], [ %17, %cond_949_case_1.dup2676 ], [ %38, %cond_949_case_1.dup2693 ], [ %38, %cond_949_case_1.dup2694 ], [ %38, %cond_949_case_1.dup2695 ], [ %38, %cond_949_case_1.dup2696 ], [ %58, %cond_949_case_1.dup2697 ], [ %58, %cond_949_case_1.dup2698 ], [ %58, %cond_949_case_1.dup2699 ], [ %58, %cond_949_case_1.dup2700 ]
-  %phi.edge2702 = phi i64 [ %"48_2.0", %cond_949_case_1.dup2674 ], [ %"48_2.0", %cond_949_case_1.dup2676 ], [ %phi.edge2334, %cond_949_case_1.dup2693 ], [ %phi.edge2334, %cond_949_case_1.dup2694 ], [ %phi.edge2334, %cond_949_case_1.dup2695 ], [ %phi.edge2334, %cond_949_case_1.dup2696 ], [ %phi.edge2362, %cond_949_case_1.dup2697 ], [ %phi.edge2362, %cond_949_case_1.dup2698 ], [ %phi.edge2362, %cond_949_case_1.dup2699 ], [ %phi.edge2362, %cond_949_case_1.dup2700 ]
+__prepare_module_record_output_final:             ; preds = %cond_949_case_1.dup2700, %cond_949_case_1.dup2696, %cond_949_case_1.dup2695, %cond_949_case_1.dup2691, %cond_949_case_1.dup2683, %cond_949_case_1.dup2675, %cond_949_case_1.dup2671, %cond_949_case_1.dup2670, %cond_949_case_1.dup2669, %cond_949_case_1.dup
+  %phi.calluser.edge2711 = phi i1 [ %71, %cond_949_case_1.dup ], [ %62, %cond_949_case_1.dup2669 ], [ %68, %cond_949_case_1.dup2670 ], [ %23, %cond_949_case_1.dup2671 ], [ %51, %cond_949_case_1.dup2675 ], [ %48, %cond_949_case_1.dup2683 ], [ %42, %cond_949_case_1.dup2691 ], [ %65, %cond_949_case_1.dup2695 ], [ %20, %cond_949_case_1.dup2696 ], [ %45, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge2710 = phi i1 [ %70, %cond_949_case_1.dup ], [ %61, %cond_949_case_1.dup2669 ], [ %67, %cond_949_case_1.dup2670 ], [ %22, %cond_949_case_1.dup2671 ], [ %50, %cond_949_case_1.dup2675 ], [ %47, %cond_949_case_1.dup2683 ], [ %41, %cond_949_case_1.dup2691 ], [ %64, %cond_949_case_1.dup2695 ], [ %19, %cond_949_case_1.dup2696 ], [ %44, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge2709 = phi i1 [ %69, %cond_949_case_1.dup ], [ %60, %cond_949_case_1.dup2669 ], [ %66, %cond_949_case_1.dup2670 ], [ %21, %cond_949_case_1.dup2671 ], [ %49, %cond_949_case_1.dup2675 ], [ %46, %cond_949_case_1.dup2683 ], [ %40, %cond_949_case_1.dup2691 ], [ %63, %cond_949_case_1.dup2695 ], [ %18, %cond_949_case_1.dup2696 ], [ %43, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge2708 = phi i1 [ %phi.edge2367, %cond_949_case_1.dup ], [ %phi.edge2367, %cond_949_case_1.dup2669 ], [ %phi.edge2367, %cond_949_case_1.dup2670 ], [ %7, %cond_949_case_1.dup2671 ], [ %28, %cond_949_case_1.dup2675 ], [ %28, %cond_949_case_1.dup2683 ], [ %28, %cond_949_case_1.dup2691 ], [ %phi.edge2367, %cond_949_case_1.dup2695 ], [ %7, %cond_949_case_1.dup2696 ], [ %28, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge2707 = phi i1 [ %phi.edge2366, %cond_949_case_1.dup ], [ %phi.edge2366, %cond_949_case_1.dup2669 ], [ %phi.edge2366, %cond_949_case_1.dup2670 ], [ %8, %cond_949_case_1.dup2671 ], [ %29, %cond_949_case_1.dup2675 ], [ %29, %cond_949_case_1.dup2683 ], [ %29, %cond_949_case_1.dup2691 ], [ %phi.edge2366, %cond_949_case_1.dup2695 ], [ %8, %cond_949_case_1.dup2696 ], [ %29, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge2706 = phi i1 [ %phi.edge2365, %cond_949_case_1.dup ], [ %phi.edge2365, %cond_949_case_1.dup2669 ], [ %phi.edge2365, %cond_949_case_1.dup2670 ], [ %9, %cond_949_case_1.dup2671 ], [ %30, %cond_949_case_1.dup2675 ], [ %30, %cond_949_case_1.dup2683 ], [ %30, %cond_949_case_1.dup2691 ], [ %phi.edge2365, %cond_949_case_1.dup2695 ], [ %9, %cond_949_case_1.dup2696 ], [ %30, %cond_949_case_1.dup2700 ]
+  %phi.calluser.edge = phi i1 [ %phi.edge2364, %cond_949_case_1.dup ], [ %phi.edge2364, %cond_949_case_1.dup2669 ], [ %phi.edge2364, %cond_949_case_1.dup2670 ], [ %10, %cond_949_case_1.dup2671 ], [ %31, %cond_949_case_1.dup2675 ], [ %31, %cond_949_case_1.dup2683 ], [ %31, %cond_949_case_1.dup2691 ], [ %phi.edge2364, %cond_949_case_1.dup2695 ], [ %10, %cond_949_case_1.dup2696 ], [ %31, %cond_949_case_1.dup2700 ]
+  %phi.edge2704 = phi i64 [ %58, %cond_949_case_1.dup ], [ %58, %cond_949_case_1.dup2669 ], [ %58, %cond_949_case_1.dup2670 ], [ %17, %cond_949_case_1.dup2671 ], [ %38, %cond_949_case_1.dup2675 ], [ %38, %cond_949_case_1.dup2683 ], [ %38, %cond_949_case_1.dup2691 ], [ %58, %cond_949_case_1.dup2695 ], [ %17, %cond_949_case_1.dup2696 ], [ %38, %cond_949_case_1.dup2700 ]
+  %phi.edge2705 = phi i64 [ %phi.edge2363, %cond_949_case_1.dup ], [ %phi.edge2363, %cond_949_case_1.dup2669 ], [ %phi.edge2363, %cond_949_case_1.dup2670 ], [ %"48_2.0", %cond_949_case_1.dup2671 ], [ %phi.edge2335, %cond_949_case_1.dup2675 ], [ %phi.edge2335, %cond_949_case_1.dup2683 ], [ %phi.edge2335, %cond_949_case_1.dup2691 ], [ %phi.edge2363, %cond_949_case_1.dup2695 ], [ %"48_2.0", %cond_949_case_1.dup2696 ], [ %phi.edge2335, %cond_949_case_1.dup2700 ]
   call void @__quantum__rt__bool_record_output(i1 %0, ptr noundef nonnull @0)
   call void @__quantum__rt__bool_record_output(i1 noundef %1, ptr noundef nonnull @1)
-  call void @__quantum__rt__int_record_output(i64 %phi.edge2701, ptr noundef nonnull @7)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2705, ptr noundef nonnull @2)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2704, ptr noundef nonnull @3)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2703, ptr noundef nonnull @4)
+  call void @__quantum__rt__int_record_output(i64 %phi.edge2704, ptr noundef nonnull @7)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2708, ptr noundef nonnull @2)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2707, ptr noundef nonnull @3)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2706, ptr noundef nonnull @4)
   call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge, ptr noundef nonnull @5)
-  call void @__quantum__rt__int_record_output(i64 %phi.edge2702, ptr noundef nonnull @6)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2706, ptr noundef nonnull @8)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2707, ptr noundef nonnull @9)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2708, ptr noundef nonnull @10)
+  call void @__quantum__rt__int_record_output(i64 %phi.edge2705, ptr noundef nonnull @6)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2709, ptr noundef nonnull @8)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2710, ptr noundef nonnull @9)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge2711, ptr noundef nonnull @10)
   ret void
 }
 
