@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 # Configuration file for the Sphinx documentation builder.
@@ -124,8 +125,6 @@ intersphinx_mapping = {
     "qiskit_aer": ("https://qiskit.github.io/qiskit-aer", None),
     "braket": ("https://amazon-braket-sdk-python.readthedocs.io/en/latest", None),
     "iqm": ("https://iqm-finland.github.io/iqm-client/", None),
-    "pennylane": ("https://docs.pennylane.ai/en/stable", None),
-    "pyquil": ("https://pyquil-docs.rigetti.com/en/stable", None),
     "pyzx": ("https://pyzx.readthedocs.io/en/latest", None),
     "pytket": (pytketdoc_base + "api-docs/", None),
     "pytket-qiskit": (ext_url + "pytket-qiskit/", None),
@@ -133,16 +132,10 @@ intersphinx_mapping = {
         ext_url + "pytket-quantinuum/",
         None,
     ),
-    "pytket-pennylane": (ext_url + "pytket-pennylane/", None),
     "pytket-qujax": (ext_url + "pytket-qujax/", None),
-    "pytket-cirq": (ext_url + "pytket-cirq/", None),
     "pytket-braket": (ext_url + "pytket-braket/", None),
-    "pytket-pyquil": (ext_url + "pytket-pyquil/", None),
-    "pytket-pysimplex": (ext_url + "pytket-pysimplex/", None),
     "pytket-qulacs": (ext_url + "pytket-qulacs/", None),
     "pytket-iqm": (ext_url + "pytket-iqm/", None),
-    "pytket-stim": (ext_url + "pytket-stim/", None),
-    "pytket-quest": (ext_url + "pytket-quest/", None),
 }
 
 # Bit of a hack to avoid executing cutensornet notebooks (needs GPUs)
@@ -188,7 +181,7 @@ if repo_name == "pytket":
         "pytket._tket.circuit.Circuit.get_rng_num",
         "pytket._tket.circuit.Circuit.set_rng_bound",
         "pytket._tket.circuit.Circuit.set_rng_index",
-        "pytket._tket.circuit.Circuit.set_rng_seed",
+        "pytket._tket.circuit.Circuit.set_rng_seed"
     ]
 elif repo_name == "pytket-qir":
     coverage_modules = ["pytket.qir"]
@@ -222,7 +215,7 @@ exclude_patterns = [
     "README.md",
     "**/README.md",
     ".jupyter_cache",
-    "build",
+     "build",
 ]
 
 autodoc_member_order = "groupwise"
