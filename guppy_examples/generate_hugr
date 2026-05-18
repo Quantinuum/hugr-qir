@@ -2,7 +2,7 @@
 
 import importlib.util
 import sys
-from mypy.moduleinspect import ModuleType
+from types import ModuleType
 from tket_exts import tket_registry
 
 def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:
