@@ -8,7 +8,7 @@ use crate::inkwell::builder::Builder;
 use crate::inkwell::module::Module;
 use crate::inkwell::passes::PassBuilderOptions;
 use crate::inkwell::targets::TargetMachine;
-use crate::inkwell::types::{AnyTypeEnum, BasicTypeEnum};
+use crate::inkwell::types::BasicTypeEnum;
 use crate::inkwell::values::{AnyValue, InstructionOpcode as Op};
 use crate::inkwell::values::{
     AnyValueEnum, AsValueRef, BasicMetadataValueEnum, BasicValue, BasicValueEnum, CallSiteValue,
@@ -108,23 +108,7 @@ fn is_lowerable_float_select_or_phi_instruction(inst: InstructionValue) -> bool 
     matches!(
         inst.get_opcode(),
         InstructionOpcode::Select | InstructionOpcode::Phi
-    ) && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
-}
-
-/// Returns whether an LLVM type matches the lowering kind.
-fn matches_lowered_any_type(ty: AnyTypeEnum, kind: LoweredSsaKind) -> bool {
-    matches!(
-        (ty, kind),
-        (AnyTypeEnum::FloatType(_), LoweredSsaKind::Float)
-    )
-}
-
-/// Returns whether a basic type matches the lowering kind.
-fn matches_lowered_basic_type(ty: BasicTypeEnum, kind: LoweredSsaKind) -> bool {
-    matches!(
-        (ty, kind),
-        (BasicTypeEnum::FloatType(_), LoweredSsaKind::Float)
-    )
+    ) && inst.get_type().is_float_type()
 }
 
 /// Human-readable description of the lowering kind for diagnostics.
@@ -244,13 +228,12 @@ fn add_qubit_value_transitively(inst: InstructionValue, qubit_values: &mut HashS
 
 /// Returns whether an instruction is a lowerable floating-point `select`.
 fn is_lowerable_float_select(inst: InstructionValue) -> bool {
-    inst.get_opcode() == InstructionOpcode::Select
-        && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
+    inst.get_opcode() == InstructionOpcode::Select && inst.get_type().is_float_type()
 }
 
 /// Returns whether a phi is a lowerable floating-point phi.
 fn is_lowerable_float_phi(phi: PhiValue) -> bool {
-    matches_lowered_basic_type(phi.as_basic_value().get_type(), LoweredSsaKind::Float)
+    phi.as_basic_value().get_type().is_float_type()
 }
 
 /// Rebuilds a terminator into the builder's current insertion block.
@@ -592,7 +575,6 @@ pub fn lower_qubit_selects(module: &Module, qubit_values: &mut HashSet<ValueKey>
             let last_sel = get_last_qubit_select_in_block(bb, qubit_values);
             if let Some(sel) = last_sel {
                 lower_one_select_to_control_flow(
-                    module,
                     &builder,
                     sel,
                     LoweredSsaKind::QubitPointer,
@@ -633,7 +615,7 @@ fn lower_matching_selects(
         let mut block_opt = func.get_last_basic_block();
         while let Some(bb) = block_opt {
             if let Some(last_sel) = get_last_matching_select_in_block(bb, matches_select) {
-                lower_one_select_to_control_flow(module, &builder, last_sel, kind, qubit_values)?;
+                lower_one_select_to_control_flow(&builder, last_sel, kind, qubit_values)?;
                 changed = true;
             } else {
                 block_opt = bb.get_previous_basic_block();
@@ -677,7 +659,6 @@ fn get_last_qubit_select_in_block<'ctx>(
 /// typed phis downstream if there were downstream users of the select and these phis
 /// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
-    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
     kind: LoweredSsaKind,
@@ -751,7 +732,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     }
     forget_qubit_value(sel, qubit_values);
     erase_instruction(sel);
-    lower_successive_phis_in_block(module, builder, merge_bb, vec![phi], qubit_values)?;
+    lower_successive_phis_in_block(builder, merge_bb, vec![phi], qubit_values)?;
     collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb, qubit_values)?;
     Ok(())
 }
@@ -880,7 +861,7 @@ fn validate_select_lowering(
     match kind {
         LoweredSsaKind::QubitPointer => Ok(()),
         LoweredSsaKind::Float => {
-            if matches_lowered_any_type(sel.get_type(), kind) {
+            if sel.get_type().is_float_type() {
                 Ok(())
             } else {
                 bail!(
@@ -1080,13 +1061,7 @@ pub fn lower_qubit_phis(module: &Module, qubit_values: &mut HashSet<ValueKey>) -
             if phi_candidates.is_empty() {
                 continue;
             }
-            if lower_successive_phis_in_block(
-                module,
-                &builder,
-                block,
-                phi_candidates,
-                qubit_values,
-            )? {
+            if lower_successive_phis_in_block(&builder, block, phi_candidates, qubit_values)? {
                 verify_module(module).map_err(|err| {
                     anyhow!(
                         "Module verification failed after lowering {} phis in block {}: {err}",
@@ -1129,13 +1104,7 @@ fn lower_matching_phis(
             if phi_candidates.is_empty() {
                 continue;
             }
-            if lower_successive_phis_in_block(
-                module,
-                &builder,
-                block,
-                phi_candidates,
-                qubit_values,
-            )? {
+            if lower_successive_phis_in_block(&builder, block, phi_candidates, qubit_values)? {
                 verify_module(module).map_err(|err| {
                     anyhow!(
                         "Module verification failed after lowering {} phis in block {}: {err}",
@@ -1151,7 +1120,6 @@ fn lower_matching_phis(
 }
 
 pub fn lower_successive_phis_in_block(
-    _module: &Module,
     builder: &Builder,
     block: BasicBlock,
     phis: Vec<PhiValue>,
@@ -2235,6 +2203,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
     qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let mut resolver = DuplicationValueResolver::new(original_block, clone_map, clone_value_maps);
+    let sorted_clone_entries = sorted_clone_entries(clone_map);
 
     for inst in original_block.get_instructions() {
         if skipped_value_keys.contains(&value_key_from_instruction(inst)) {
@@ -2263,7 +2232,6 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                     qubit_values
                         .insert(value_key_from_instruction(replacement_phi.as_instruction()));
                 }
-                let sorted_clone_entries = sorted_clone_entries(clone_map);
 
                 for (incoming_val, incoming_bb) in incomings {
                     if incoming_bb == original_block {
@@ -2627,23 +2595,26 @@ fn redirect_edge<'ctx>(
             Op::Br => {
                 if term.is_conditional().unwrap() {
                     let cond = expect_inst_operand_value(term, 0).into_int_value();
-                    let then_bb = operand_as_bb(term, 1).unwrap();
-                    let else_bb = operand_as_bb(term, 2).unwrap();
-                    let new_then = if then_bb == old_to { new_to } else { then_bb };
-                    let new_else = if else_bb == old_to { new_to } else { else_bb };
+                    let false_bb = operand_as_bb(term, 1).unwrap();
+                    let true_bb = operand_as_bb(term, 2).unwrap();
+                    let new_false = if false_bb == old_to { new_to } else { false_bb };
+                    let new_true = if true_bb == old_to { new_to } else { true_bb };
 
-                    // In this LLVM/in-inkwell setup, operand(1) is the *false* target and
-                    // operand(2) is the *true* target. Keep the same ordering here so we don't
-                    // invert the branch when rebuilding.
+                    // In LLVM's operand layout, operand(1) is the *false* target and
+                    // operand(2) is the *true* target. build_conditional_branch takes
+                    // (cond, then, else) so we pass true first.
                     builder
-                        .build_conditional_branch(cond, new_else, new_then)
+                        .build_conditional_branch(cond, new_true, new_false)
                         .ok();
                 } else {
                     builder.build_unconditional_branch(new_to).ok();
                 }
                 term.erase_from_basic_block();
             }
-            _ => { /* extend for switch if needed */ }
+            _ => panic!(
+                "redirect_edge: unsupported terminator (switches should have been removed by 'lowerswitch'): {}",
+                term
+            ),
         }
     }
 }
@@ -2677,9 +2648,8 @@ pub fn rebuild_inst<'ctx>(
 
         // ---------------- Casts (no `build_bitcast` fallback) ----------------
         Op::BitCast => {
-            // We implement bitcast via specialized casts. See comments in our previous message.
             let src_val = remap(vmap, expect_inst_operand_value(inst, 0));
-            let dst_any = inst.get_type(); // LLVM 14: typed pointers still exist
+            let dst_any = inst.get_type();
 
             match dst_any.try_into() {
                 Ok(BasicTypeEnum::PointerType(dst_ptr_ty)) => {
@@ -2712,7 +2682,7 @@ pub fn rebuild_inst<'ctx>(
                     let cast = builder.build_float_cast(src_fp, dst_fp_ty, &name)?;
                     Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
                 }
-                _ => bail!("Unsupported BitCase type"),
+                _ => bail!("Unsupported BitCast type"),
             }
         }
 
@@ -2903,7 +2873,6 @@ pub fn rebuild_inst<'ctx>(
             }
             let dup_callsite = builder.build_call(orig_callee, &args, &name)?;
             let dup_value = dup_callsite.try_as_basic_value();
-            builder.position_at_end(into_block);
 
             // If return type is void → Void; else produce the resulting SSA value
             match dup_value {
@@ -2936,7 +2905,7 @@ fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> 
 fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
     inst.get_operand(i)
         .and_then(operand_as_value)
-        .expect("Cound not get operand value")
+        .expect("Could not get operand value")
 }
 
 /// Runs LLVM's CFG simplification pass over every function in the module.
