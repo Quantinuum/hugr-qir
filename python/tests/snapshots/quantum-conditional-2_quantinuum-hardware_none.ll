@@ -10,6 +10,8 @@ target triple = "aarch64-unknown-linux-gnu"
 @1 = private unnamed_addr constant [38 x i8] c"No more qubits available to allocate.\00", align 1
 @2 = private unnamed_addr constant [2 x i8] c"a\00", align 1
 @3 = private unnamed_addr constant [2 x i8] c"b\00", align 1
+@gen_name = global [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = global [5 x i8] c"0.0.0", section ",qir_generator"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() #0 {
 alloca_block:

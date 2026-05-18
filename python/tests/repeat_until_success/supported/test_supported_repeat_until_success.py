@@ -4,7 +4,11 @@ import pytest
 from hugr_qir.hugr_to_qir import to_qir_str
 from pytest_snapshot.plugin import Snapshot
 
-from tests.conftest import GUPPY_EXAMPLES_DIR, skip_snapshot_checks
+from tests.conftest import (
+    GUPPY_EXAMPLES_DIR,
+    skip_snapshot_checks,
+    stabilize_qir_snapshot_output,
+)
 from tests.hugr_generation import guppy_to_hugr_binary
 
 SUPPORTED_RUS_DIR = GUPPY_EXAMPLES_DIR / "repeat-until-success/supported"
@@ -22,4 +26,6 @@ def test_supported_repeat_until_success(guppy_file: Path, snapshot: Snapshot) ->
     hugr_bin = guppy_to_hugr_binary(guppy_file)
     qir = to_qir_str(hugr_bin)
     if not skip_snapshot_checks:
-        snapshot.assert_match(qir, str(Path(guppy_file.stem).with_suffix(".ll")))
+        snapshot.assert_match(
+            stabilize_qir_snapshot_output(qir), str(Path(guppy_file.stem).with_suffix(".ll"))
+        )

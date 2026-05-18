@@ -6,6 +6,9 @@ target triple = "aarch64-unknown-linux-gnu"
 %Qubit = type opaque
 %Result = type opaque
 
+@gen_name = global [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = global [5 x i8] c"0.0.0", section ",qir_generator"
+
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(i8* null)

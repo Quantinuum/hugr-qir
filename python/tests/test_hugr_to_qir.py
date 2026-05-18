@@ -18,6 +18,7 @@ from .conftest import (
     guppy_example_dict,
     guppy_examples,
     skip_snapshot_checks,
+    stabilize_qir_snapshot_output,
 )
 from .hugr_generation import GuppyExample
 
@@ -55,7 +56,9 @@ def test_guppy_file_snapshots(guppy_example: GuppyExample, snapshot: Snapshot) -
         wasm_file=wasm_binary_filepath,
     )
     if not skip_snapshot_checks:
-        snapshot.assert_match(qir, str(Path(guppy_file.stem).with_suffix(".ll")))
+        snapshot.assert_match(
+            stabilize_qir_snapshot_output(qir), str(Path(guppy_file.stem).with_suffix(".ll"))
+        )
 
 
 @pytest.mark.parametrize(
@@ -118,5 +121,6 @@ def test_guppy_files_options(
         file_suffix = expected_file_extension(out_format)
         snapshot_filename = guppy_file.stem + "_" + target + "_" + opt_level
         snapshot.assert_match(
-            qir, str(Path(snapshot_filename).with_suffix(file_suffix))
+            stabilize_qir_snapshot_output(qir, OutputFormat(out_format)),
+            str(Path(snapshot_filename).with_suffix(file_suffix)),
         )

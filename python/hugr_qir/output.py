@@ -6,6 +6,8 @@ from llvmlite.binding import (  # type: ignore[import-untyped]
     parse_assembly,
 )
 
+GENERATOR_SECTION = ",qir_generator"
+
 
 class OutputFormat(Enum):
     LLVM_IR = "llvm-ir"

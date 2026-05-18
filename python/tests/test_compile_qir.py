@@ -1,3 +1,5 @@
+import re
+from importlib.metadata import version
 from typing import no_type_check
 
 from guppylang import guppy, qubit
@@ -5,6 +7,7 @@ from guppylang.std.builtins import result
 from guppylang.std.quantum import h, measure
 from hugr_qir.guppy_to_qir import guppy_to_qir_str
 from hugr_qir.hugr_to_qir import to_qir_str
+from hugr_qir.output import GENERATOR_SECTION
 
 
 @guppy
@@ -38,10 +41,19 @@ def test_guppy_entrypoint_to_qir() -> None:
 
 def test_generated_qir_uses_qir_1_runtime_contracts() -> None:
     qir = guppy_to_qir_str(main, validate_qir=True)
+    package_version = version("hugr-qir")
 
     assert "__quantum__rt__read_result" in qir
     assert "__quantum__qis__read_result__body" not in qir
     assert 'qir_profiles"="adaptive_profile"' in qir
+    assert re.search(
+        rf'@gen_name = (?:local_unnamed_addr )?global \[8 x i8\] c"hugr-qir", section "{re.escape(GENERATOR_SECTION)}"',
+        qir,
+    )
+    assert re.search(
+        rf'@gen_version = (?:local_unnamed_addr )?global \[{len(package_version)} x i8\] c"{re.escape(package_version)}", section "{re.escape(GENERATOR_SECTION)}"',
+        qir,
+    )
     assert "call void @__quantum__rt__initialize(i8* null)" in qir
     assert "declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly)" in qir
     assert "declare i1 @__quantum__rt__read_result(%Result* readonly)" in qir
