@@ -55,7 +55,7 @@ pub fn lower_qubit_selects_and_phis(module: &Module, target: &TargetMachine) -> 
 ///
 /// This follows the same lowering strategy as the qubit-pointer pass, but does not
 /// run CFG simplification afterward because that can reintroduce float phis.
-pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
+pub fn lower_float_selects_and_phis(module: &Module, target: &TargetMachine) -> Result<bool> {
     verify_module(module).map_err(|err| {
         anyhow!("Verification failed for input module to lower_float_selects_and_phis pass: {err}")
     })?;
@@ -66,7 +66,15 @@ pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
     let lowered_selects = lower_float_selects(module)?;
     let lowered_phis = lower_float_phis(module)?;
     let changed = lowered_selects || lowered_phis;
-    // Don't run simp_cfg, may reintroduce float selects/phis
+    if changed {
+        // Fold intrinsic calls applied to constants (e.g. llvm.fabs.f64(0.3) → 0.3),
+        // then clean up any dead blocks left by the constant folding.
+        constprop(module, target)?;
+        debug_assert!(
+            !module_has_lowerable_float_selects_or_phis(module),
+            "constprop reintroduced lowerable float selects or phis"
+        );
+    }
     verify_module(module)?;
     Ok(changed)
 }
@@ -2938,6 +2946,28 @@ fn simp_cfg(module: &Module, target: &TargetMachine) -> Result<()> {
         .map_err(|e| anyhow!("Error running simplifycfg: {e}"))
 }
 
+fn constprop(module: &Module, target: &TargetMachine) -> Result<()> {
+    // attributor adds `speculatable`/`memory(none)` attributes to LLVM intrinsics
+    // like llvm.fabs.f64, which then allows instcombine to constant-fold calls to
+    // them (e.g. llvm.fabs.f64(0.6) → 0.6).
+    //
+    // instcombine needs max-iterations=2 because it lowers switch statements into
+    // xor/and patterns on i1 in its first iteration, then folds those patterns
+    // (which may now have constant operands) in a second iteration. This is expected
+    // behaviour, not an infinite loop.
+    //
+    // sccp then makes branches on constant conditions unconditional (e.g.
+    // `br i1 true, label %a, label %b` → `br label %a`), and adce removes the
+    // now-unreachable dead blocks.
+    module
+        .run_passes(
+            "attributor,instcombine<max-iterations=2>,sccp,adce",
+            target,
+            PassBuilderOptions::create(),
+        )
+        .map_err(|e| anyhow!("Error running constprop passes: {e}"))
+}
+
 /// Produces a stable key for instruction-produced SSA values.
 fn value_key_from_instruction(inst: InstructionValue) -> ValueKey {
     inst.as_value_ref() as ValueKey
@@ -3299,9 +3329,10 @@ mod test {
     #[case("float_select_with_downstream_call.ll")]
     #[case("float_phi_with_constant_successor_incoming.ll")]
     fn lowers_all_lowerable_float_selects_and_phis_from_fixture(#[case] fixture: &str) {
+        let tm = default_target_machine();
         assert_lowering_fixture(
             fixture,
-            lower_float_selects_and_phis,
+            |module| lower_float_selects_and_phis(module, &tm),
             count_lowerable_float_selects_and_phis,
             "float select or phi",
             "lowered_float_selects_and_phis",

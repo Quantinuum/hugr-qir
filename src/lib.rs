@@ -191,7 +191,7 @@ impl CompileArgs {
 
         let target = self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module, &target)?;
-        lower_float_selects_and_phis(&module)?;
+        lower_float_selects_and_phis(&module, &target)?;
         normalize_block_names(&module);
         Ok(module)
     }
