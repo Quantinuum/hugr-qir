@@ -481,7 +481,7 @@ fn move_record_output_calls_to_function_end<'ctx>(function: FunctionValue<'ctx>)
                 "move_record_output_calls_to_function_end",
             )?);
         }
-        old_call.erase_from_basic_block();
+        erase_instruction(old_call);
     }
 
     Ok(true)
@@ -730,7 +730,7 @@ fn lower_one_select_to_control_flow<'ctx>(
     builder.position_at_end(bb);
     for &i in tail.iter().rev() {
         forget_qubit_value(i, qubit_values);
-        i.erase_from_basic_block();
+        erase_instruction(i);
     }
     builder.build_conditional_branch(cond, then_bb, else_bb)?;
     builder.position_at_end(then_bb);
@@ -742,7 +742,7 @@ fn lower_one_select_to_control_flow<'ctx>(
         fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap, qubit_values)?;
     }
     forget_qubit_value(sel, qubit_values);
-    sel.erase_from_basic_block();
+    erase_instruction(sel);
     lower_successive_phis_in_block(module, builder, merge_bb, vec![phi], qubit_values)?;
     collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb, qubit_values)?;
     Ok(())
@@ -809,12 +809,8 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
 
     erase_all_instructions_in_block(then_bb, qubit_values);
     erase_all_instructions_in_block(else_bb, qubit_values);
-    then_bb
-        .remove_from_function()
-        .expect("collapse_trivial_select_dispatch_blocks: failed to remove then block");
-    else_bb
-        .remove_from_function()
-        .expect("collapse_trivial_select_dispatch_blocks: failed to remove else block");
+    remove_block(then_bb);
+    remove_block(else_bb);
     let _ = then_bb;
     let _ = else_bb;
 
@@ -988,7 +984,7 @@ fn rename_incoming_block_in_phis<'ctx>(
 
         phi.replace_all_uses_with(&new_phi);
         forget_qubit_value(inst, qubit_values);
-        inst.erase_from_basic_block();
+        erase_instruction(inst);
         it = new_phi.as_instruction().get_next_instruction();
     }
     Ok(())
@@ -1056,7 +1052,7 @@ fn rewrite_successor_phis_for_edge_change<'ctx>(
 
         phi.replace_all_uses_with(&new_phi);
         forget_qubit_value(inst, qubit_values);
-        inst.erase_from_basic_block();
+        erase_instruction(inst);
         it = new_phi.as_instruction().get_next_instruction();
     }
 
@@ -1175,9 +1171,7 @@ pub fn lower_successive_phis_in_block(
         }
 
         erase_all_instructions_in_block(block, qubit_values);
-        block
-            .remove_from_function()
-            .expect("Tried to remove block without parent");
+        remove_block(block);
         let _ = block;
         return Ok(false);
     }
@@ -1219,18 +1213,15 @@ pub fn lower_successive_phis_in_block(
 
     // Now need to take care of any instructions that used the phi ssa variable
     // , e.g. function calls on the variable or additional phis
-    for phi in phis {
-        handle_phi_users(phi, block, &clone_map, qubit_values)?;
-        let inst = phi.as_instruction();
-        forget_qubit_value(inst, qubit_values);
-        inst.erase_from_basic_block();
+    for phi in &phis {
+        handle_phi_users(*phi, block, &clone_map, qubit_values)?;
+        forget_qubit_value(phi.as_instruction(), qubit_values);
     }
 
-    // Delete no longer needed block
+    // Delete no longer needed block (erases all instructions in reverse order,
+    // including the phis themselves whose only remaining users are within the block).
     erase_all_instructions_in_block(block, qubit_values);
-    block
-        .remove_from_function()
-        .expect("Tried to remove block without parent");
+    remove_block(block);
     let _ = block;
     Ok(true)
 }
@@ -1493,7 +1484,7 @@ fn rewrite_phi_user_as_phi<'ctx>(
 
     user_phi.replace_all_uses_with(&new_phi);
     forget_qubit_value(user_inst, qubit_values);
-    user_inst.erase_from_basic_block();
+    erase_instruction(user_inst);
     Ok(())
 }
 
@@ -1555,7 +1546,7 @@ fn rewrite_phi_user_as_call<'ctx>(
         )?);
     }
     forget_qubit_value(user_inst, qubit_values);
-    user_inst.erase_from_basic_block();
+    erase_instruction(user_inst);
     Ok(())
 }
 
@@ -1799,6 +1790,42 @@ fn forget_qubit_value(inst: InstructionValue, qubit_values: &mut HashSet<ValueKe
     qubit_values.remove(&value_key_from_instruction(inst));
 }
 
+/// Erases a single instruction, debug-asserting that it has no remaining SSA users.
+///
+/// Any live uses of the instruction's value indicate a bug: the caller should have
+/// replaced all uses before erasing.
+fn erase_instruction(inst: InstructionValue) {
+    debug_assert!(
+        inst.get_first_use().is_none(),
+        "BUG: erasing instruction `{}` that still has uses; first user: `{}`",
+        inst.print_to_string().to_string_lossy(),
+        inst.get_first_use()
+            .map(|u| u
+                .get_user()
+                .print_to_string()
+                .to_string_lossy()
+                .into_owned())
+            .unwrap_or_else(|| "<none>".to_string()),
+    );
+    inst.erase_from_basic_block();
+}
+
+/// Removes a basic block from its parent function, debug-asserting that nothing still
+/// branches to it.
+///
+/// Any remaining uses indicate that predecessor branch targets were not fully
+/// redirected before the block was detached.
+fn remove_block(block: BasicBlock) {
+    debug_assert!(
+        block.get_first_use().is_none(),
+        "BUG: removing block `{}` that still has uses (unreachable predecessors?)",
+        block.get_name().to_str().unwrap_or("<unnamed>"),
+    );
+    block
+        .remove_from_function()
+        .expect("Tried to remove block without parent");
+}
+
 /// Erases all instructions in `block` (including its terminator) in reverse order.
 ///
 /// This is required before detaching a block from its parent function: otherwise the
@@ -1809,7 +1836,7 @@ fn erase_all_instructions_in_block(block: BasicBlock, qubit_values: &mut HashSet
     while let Some(inst) = inst_opt {
         inst_opt = inst.get_previous_instruction();
         forget_qubit_value(inst, qubit_values);
-        inst.erase_from_basic_block();
+        erase_instruction(inst);
     }
 }
 
@@ -2059,9 +2086,7 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
         "duplicated phi tail",
     ) {
         erase_all_instructions_in_block(clone_block, &mut HashSet::new());
-        clone_block
-            .remove_from_function()
-            .expect("Tried to delete failed clone block without parent");
+        remove_block(clone_block);
         let _ = clone_block;
         bail!("Failed to rebuild duplicated phi tail: {err}");
     }
@@ -2183,7 +2208,7 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
 
             phi.replace_all_uses_with(&replacement_phi);
             forget_qubit_value(phi_inst, qubit_values);
-            phi_inst.erase_from_basic_block();
+            erase_instruction(phi_inst);
         }
     }
 
@@ -2265,7 +2290,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 
                 user_phi.replace_all_uses_with(&replacement_phi);
                 forget_qubit_value(user, qubit_values);
-                user.erase_from_basic_block();
+                erase_instruction(user);
                 continue;
             }
 
