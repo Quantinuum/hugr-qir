@@ -36,6 +36,14 @@ examples = [
 requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
 
+[tool.uv]
+# rebuild package when Rust source changes
+cache-keys = [
+    { file = "Cargo.toml" },
+    { file = "Cargo.lock" },
+    { file = "src/**/*.rs" },
+]
+
 [tool.ty.analysis]
 replace-imports-with-any = ["qnexus", "qnexus.**"]
 
