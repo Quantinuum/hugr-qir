@@ -51,10 +51,10 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
       - name: Build HUGR-QIR binary
         run: cargo build
       - name: Upload the binary to the artifacts
@@ -98,10 +98,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
 
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
-          version: ${{ env.LLVM_VERSION }}
+          packages: "llvm"
 
       - name: Download the hugr-bin binary
         uses: actions/download-artifact@v8
