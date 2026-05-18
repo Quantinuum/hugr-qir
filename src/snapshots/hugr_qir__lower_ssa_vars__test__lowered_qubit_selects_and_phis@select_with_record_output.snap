@@ -12,13 +12,13 @@ target triple = "<normalized>"
 define void @__hugr__.main.1() {
 entry:
   %flag = tail call i1 @__quantum__qis__read_result__body(ptr null)
-  br i1 %flag, label %entry.dup, label %entry.dup1
+  br i1 %flag, label %entry.dup1, label %entry.dup
 
-entry.dup:                                        ; preds = %entry
+entry.dup1:                                       ; preds = %entry
   call void @__quantum__qis__reset__body(ptr null)
   br label %__prepare_module_record_output_final
 
-entry.dup1:                                       ; preds = %entry
+entry.dup:                                        ; preds = %entry
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %__prepare_module_record_output_final
 

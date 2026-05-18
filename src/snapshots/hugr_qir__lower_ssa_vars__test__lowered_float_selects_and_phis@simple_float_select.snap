@@ -10,12 +10,12 @@ target triple = "<normalized>"
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
 define noundef nofpclass(nan inf zero sub nnorm) double @__hugr__.main.1(i1 noundef %cond0) #0 {
 entry:
-  br i1 %cond0, label %entry.dup, label %entry.dup2
-
-entry.dup:                                        ; preds = %entry
-  ret double 4.000000e+00
+  br i1 %cond0, label %entry.dup2, label %entry.dup
 
 entry.dup2:                                       ; preds = %entry
+  ret double 4.000000e+00
+
+entry.dup:                                        ; preds = %entry
   ret double 5.000000e+00
 }
 

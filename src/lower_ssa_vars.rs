@@ -1703,60 +1703,31 @@ fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
     inst.get_operand(idx)?.block()
 }
 
-/// Returns the predecessor blocks of `to`.
+/// Returns the predecessor blocks of `to` by walking the block's use-list.
 ///
-/// Only direct branch predecessors are supported here; unsupported terminators
-/// cause an error because the lowering logic depends on explicit CFG structure.
+/// Each use of a basic block is either a terminator (branch target) or a phi
+/// (incoming block). We filter to terminators only, then collect their parent blocks.
+/// Results are sorted by block name for deterministic output.
 fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
     let mut preds = Vec::new();
-    let func = required_parent_function(to, "predecessors")?;
-    for b in func.get_basic_blocks() {
-        if let Some(term) = b.get_terminator() {
-            match term.get_opcode() {
-                Op::Br => {
-                    // Unconditional: operand 0 = target BB
-                    if !term.is_conditional().unwrap() {
-                        if operand_as_bb(term, 0) == Some(to) {
-                            preds.push(b);
-                        }
-                    } else {
-                        // Conditional: operand 1 = false-dest BB, operand 2 = true-dest BB
-                        if operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to)
-                        {
-                            preds.push(b);
-                        }
-                    }
-                }
-                Op::Switch => {
-                    if operand_as_bb(term, 1) == Some(to) {
-                        preds.push(b);
-                        continue;
-                    }
-                    let mut idx = 3;
-                    while idx < term.get_num_operands() {
-                        if operand_as_bb(term, idx) == Some(to) {
-                            preds.push(b);
-                            break;
-                        }
-                        idx += 2;
-                    }
-                }
-                Op::IndirectBr
-                | Op::Invoke
-                | Op::CallBr
-                | Op::CatchSwitch
-                | Op::CatchRet
-                | Op::CleanupRet => {
-                    // These cases could be predecessors, but we don't handle them for now
-                    // Not sure if these can occur for this pass.
-                    bail!(
-                        "Found unsupported terminal case when searching for phi predecessor blocks"
-                    );
-                }
-                _ => { /* Cases that do not point to successors cannot be predecessors */ }
-            }
+    let mut use_opt = to.get_first_use();
+    while let Some(u) = use_opt {
+        use_opt = u.get_next_use();
+        let user = u.get_user();
+        let Some(inst) = any_value_as_instruction(user) else {
+            continue;
+        };
+        if !inst.is_terminator() {
+            continue;
+        }
+        let Some(pred_bb) = inst.get_parent() else {
+            continue;
+        };
+        if !preds.contains(&pred_bb) {
+            preds.push(pred_bb);
         }
     }
+    preds.sort_by_key(|bb| name_of_block(*bb));
     Ok(preds)
 }
 
@@ -3020,15 +2991,6 @@ fn required_parent_block<'ctx>(
 ) -> Result<BasicBlock<'ctx>> {
     inst.get_parent()
         .ok_or_else(|| anyhow!("{context}: instruction has no parent block"))
-}
-
-/// Returns the parent function of a block or a contextual error.
-fn required_parent_function<'ctx>(
-    bb: BasicBlock<'ctx>,
-    context: &str,
-) -> Result<FunctionValue<'ctx>> {
-    bb.get_parent()
-        .ok_or_else(|| anyhow!("{context}: block has no parent function"))
 }
 
 /// Returns operand `idx` of `inst` as a block operand or a contextual error.
