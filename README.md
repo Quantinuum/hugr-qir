@@ -14,7 +14,7 @@ Project documentation lives in [docs/](docs/) and is organized as a small Sphinx
 
 - Getting started: [docs/getting-started.md](docs/getting-started.md)
 - Examples: [docs/examples/index.md](docs/examples/index.md)
-- Guppylang support: [docs/guppylang-support.md](docs/guppylang-support.md)
+- Guppylang support: [docs/guppy-for-h-series/index.md](docs/guppy-for-h-series/index.md)
 - Python API: [docs/python-api.md](docs/python-api.md)
 - CLI: [docs/cli.md](docs/cli.md)
 - WASM support: [docs/wasm.md](docs/wasm.md)
@@ -83,7 +83,7 @@ If you want to generate a HUGR file from Guppy, you can do this in two steps:
     python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
     ```
 
-See [docs/guppylang-support.md](docs/guppylang-support.md) for the current Guppylang support matrix and caveats.
+See [docs/guppy-for-h-series/support-matrix.md](docs/guppy-for-h-series/support-matrix.md) for the current Guppylang support matrix and caveats.
 
 ## Development
 

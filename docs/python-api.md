@@ -12,8 +12,8 @@ hugr_to_qir(
     *,
     validate_qir=True,
     validate_hugr=False,
-    target="native",
-    opt_level="default",
+    target="quantinuum-hardware",
+    opt_level="aggressive",
     output_format=OutputFormat.BASE64,
     wasm_file=None,
 )
