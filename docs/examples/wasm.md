@@ -1,6 +1,6 @@
-# WASM Integration
+# Wasm Integration
 
-This example shows a Guppy module that binds to exported functions from a WASM file and then uses those functions inside a compiled program.
+This example shows a Guppy module that binds to exported functions from a Wasm file and then uses those functions inside a compiled program.
 
 
 ## Example Guppy source

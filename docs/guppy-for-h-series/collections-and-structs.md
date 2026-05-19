@@ -35,5 +35,5 @@ Counterexamples and support boundaries are summarized in [Examples](../examples/
 ## Where to look next
 
 - General example and full flow: [Getting Started](../getting-started.md)
-- WASM examples: [Examples: WASM integration](../examples/wasm.md)
+- Wasm examples: [Examples: Wasm integration](../examples/wasm.md)
 - Architecture overview: [Architecture](../architecture.md)

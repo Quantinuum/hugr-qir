@@ -16,8 +16,8 @@ At a high level, `hugr-qir` takes a HUGR package, runs a Rust lowering pipeline,
 - CLI argument handling: `src/cli.rs`
 - Python wrapper: `python/hugr_qir/cli.py`
 
-## WASM integration
+## Wasm integration
 
-WASM metadata is parsed once when a wasm file is provided, then validated at lookup time when a specific wasm function is actually referenced. This keeps unrelated functions in the module from causing spurious failures.
+Wasm metadata is parsed once when a Wasm file is provided, then validated at lookup time when a specific Wasm function is actually referenced. This keeps unrelated functions in the module from causing spurious failures.
 
-The wasm implementation lives in `src/qir/wasm_ext.rs`.
+The Wasm implementation lives in `src/qir/wasm_ext.rs`.

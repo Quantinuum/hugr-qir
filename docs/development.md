@@ -53,5 +53,5 @@ uv run --group docs sphinx-build -M html docs docs/_build
 
 - CLI: `src/cli.rs`
 - Python wrapper: `python/hugr_qir/hugr_to_qir.py`
-- WASM lowering: `src/qir/wasm_ext.rs`
+- Wasm lowering: `src/qir/wasm_ext.rs`
 - Examples in the docs: [Examples](examples/index.md)

@@ -27,7 +27,7 @@ Key parameters:
 - `target`: compilation target passed through to the Rust backend
 - `opt_level`: LLVM optimization level
 - `output_format`: `LLVM_IR`, `BITCODE`, or `BASE64`
-- `wasm_file`: optional path to a WASM module used by the wasm extension
+- `wasm_file`: optional path to a Wasm module used by the Wasm extension
 
 ### Convenience helpers
 
@@ -53,4 +53,4 @@ bitcode = hugr_to_qir(hugr_package, output_format=OutputFormat.BITCODE)
 
 ## Error behavior
 
-The Python wrapper raises `ValueError` when code generation or validation fails. For wasm-related failures, the backend attempts to produce function-specific errors that mention the wasm function being looked up.
+The Python wrapper raises `ValueError` when code generation or validation fails. For Wasm-related failures, the backend attempts to produce function-specific errors that mention the Wasm function being looked up.
