@@ -2,7 +2,7 @@
 
 `hugr-qir` is aimed at Guppy programs that compile through HUGR and then target Quantinuum's H-Series systems via QIR.
 
-That workflow is already usable today, but it supports a constrained subset of Guppy. This section breaks down the current support envelope and the main modeling constraints to keep in mind when writing programs for H-Series targets.
+That workflow is already usable today, but it supports only a subset of Guppy. This section summarizes the current limitations to keep in mind when writing programs for H-Series targets.
 
 - Start with the [Support matrix](support-matrix.md) for a quick feature-level overview.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.

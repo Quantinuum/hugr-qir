@@ -4,7 +4,7 @@
 
 The primary goal of `hugr-qir` is to let users write programs in [Guppy](https://docs.quantinuum.com/guppy/), compile them through HUGR, and target backends that accept QIR as input.
 
-In particular, this package is useful for targeting Quantinuum's older H-series systems from Guppy code.
+In particular, this package is useful for targeting Quantinuum's H-Series systems from Guppy code.
 
 `hugr-qir` does not yet support all Guppy features, so some programs will need to stay within the currently supported subset.
 
