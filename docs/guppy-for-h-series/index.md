@@ -6,10 +6,12 @@ That workflow is already usable today, but it supports only a subset of Guppy. T
 
 - Start with the [Support matrix](support-matrix.md) for a quick feature-level overview.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.
+- Browse [Guppy feature examples](guppy-features/index.md) for paired supported examples and unsupported counterexamples from the repository.
 
 ```{toctree}
 :maxdepth: 1
 
 support-matrix
 collections-and-structs
+guppy-features/index
 ```
