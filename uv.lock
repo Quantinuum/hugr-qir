@@ -1008,8 +1008,8 @@ examples = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = "~=8.3.1" },
-    { name = "guppylang", specifier = "==0.21.11" },
-    { name = "hugr", specifier = "~=0.15.4" },
+    { name = "guppylang", specifier = "~=0.21.11" },
+    { name = "hugr", specifier = ">=0.15.4" },
     { name = "llvmlite", specifier = "~=0.44.0" },
     { name = "quantinuum-qircheck", specifier = "~=0.7.0" },
 ]
