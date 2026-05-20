@@ -13,7 +13,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"0.0.0", section ",qir_generator"
 
-define dso_local void @__hugr__.guppy_example_mod.main.1() #0 {
+define void @__hugr__.guppy_example_mod.main.1() #0 {
 alloca_block:
   call void @__quantum__rt__initialize(i8* null)
   %"20_0" = alloca { i1, i1 }, align 8
