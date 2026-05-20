@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "click~=8.3.1",
-    "guppylang==0.21.11", # see https://github.com/Quantinuum/hugr-qir/issues/252
-    "hugr~=0.15.4",
+    "guppylang~=0.21.11", # see https://github.com/Quantinuum/hugr-qir/issues/252
+    "hugr>=0.15.4",
     "llvmlite~=0.44.0",
     "quantinuum-qircheck~=0.7.0",
 ]
