@@ -15,6 +15,9 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: "0"
+          submodules: recursive
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install LLVM and Clang
