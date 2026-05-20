@@ -8,6 +8,27 @@ A tool for converting Hierarchical Unified Graph Representation (HUGR, pronounce
 > [!NOTE]
 > Not all Guppy/HUGR programs can be converted to QIR.
 
+## Documentation
+
+Project documentation lives in [docs/](docs/) and is organized as a small Sphinx site using the shared `pytket-docs-theming` configuration.
+
+- Getting started: [docs/getting-started.md](docs/getting-started.md)
+- Examples: [docs/examples/index.md](docs/examples/index.md)
+- Guppylang support: [docs/guppy-for-h-series/index.md](docs/guppy-for-h-series/index.md)
+- Python API: [docs/python-api.md](docs/python-api.md)
+- CLI: [docs/cli.md](docs/cli.md)
+- WASM support: [docs/wasm.md](docs/wasm.md)
+- Development: [docs/development.md](docs/development.md)
+
+To build the documentation locally:
+
+```bash
+uv run --group docs sphinx-build -M html docs docs/_build
+```
+
+Then open `docs/_build/html/index.html` in a browser.
+
+
 ## Installation
 
 You can install from pypi via `pip install hugr-qir`.
@@ -16,7 +37,20 @@ You can install from pypi via `pip install hugr-qir`.
 
 ### Python
 
-Use the function `hugr_to_qir` from the `hugr_to_qir` module to convert hugr to qir. By default, some basic validity checks will be run on the generated QIR. These checks can be turned off by passing `validate_qir = False`.
+Use `hugr_to_qir` to convert a HUGR package or serialized HUGR bytes into QIR.
+
+```py
+from hugr_qir.hugr_to_qir import hugr_to_qir
+from hugr_qir.output import OutputFormat
+
+qir = hugr_to_qir(
+    hugr_package,
+    validate_qir=False,
+    output_format=OutputFormat.LLVM_IR,
+)
+```
+
+By default, basic validity checks are run on the generated QIR. These can be disabled by passing `validate_qir=False`.
 
 You can find an example notebook at `examples/submit-guppy-h2-via-qir.ipynb` showing the conversion and the submission to Quantinuum System Model H2.
 
@@ -32,7 +66,7 @@ hugr-qir test-file.hugr
 
 Run `hugr-qir --help` to see the available options.
 
-If you want to generate a hugr file from guppy, you can do this in two steps:
+If you want to generate a HUGR file from Guppy, you can do this in two steps:
 
 1. Add this to the end of your guppy file:
 
@@ -49,83 +83,11 @@ If you want to generate a hugr file from guppy, you can do this in two steps:
     python guppy_examples/general/quantum-classical-1.py > test-guppy.hugr
     ```
 
-## Guppy language support
-
-✅ = full support, *️⃣ = partial support, ❌ = unsupported
-
-### Overview Data Types
-
-| Data Types | Support | Caveats                                             |
-|------------|---------|-----------------------------------------------------|
-| int        | ✅      |                                                     |
-| bool       | ✅      |                                                     |
-| nat        | ✅      |                                                     |
-| struct     | ✅      | Cannot contain arrays                               |
-| float      | *️⃣      | Must be runtime constant, arithmetic comptime only  |
-| array      | *️⃣      | Comptime only                                       |
-| tuple      | *️⃣      | Unpacking with * returns array, so only at comptime |
-
-#### Arrays
-
-- Only supported within comptime guppy
-- Cannot use guppy builtins that use runtime arrays internally
-- Cannot be used within structs
-- Cannot be used as parameter to either `@guppy` or `@guppy.comptime` decorated functions
-
-Array examples:
-
-```py
-def py_function(arr: array[qubit]) -> None: # ✅ no need to fully qualify array type, will be treated as python list
-   """This python function can be called from @guppy.comptime, but not @guppy
-      Can do anything here that is allowed within @guppy.comptime
-   """
-    for q in arr:
-       h(q)
-
-@guppy.comptime
-def guppy_comptime_function(arr: array[qubit, 4]) -> None: # ❌ no support for passing in arrays (even to guppy.comptime functions)
-   for q in arr:
-      h(q)
-
-@guppy
-def guppy_function(arr: array[qubit, 4]) -> None: # ❌ no support for passing in arrays
-   for q in arr:
-      h(q)
-
-@guppy.comptime
-def main() -> None:
-    comptime_array = array(qubit() for _ in range(4)) # ✅: array initialization at comptime
-    py_function(comptime_array)             # ✅: can call python function from comptime and pass in comptime array
-    guppy_comptime_function(comptime_array) # ❌: parameters to guppy comptime functions are NOT comptime
-    guppy_function(comptime_array)          # ❌: parameters to guppy functions are NOT comptime
-
-@guppy
-def main_noncomptime() -> None:
-   array = array(qubit() for _ in range(4)) # ❌: non-comptime array initialization
-```
-
-#### Tuples
-
-- Unpacking with * only supported at comptime (creates array)
-
-#### Structs
-
-- Cannot contain arrays
-
-### Overview Guppy Features
-
-| Features                            | Support | Remarks                                                  |
-|-------------------------------------|---------|----------------------------------------------------------|
-| if elif else constructs             | ✅      |                                                          |
-| function overloading                | ✅      |                                                          |
-| Generics (type_var/nat_var)         | ✅      | nat_vars not really useful without runtime array support |
-| First class/ Higher order functions | ✅      |                                                          |
-| Recursive functions/loops           | *️⃣      | Only if unrollable/serializable                          |
-| measure_array/discard_array         | ❌      | Use non-comptime arrays internally                       |
+See [docs/guppy-for-h-series/support-matrix.md](docs/guppy-for-h-series/support-matrix.md) for the current Guppylang support matrix and caveats.
 
 ## Development
 
-### #️⃣ Setting up the development environment
+### Setting up the development environment
 
 The easiest way to set up the development environment is to use the provided
 [`devenv.nix`](devenv.nix) file. This will set up a development shell with all the

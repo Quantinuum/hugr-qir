@@ -1,53 +1,25 @@
 #!/usr/bin/env python
 
-import builtins
 import importlib.util
 import sys
-from pathlib import Path
 from types import ModuleType
-
 from tket_exts import tket_registry
-
-# Ensure the tket extension registry is loaded before compiling Guppy modules.
-_ = tket_registry
-
-
-def _load_without_sphinx(module_name: str, file_path: str) -> ModuleType:
-    """Load a Python module while forcing guppylang out of Sphinx dummy mode."""
-    real_import = builtins.__import__
-
-    def blocked_import(
-        name: str,
-        globals_: object = None,
-        locals_: object = None,
-        fromlist: tuple[str, ...] = (),
-        level: int = 0,
-    ) -> ModuleType:
-        if name == "sphinx" or name.startswith("sphinx."):
-            msg = "Sphinx import blocked while loading guppy module"
-            raise ImportError(msg)
-        return real_import(name, globals_, locals_, fromlist, level)
-
-    builtins.__import__ = blocked_import
-    try:
-        return load_py_module_from_path(module_name, file_path)
-    finally:
-        builtins.__import__ = real_import
-
 
 def load_py_module_from_path(module_name: str, file_path: str) -> ModuleType:
     # 1. Create a module spec from the file location
     spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None or spec.loader is None:
-        msg = f"Bad file path: {file_path}"
-        raise ValueError(msg)
+    msg = "Bad file path"
+    if not spec:
+        raise (ValueError(msg))
 
     # 2. Create a new module based on that spec
     module = importlib.util.module_from_spec(spec)
     # 3. Optional: Add it to sys.modules so it behaves like a normal import
     sys.modules[module_name] = module
     # 4. Execute the module to make its functions available
-    spec.loader.exec_module(module)
+    loader = spec.loader
+    if loader:
+        loader.exec_module(module)
     return module
 
 
@@ -59,7 +31,6 @@ if __name__ == "__main__":
         guppy_file = None
 
     if guppy_file:
-        guppy_path = Path(guppy_file)
-        guppy_example = _load_without_sphinx("guppy_example_mod", str(guppy_path))
+        guppy_example = load_py_module_from_path("guppy_example_mod", str(guppy_file))
         hugr_package = guppy_example.main.compile()
         sys.stdout.buffer.write(hugr_package.to_bytes())

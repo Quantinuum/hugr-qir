@@ -8,6 +8,8 @@ target triple = "aarch64-unknown-linux-gnu"
 
 @0 = private unnamed_addr constant [2 x i8] c"a\00", align 1
 @1 = private unnamed_addr constant [2 x i8] c"b\00", align 1
+@gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = private unnamed_addr constant [5 x i8] c"0.0.0", section ",qir_generator"
 
 define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:

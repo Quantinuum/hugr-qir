@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "click~=8.3.1",
-    "guppylang==0.21.11", # see https://github.com/Quantinuum/hugr-qir/issues/252
-    "hugr~=0.15.4",
+    "guppylang~=0.21.11",
+    "hugr>=0.15.4",
     "quantinuum-qircheck~=0.7.0",
 ]
 
@@ -25,6 +25,16 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.0",
     "ty>=0.0.34",
+    "llvmlite~=0.44.0",
+]
+docs = [
+    "enum-tools[sphinx]>=0.13.0",
+    "myst-nb>=1.2.0",
+    "quantinuum-sphinx~=0.6",
+    "sphinx>=8,<9",
+    "sphinx-autodoc-typehints<3.2",
+    "sphinx-copybutton>=0.5.2,<1",
+    "sphinxcontrib-googleanalytics>=0.5",
 ]
 examples = [
     "jupyterlab>=4.5.3",
