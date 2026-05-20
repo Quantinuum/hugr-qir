@@ -20,7 +20,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"0.0.0", section ",qir_generator"
 
-define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
+define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(i8* null)
   tail call void @__quantum__qis__mz__body(%Qubit* nonnull inttoptr (i64 4 to %Qubit*), %Result* null)

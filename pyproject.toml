@@ -27,6 +27,15 @@ dev = [
     "ruff>=0.15.0",
     "ty>=0.0.34",
 ]
+docs = [
+    "enum-tools[sphinx]>=0.13.0",
+    "myst-nb>=1.2.0",
+    "quantinuum-sphinx~=0.6",
+    "sphinx>=8,<9",
+    "sphinx-autodoc-typehints<3.2",
+    "sphinx-copybutton>=0.5.2,<1",
+    "sphinxcontrib-googleanalytics>=0.5",
+]
 examples = [
     "jupyterlab>=4.5.3",
     "qnexus~=0.37.1",

@@ -3,7 +3,7 @@
   "generates-qubit-selects-1": "d9d24e527aeaf79ed39a6f820e557154b250edfdeb772702d5cf472906b2afe8",
   "generates-qubit-selects-2": "f79bc6625aab21e1999fe4169d2ffec58950817cb6248882c0a5c61385877a86",
   "generates-qubit-selects-and-float-phi": "51292216a44796d7429863e6cba5843e11dd2bb5a32bb23719f7c142a399da2e",
-  "guppylang_hugr_version": "guppy-v0.21.15 hugr-v0.16.0",
+  "guppylang_hugr_version": "guppy-v0.21.11 hugr-v0.15.5",
   "hugr_generation_module": "6e8543537797e9eef773daa340b76b85b7bf6ecdd46b00a7484aa8f725bc93ef",
   "planqc-1": "90557e381ff288343c34bd3009816ab2d90d19d56f38e1b96c17ca82b3e7e277",
   "quantum-classical-1": "fbbe8e2c9b9921fadd7f0758349d234b40265d8be0fadb63791b75ebaad74d34",

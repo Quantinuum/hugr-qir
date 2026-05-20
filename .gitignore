@@ -27,3 +27,5 @@ examples/.ipynb_checkpoints/*
 
 
 **.dylib*
+
+docs/_build
