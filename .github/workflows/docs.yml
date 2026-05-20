@@ -9,6 +9,11 @@ on:
     branches:
       - 'docs/*'
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   docs-checks:
     name: Run doc build and create artifact
