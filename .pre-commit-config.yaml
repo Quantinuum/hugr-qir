@@ -89,7 +89,7 @@ repos:
         description:
           Run tests with `cargo test`.
           # guppy tests require python/guppylang so use uv to run cargo test
-        entry: uv run cargo test
+        entry: uv run cargo test -- --test-threads=1
         language: system
         files: \.rs$
         pass_filenames: false
