@@ -9,11 +9,6 @@ on:
     branches:
       - 'docs/*'
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   docs-checks:
     name: Run doc build and create artifact
@@ -44,12 +39,3 @@ jobs:
         with:
           name: docs
           path: docs/_build/html/
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs/_build/html/
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
