@@ -5,7 +5,7 @@ description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "click~=8.3.1",
+    "click>=8.3.1,<8.5.0",
     "guppylang~=0.21.11",
     "hugr>=0.15.4",
     "llvmlite~=0.44.0",
