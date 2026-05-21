@@ -7,7 +7,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 
-project = "hugr-qir"
+# Alias needed here to prevent naming clash with something else sphinx is doing.
+from importlib.metadata import version as check_version
+
+# Checking the version used in the Python environment means that pyproject.toml
+#  serves as the single source of truth for the version of hugr-qir.
+
+
+project = f"hugr-qir v{check_version('hugr-qir')}"
 copyright = "2026, Quantinuum"
 
 # -- General configuration ---------------------------------------------------
