@@ -54,3 +54,11 @@ bitcode = hugr_to_qir(hugr_package, output_format=OutputFormat.BITCODE)
 ## Error behavior
 
 The Python wrapper raises `ValueError` when code generation or validation fails. For Wasm-related failures, the backend attempts to produce function-specific errors that mention the Wasm function being looked up.
+
+
+# hugr-qir
+
+```{eval-rst}
+.. currentmodule:: hugr_qir.hugr_to_qir
+.. autofunction:: hugr_to_qir
+```
