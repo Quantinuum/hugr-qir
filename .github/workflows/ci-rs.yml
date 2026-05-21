@@ -21,7 +21,6 @@ env:
   RUSTC_WRAPPER: "sccache"
   # different strings for install action and feature name
   # adapted from https://github.com/TheDan64/inkwell/blob/master/.github/workflows/test.yml
-  LLVM_VERSION: "14.0.6"
   PYTHON_VERSION: "3.13"
 
 
@@ -73,9 +72,11 @@ jobs:
       - name: Check formatting
         run: cargo fmt -- --check
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Run clippy
         run: cargo clippy --all-targets --all-features --workspace -- -D warnings
       - name: Build docs
@@ -100,9 +101,11 @@ jobs:
         run: rustup override set ${{steps.toolchain.outputs.name}}
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Build with no features
         run: cargo test --verbose  --no-default-features --no-run
       - name: Tests with no features
@@ -125,9 +128,11 @@ jobs:
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Build with all features
         run: cargo test --verbose  --all-features --no-run
       - name: Tests with all features
@@ -162,9 +167,11 @@ jobs:
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Build with no features
         run: cargo test --verbose  --no-default-features --no-run
       - name: Tests with no features
@@ -189,9 +196,11 @@ jobs:
           toolchain: "nightly"
           components: llvm-tools-preview
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Run tests with coverage instrumentation
