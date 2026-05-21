@@ -34,6 +34,7 @@ docs = [
     "sphinx-autodoc-typehints<3.2",
     "sphinx-copybutton>=0.5.2,<1",
     "sphinxcontrib-googleanalytics>=0.5",
+    "sphinx-click>=6.2.0"
 ]
 examples = [
     "jupyterlab>=4.5.3",

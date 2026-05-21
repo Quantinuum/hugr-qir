@@ -1,5 +1,11 @@
 ## Changelog
 
+### v0.0.28rc0
+
+- add documentation
+- update hugr python version to >= 0.15.4
+- update guppylang version to ~= 0.21.11
+
 ### v0.0.27
 
 - don't generate qir basic blocks with purely numerical names
