@@ -1,4 +1,5 @@
 import re
+from importlib.metadata import version
 from typing import no_type_check
 
 import pytest
@@ -45,7 +46,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
     # remove version override for this test only
     monkeypatch.delenv("HUGR_QIR_VERSION_TEST_OVERRIDE", raising=False)
     qir = guppy_to_qir_str(main, validate_qir=True)
-    package_version = "0.0.28-rc.0"  # not working for RC version: version("hugr-qir")
+    package_version = version("hugr-qir")
 
     assert "__quantum__rt__read_result" in qir
     assert "__quantum__qis__read_result__body" not in qir

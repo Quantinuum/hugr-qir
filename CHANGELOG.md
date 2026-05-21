@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.0.28rc0
+### v0.1.0
 
 - add documentation
 - update hugr python version to >= 0.15.4
