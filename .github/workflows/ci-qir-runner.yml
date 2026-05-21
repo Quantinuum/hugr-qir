@@ -16,7 +16,7 @@ env:
   # Pinned version for the uv package manager
   UV_VERSION: "0.6.11"
   UV_FROZEN: 1
-  LLVM_VERSION: "14.0"
+  LLVM_VERSION: "14.0.6"
 
 jobs:
   # Check if changes were made to the relevant files.

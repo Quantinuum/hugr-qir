@@ -23,7 +23,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: 14.0
+          version: 14.0.6
           directory: ${{ runner.temp }}/llvm
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
