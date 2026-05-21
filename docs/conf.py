@@ -1,38 +1,35 @@
-import runpy
-from pathlib import Path
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-DOCS_DIR = Path(__file__).resolve().parent
-THEMING_DIR = DOCS_DIR / "pytket-docs-theming"
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-# Load the shared Quantinuum/pytket docs configuration first, then override the
-# project-specific pieces that should remain local to hugr-qir.
-_shared_conf = runpy.run_path(str(THEMING_DIR / "conf.py"))
-globals().update(_shared_conf)
 
 project = "hugr-qir"
-copyright = "2026 Quantinuum"  # noqa: A001
-author = "Quantinuum"
-root_doc = "index"
-html_title = "hugr-qir"
+copyright = "2026, Quantinuum"
 
-# Our docs are Markdown-based and live directly under docs/.
-source_suffix = {
-    ".md": "myst-nb",
-}
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-templates_path = ["_templates"]
-html_static_path = ["pytket-docs-theming/_static"]
-html_favicon = "pytket-docs-theming/_static/assets/quantinuum_favicon.svg"
-
-# Exclude the theming submodule itself from the documentation source tree.
-exclude_patterns = [
-    *_shared_conf.get("exclude_patterns", []),
-    "pytket-docs-theming",
-    "pytket-docs-theming/**",
+extensions = [
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+    "sphinx_copybutton",
+    "myst_parser",
+    "sphinx_autodoc_typehints",
 ]
 
-# This repository does not build API docs via autodoc yet and does not ship
-# notebooks, so keep notebook execution disabled and avoid repo-name-based
-# coverage configuration from the shared config.
-nb_execution_mode = "off"
-coverage_modules: list[str] = []
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+
+html_theme = "furo"
+
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "pytket": ("https://docs.quantinuum.com/tket/api-docs/", None),
+    "hugr": ("https://quantinuum.github.io/hugr/", None),
+}
