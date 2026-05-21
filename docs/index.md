@@ -24,3 +24,13 @@ wasm
 development
 architecture
 ```
+
+```{toctree}
+:caption: Useful links
+Github <https://github.com/Quantinuum/hugr-qir>
+PyPi <https://pypi.org/project/hugr-qir/>
+Issues <https://github.com/Quantinuum/hugr-qir/issues>
+Guppylang docs <https://docs.quantinuum.com/guppy/index.html>
+HUGR spec <https://github.com/Quantinuum/hugr/tree/main/specification>
+QIR Spec <https://github.com/qir-alliance/qir-spec/tree/main/specification>
+```
