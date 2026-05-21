@@ -26,6 +26,7 @@ extensions = [
     "sphinx_copybutton",
     "myst_parser",
     "sphinx_autodoc_typehints",
+    "sphinx_click",
 ]
 
 
