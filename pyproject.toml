@@ -25,7 +25,6 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.0",
     "ty>=0.0.34",
-    "llvmlite~=0.44.0",
 ]
 docs = [
     "enum-tools[sphinx]>=0.13.0",

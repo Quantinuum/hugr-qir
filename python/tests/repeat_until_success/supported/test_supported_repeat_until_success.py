@@ -7,7 +7,6 @@ from pytest_snapshot.plugin import Snapshot
 from tests.conftest import (
     GUPPY_EXAMPLES_DIR,
     skip_snapshot_checks,
-    stabilize_qir_snapshot_output,
 )
 from tests.hugr_generation import guppy_to_hugr_binary
 
@@ -27,6 +26,6 @@ def test_supported_repeat_until_success(guppy_file: Path, snapshot: Snapshot) ->
     qir = to_qir_str(hugr_bin)
     if not skip_snapshot_checks:
         snapshot.assert_match(
-            stabilize_qir_snapshot_output(qir),
+            qir,
             str(Path(guppy_file.stem).with_suffix(".ll")),
         )
