@@ -13,6 +13,8 @@ target triple = "aarch64-unknown-linux-gnu"
 @7 = private unnamed_addr constant [18 x i8] c"2nd result as int\00", align 1
 @8 = private unnamed_addr constant [3 x i8] c"q4\00", align 1
 @9 = private unnamed_addr constant [3 x i8] c"q5\00", align 1
+@gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:

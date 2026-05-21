@@ -4,6 +4,8 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i6
 target triple = "aarch64-unknown-linux-gnu"
 
 @0 = private unnamed_addr constant [4 x i8] c"res\00", align 1
+@gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:

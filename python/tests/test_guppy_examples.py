@@ -53,7 +53,10 @@ def test_guppy_file_snapshots(
     with Path.open(out_file) as f:
         qir = f.read()
     if not skip_snapshot_checks:
-        snapshot.assert_match(qir, str(Path(guppy_file.stem).with_suffix(".ll")))
+        snapshot.assert_match(
+            qir,
+            str(Path(guppy_file.stem).with_suffix(".ll")),
+        )
 
 
 @pytest.mark.parametrize(
@@ -88,7 +91,8 @@ def test_guppy_files_options(
     if target != "native" and not skip_snapshot_checks:
         snapshot_filename = guppy_file.stem + "_" + target + "_" + opt_level
         snapshot.assert_match(
-            qir, str(Path(snapshot_filename).with_suffix(file_suffix))
+            qir,
+            str(Path(snapshot_filename).with_suffix(file_suffix)),
         )
 
 

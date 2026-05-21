@@ -27,6 +27,16 @@ in {
     # https://devenv.sh/tasks/
     env = {
       "LLVM_SYS_${cfg.llvmVersion}0_PREFIX" = "${libllvm.dev}";
+      # `uv run ...` builds the mixed Python/Rust package in an isolated
+      # environment via maturin. On macOS, wheel repair needs explicit fallback
+      # dylib search paths to locate Nix-provided runtime libraries such as zlib.
+      DYLD_FALLBACK_LIBRARY_PATH = "${lib.makeLibraryPath [
+        pkgs.libcxx
+        pkgs.libffi
+        pkgs.libxml2
+        pkgs.libz
+        pkgs.ncurses
+      ]}:/usr/lib";
     };
 
     languages = {

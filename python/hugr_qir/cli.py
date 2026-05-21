@@ -122,6 +122,8 @@ def hugr_qir_impl(  # noqa: PLR0913
     options = ["-q"]
     options.extend(["-t", target])
     options.extend(["-l", opt_level])
+    format_setting, read_mode = tmp_file_settings(output_format)
+    options.extend(["-f", format_setting])
     if wasm_file:
         options.extend(["--wasm-file", str(wasm_file)])
     if opt_level == "none":
@@ -145,7 +147,7 @@ which is not supported in QIR."
             msg = f"{failedqirmsg} Error details: {e}"
             raise ValueError(msg) from e
         try:
-            with Path.open(tmp_outfile_path) as output:
+            with Path.open(tmp_outfile_path, mode=read_mode) as output:
                 qir = output.read()
         except FileNotFoundError as e:
             msg = f"{failedqirmsg} Error details: {e}"
@@ -169,14 +171,24 @@ which is not supported in QIR."
                 )
                 raise ValueError(msg) from e
 
-    llvm_write_mode = get_write_mode(output_format)
     qir_out = ir_string_to_output_format(qir, output_format)
 
     if outfile:
+        llvm_write_mode = get_write_mode(output_format)
         with outfile.open(mode=llvm_write_mode) as output:
             output.write(qir_out)
     else:
         print(qir_out)
+
+
+def tmp_file_settings(output_format: OutputFormat) -> tuple[str, str]:
+    """Returns the file format option to pass to rust and read mode
+    for reading the temporary file gerated by the rust code."""
+    match output_format:
+        case OutputFormat.LLVM_IR:
+            return "llvm-ir", "r"
+        case _:
+            return "bitcode", "rb"
 
 
 if __name__ == "__main__":

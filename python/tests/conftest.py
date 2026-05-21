@@ -7,6 +7,9 @@ from hugr_qir.cli import hugr_qir
 
 from tests.hugr_generation import GuppyExample, generate_guppy_example_dict
 
+TEST_VERSION_OVERRIDE = "X.Y.Z"
+os.environ["HUGR_QIR_VERSION_TEST_OVERRIDE"] = "true"
+
 GUPPY_EXAMPLES_DIR = Path(__file__).parent / "../../guppy_examples"
 GUPPY_EXAMPLES_DIR_GENERAL = Path(__file__).parent / "../../guppy_examples/general"
 GUPPY_EXAMPLES_DIR_QHO = (

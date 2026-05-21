@@ -17,9 +17,13 @@ pub(crate) use hugr_llvm::inkwell;
 use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
 use inkwell::module::{Linkage, Module};
+<<<<<<< HEAD
 use inkwell::passes::PassBuilderOptions;
 use inkwell::targets::TargetMachine;
 use inkwell::values::{CallSiteValue, FunctionValue, PointerValue};
+=======
+use inkwell::values::UnnamedAddress;
+>>>>>>> main
 use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
@@ -42,6 +46,12 @@ use itertools::Itertools;
 
 #[cfg(feature = "py")]
 mod py;
+
+const GENERATOR_SECTION: &str = ",qir_generator";
+const GENERATOR_NAME_KEY: &str = "gen_name";
+const GENERATOR_VERSION_KEY: &str = "gen_version";
+const VERSION_TEST_OVERRIDE_ENV_VAR: &str = "HUGR_QIR_VERSION_TEST_OVERRIDE";
+const VERSION_TEST_OVERRIDE_VALUE: &str = "X.Y.Z";
 
 // TODO this was copy pasted, ideally it would live in tket2-hseries
 pub mod rotation;
@@ -193,7 +203,18 @@ impl CompileArgs {
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         normalize_block_names(&module);
+        add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
+        add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
         Ok(module)
+    }
+}
+
+/// Allow overriding the version to a static string for snapshot test purposes
+/// The default case is to use the package version
+fn generator_version() -> String {
+    match std::env::var(VERSION_TEST_OVERRIDE_ENV_VAR).as_deref() {
+        Ok("true") => VERSION_TEST_OVERRIDE_VALUE.to_string(),
+        _ => env!("CARGO_PKG_VERSION").to_string(),
     }
 }
 
@@ -388,6 +409,19 @@ pub fn add_module_metadata(
         .unwrap();
 
     Ok(())
+}
+
+fn add_generator_metadata(module: &Module, key: &str, value: &str) {
+    let context = module.get_context();
+    let value_type = context
+        .i8_type()
+        .array_type(u32::try_from(value.len()).expect("generator metadata length must fit in u32"));
+    let global = module.add_global(value_type, None, key);
+    global.set_initializer(&context.const_string(value.as_bytes(), false));
+    global.set_linkage(Linkage::Private);
+    global.set_constant(true);
+    global.set_unnamed_address(UnnamedAddress::Global);
+    global.set_section(Some(GENERATOR_SECTION));
 }
 
 fn add_qir_runtime_contracts(

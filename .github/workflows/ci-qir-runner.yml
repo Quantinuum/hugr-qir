@@ -16,7 +16,6 @@ env:
   # Pinned version for the uv package manager
   UV_VERSION: "0.6.11"
   UV_FROZEN: 1
-  LLVM_VERSION: "14.0"
 
 jobs:
   # Check if changes were made to the relevant files.
@@ -97,12 +96,10 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-
       - name: Install LLVM from hugrverse-env
         uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
           packages: "llvm"
-
       - name: Download the hugr-bin binary
         uses: actions/download-artifact@v8
         with:

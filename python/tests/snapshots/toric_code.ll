@@ -6,6 +6,8 @@ target triple = "aarch64-unknown-linux-gnu"
 @0 = private unnamed_addr constant [3 x i8] c"s0\00", align 1
 @1 = private unnamed_addr constant [3 x i8] c"s1\00", align 1
 @2 = private unnamed_addr constant [2 x i8] c"c\00", align 1
+@gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
+@gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
 define void @__hugr__.main.1() local_unnamed_addr #0 {
 alloca_block:
