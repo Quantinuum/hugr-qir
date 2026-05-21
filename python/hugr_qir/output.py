@@ -1,11 +1,6 @@
 from base64 import b64encode
 from enum import Enum
 
-from llvmlite.binding import (  # type: ignore[import-untyped]
-    create_context,
-    parse_assembly,
-)
-
 GENERATOR_SECTION = ",qir_generator"
 
 
@@ -36,19 +31,16 @@ def get_write_mode(out_format: OutputFormat) -> str:
     return "w"
 
 
-def ir_string_to_output_format(qir_ir: str, output_format: OutputFormat) -> str | bytes:
+def ir_string_to_output_format(
+    qir_ir: str | bytes, output_format: OutputFormat
+) -> str | bytes:
     match output_format:
         case OutputFormat.LLVM_IR:
             return qir_ir
         case OutputFormat.BITCODE:
-            ctx = create_context()
-            module = parse_assembly(qir_ir, context=ctx)
-            return module.as_bitcode()
+            return qir_ir
         case OutputFormat.BASE64:
-            ctx = create_context()
-            module = parse_assembly(qir_ir, context=ctx)
-            qir_bitcode = module.as_bitcode()
-            return b64encode(qir_bitcode).decode("utf-8")
-        case _:
-            errmsg = "Unrecognized output format"
-            raise ValueError(errmsg)
+            if not isinstance(qir_ir, bytes):
+                msg = "Output format error - expected bytes, got str"
+                raise TypeError(msg)
+            return b64encode(qir_ir).decode("utf-8")

@@ -2,6 +2,7 @@ import re
 from importlib.metadata import version
 from typing import no_type_check
 
+import pytest
 from guppylang import guppy, qubit
 from guppylang.std.builtins import result
 from guppylang.std.quantum import h, measure
@@ -39,7 +40,11 @@ def test_guppy_entrypoint_to_qir() -> None:
     assert len(qir) > 10  # noqa: PLR2004
 
 
-def test_generated_qir_uses_qir_1_runtime_contracts() -> None:
+def test_generated_qir_uses_qir_1_runtime_contracts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # remove version override for this test only
+    monkeypatch.delenv("HUGR_QIR_VERSION_TEST_OVERRIDE", raising=False)
     qir = guppy_to_qir_str(main, validate_qir=True)
     package_version = version("hugr-qir")
 

@@ -18,7 +18,6 @@ env:
   # Pinned version for the uv package manager
   UV_VERSION: "0.6.11"
   UV_FROZEN: 1
-  LLVM_VERSION: "14.0"
 
 jobs:
   # Check if changes were made to the relevant files.
@@ -55,10 +54,11 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
-          directory: ${{ runner.temp }}/llvm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -92,9 +92,11 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
       - name: Build HUGR-QIR binary
         run: cargo build
       - name: Upload the binary to the artifacts
@@ -123,9 +125,11 @@ jobs:
           enable-cache: true
 
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: ${{ env.LLVM_VERSION }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
+          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
+          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
 
       - name: Download the hugr-bin binary
         uses: actions/download-artifact@v8
