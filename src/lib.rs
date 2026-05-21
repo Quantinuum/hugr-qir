@@ -17,13 +17,10 @@ pub(crate) use hugr_llvm::inkwell;
 use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
 use inkwell::module::{Linkage, Module};
-<<<<<<< HEAD
 use inkwell::passes::PassBuilderOptions;
 use inkwell::targets::TargetMachine;
 use inkwell::values::{CallSiteValue, FunctionValue, PointerValue};
-=======
 use inkwell::values::UnnamedAddress;
->>>>>>> main
 use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
