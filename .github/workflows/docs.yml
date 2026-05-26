@@ -44,7 +44,7 @@ jobs:
         run: |
           uv pip install -e .
           uv run --group docs sphinx-build -M html docs docs/_build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: docs
           path: docs/_build/html/
