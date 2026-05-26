@@ -1,5 +1,12 @@
 ## Changelog
 
+### v0.1.0
+
+- add documentation
+- add module globals @gen_name = "hugr-qir" and @gen_version = "<current_version>" to signify to downstream users that hugr-qir with that version was used to generate the qir
+- update hugr python version to >= 0.15.4
+- update guppylang version to ~= 0.21.11
+
 ### v0.0.27
 
 - don't generate qir basic blocks with purely numerical names

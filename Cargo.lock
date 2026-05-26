@@ -994,7 +994,7 @@ dependencies = [
 
 [[package]]
 name = "hugr-qir"
-version = "0.0.28"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1014,7 +1014,7 @@ dependencies = [
  "tket",
  "tket-qsystem",
  "typetag",
- "wasmparser 0.249.0",
+ "wasmparser 0.250.0",
 ]
 
 [[package]]
@@ -2405,9 +2405,9 @@ checksum = "40ce102ab67701b8526c123c1bab5cbe42d7040ccfd0f64af1a385808d2f43de"
 
 [[package]]
 name = "typetag"
-version = "0.2.21"
+version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be2212c8a9b9bcfca32024de14998494cf9a5dfa59ea1b829de98bac374b86bf"
+checksum = "c5a897b12c6c1151ad0b138b8db50252dc301f93bc3b027db05eec82aeed298c"
 dependencies = [
  "erased-serde",
  "inventory",
@@ -2418,9 +2418,9 @@ dependencies = [
 
 [[package]]
 name = "typetag-impl"
-version = "0.2.21"
+version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27a7a9b72ba121f6f1f6c3632b85604cac41aedb5ddc70accbebb6cac83de846"
+checksum = "cf808357c6ed7e13ba0f3277ec8d8f21b2d501274895104263985330c726c1c5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2602,9 +2602,9 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.249.0"
+version = "0.250.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30538cae9a794215f490b532df01c557e2e2bfac92569482554acd0992a102ea"
+checksum = "071d99cdfb8111603ed05500506c3298a940b58d609dd0259d3981785dd33556"
 dependencies = [
  "bitflags",
 ]

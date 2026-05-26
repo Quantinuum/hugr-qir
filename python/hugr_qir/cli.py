@@ -29,12 +29,14 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     "--validate-qir/--no-validate-qir",
     "validate_qir",
     default=True,
+    show_default=True,
     help="Whether to validate the QIR output",
 )
 @click.option(
     "--validate-hugr/--no-validate-hugr",
     "validate_hugr",
     default=False,
+    show_default=True,
     help="Whether to validate the input hugr before and after each internal pass",
 )
 @click.option(

@@ -69,6 +69,8 @@ def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
     """
     Converts hugr package to qir str
 
+    Uses hugr_to_qir internally with default settings and llvm_ir output format.
+
     :param hugr: hugr package
     :type hugr: Package
     :param validate_qir: Whether to validate the created QIR
@@ -86,7 +88,9 @@ def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
 
 def to_qir_bytes(hugr: Package | bytes, *, validate_qir: bool = True) -> bytes:
     """
-    Converts hugr package to qir bytes
+    Converts hugr package to qir bytes.
+
+    Uses hugr_to_qir internally with default settings and bitcode output format.
 
     :param hugr: hugr package
     :type hugr: Package

@@ -1,6 +1,6 @@
 [package]
 name = "hugr-qir"
-version = "0.0.28"
+version = "0.1.0"
 edition = "2024"
 rust-version = "1.91"
 
@@ -28,7 +28,7 @@ serde = "1.0"
 strum = "0.27.2"
 tket = "0.18.0"
 tket-qsystem = { version = "0.24.0", features = ["cli"] }
-wasmparser = { version = "0.249", default-features = false }
+wasmparser = { version = "0.250", default-features = false }
 
 [dev-dependencies]
 insta = "1.47"

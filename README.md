@@ -10,7 +10,7 @@ A tool for converting Hierarchical Unified Graph Representation (HUGR, pronounce
 
 ## Documentation
 
-Project documentation lives in [docs/](docs/) and is organized as a small Sphinx site using the shared `pytket-docs-theming` configuration.
+Project documentation lives in [docs/](docs/) and can be viewed online [here](https://quantinuum.github.io/hugr-qir/).
 
 - Getting started: [docs/getting-started.md](docs/getting-started.md)
 - Examples: [docs/examples/index.md](docs/examples/index.md)

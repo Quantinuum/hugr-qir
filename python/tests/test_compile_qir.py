@@ -30,6 +30,10 @@ def main() -> None:
 hugr_package = main.compile()
 
 
+def rustify_version(version_str: str) -> str:
+    return re.sub(r"^(\d+\.\d+\.\d+)rc(\d+)$", r"\1-rc.\2", version_str)
+
+
 def test_hugr_package_to_qir() -> None:
     qir = to_qir_str(hugr_package)
     assert len(qir) > 10  # noqa: PLR2004
@@ -46,7 +50,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
     # remove version override for this test only
     monkeypatch.delenv("HUGR_QIR_VERSION_TEST_OVERRIDE", raising=False)
     qir = guppy_to_qir_str(main, validate_qir=True)
-    package_version = version("hugr-qir")
+    package_version = rustify_version(version("hugr-qir"))
 
     assert "__quantum__rt__read_result" in qir
     assert "__quantum__qis__read_result__body" not in qir
@@ -59,6 +63,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
         gen_name_pattern,
         qir,
     )
+
     gen_version_pattern = (
         rf"@gen_version = private unnamed_addr constant "
         rf'\[{len(package_version)} x i8\] c"{re.escape(package_version)}", '
@@ -68,7 +73,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
         gen_version_pattern,
         qir,
     )
-    assert "call void @__quantum__rt__initialize(i8* null)" in qir
-    assert "declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly)" in qir
-    assert "declare i1 @__quantum__rt__read_result(%Result* readonly)" in qir
+    assert "call void @__quantum__rt__initialize(ptr null)" in qir
+    assert "declare void @__quantum__qis__mz__body(ptr, ptr writeonly)" in qir
+    assert "declare i1 @__quantum__rt__read_result(ptr readonly)" in qir
     assert '"irreversible"' in qir
