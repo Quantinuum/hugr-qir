@@ -1,6 +1,6 @@
 # Control Flow and Recursion
 
-These examples show the distinction between control flow that can be made static for QIR generation and control flow that still implies dynamic or cyclic structure in the lowered program.
+These examples show the distinction between control flow that can be made static for QIR generation and control flow that still implies dynamic or cyclic structure in the lowered program. They also detail some Guppy features that are not currently supported by H-Series hardware.
 
 ## Supported: `if` / `elif` / `else`
 
@@ -8,6 +8,28 @@ Source file: `guppy_examples/guppy-features/supported/guppy-if-elif-else.py`
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/supported/guppy-if-elif-else.py
 :language: python
+```
+
+## Unsupported: `exit` / `panic`
+
+Source file: `guppy_examples/guppy-features/unsupported/early-exit.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/early-exit.py
+:language: python
+```
+
+Source file: `guppy_examples/guppy-features/unsupported/panic.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/panic.py
+:language: python
+```
+
+Early exit using either `exit` or `panic` is not currently supported on H-Series hardware and will not pass the QIR validation step.
+
+Expected error:
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/early-exit.error
+:language: text
 ```
 
 ## Supported: unrollable loops
@@ -18,7 +40,9 @@ Source file: `guppy_examples/guppy-features/supported/unrollable-loops.py`
 :language: python
 ```
 
-This pattern works because the loop structure can be serialized into static control flow during lowering.
+This pattern works because the loop structure can be serialized into static control flow during lowering. Note that loop unrolling within `@guppy` annotated functions relies on the capabilities of the chosen llvm optimization level (default: Agressive). 100% unrolling is not guaranteed and will not happen for loops of a certain size and complexity, leading to a conversion error.
+
+This reliance on llvm optimization can be mitigated by writing loops within `@guppy.comptime` when possible. This guarantees loop unrolling at compile time, since the loop is fully executed by the python interpreter. This is, of course, not possible if the loop branches on runtime values, such as measurement results.
 
 ## Unsupported: non-unrollable loops
 
