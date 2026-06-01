@@ -14,6 +14,7 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 | First class or higher order functions | ✅      |                                                          |
 | Recursive functions or loops          | *️⃣      | Only if unrollable or serializable                       |
 | `measure_array` or `discard_array`    | ❌      | Use non-comptime arrays internally                       |
+| `exit` and `panic`                    | ❌      | Currently unsupported on H2 hardware                     |
 
 ## Data types
 
