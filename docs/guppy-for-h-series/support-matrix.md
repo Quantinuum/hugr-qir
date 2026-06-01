@@ -6,15 +6,20 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 
 ## Guppy features
 
-| Features                              | Support | Remarks                                                  |
-|---------------------------------------|---------|----------------------------------------------------------|
-| if elif else constructs               | ✅      |                                                          |
-| function overloading                  | ✅      |                                                          |
-| Generics (`type_var`/`nat_var`)       | ✅      | `nat_var`s are less useful without runtime array support |
-| First class or higher order functions | ✅      |                                                          |
-| Recursive functions or loops          | *️⃣      | Only if unrollable or serializable                       |
-| `measure_array` or `discard_array`    | ❌      | Use non-comptime arrays internally                       |
-| `exit` and `panic`                    | ❌      | Currently unsupported on H2 hardware                     |
+| Features                                             | Support | Remarks                                                                |
+|------------------------------------------------------|---------|------------------------------------------------------------------------|
+| if elif else constructs                              | ✅      |                                                                        |
+| function overloading                                 | ✅      |                                                                        |
+| Generics (`type_var`/`nat_var`)                      | ✅      | `nat_var`s are less useful without runtime array support               |
+| First class or higher order functions                | ✅      |                                                                        |
+| `get_current_shot`                                   | ✅      |                                                                        |
+| Recursive functions or loops within `@guppy.comptime` | ✅      | As long as compilation to HUGR suceeds                                 |
+| Recursive functions or loops within `@guppy`          | *️⃣      | Only if unrollable/serializable through chosen llvm optimization level |
+| `measure_array` or `discard_array`                   | ❌      | Use non-comptime arrays internally                                     |
+| `exit` and `panic`                                   | ❌      | Currently unsupported on H2 hardware                                   |
+| RNG: `__new__`, `discard`, `random_int/_bounded`     | ✅      | Specific to Quantinuum hardware                                        |
+| RNG: `random_advance`, `shuffle`                     | ❌      | Currently unsupported on H2 hardware                                   |
+| RNG: `random(_clifford)_angle`, `random_float`       | ❌      | No float support planned for H2 Hardware                               |
 
 ## Data types
 
