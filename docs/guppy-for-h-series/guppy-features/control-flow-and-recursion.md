@@ -40,9 +40,9 @@ Source file: `guppy_examples/guppy-features/supported/unrollable-loops.py`
 :language: python
 ```
 
-This pattern works because the loop structure can be serialized into static control flow during lowering. Note that loop unrolling within `@guppy` annotated functions relies on the capabilities of the chosen llvm optimization level (default: Agressive). 100% unrolling is not guaranteed and will not happen for loops of a certain size and complexity, leading to a conversion error.
+This pattern works because the loop structure can be serialized into static control flow during lowering. Note that loop unrolling within `@guppy` annotated functions relies on the capabilities of the chosen LLVM optimization level (default: Aggressive). 100% unrolling is not guaranteed and will not happen for loops of a certain size and complexity, leading to a conversion error.
 
-This reliance on llvm optimization can be mitigated by writing loops within `@guppy.comptime` when possible. This guarantees loop unrolling at compile time, since the loop is fully executed by the python interpreter. This is, of course, not possible if the loop branches on runtime values, such as measurement results.
+This reliance on LLVM optimization can be mitigated by writing loops within `@guppy.comptime` when possible. This guarantees loop unrolling at compile time, since the loop is fully executed by the Python interpreter. This is, of course, not possible if the loop branches on runtime values, such as measurement results.
 
 ## Unsupported: non-unrollable loops
 

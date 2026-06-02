@@ -2,7 +2,7 @@
 
 These examples exercise Guppy features that are specifically aimed at Quantinuum hardware-oriented workflows.
 
-The RNG and shot-dependent functions used here are only available on Quantinuum hardware targets, so these examples are not intended as portable Guppy programs for arbitrary QIR backends. Not that not all RNG methods are currently supported, see [Support matrix](../guppy-for-h-series/support-matrix.md).
+The RNG and shot-dependent functions used here are only available on Quantinuum hardware targets, so these examples are not intended as portable Guppy programs for arbitrary QIR backends. Note that not all RNG methods are currently supported; see [Support matrix](../guppy-for-h-series/support-matrix.md).
 
 ## Quantum RNG example
 
