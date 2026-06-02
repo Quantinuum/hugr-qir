@@ -30,6 +30,6 @@ def assert_unsupported_example(guppy_file: Path) -> None:
             f"Missing error file for {guppy_file.stem} example. "
             "Error file was regenerated."
         )
-        raise MissingErrorFileError(msg) from err
+        raise AssertionError(msg) from err
 
     assert actual_error == expected_error

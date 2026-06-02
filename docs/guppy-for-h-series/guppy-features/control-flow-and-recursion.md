@@ -26,7 +26,7 @@ Source file: `guppy_examples/guppy-features/unsupported/panic.py`
 
 Early exit using either `exit` or `panic` is not currently supported on H-Series hardware and will not pass the QIR validation step.
 
-Expected error:
+Expected error (for both examples):
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/early-exit.error
 :language: text
