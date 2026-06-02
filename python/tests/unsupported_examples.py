@@ -10,10 +10,6 @@ def _normalize_newlines(text: str) -> str:
     return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
-class MissingErrorFileError(Exception):
-    pass
-
-
 def assert_unsupported_example(guppy_file: Path) -> None:
     hugr_bin = guppy_to_hugr_binary(guppy_file)
     with pytest.raises(Exception) as error:  # noqa: PT011
