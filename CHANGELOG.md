@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.1.1
+
+- update documentation
+
 ### v0.1.0
 
 - add documentation
