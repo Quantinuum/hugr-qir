@@ -16,7 +16,16 @@ def assert_unsupported_example(guppy_file: Path) -> None:
         to_qir_str(hugr_bin)
 
     actual_error = _normalize_newlines(str(error.value) + "\n")
-    expected_error = _normalize_newlines(
-        guppy_file.with_suffix(".error").read_text(encoding="utf-8")
-    )
+    try:
+        expected_error = _normalize_newlines(
+            guppy_file.with_suffix(".error").read_text(encoding="utf-8")
+        )
+    except FileNotFoundError as err:
+        guppy_file.with_suffix(".error").write_text(actual_error, encoding="utf-8")
+        msg = (
+            f"Missing error file for {guppy_file.stem} example. "
+            "Error file was regenerated."
+        )
+        raise AssertionError(msg) from err
+
     assert actual_error == expected_error
