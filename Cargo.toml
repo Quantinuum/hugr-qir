@@ -20,7 +20,7 @@ hugr-llvm = { version = "0.25.7", features = ["test-utils"] }
 inkwell = { version = "0.8.0", features = ["llvm14-0"] }
 itertools = "0.14.0"
 lazy_static = "1.5.0"
-pyo3 = { version = "0.28", features = [
+pyo3 = { version = "0.29", features = [
     "abi3-py310",
     "anyhow",
 ], optional = true }
