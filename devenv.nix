@@ -19,12 +19,13 @@ in {
       pkgs.libcxx
       pkgs.libffi
       pkgs.libxml2
-      pkgs.libz
+      pkgs.zlib
       pkgs.ncurses
     ];
 
-    # enterShell = ''
-    # '';
+    enterShell = ''
+      export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.zlib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    '';
 
     # https://devenv.sh/tasks/
     env = {
@@ -36,7 +37,7 @@ in {
         pkgs.libcxx
         pkgs.libffi
         pkgs.libxml2
-        pkgs.libz
+        pkgs.zlib
         pkgs.ncurses
       ]}:/usr/lib";
     };
@@ -52,7 +53,7 @@ in {
         venv.enable = true;
         uv = {
           enable = true;
-          sync.enable = true;
+          # sync.enable = true;
         };
       };
     };
