@@ -1,0 +1,14 @@
+from guppylang import guppy, qubit
+from guppylang.std.builtins import exit, result  # noqa: A004
+from guppylang.std.quantum import h, measure, x
+
+
+@guppy
+def main() -> None:
+    q = qubit()
+    fake_ancilla = qubit()
+    h(fake_ancilla)
+    if measure(fake_ancilla):
+        exit("Postselected: Criteria not met", 1)
+    x(q)
+    result("q", measure(q))
