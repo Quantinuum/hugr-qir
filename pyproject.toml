@@ -90,7 +90,11 @@ PATH = '$HOME/.cargo/bin:/tmp/llvm/bin:$PATH'
 LLVM_SYS_140_PREFIX = '/tmp/llvm'
 [tool.cibuildwheel.linux]
 before-all = [
-    'dnf install libffi-devel rust cargo -y',
+    'dnf install libffi-devel rustup -y',
+    'rustup set profile minimal',
+    'rustup toolchain install stable --no-self-update',
+    'rustup default stable',
+    'rustc --version',
     'curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz',
     'mkdir -p /tmp/llvm',
     'tar xf clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz -C /tmp/llvm --strip-components=1',
