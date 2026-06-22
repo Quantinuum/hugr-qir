@@ -113,11 +113,11 @@ jobs:
           path: ${{env.HUGR_QIR_BIN_DIR}}
 
       - name: Setup dependencies
-        run: uv sync --python ${{ matrix.python-version.py }}
+        run: uv sync --python ${{ matrix.python-version.py }} --no-install-project
 
       - name: run qir-runner
         run: |
-          uv run guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
-          uv run hugr-qir ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
+          .venv/bin/python guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
+          "${HUGR_QIR_BIN}" ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
           cargo install --git https://github.com/Quantinuum/qir-runner runner
           qir-runner --file ${{ matrix.guppy-file }}.ll
