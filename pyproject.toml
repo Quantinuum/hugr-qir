@@ -90,11 +90,7 @@ PATH = '$HOME/.cargo/bin:/tmp/llvm/bin:$PATH'
 LLVM_SYS_140_PREFIX = '/tmp/llvm'
 [tool.cibuildwheel.linux]
 before-all = [
-    'command -v rustup >/dev/null || (echo "rustup is required but not installed" >&2; exit 1)',
-    'rustup set profile minimal',
-    'rustup toolchain install stable --no-self-update',
-    'rustup default stable',
-    'dnf install libffi-devel -y',
+    'dnf install libffi-devel rust cargo -y',
     'curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz',
     'mkdir -p /tmp/llvm',
     'tar xf clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz -C /tmp/llvm --strip-components=1',
@@ -110,10 +106,6 @@ LLVM_SYS_140_PREFIX = '/tmp/llvm'
 MACOSX_DEPLOYMENT_TARGET = "13.2"
 [tool.cibuildwheel.macos]
 before-all = [
-    'command -v rustup >/dev/null || (echo "rustup is required but not installed" >&2; exit 1)',
-    'rustup set profile minimal',
-    'rustup toolchain install stable --no-self-update',
-    'rustup default stable',
     'if [ "$(uname -m)" = "arm64" ]; then ARCH_PREFIX=arm64-apple-darwin22.3.0; else ARCH_PREFIX=x86_64-apple-darwin; fi',
     'curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang+llvm-14.0.6-$ARCH_PREFIX.tar.xz',
     'mkdir -p /tmp/llvm',
@@ -129,9 +121,6 @@ PATH = 'C:\\LLVM\\bin;$PATH'
 LLVM_SYS_140_PREFIX = 'C:\\LLVM'
 [tool.cibuildwheel.windows]
 before-all = [
-    'rustup set profile minimal',
-    'rustup toolchain install stable --no-self-update',
-    'rustup default stable',
     'curl -LO https://github.com/PLC-lang/llvm-package-windows/releases/download/v14.0.6/LLVM-14.0.6-win64.7z',
     '7z x LLVM-14.0.6-win64.7z "-oC:\LLVM" -y',
 ]
