@@ -112,6 +112,9 @@ jobs:
           name: hugr_qir_binary
           path: ${{env.HUGR_QIR_BIN_DIR}}
 
+      - name: Make the downloaded binary executable
+        run: chmod +x "${HUGR_QIR_BIN}"
+
       - name: Setup dependencies
         run: uv sync --python ${{ matrix.python-version.py }} --no-install-project
 
