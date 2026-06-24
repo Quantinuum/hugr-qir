@@ -110,6 +110,9 @@ impl CompileArgs {
                 hugr.validate()?;
             }
         }
+        // Drop unreachable functions before inlining to avoid doing adversarial
+        // expansion work in code that will be removed anyway.
+        self.remove_dead_functions(hugr)?;
         self.inline_calls(hugr)?;
         self.remove_dead_functions(hugr)?;
         Ok(())
