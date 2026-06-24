@@ -38,7 +38,7 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust-workflow == 'true' || steps.override.outputs.out == 'true' }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Override label
       id: override
       run: |
@@ -63,7 +63,7 @@ jobs:
     if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     name: tests (Rust stable, no features)
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - id: toolchain
         uses: dtolnay/rust-toolchain@master
@@ -119,7 +119,7 @@ jobs:
     name: tests (Rust stable, all features)
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - id: toolchain
         uses: dtolnay/rust-toolchain@master
@@ -158,7 +158,7 @@ jobs:
         rust: ["1.89", beta]
     name: tests (Rust ${{ matrix.rust }})
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - id: toolchain
         uses: dtolnay/rust-toolchain@master
@@ -188,7 +188,7 @@ jobs:
     runs-on: ubuntu-latest
     name: tests (Rust nightly, coverage)
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - uses: dtolnay/rust-toolchain@master
         with:
