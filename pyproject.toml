@@ -5,7 +5,7 @@ description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "click~=8.3.1",
+    "click>=8.3.1,<8.5.0",
     "guppylang~=0.21.11",
     "hugr>=0.15.4",
     "quantinuum-qircheck~=0.7.0",
@@ -38,7 +38,7 @@ docs = [
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus~=0.37.1",
+    "qnexus>=0.37.1,<0.46.0",
 ]
 
 [build-system]
