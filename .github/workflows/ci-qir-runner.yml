@@ -30,7 +30,7 @@ jobs:
     outputs:
       has-changes: ${{ github.ref_name == github.event.repository.default_branch || steps.filter.outputs.qir-runner }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -46,7 +46,7 @@ jobs:
       RUSTC_WRAPPER: "sccache"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -72,7 +72,7 @@ jobs:
       guppy-files: ${{ steps.set-matrix.outputs.files }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Generate guppy example file list
         id: set-matrix
         run: |
@@ -91,10 +91,10 @@ jobs:
           - { py: '3.13'}
         guppy-file: ${{ fromJson(needs.generate-file-list.outputs.guppy-files) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
