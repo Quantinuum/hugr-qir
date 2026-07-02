@@ -1,5 +1,10 @@
 ## Changelog
 
+### v0.1.2
+
+- update CI workflows
+- prune dead functions before inlining
+
 ### v0.1.1
 
 - update documentation
