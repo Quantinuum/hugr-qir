@@ -11,7 +11,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
-define dso_local void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
+define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(i8* null)
   %shot = tail call i64 @___get_current_shot()
