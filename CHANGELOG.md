@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.1.3rc1
+### v0.1.3-rc1
 
 - update quantinuum-qircheck version requirement to 0.8.0
 - add support for sext in qir
