@@ -45,6 +45,14 @@ examples = [
 requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
 
+[tool.uv]
+# rebuild package when Rust source changes
+cache-keys = [
+    { file = "Cargo.toml" },
+    { file = "Cargo.lock" },
+    { file = "src/**/*.rs" },
+]
+
 [tool.ty.analysis]
 replace-imports-with-any = ["qnexus", "qnexus.**"]
 
@@ -86,9 +94,13 @@ test-sources = ["python/tests", "guppy_examples"]
 test-command = "pytest python/tests"
 
 [tool.cibuildwheel.linux.environment]
-PATH = '$HOME/.cargo/bin:/tmp/llvm/bin:$PATH'
-LLVM_SYS_140_PREFIX = '/tmp/llvm'
+# we prepend /host to incoming paths because cibuildwheel mounts the host filesystem at /host.
+# this can ONLY be done if you know for sure that the libraries available at that directory on
+# the host are compatible with the build environment, e.g. manylinux compliant.
+PATH = '$HOME/.cargo/bin:/host${HUGRENV_PATH}/bin:$PATH'
+LLVM_SYS_211_PREFIX = '/host${HUGRENV_PATH}'
 [tool.cibuildwheel.linux]
+environment-pass = ["HUGRENV_PATH", "LLVM_SYS_211_PREFIX"]
 before-all = [
     'dnf install libffi-devel -y',
     'curl -LO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init',
@@ -107,8 +119,8 @@ repair-wheel-command = [
 ]
 
 [tool.cibuildwheel.macos.environment]
-PATH = '/tmp/llvm:$PATH'
-LLVM_SYS_140_PREFIX = '/tmp/llvm'
+PATH = '$HOME/.cargo/bin:${HUGRENV_PATH}/bin:$PATH'
+LLVM_SYS_211_PREFIX = '${HUGRENV_PATH}'
 MACOSX_DEPLOYMENT_TARGET = "13.2"
 [tool.cibuildwheel.macos]
 before-all = [
@@ -118,13 +130,13 @@ before-all = [
     'tar xf clang+llvm-14.0.6-$ARCH_PREFIX.tar.xz -C /tmp/llvm --strip-components=1',
 ]
 repair-wheel-command = [
-    'DYLD_FALLBACK_LIBRARY_PATH=/tmp/llvm/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}',
+    'DYLD_FALLBACK_LIBRARY_PATH=${HUGRENV_PATH}/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}',
     'uvx abi3audit --strict --report {wheel}',
 ]
 
 [tool.cibuildwheel.windows.environment]
-PATH = 'C:\\LLVM\\bin;$PATH'
-LLVM_SYS_140_PREFIX = 'C:\\LLVM'
+PATH = '${HUGRENV_PATH}\\bin;$PATH'
+LLVM_SYS_211_PREFIX = '${HUGRENV_PATH}'
 [tool.cibuildwheel.windows]
 before-all = [
     'curl -LO https://github.com/PLC-lang/llvm-package-windows/releases/download/v14.0.6/LLVM-14.0.6-win64.7z',

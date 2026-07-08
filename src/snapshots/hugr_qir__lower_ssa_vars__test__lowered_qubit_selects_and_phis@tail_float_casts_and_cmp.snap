@@ -7,46 +7,20 @@ source_filename = "tail_float_casts_and_cmp"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond, i1 %flag) {
 entry:
-  br i1 %cond, label %entry.dup, label %entry.dup11
-
-entry.dup:                                        ; preds = %entry
-  %flag.i6416 = zext i1 %flag to i64
-  %flag.f6427 = uitofp i64 %flag.i6416 to double
-  %flag.f3238 = fptrunc double %flag.f6427 to float
-  %flag.f64.ext49 = fpext float %flag.f3238 to double
-  %is.zero510 = fcmp oeq double %flag.f64.ext49, 0.000000e+00
-  br i1 %is.zero510, label %left.dup, label %right.dup
-
-common.ret:                                       ; preds = %left.dup18, %right.dup19, %left.dup, %right.dup
-  ret void
-
-right.dup:                                        ; preds = %entry.dup
-  call void @__quantum__qis__reset__body(%Qubit* null)
-  br label %common.ret
-
-left.dup:                                         ; preds = %entry.dup
-  call void @__quantum__qis__reset__body(%Qubit* null)
-  br label %common.ret
+  br i1 %cond, label %entry.dup11, label %entry.dup
 
 entry.dup11:                                      ; preds = %entry
-  %flag.i64112 = zext i1 %flag to i64
-  %flag.f64213 = uitofp i64 %flag.i64112 to double
-  %flag.f32314 = fptrunc double %flag.f64213 to float
-  %flag.f64.ext415 = fpext float %flag.f32314 to double
-  %is.zero516 = fcmp oeq double %flag.f64.ext415, 0.000000e+00
-  br i1 %is.zero516, label %left.dup18, label %right.dup19
-
-right.dup19:                                      ; preds = %entry.dup11
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 
-left.dup18:                                       ; preds = %entry.dup11
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 3 to %Qubit*))
+common.ret:                                       ; preds = %entry.dup, %entry.dup11
+  ret void
+
+entry.dup:                                        ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   br label %common.ret
 }
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

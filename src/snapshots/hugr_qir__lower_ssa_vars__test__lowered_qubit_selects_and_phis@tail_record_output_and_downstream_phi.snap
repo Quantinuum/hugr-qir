@@ -7,20 +7,20 @@ source_filename = "tail_record_output_and_downstream_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Result = type opaque
-
 @0 = private unnamed_addr constant [8 x i8] c"first\00\00\00", align 1
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.dup, label %entry.dup3
-
-entry.dup:                                        ; preds = %entry
-  %flag12 = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %cond1, label %join, label %right
+  br i1 %cond0, label %entry.dup3, label %entry.dup
 
 entry.dup3:                                       ; preds = %entry
-  %flag14 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  %flag14 = call i1 @__quantum__qis__read_result__body(ptr null)
+  call void @__quantum__qis__reset__body(ptr null)
+  br i1 %cond1, label %join, label %right
+
+entry.dup:                                        ; preds = %entry
+  %flag12 = call i1 @__quantum__qis__read_result__body(ptr null)
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 6 to ptr))
   br i1 %cond1, label %join, label %right
 
 right:                                            ; preds = %entry.dup3, %entry.dup
@@ -31,12 +31,17 @@ join:                                             ; preds = %entry.dup, %entry.d
   %phi.calluser.edge6 = phi i1 [ %phi.calluser.edge7, %right ], [ %flag12, %entry.dup ], [ %flag14, %entry.dup3 ]
   %phi.calluser = phi i1 [ true, %right ], [ %flag12, %entry.dup ], [ %flag14, %entry.dup3 ]
   tail call void @__test__consume_bool(i1 %phi.calluser)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge6, i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i64 0, i64 0))
+  br label %__prepare_module_record_output_final
+
+__prepare_module_record_output_final:             ; preds = %join
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge6, ptr @0)
   ret void
 }
 
-declare i1 @__quantum__qis__read_result__body(%Result*)
+declare i1 @__quantum__qis__read_result__body(ptr)
 
-declare void @__quantum__rt__bool_record_output(i1, i8*)
+declare void @__quantum__rt__bool_record_output(i1, ptr)
+
+declare void @__quantum__qis__reset__body(ptr)
 
 declare void @__test__consume_bool(i1)

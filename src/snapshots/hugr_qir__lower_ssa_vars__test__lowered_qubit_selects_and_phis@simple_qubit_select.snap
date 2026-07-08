@@ -7,22 +7,20 @@ source_filename = "simple_qubit_select"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %entry.dup, label %entry.dup1
+  br i1 %cond, label %entry.dup1, label %entry.dup
 
-common.ret:                                       ; preds = %entry.dup1, %entry.dup
+common.ret:                                       ; preds = %entry.dup, %entry.dup1
   ret void
 
-entry.dup:                                        ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* null)
+entry.dup1:                                       ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr null)
   br label %common.ret
 
-entry.dup1:                                       ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+entry.dup:                                        ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 }
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

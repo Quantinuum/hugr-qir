@@ -1,12 +1,14 @@
 { pkgs, lib, config, inputs, ... }: let
   cfg = config.hugr-qir;
-  libllvm = pkgs."llvmPackages_${cfg.llvmVersion}".libllvm;
+  llvmMajorVersion = lib.versions.major cfg.llvmVersion;
+  llvmVersionNoDot = builtins.replaceStrings [ "." ] [ "" ] cfg.llvmVersion;
+  libllvm = pkgs."llvmPackages_${llvmMajorVersion}".libllvm;
 in {
   # set these options in devenv.local.nix
   options.hugr-qir = {
     llvmVersion = lib.mkOption {
       type = lib.types.str;
-      default = "14";
+      default = "21.1";
     };
     patch-ruff = lib.mkEnableOption "patch-ruff";
   };
@@ -17,16 +19,17 @@ in {
       pkgs.libcxx
       pkgs.libffi
       pkgs.libxml2
-      pkgs.libz
+      pkgs.zlib
       pkgs.ncurses
     ];
 
-    # enterShell = ''
-    # '';
+    enterShell = ''
+      export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.zlib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    '';
 
     # https://devenv.sh/tasks/
     env = {
-      "LLVM_SYS_${cfg.llvmVersion}0_PREFIX" = "${libllvm.dev}";
+      "LLVM_SYS_${llvmVersionNoDot}_PREFIX" = "${libllvm.dev}";
       # `uv run ...` builds the mixed Python/Rust package in an isolated
       # environment via maturin. On macOS, wheel repair needs explicit fallback
       # dylib search paths to locate Nix-provided runtime libraries such as zlib.
@@ -34,7 +37,7 @@ in {
         pkgs.libcxx
         pkgs.libffi
         pkgs.libxml2
-        pkgs.libz
+        pkgs.zlib
         pkgs.ncurses
       ]}:/usr/lib";
     };
@@ -50,7 +53,7 @@ in {
         venv.enable = true;
         uv = {
           enable = true;
-          sync.enable = true;
+          # sync.enable = true;
         };
       };
     };

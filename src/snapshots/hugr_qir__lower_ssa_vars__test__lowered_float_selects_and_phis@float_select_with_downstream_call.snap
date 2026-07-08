@@ -7,30 +7,30 @@ source_filename = "float_select_with_downstream_call"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+define void @__hugr__.main.1(i1 noundef %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.dup, label %entry.dup1
-
-entry.dup:                                        ; preds = %entry
-  br i1 %cond1, label %left.dup, label %right.dup
-
-right.dup:                                        ; preds = %entry.dup
-  call void @consume(double 1.000000e+00)
-  br label %join
-
-left.dup:                                         ; preds = %entry.dup
-  call void @consume(double 1.000000e+00)
-  br label %join
+  br i1 %cond0, label %entry.dup1, label %entry.dup
 
 entry.dup1:                                       ; preds = %entry
   br i1 %cond1, label %left.dup3, label %right.dup4
 
 right.dup4:                                       ; preds = %entry.dup1
-  call void @consume(double 2.000000e+00)
+  call void @consume(double noundef 1.000000e+00)
   br label %join
 
 left.dup3:                                        ; preds = %entry.dup1
-  call void @consume(double 2.000000e+00)
+  call void @consume(double noundef 1.000000e+00)
+  br label %join
+
+entry.dup:                                        ; preds = %entry
+  br i1 %cond1, label %left.dup, label %right.dup
+
+right.dup:                                        ; preds = %entry.dup
+  call void @consume(double noundef 2.000000e+00)
+  br label %join
+
+left.dup:                                         ; preds = %entry.dup
+  call void @consume(double noundef 2.000000e+00)
   br label %join
 
 join:                                             ; preds = %right.dup4, %right.dup, %left.dup3, %left.dup

@@ -7,20 +7,20 @@ source_filename = "tail_call_result_downstream_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Result = type opaque
-
 @0 = private unnamed_addr constant [5 x i8] c"flag\00", align 1
 
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.dup, label %entry.dup3
-
-entry.dup:                                        ; preds = %entry
-  %flag12 = call i1 @__quantum__qis__read_result__body(%Result* null)
-  br i1 %cond1, label %join, label %right
+  br i1 %cond0, label %entry.dup3, label %entry.dup
 
 entry.dup3:                                       ; preds = %entry
-  %flag14 = call i1 @__quantum__qis__read_result__body(%Result* null)
+  %flag14 = call i1 @__quantum__qis__read_result__body(ptr null)
+  call void @__quantum__qis__reset__body(ptr null)
+  br i1 %cond1, label %join, label %right
+
+entry.dup:                                        ; preds = %entry
+  %flag12 = call i1 @__quantum__qis__read_result__body(ptr null)
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br i1 %cond1, label %join, label %right
 
 right:                                            ; preds = %entry.dup3, %entry.dup
@@ -32,6 +32,8 @@ join:                                             ; preds = %entry.dup, %entry.d
   ret void
 }
 
-declare i1 @__quantum__qis__read_result__body(%Result*)
+declare i1 @__quantum__qis__read_result__body(ptr)
+
+declare void @__quantum__qis__reset__body(ptr)
 
 declare void @__test__consume_bool(i1)

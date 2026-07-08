@@ -1,0 +1,20 @@
+---
+source: src/qir/tket2_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define void @_hl.main.1(ptr %0) {
+alloca_block:
+  %"2_0" = alloca ptr, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store ptr %0, ptr %"2_0", align 8
+  %"2_01" = load ptr, ptr %"2_0", align 8
+  call void @__quantum__rt__qubit_release(ptr %"2_01")
+  ret void
+}
+
+declare void @__quantum__rt__qubit_release(ptr)

@@ -1,0 +1,24 @@
+---
+source: src/qir/qsystem_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define { i1, ptr } @_hl.main.1() {
+alloca_block:
+  %"0" = alloca { i1, ptr }, align 8
+  %"4_0" = alloca { i1, ptr }, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  %0 = call ptr @__quantum__rt__qubit_allocate()
+  %1 = insertvalue { i1, ptr } { i1 true, ptr poison }, ptr %0, 1
+  store { i1, ptr } %1, ptr %"4_0", align 8
+  %"4_01" = load { i1, ptr }, ptr %"4_0", align 8
+  store { i1, ptr } %"4_01", ptr %"0", align 8
+  %"02" = load { i1, ptr }, ptr %"0", align 8
+  ret { i1, ptr } %"02"
+}
+
+declare ptr @__quantum__rt__qubit_allocate()

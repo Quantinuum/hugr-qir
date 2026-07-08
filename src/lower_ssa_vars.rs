@@ -1,19 +1,54 @@
-//! Utilities for squashing any ssa variables to QUBIT pointers.
+//! Lowers `select` and `phi` instructions on qubit-pointer and floating-point
+//! types into equivalent explicit control flow.
 //!
-//! For OG systems, these cannot be used as input to qis functions,
-//! because dynamic addressing of qubits is not allowed
+//! Quantinuum H-Series ("OG") targets require qubit and float arguments to `__quantum__qis__*` functions to
+//! be constant within a branch — they cannot be chosen at runtime via SSA data
+//! flow, but they can be chosen via control flow. This pass converts `phi` and `select`
+//! instructions to equivalent control flow. We assume `switch` instructions have
+//! already been eliminated (e.g. by the LLVM 'lower-switch' pass).
+//!
+//! # Pass design
+//!
+//! Two public entry points drive the lowering:
+//!
+//! - [`lower_qubit_selects_and_phis`]: lowers qubit-pointer selects then phis,
+//!   followed by LLVM `simplifycfg` cleanup.
+//! - [`lower_float_selects_and_phis`]: same strategy for floats, but uses
+//!   `constprop` cleanup instead (since `simplifycfg` can reintroduce phis).
+//!
+//! Both pipelines share the same structure:
+//!
+//! 1. **Preparation** (`prepare_module`): sinks `*_record_output` runtime calls
+//!    into a single final block per function so tail duplication cannot duplicate
+//!    measurement recording.
+//! 2. **Select lowering** (`lower_one_select_to_control_flow`): splits the
+//!    block at the select into a then/else/merge diamond, rebuilds the tail into
+//!    the merge block via `rebuild_tail`, then immediately eliminates the merge
+//!    phi via tail duplication.
+//! 3. **Phi lowering** ([`lower_successive_phis_in_block`]): for each predecessor
+//!    of a phi-bearing block, duplicates the non-phi tail into a per-predecessor
+//!    clone block (`duplicate_phi_tail_for_predecessor`), redirects edges, and
+//!    reconciles downstream phi incomings and external uses.
+//! 4. **Cleanup**: LLVM pass pipeline (`simplifycfg` or `constprop`) removes
+//!    redundant blocks / folds constants.
+//!
+//! Instruction cloning is handled by [`rebuild_inst`] (non-terminators) and
+//! `rebuild_terminator`, both of which remap operands through a value map.
+//! After phi-block duplication, `DuplicationValueResolver` resolves SSA values
+//! for downstream users that referenced the now-deleted block.
 
-use anyhow::{Result, anyhow, bail};
-use inkwell::basic_block::BasicBlock;
-use inkwell::builder::Builder;
-use inkwell::module::Module;
-use inkwell::passes::PassManager;
-use inkwell::types::{AnyTypeEnum, BasicTypeEnum, PointerType};
-use inkwell::values::{AnyValue, InstructionOpcode as Op};
-use inkwell::values::{
-    AnyValueEnum, AsValueRef, BasicValue, BasicValueEnum, CallSiteValue, InstructionOpcode,
-    InstructionValue, Operand, PhiValue, ValueKind,
+use crate::inkwell::basic_block::BasicBlock;
+use crate::inkwell::builder::Builder;
+use crate::inkwell::module::Module;
+use crate::inkwell::passes::PassBuilderOptions;
+use crate::inkwell::targets::TargetMachine;
+use crate::inkwell::types::BasicTypeEnum;
+use crate::inkwell::values::{AnyValue, InstructionOpcode as Op};
+use crate::inkwell::values::{
+    AnyValueEnum, AsValueRef, BasicMetadataValueEnum, BasicValue, BasicValueEnum, CallSiteValue,
+    FunctionValue, InstructionOpcode, InstructionValue, Operand, PhiValue, ValueKind,
 };
+use anyhow::{Result, anyhow, bail};
 use std::collections::{HashMap, HashSet};
 
 type ValueKey = usize;
@@ -28,19 +63,23 @@ enum LoweredSsaKind {
 /// These can be introduced through llvm optimizations to reduce branching.
 /// Lowers select instructions to branching + possible additional phi's,
 /// then lowers any remaining phis
-pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
+pub fn lower_qubit_selects_and_phis(module: &Module, target: &TargetMachine) -> Result<bool> {
     verify_module(module).map_err(|err| {
         anyhow!("Verification failed for input module to lower_qubit_selects_and_phis pass: {err}")
     })?;
-    if !module_has_lowerable_qubit_selects_or_phis(module) {
+    let mut qubit_values = collect_qubit_select_and_phi_values(module);
+    if qubit_values.is_empty() {
         return Ok(false);
     }
     prepare_module(module)?;
-    let lowered_selects = lower_qubit_selects(module)?;
-    let lowered_phis = lower_qubit_phis(module)?;
+    let lowered_selects = lower_qubit_selects(module, &mut qubit_values)?;
+    let lowered_phis = lower_qubit_phis(module, &mut qubit_values)?;
     let changed = lowered_selects || lowered_phis;
     if changed {
-        simp_cfg(module);
+        simp_cfg(module, target)?;
+        // `simplifycfg` can (legally) move/duplicate the final record-output block.
+        // Re-run `prepare_module` to re-canonicalize record-output calls into a single sink.
+        prepare_module(module)?;
     }
     verify_module(module)?;
     Ok(changed)
@@ -50,7 +89,7 @@ pub fn lower_qubit_selects_and_phis(module: &Module) -> Result<bool> {
 ///
 /// This follows the same lowering strategy as the qubit-pointer pass, but does not
 /// run CFG simplification afterward because that can reintroduce float phis.
-pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
+pub fn lower_float_selects_and_phis(module: &Module, target: &TargetMachine) -> Result<bool> {
     verify_module(module).map_err(|err| {
         anyhow!("Verification failed for input module to lower_float_selects_and_phis pass: {err}")
     })?;
@@ -61,18 +100,17 @@ pub fn lower_float_selects_and_phis(module: &Module) -> Result<bool> {
     let lowered_selects = lower_float_selects(module)?;
     let lowered_phis = lower_float_phis(module)?;
     let changed = lowered_selects || lowered_phis;
-    // Don't run simp_cfg, may reintroduce float selects/phis
+    if changed {
+        // Fold intrinsic calls applied to constants (e.g. llvm.fabs.f64(0.3) → 0.3),
+        // then clean up any dead blocks left by the constant folding.
+        constprop(module, target)?;
+        debug_assert!(
+            !module_has_lowerable_float_selects_or_phis(module),
+            "constprop reintroduced lowerable float selects or phis"
+        );
+    }
     verify_module(module)?;
     Ok(changed)
-}
-
-/// Returns whether the module contains at least one qubit-pointer `select` or
-/// `phi` that this pass is expected to lower.
-fn module_has_lowerable_qubit_selects_or_phis(module: &Module) -> bool {
-    module_has_lowerable_selects_or_phis_matching(
-        module,
-        is_lowerable_qubit_select_or_phi_instruction,
-    )
 }
 
 /// Returns whether the module contains at least one floating-point `select` or
@@ -98,42 +136,13 @@ fn module_has_lowerable_selects_or_phis_matching(
     })
 }
 
-/// Checks whether a single instruction matches the pass entry criteria:
-/// opcode `select` or `phi`, result type `PointerType`, and pointer element type `Qubit`.
-fn is_lowerable_qubit_select_or_phi_instruction(inst: InstructionValue) -> bool {
-    matches!(
-        inst.get_opcode(),
-        InstructionOpcode::Select | InstructionOpcode::Phi
-    ) && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::QubitPointer)
-}
-
 /// Checks whether a single instruction matches the float lowering criteria:
 /// opcode `select` or `phi`, result type `FloatType`.
 fn is_lowerable_float_select_or_phi_instruction(inst: InstructionValue) -> bool {
     matches!(
         inst.get_opcode(),
         InstructionOpcode::Select | InstructionOpcode::Phi
-    ) && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
-}
-
-/// Returns whether an LLVM type is a lowerable qubit pointer.
-fn matches_lowered_any_type(ty: AnyTypeEnum, kind: LoweredSsaKind) -> bool {
-    match kind {
-        LoweredSsaKind::QubitPointer => {
-            matches!(ty, AnyTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
-        }
-        LoweredSsaKind::Float => matches!(ty, AnyTypeEnum::FloatType(_)),
-    }
-}
-
-/// Returns whether a basic type matches the lowering kind.
-fn matches_lowered_basic_type(ty: BasicTypeEnum, kind: LoweredSsaKind) -> bool {
-    match kind {
-        LoweredSsaKind::QubitPointer => {
-            matches!(ty, BasicTypeEnum::PointerType(ptr_ty) if is_qubit_pointer(ptr_ty))
-        }
-        LoweredSsaKind::Float => matches!(ty, BasicTypeEnum::FloatType(_)),
-    }
+    ) && inst.get_type().is_float_type()
 }
 
 /// Human-readable description of the lowering kind for diagnostics.
@@ -144,29 +153,121 @@ fn lowered_kind_description(kind: LoweredSsaKind) -> &'static str {
     }
 }
 
-/// Returns whether an instruction is a lowerable qubit-pointer `select`.
-fn is_lowerable_qubit_select(inst: InstructionValue) -> bool {
-    inst.get_opcode() == InstructionOpcode::Select
-        && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::QubitPointer)
+fn qis_qubit_arg_positions(func_name: &str) -> Option<&'static [usize]> {
+    Some(match func_name {
+        "__quantum__qis__h__body" => &[0],
+        "__quantum__qis__x__body" => &[0],
+        "__quantum__qis__y__body" => &[0],
+        "__quantum__qis__z__body" => &[0],
+        "__quantum__qis__s__body" => &[0],
+        "__quantum__qis__s__adj" => &[0],
+        "__quantum__qis__t__body" => &[0],
+        "__quantum__qis__t__adj" => &[0],
+        "__quantum__qis__reset__body" => &[0],
+        "__quantum__qis__cx__body" => &[0, 1],
+        "__quantum__qis__cy__body" => &[0, 1],
+        "__quantum__qis__cz__body" => &[0, 1],
+        "__quantum__qis__rx__body" => &[1],
+        "__quantum__qis__ry__body" => &[1],
+        "__quantum__qis__rz__body" => &[1],
+        "__quantum__qis__phasedx__body" => &[2],
+        "__quantum__qis__rzz__body" => &[1, 2],
+        "__quantum__qis__mz__body" => &[0],
+        "__quantum__rt__qubit_release" => &[0],
+        "__QIR__CONV_Qubit_TO_Result" => &[0],
+        _ => return None,
+    })
+}
+
+fn collect_qubit_select_and_phi_values(module: &Module) -> HashSet<ValueKey> {
+    let mut qubit_values = HashSet::new();
+
+    for function in module.get_functions() {
+        for block in function.get_basic_blocks() {
+            for inst in block.get_instructions() {
+                if inst.get_opcode() != InstructionOpcode::Call {
+                    continue;
+                }
+                let Ok(callsite) = CallSiteValue::try_from(inst) else {
+                    continue;
+                };
+                let Some(callee) = callsite.get_called_fn_value() else {
+                    continue;
+                };
+                let Ok(func_name) = callee.get_name().to_str() else {
+                    continue;
+                };
+                let Some(qubit_arg_positions) = qis_qubit_arg_positions(func_name) else {
+                    continue;
+                };
+
+                for &arg_idx in qubit_arg_positions {
+                    let Some(arg) = inst_operand_value(inst, arg_idx as u32) else {
+                        continue;
+                    };
+                    let Some(arg_inst) = arg.as_instruction_value() else {
+                        continue;
+                    };
+                    add_qubit_value_transitively(arg_inst, &mut qubit_values);
+                }
+            }
+        }
+    }
+
+    qubit_values
+}
+
+/// Adds `inst` to `qubit_values` if it is a `select` or `phi`, then recursively
+/// adds any upstream `select`/`phi` instructions reachable through its value operands.
+///
+/// `inttoptr` and `ptrtoint` casts are transparent: the chain is followed through
+/// them without adding the cast itself to `qubit_values`.
+///
+/// For `select`, operand 0 is the i1 condition and is skipped; operands 1 and 2 are
+/// the value arms.  For `phi`, `inst_operand_value` returns `None` for the
+/// interleaved basic-block operands, so only the value slots are followed.
+fn add_qubit_value_transitively(inst: InstructionValue, qubit_values: &mut HashSet<ValueKey>) {
+    match inst.get_opcode() {
+        InstructionOpcode::IntToPtr | InstructionOpcode::PtrToInt => {
+            // Transparent: follow through the cast to find upstream selects/phis.
+            if let Some(operand) = inst_operand_value(inst, 0)
+                && let Some(operand_inst) = operand.as_instruction_value()
+            {
+                add_qubit_value_transitively(operand_inst, qubit_values);
+            }
+        }
+        InstructionOpcode::Select | InstructionOpcode::Phi => {
+            let key = value_key_from_instruction(inst);
+            if !qubit_values.insert(key) {
+                return; // already visited — prevents loops
+            }
+            let n = inst.get_num_operands();
+            // Skip the i1 condition (operand 0) for select.
+            let start = if inst.get_opcode() == InstructionOpcode::Select {
+                1
+            } else {
+                0
+            };
+            for i in start..n {
+                if let Some(operand) = inst_operand_value(inst, i)
+                    && let Some(operand_inst) = operand.as_instruction_value()
+                {
+                    add_qubit_value_transitively(operand_inst, qubit_values);
+                }
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Returns whether an instruction is a lowerable floating-point `select`.
 fn is_lowerable_float_select(inst: InstructionValue) -> bool {
-    inst.get_opcode() == InstructionOpcode::Select
-        && matches_lowered_any_type(inst.get_type(), LoweredSsaKind::Float)
-}
-
-/// Returns whether a phi is a lowerable qubit-pointer phi.
-fn is_lowerable_qubit_phi(phi: PhiValue) -> bool {
-    matches_lowered_basic_type(
-        phi.as_basic_value().get_type(),
-        LoweredSsaKind::QubitPointer,
-    )
+    inst.get_opcode() == InstructionOpcode::Select && inst.get_type().is_float_type()
 }
 
 /// Returns whether a phi is a lowerable floating-point phi.
 fn is_lowerable_float_phi(phi: PhiValue) -> bool {
-    matches_lowered_basic_type(phi.as_basic_value().get_type(), LoweredSsaKind::Float)
+    phi.as_basic_value().get_type().is_float_type()
 }
 
 /// Rebuilds a terminator into the builder's current insertion block.
@@ -186,7 +287,7 @@ fn rebuild_terminator<'ctx>(
 
     match term.get_opcode() {
         InstructionOpcode::Br => {
-            let is_cond = term.is_conditional();
+            let is_cond = term.is_conditional().unwrap();
             if is_cond {
                 let cond = remap_value(expect_inst_operand_value(term, 0)).into_int_value();
 
@@ -282,9 +383,7 @@ fn prepare_module(module: &Module) -> Result<()> {
 /// If such a block already exists and is the only return point in the function,
 /// newly discovered record-output calls are appended to the start of that block
 /// rather than creating another sink.
-fn move_record_output_calls_to_function_end<'ctx>(
-    function: inkwell::values::FunctionValue<'ctx>,
-) -> Result<bool> {
+fn move_record_output_calls_to_function_end<'ctx>(function: FunctionValue<'ctx>) -> Result<bool> {
     let Some(first_block) = function.get_first_basic_block() else {
         return Ok(false);
     };
@@ -407,14 +506,14 @@ fn move_record_output_calls_to_function_end<'ctx>(
                 "move_record_output_calls_to_function_end",
             )?);
         }
-        old_call.erase_from_basic_block();
+        erase_instruction(old_call);
     }
 
     Ok(true)
 }
 
 fn find_prepare_module_record_final_block<'ctx>(
-    function: inkwell::values::FunctionValue<'ctx>,
+    function: FunctionValue<'ctx>,
 ) -> Result<Option<BasicBlock<'ctx>>> {
     let mut matching_blocks = Vec::new();
     let mut return_blocks = Vec::new();
@@ -499,17 +598,39 @@ fn block_is_prepare_module_record_final_block(block: BasicBlock) -> Result<bool>
 /// Lower all pointer-typed `select` on qubits to explicit control flow by introducing
 /// a then/else diamond and a merge PHI, then using phi elimination to remove phi.
 /// May introduce new phis downstream
-pub fn lower_qubit_selects(module: &Module) -> Result<bool> {
-    lower_matching_selects(
-        module,
-        is_lowerable_qubit_select,
-        LoweredSsaKind::QubitPointer,
-    )
+pub fn lower_qubit_selects(module: &Module, qubit_values: &mut HashSet<ValueKey>) -> Result<bool> {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+
+    for func in module.get_functions() {
+        let mut block_opt = func.get_last_basic_block();
+        while let Some(bb) = block_opt {
+            let last_sel = get_last_qubit_select_in_block(bb, qubit_values);
+            if let Some(sel) = last_sel {
+                lower_one_select_to_control_flow(
+                    &builder,
+                    sel,
+                    LoweredSsaKind::QubitPointer,
+                    qubit_values,
+                )?;
+                changed = true;
+            } else {
+                block_opt = bb.get_previous_basic_block();
+            }
+        }
+    }
+    Ok(changed)
 }
 
 /// Lower all floating-point `select` instructions to explicit control flow.
 pub fn lower_float_selects(module: &Module) -> Result<bool> {
-    lower_matching_selects(module, is_lowerable_float_select, LoweredSsaKind::Float)
+    lower_matching_selects(
+        module,
+        is_lowerable_float_select,
+        LoweredSsaKind::Float,
+        &mut HashSet::new(),
+    )
 }
 
 /// Lowers all `select` instructions matched by `matches_select` using reverse
@@ -518,6 +639,7 @@ fn lower_matching_selects(
     module: &Module,
     matches_select: impl Fn(InstructionValue) -> bool + Copy,
     kind: LoweredSsaKind,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
@@ -527,7 +649,7 @@ fn lower_matching_selects(
         let mut block_opt = func.get_last_basic_block();
         while let Some(bb) = block_opt {
             if let Some(last_sel) = get_last_matching_select_in_block(bb, matches_select) {
-                lower_one_select_to_control_flow(module, &builder, last_sel, kind)?;
+                lower_one_select_to_control_flow(&builder, last_sel, kind, qubit_values)?;
                 changed = true;
             } else {
                 block_opt = bb.get_previous_basic_block();
@@ -552,6 +674,17 @@ fn get_last_matching_select_in_block(
     None
 }
 
+/// Returns the last qubit select in `bb` according to the current `qubit_values` set.
+fn get_last_qubit_select_in_block<'ctx>(
+    bb: BasicBlock<'ctx>,
+    qubit_values: &HashSet<ValueKey>,
+) -> Option<InstructionValue<'ctx>> {
+    get_last_matching_select_in_block(bb, |inst| {
+        inst.get_opcode() == InstructionOpcode::Select
+            && qubit_values.contains(&value_key_from_instruction(inst))
+    })
+}
+
 /// Lowers one qubit-pointer `select` into an explicit then/else/merge diamond and then duplicates
 /// the merge block using tail duplication
 ///
@@ -560,10 +693,10 @@ fn get_last_matching_select_in_block(
 /// typed phis downstream if there were downstream users of the select and these phis
 /// are not lowered here. They can be removed using the dedicated phi lowering pass.
 fn lower_one_select_to_control_flow<'ctx>(
-    module: &'ctx Module,
     builder: &Builder<'ctx>,
     sel: InstructionValue<'ctx>,
     kind: LoweredSsaKind,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let bb = required_parent_block(sel, "lower_one_select_to_control_flow")?;
 
@@ -597,6 +730,9 @@ fn lower_one_select_to_control_flow<'ctx>(
     builder.position_at_end(merge_bb);
     let phi = builder.build_phi(phi_ty, "select.merge.val")?;
     phi.add_incoming(&[(&tval, then_bb), (&fval, else_bb)]);
+    if matches!(kind, LoweredSsaKind::QubitPointer) {
+        qubit_values.insert(value_key_from_instruction(phi.as_instruction()));
+    }
 
     // Rebuild the original tail into merge, remapping %sel -> %phi
     let mut vmap: HashMap<ValueKey, BasicValueEnum> = HashMap::new();
@@ -616,7 +752,8 @@ fn lower_one_select_to_control_flow<'ctx>(
     // erase the original tail from `bb` and replace it with br i1 %cond, %then, %else.
     builder.position_at_end(bb);
     for &i in tail.iter().rev() {
-        i.erase_from_basic_block();
+        forget_qubit_value(i, qubit_values);
+        erase_instruction(i);
     }
     builder.build_conditional_branch(cond, then_bb, else_bb)?;
     builder.position_at_end(then_bb);
@@ -625,11 +762,12 @@ fn lower_one_select_to_control_flow<'ctx>(
     builder.build_unconditional_branch(merge_bb)?;
 
     if let Some(merge_term) = merge_bb.get_terminator() {
-        fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap)?;
+        fix_successor_phis_block_rename(merge_term, bb, merge_bb, &vmap, qubit_values)?;
     }
-    sel.erase_from_basic_block();
-    lower_successive_phis_in_block(module, builder, merge_bb, vec![phi])?;
-    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb)?;
+    forget_qubit_value(sel, qubit_values);
+    erase_instruction(sel);
+    lower_successive_phis_in_block(builder, merge_bb, vec![phi], qubit_values)?;
+    collapse_trivial_select_dispatch_blocks(builder, bb, then_bb, else_bb, qubit_values)?;
     Ok(())
 }
 
@@ -645,11 +783,12 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
     source_bb: BasicBlock<'ctx>,
     then_bb: BasicBlock<'ctx>,
     else_bb: BasicBlock<'ctx>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let Some(source_term) = source_bb.get_terminator() else {
         return Ok(());
     };
-    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional() {
+    if source_term.get_opcode() != InstructionOpcode::Br || !source_term.is_conditional().unwrap() {
         return Ok(());
     }
 
@@ -675,22 +814,28 @@ fn collapse_trivial_select_dispatch_blocks<'ctx>(
         "collapse_trivial_select_dispatch_blocks",
     )?;
 
-    builder.position_at_end(source_bb);
-    source_term.erase_from_basic_block();
+    // If both forwarding blocks jump to the same destination, then they may be
+    // deliberately distinguishing control-flow for PHIs in that destination. Don't
+    // collapse in that case.
     if direct_then == direct_else {
-        builder.build_unconditional_branch(direct_then)?;
-    } else {
-        builder.build_conditional_branch(cond, direct_then, direct_else)?;
+        return Ok(());
     }
 
-    unsafe {
-        then_bb
-            .delete()
-            .expect("collapse_trivial_select_dispatch_blocks: failed to delete then block");
-        else_bb
-            .delete()
-            .expect("collapse_trivial_select_dispatch_blocks: failed to delete else block");
-    }
+    builder.position_at_end(source_bb);
+    source_term.erase_from_basic_block();
+    builder.build_conditional_branch(cond, direct_then, direct_else)?;
+
+    // The branch now targets `direct_then`/`direct_else` from `source_bb`, so any PHIs
+    // in those destination blocks must update their incoming blocks accordingly.
+    rewrite_successor_phis_for_edge_change(direct_then, then_bb, Some(source_bb), qubit_values)?;
+    rewrite_successor_phis_for_edge_change(direct_else, else_bb, Some(source_bb), qubit_values)?;
+
+    erase_all_instructions_in_block(then_bb, qubit_values);
+    erase_all_instructions_in_block(else_bb, qubit_values);
+    remove_block(then_bb);
+    remove_block(else_bb);
+    let _ = then_bb;
+    let _ = else_bb;
 
     Ok(())
 }
@@ -747,13 +892,18 @@ fn validate_select_lowering(
             lowered_kind_description(kind)
         )
     })?;
-    if matches_lowered_any_type(sel.get_type(), kind) {
-        Ok(())
-    } else {
-        bail!(
-            "Select lowering only supports {} results",
-            lowered_kind_description(kind)
-        )
+    match kind {
+        LoweredSsaKind::QubitPointer => Ok(()),
+        LoweredSsaKind::Float => {
+            if sel.get_type().is_float_type() {
+                Ok(())
+            } else {
+                bail!(
+                    "Select lowering only supports {} results",
+                    lowered_kind_description(kind)
+                )
+            }
+        }
     }
 }
 
@@ -764,10 +914,11 @@ fn fix_successor_phis_block_rename<'ctx>(
     old_bb: BasicBlock<'ctx>,
     new_bb: BasicBlock<'ctx>,
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     match term.get_opcode() {
         Op::Br => {
-            let is_cond = term.is_conditional();
+            let is_cond = term.is_conditional().unwrap();
             let succs: Vec<BasicBlock> = if is_cond {
                 [
                     required_block_operand(term, 1, "fix_successor_phis_block_rename")?,
@@ -783,7 +934,7 @@ fn fix_successor_phis_block_rename<'ctx>(
                 .to_vec()
             };
             for s in succs {
-                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap)?;
+                rename_incoming_block_in_phis(s, old_bb, new_bb, vmap, qubit_values)?;
             }
             Ok(())
         }
@@ -804,7 +955,7 @@ fn fix_successor_phis_block_rename<'ctx>(
                 idx += 2;
             }
             for succ in succs {
-                rename_incoming_block_in_phis(succ, old_bb, new_bb, vmap)?;
+                rename_incoming_block_in_phis(succ, old_bb, new_bb, vmap, qubit_values)?;
             }
             Ok(())
         }
@@ -819,13 +970,14 @@ fn rename_incoming_block_in_phis<'ctx>(
     old_bb: BasicBlock<'ctx>,
     new_bb: BasicBlock<'ctx>,
     vmap: &HashMap<ValueKey, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let mut it = succ_bb.get_first_instruction();
     while let Some(inst) = it {
         if inst.get_opcode() != Op::Phi {
             break;
         }
-        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        let phi: PhiValue = inst.try_into().unwrap();
         let incomings = phi.get_incomings();
 
         if !incomings.into_iter().any(|(_, b)| b == old_bb) {
@@ -835,9 +987,13 @@ fn rename_incoming_block_in_phis<'ctx>(
 
         let incomings = phi.get_incomings();
         let ty: BasicTypeEnum = phi.as_basic_value().get_type();
+        let old_phi_key = value_key_from_instruction(inst);
         let builder = succ_bb.get_context().create_builder();
         builder.position_before(&inst);
         let new_phi = builder.build_phi(ty, "phi.fix")?;
+        if qubit_values.contains(&old_phi_key) {
+            qubit_values.insert(value_key_from_instruction(new_phi.as_instruction()));
+        }
 
         for (val, inc_bb) in incomings {
             let mapped_bb = if inc_bb == old_bb { new_bb } else { inc_bb };
@@ -850,20 +1006,118 @@ fn rename_incoming_block_in_phis<'ctx>(
         }
 
         phi.replace_all_uses_with(&new_phi);
-        inst.erase_from_basic_block();
+        forget_qubit_value(inst, qubit_values);
+        erase_instruction(inst);
         it = new_phi.as_instruction().get_next_instruction();
     }
     Ok(())
 }
 
+/// Rewrites leading PHIs in `succ_bb` so that any incoming edge from `old_bb`
+/// is rewritten to come from `new_bb` (or dropped when `new_bb` is `None`).
+///
+/// This is used when we retarget branches and then remove now-dead forwarding
+/// blocks from the function.
+fn rewrite_successor_phis_for_edge_change<'ctx>(
+    succ_bb: BasicBlock<'ctx>,
+    old_bb: BasicBlock<'ctx>,
+    new_bb: Option<BasicBlock<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
+) -> Result<()> {
+    let mut it = succ_bb.get_first_instruction();
+    while let Some(inst) = it {
+        if inst.get_opcode() != Op::Phi {
+            break;
+        }
+
+        let phi: PhiValue = inst.try_into().unwrap();
+        let incomings: Vec<_> = phi.get_incomings().collect();
+
+        if !incomings.iter().any(|(_, b)| *b == old_bb) {
+            it = inst.get_next_instruction();
+            continue;
+        }
+
+        let ty: BasicTypeEnum = phi.as_basic_value().get_type();
+        let old_phi_key = value_key_from_instruction(inst);
+        let builder = succ_bb.get_context().create_builder();
+        builder.position_before(&inst);
+        let new_phi = builder.build_phi(ty, "phi.edge")?;
+        if qubit_values.contains(&old_phi_key) {
+            qubit_values.insert(value_key_from_instruction(new_phi.as_instruction()));
+        }
+
+        let mut incoming_by_block: HashMap<usize, BasicValueEnum<'ctx>> = HashMap::new();
+        for (val, inc_bb) in incomings {
+            let mapped_bb = if inc_bb == old_bb {
+                new_bb
+            } else {
+                Some(inc_bb)
+            };
+            let Some(mapped_bb) = mapped_bb else {
+                continue;
+            };
+            let key = mapped_bb.as_mut_ptr() as usize;
+            match incoming_by_block.entry(key) {
+                std::collections::hash_map::Entry::Vacant(e) => {
+                    e.insert(val);
+                    new_phi.add_incoming(&[(&val, mapped_bb)]);
+                }
+                std::collections::hash_map::Entry::Occupied(e) => {
+                    if e.get().as_value_ref() != val.as_value_ref() {
+                        bail!(
+                            "rewrite_successor_phis_for_edge_change: multiple distinct incoming values for the same predecessor block"
+                        );
+                    }
+                }
+            }
+        }
+
+        phi.replace_all_uses_with(&new_phi);
+        forget_qubit_value(inst, qubit_values);
+        erase_instruction(inst);
+        it = new_phi.as_instruction().get_next_instruction();
+    }
+
+    Ok(())
+}
+
 /// Lowers all phi instructions returning QUBIT* to control flow.
-pub fn lower_qubit_phis(module: &Module) -> Result<bool> {
-    lower_matching_phis(module, is_lowerable_qubit_phi, LoweredSsaKind::QubitPointer)
+pub fn lower_qubit_phis(module: &Module, qubit_values: &mut HashSet<ValueKey>) -> Result<bool> {
+    let context = module.get_context();
+    let builder = context.create_builder();
+    let mut changed = false;
+    for func in module.get_functions() {
+        let mut block_opt = func.get_first_basic_block();
+        while let Some(block) = block_opt {
+            block_opt = block.get_next_basic_block();
+            let phi_candidates = get_block_qubit_phis(block, qubit_values);
+            if phi_candidates.is_empty() {
+                continue;
+            }
+            if lower_successive_phis_in_block(&builder, block, phi_candidates, qubit_values)? {
+                verify_module(module).map_err(|err| {
+                    anyhow!(
+                        "Module verification failed after lowering {} phis in block {}: {err}",
+                        lowered_kind_description(LoweredSsaKind::QubitPointer),
+                        name_of_block(block)
+                    )
+                })?;
+                changed = true;
+            }
+        }
+    }
+    Ok(changed)
 }
 
 /// Lowers all phi instructions returning floating-point values to control flow.
 pub fn lower_float_phis(module: &Module) -> Result<bool> {
-    lower_matching_phis(module, is_lowerable_float_phi, LoweredSsaKind::Float)
+    lower_matching_phis(
+        module,
+        is_lowerable_float_phi,
+        LoweredSsaKind::Float,
+        &mut HashSet::new(),
+    )
 }
 
 /// Lowers all leading block phis matched by `matches_phi`.
@@ -871,6 +1125,7 @@ fn lower_matching_phis(
     module: &Module,
     matches_phi: impl Fn(PhiValue) -> bool + Copy,
     kind: LoweredSsaKind,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<bool> {
     let context = module.get_context();
     let builder = context.create_builder();
@@ -883,7 +1138,7 @@ fn lower_matching_phis(
             if phi_candidates.is_empty() {
                 continue;
             }
-            if lower_successive_phis_in_block(module, &builder, block, phi_candidates)? {
+            if lower_successive_phis_in_block(&builder, block, phi_candidates, qubit_values)? {
                 verify_module(module).map_err(|err| {
                     anyhow!(
                         "Module verification failed after lowering {} phis in block {}: {err}",
@@ -899,10 +1154,10 @@ fn lower_matching_phis(
 }
 
 pub fn lower_successive_phis_in_block(
-    _module: &Module,
     builder: &Builder,
     block: BasicBlock,
     phis: Vec<PhiValue>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<bool> {
     // Return if phis empty
     if phis.is_empty() {
@@ -920,11 +1175,14 @@ pub fn lower_successive_phis_in_block(
     // If none, remove this block and continue
     let preds = predecessors(block)?;
     if preds.is_empty() {
-        unsafe {
-            block
-                .delete()
-                .expect("Tried to delete block without parent")
-        };
+        // Remove any incoming-from-`block` entries in successor PHIs before detaching.
+        for succ in direct_successors(block)? {
+            rewrite_successor_phis_for_edge_change(succ, block, None, qubit_values)?;
+        }
+
+        erase_all_instructions_in_block(block, qubit_values);
+        remove_block(block);
+        let _ = block;
         return Ok(false);
     }
 
@@ -953,27 +1211,28 @@ pub fn lower_successive_phis_in_block(
         block,
         &clone_map,
         &clone_value_maps,
+        qubit_values,
     )?;
     reconcile_external_uses_after_duplication(
         block,
         &clone_map,
         &clone_value_maps,
         &lowered_phi_keys,
+        qubit_values,
     )?;
 
     // Now need to take care of any instructions that used the phi ssa variable
     // , e.g. function calls on the variable or additional phis
-    for phi in phis {
-        handle_phi_users(phi, block, &clone_map)?;
-        phi.as_instruction().erase_from_basic_block();
+    for phi in &phis {
+        handle_phi_users(*phi, block, &clone_map, qubit_values)?;
+        forget_qubit_value(phi.as_instruction(), qubit_values);
     }
 
-    // Delete no longer needed block
-    unsafe {
-        block
-            .delete()
-            .expect("Tried to delete block without parent")
-    };
+    // Delete no longer needed block (erases all instructions in reverse order,
+    // including the phis themselves whose only remaining users are within the block).
+    erase_all_instructions_in_block(block, qubit_values);
+    remove_block(block);
+    let _ = block;
     Ok(true)
 }
 
@@ -1024,7 +1283,7 @@ fn get_block_matching_phis(
         if inst.get_opcode() != InstructionOpcode::Phi {
             break;
         }
-        let phi = unsafe { PhiValue::new(inst.as_value_ref()) };
+        let phi: PhiValue = inst.try_into().unwrap();
         if matches_phi(phi) {
             phi_candidates.push(phi);
         }
@@ -1033,14 +1292,14 @@ fn get_block_matching_phis(
     phi_candidates
 }
 
-/// Returns whether a pointer type is the LLVM `%Qubit*` type used by QIR.
-fn is_qubit_pointer(ptr_ty: PointerType) -> bool {
-    ptr_ty
-        .get_element_type()
-        .into_struct_type()
-        .get_name()
-        .unwrap_or_default()
-        .eq(c"Qubit")
+/// Collects leading phis in `block` that are tracked in `qubit_values`.
+fn get_block_qubit_phis<'ctx>(
+    block: BasicBlock<'ctx>,
+    qubit_values: &HashSet<ValueKey>,
+) -> Vec<PhiValue<'ctx>> {
+    get_block_matching_phis(block, |phi| {
+        qubit_values.contains(&value_key_from_instruction(phi.as_instruction()))
+    })
 }
 
 /// For a PHI `%phi` in block `B`, replace every PHI-use of `%phi`
@@ -1064,9 +1323,10 @@ pub fn handle_phi_users<'ctx>(
     phi: PhiValue<'ctx>,
     phi_block: BasicBlock<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<usize> {
     let phi_users = plan_phi_user_rewrites(phi, phi_block, clone_for_pred)?;
-    apply_phi_user_rewrites(phi, phi_block, clone_for_pred, &phi_users)
+    apply_phi_user_rewrites(phi, phi_block, clone_for_pred, &phi_users, qubit_values)
 }
 
 /// Plans rewrites for uses of a phi that will be deleted.
@@ -1094,10 +1354,18 @@ fn plan_phi_user_rewrites<'ctx>(
                 }
             }
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if can_rebuild_inst(*u_inst) {
+                    for pred in incoming_by_pred.keys() {
+                        if !clone_for_pred.contains_key(pred) {
+                            bail!("Detected error in phi predecessors");
+                        }
+                    }
+                } else {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
     }
@@ -1113,6 +1381,7 @@ fn apply_phi_user_rewrites<'ctx>(
     phi_block: BasicBlock<'ctx>,
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     phi_users: &[InstructionValue<'ctx>],
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<usize> {
     let incoming_by_pred = incoming_map(phi);
     let sorted_incoming_by_pred = sorted_incoming_entries(&incoming_by_pred);
@@ -1120,7 +1389,15 @@ fn apply_phi_user_rewrites<'ctx>(
 
     let mut rewritten = 0usize;
     for &u_inst in phi_users {
-        if required_parent_block(u_inst, "apply_phi_user_rewrites")? == phi_block {
+        // The same instruction can appear multiple times in phi_users when it uses
+        // phi in more than one operand (e.g. two incoming slots or fmul %phi,%phi).
+        // Phi/Call rewrites erase the instruction on the first encounter; skip it on
+        // subsequent encounters.
+        let parent = match u_inst.get_parent() {
+            Some(bb) => bb,
+            None => continue,
+        };
+        if parent == phi_block {
             continue;
         }
         match u_inst.get_opcode() {
@@ -1131,6 +1408,7 @@ fn apply_phi_user_rewrites<'ctx>(
                 clone_for_pred,
                 &sorted_incoming_by_pred,
                 &mut available_value_cache,
+                qubit_values,
             )?,
             InstructionOpcode::Call => rewrite_phi_user_as_call(
                 phi,
@@ -1139,12 +1417,25 @@ fn apply_phi_user_rewrites<'ctx>(
                 clone_for_pred,
                 &sorted_incoming_by_pred,
                 &mut available_value_cache,
+                qubit_values,
             )?,
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if can_rebuild_inst(u_inst) {
+                    rewrite_phi_user_as_inst(
+                        phi,
+                        phi_block,
+                        u_inst,
+                        clone_for_pred,
+                        &sorted_incoming_by_pred,
+                        &mut available_value_cache,
+                        qubit_values,
+                    )?
+                } else {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
         rewritten += 1;
@@ -1161,15 +1452,20 @@ fn rewrite_phi_user_as_phi<'ctx>(
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
     available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
-    let user_phi = unsafe { PhiValue::new(user_inst.as_value_ref()) };
+    let user_phi: PhiValue = user_inst.try_into().unwrap();
     let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_phi")?;
     let incomings = user_phi.get_incomings();
 
     let ty: BasicTypeEnum = user_phi.as_basic_value().get_type();
+    let old_phi_key = value_key_from_instruction(phi.as_instruction());
     let builder = succ_bb.get_context().create_builder();
     builder.position_before(&user_inst);
     let new_phi = builder.build_phi(ty, "phi.expanded")?;
+    if qubit_values.contains(&old_phi_key) {
+        qubit_values.insert(value_key_from_instruction(new_phi.as_instruction()));
+    }
 
     for (val, inc_bb) in incomings {
         if val != phi.as_basic_value() {
@@ -1190,13 +1486,15 @@ fn rewrite_phi_user_as_phi<'ctx>(
                 clone_for_pred,
                 sorted_incoming_by_pred,
                 available_value_cache,
+                qubit_values,
             )?;
             new_phi.add_incoming(&[(&available_value, inc_bb)]);
         }
     }
 
     user_phi.replace_all_uses_with(&new_phi);
-    user_inst.erase_from_basic_block();
+    forget_qubit_value(user_inst, qubit_values);
+    erase_instruction(user_inst);
     Ok(())
 }
 
@@ -1209,6 +1507,7 @@ fn rewrite_phi_user_as_call<'ctx>(
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
     available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_call")?;
     let local_builder = succ_bb.get_context().create_builder();
@@ -1222,6 +1521,7 @@ fn rewrite_phi_user_as_call<'ctx>(
             clone_for_pred,
             sorted_incoming_by_pred,
             available_value_cache,
+            qubit_values,
         )?
     };
 
@@ -1231,7 +1531,7 @@ fn rewrite_phi_user_as_call<'ctx>(
     let callee = required_called_function(cs, "rewrite_phi_user_as_call")?;
 
     let old_val_ref = phi.as_basic_value().as_value_ref();
-    let mut args: Vec<inkwell::values::BasicMetadataValueEnum> = Vec::new();
+    let mut args: Vec<BasicMetadataValueEnum> = Vec::new();
     for i in 0..cs.count_arguments() {
         if let Some(op_bv) = inst_operand_value(user_inst, i) {
             let vref = op_bv.as_value_ref();
@@ -1255,11 +1555,41 @@ fn rewrite_phi_user_as_call<'ctx>(
             "rewrite_phi_user_as_call",
         )?);
     }
-    user_inst.erase_from_basic_block();
+    forget_qubit_value(user_inst, qubit_values);
+    erase_instruction(user_inst);
     Ok(())
 }
 
-/// Returns a value in `block` that represents the eliminated phi after its
+/// Rewrites a general rebuildable instruction that uses `phi` by replacing
+/// the phi operand in-place with the value available after phi lowering.
+///
+/// A helper phi is inserted at the top of the user's block (and cached) so
+/// that multiple users in the same block share the same merged value.
+fn rewrite_phi_user_as_inst<'ctx>(
+    phi: PhiValue<'ctx>,
+    phi_block: BasicBlock<'ctx>,
+    user_inst: InstructionValue<'ctx>,
+    clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
+    sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
+    available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
+) -> Result<()> {
+    let succ_bb = required_parent_block(user_inst, "rewrite_phi_user_as_inst")?;
+    if succ_bb == phi_block {
+        bail!("rewrite_phi_user_as_inst: instruction user unexpectedly remained in phi block");
+    }
+    let replacement_value = value_available_in_block_after_phi_lowering(
+        phi,
+        succ_bb,
+        clone_for_pred,
+        sorted_incoming_by_pred,
+        available_value_cache,
+        qubit_values,
+    )?;
+    replace_value_uses_in_instruction(user_inst, phi.as_basic_value(), replacement_value);
+    Ok(())
+}
+
 /// defining block has been duplicated away.
 ///
 /// If `block` is directly reached from the clone blocks, this creates a helper
@@ -1271,6 +1601,7 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
     clone_for_pred: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     sorted_incoming_by_pred: &[(BasicBlock<'ctx>, BasicValueEnum<'ctx>)],
     available_value_cache: &mut HashMap<BasicBlock<'ctx>, BasicValueEnum<'ctx>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<BasicValueEnum<'ctx>> {
     if let Some(&cached) = available_value_cache.get(&block) {
         return Ok(cached);
@@ -1306,7 +1637,11 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
     } else {
         builder.position_at_end(block);
     }
+    let phi_key = value_key_from_instruction(phi.as_instruction());
     let helper_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.available")?;
+    if qubit_values.contains(&phi_key) {
+        qubit_values.insert(value_key_from_instruction(helper_phi.as_instruction()));
+    }
     let mut added_pred_keys: HashSet<usize> = HashSet::new();
 
     for pred_block in preds {
@@ -1344,6 +1679,7 @@ fn value_available_in_block_after_phi_lowering<'ctx>(
                 clone_for_pred,
                 sorted_incoming_by_pred,
                 available_value_cache,
+                qubit_values,
             )?
         };
         if added_pred_keys.insert(pred_block.as_mut_ptr() as usize) {
@@ -1378,10 +1714,12 @@ fn validate_phi_users<'ctx>(
                 }
             }
             opcode => {
-                bail!(
-                    "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
-                    opcode
-                );
+                if !can_rebuild_inst(user_inst) {
+                    bail!(
+                        "Unsupported Opcode ({:?}) for user rewriting of deleted phi instruction",
+                        opcode
+                    );
+                }
             }
         }
 
@@ -1399,61 +1737,88 @@ fn operand_as_bb(inst: InstructionValue, idx: u32) -> Option<BasicBlock> {
     inst.get_operand(idx)?.block()
 }
 
-/// Returns the predecessor blocks of `to`.
+/// Returns the predecessor blocks of `to` by walking the block's use-list.
 ///
-/// Only direct branch predecessors are supported here; unsupported terminators
-/// cause an error because the lowering logic depends on explicit CFG structure.
+/// Each use of a basic block is either a terminator (branch target) or a phi
+/// (incoming block). We filter to terminators only, then collect their parent blocks.
+/// Results are sorted by block name for deterministic output.
 fn predecessors(to: BasicBlock) -> Result<Vec<BasicBlock>> {
     let mut preds = Vec::new();
-    let func = required_parent_function(to, "predecessors")?;
-    for b in func.get_basic_blocks() {
-        if let Some(term) = b.get_terminator() {
-            match term.get_opcode() {
-                Op::Br => {
-                    // Unconditional: operand 0 = target BB
-                    if !term.is_conditional() {
-                        if operand_as_bb(term, 0) == Some(to) {
-                            preds.push(b);
-                        }
-                    } else {
-                        // Conditional: operand 1 = then BB, operand 2 = else BB
-                        if operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to)
-                        {
-                            preds.push(b);
-                        }
-                    }
-                }
-                Op::Switch => {
-                    if operand_as_bb(term, 1) == Some(to) {
-                        preds.push(b);
-                        continue;
-                    }
-                    let mut idx = 3;
-                    while idx < term.get_num_operands() {
-                        if operand_as_bb(term, idx) == Some(to) {
-                            preds.push(b);
-                            break;
-                        }
-                        idx += 2;
-                    }
-                }
-                Op::IndirectBr
-                | Op::Invoke
-                | Op::CallBr
-                | Op::CatchSwitch
-                | Op::CatchRet
-                | Op::CleanupRet => {
-                    // These cases could be predecessors, but we don't handle them for now
-                    // Not sure if these can occur for this pass.
-                    bail!(
-                        "Found unsupported terminal case when searching for phi predecessor blocks"
-                    );
-                }
-                _ => { /* Cases that do not point to successors cannot be predecessors */ }
-            }
+    let mut use_opt = to.get_first_use();
+    while let Some(u) = use_opt {
+        use_opt = u.get_next_use();
+        let user = u.get_user();
+        let Some(inst) = any_value_as_instruction(user) else {
+            continue;
+        };
+        if !inst.is_terminator() {
+            continue;
+        }
+        let Some(pred_bb) = inst.get_parent() else {
+            continue;
+        };
+        if !preds.contains(&pred_bb) {
+            preds.push(pred_bb);
         }
     }
+    preds.sort_by_key(|bb| name_of_block(*bb));
     Ok(preds)
+}
+
+/// Remove a just-erased instruction's key from `qubit_values` to avoid
+/// pointer-address reuse causing nondeterministic misclassification.
+fn forget_qubit_value(inst: InstructionValue, qubit_values: &mut HashSet<ValueKey>) {
+    qubit_values.remove(&value_key_from_instruction(inst));
+}
+
+/// Erases a single instruction, debug-asserting that it has no remaining SSA users.
+///
+/// Any live uses of the instruction's value indicate a bug: the caller should have
+/// replaced all uses before erasing.
+fn erase_instruction(inst: InstructionValue) {
+    debug_assert!(
+        inst.get_first_use().is_none(),
+        "BUG: erasing instruction `{}` that still has uses; first user: `{}`",
+        inst.print_to_string().to_string_lossy(),
+        inst.get_first_use()
+            .map(|u| u
+                .get_user()
+                .print_to_string()
+                .to_string_lossy()
+                .into_owned())
+            .unwrap_or_else(|| "<none>".to_string()),
+    );
+    inst.erase_from_basic_block();
+}
+
+/// Removes a basic block from its parent function, debug-asserting that nothing still
+/// branches to it.
+///
+/// Any remaining uses indicate that predecessor branch targets were not fully
+/// redirected before the block was detached.
+fn remove_block(block: BasicBlock) {
+    debug_assert!(
+        block.get_first_use().is_none(),
+        "BUG: removing block `{}` that still has uses (unreachable predecessors?)",
+        block.get_name().to_str().unwrap_or("<unnamed>"),
+    );
+    block
+        .remove_from_function()
+        .expect("Tried to remove block without parent");
+}
+
+/// Erases all instructions in `block` (including its terminator) in reverse order.
+///
+/// This is required before detaching a block from its parent function: otherwise the
+/// now-parentless instructions can continue to reference globals and/or successor
+/// blocks, breaking verification and potentially leading to LLVM crashes.
+fn erase_all_instructions_in_block(block: BasicBlock, qubit_values: &mut HashSet<ValueKey>) {
+    let mut inst_opt = block.get_last_instruction();
+    while let Some(inst) = inst_opt {
+        inst_opt = inst.get_previous_instruction();
+        forget_qubit_value(inst, qubit_values);
+        erase_instruction(inst);
+    }
 }
 
 /// Returns whether `from` has `to` as a direct successor through a supported terminator.
@@ -1464,7 +1829,7 @@ fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
 
     match term.get_opcode() {
         Op::Br => {
-            if !term.is_conditional() {
+            if !term.is_conditional().unwrap() {
                 Ok(operand_as_bb(term, 0) == Some(to))
             } else {
                 Ok(operand_as_bb(term, 1) == Some(to) || operand_as_bb(term, 2) == Some(to))
@@ -1492,7 +1857,7 @@ fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
 
     match term.get_opcode() {
         Op::Br => {
-            if !term.is_conditional() {
+            if !term.is_conditional().unwrap() {
                 Ok(vec![required_block_operand(term, 0, "direct_successors")?])
             } else {
                 Ok(vec![
@@ -1525,18 +1890,20 @@ fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
     }
 }
 
-/// Returns whether a block contains no non-terminator instructions and ends in
-/// an unconditional branch.
+/// Returns whether a block contains *only* an unconditional branch terminator.
+///
+/// Important: we must not remove forwarding blocks that still contain PHIs,
+/// because those PHI results can be used by downstream blocks. Deleting the block
+/// would then leave dangling (`<badref>`) values.
 fn block_is_trivial_unconditional_branch(bb: BasicBlock) -> bool {
     let Some(term) = bb.get_terminator() else {
         return false;
     };
-    if term.get_opcode() != Op::Br || term.is_conditional() {
+    if term.get_opcode() != Op::Br || term.is_conditional().unwrap() {
         return false;
     }
 
-    bb.get_instructions()
-        .all(|inst| inst == term || inst.get_opcode() == InstructionOpcode::Phi)
+    bb.get_first_instruction() == Some(term)
 }
 
 /// First non‑PHI in a block
@@ -1650,18 +2017,28 @@ fn incoming_for_predecessor<'ctx>(
 }
 
 /// Seeds the value map for one duplicated predecessor edge using the incoming
-/// values that each eliminated phi contributes on that edge.
-fn phi_incoming_vmap_for_predecessor<'ctx>(
-    phis: &[PhiValue<'ctx>],
+/// values for *all* leading PHIs in `block` on that edge.
+///
+/// We may be lowering only a subset of those PHIs (e.g. float-only), but we still
+/// delete the entire block after tail duplication. Any remaining PHI values that
+/// are referenced in the duplicated tail must therefore be remapped too.
+fn phi_incoming_vmap_for_block_predecessor<'ctx>(
+    block: BasicBlock<'ctx>,
     pred: BasicBlock<'ctx>,
 ) -> Result<HashMap<ValueKey, BasicValueEnum<'ctx>>> {
     let mut vmap = HashMap::new();
-    for phi in phis {
-        let (val, _) = incoming_for_predecessor(*phi, pred)
+
+    for inst in block
+        .get_instructions()
+        .take_while(|inst| inst.get_opcode() == InstructionOpcode::Phi)
+    {
+        let phi: PhiValue<'ctx> = inst.try_into().unwrap();
+        let (val, _) = incoming_for_predecessor(phi, pred)
             .ok_or_else(|| anyhow!("Missing phi incoming for predecessor during lowering"))?;
-        let key = value_key_from_instruction(phi.as_instruction());
+        let key = value_key_from_instruction(inst);
         vmap.insert(key, val);
     }
+
     Ok(vmap)
 }
 
@@ -1670,10 +2047,10 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
     builder: &Builder<'ctx>,
     original_block: BasicBlock<'ctx>,
     pred: BasicBlock<'ctx>,
-    phis: &[PhiValue<'ctx>],
+    _phis: &[PhiValue<'ctx>],
     duplicated_tail: &[InstructionValue<'ctx>],
 ) -> Result<(BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>)> {
-    let mut vmap = phi_incoming_vmap_for_predecessor(phis, pred)?;
+    let mut vmap = phi_incoming_vmap_for_block_predecessor(original_block, pred)?;
     let mut cloned_values: HashMap<ValueKey, BasicValueEnum<'ctx>> = HashMap::new();
 
     let clone_block = pred.get_context().insert_basic_block_after(
@@ -1689,11 +2066,9 @@ fn duplicate_phi_tail_for_predecessor<'ctx>(
         Some(&mut cloned_values),
         "duplicated phi tail",
     ) {
-        unsafe {
-            clone_block
-                .delete()
-                .expect("Tried to delete failed clone block without parent")
-        };
+        erase_all_instructions_in_block(clone_block, &mut HashSet::new());
+        remove_block(clone_block);
+        let _ = clone_block;
         bail!("Failed to rebuild duplicated phi tail: {err}");
     }
 
@@ -1767,6 +2142,7 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
     original_block: BasicBlock<'ctx>,
     clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     clone_value_maps: &HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let resolver = DuplicationValueResolver::new(original_block, clone_map, clone_value_maps);
     let sorted_clone_entries = sorted_clone_entries(clone_map);
@@ -1778,7 +2154,7 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
             .collect();
 
         for phi_inst in phi_insts {
-            let phi = unsafe { PhiValue::new(phi_inst.as_value_ref()) };
+            let phi: PhiValue = phi_inst.try_into().unwrap();
             let incomings: Vec<_> = phi.get_incomings().collect();
             if !incomings
                 .iter()
@@ -1789,7 +2165,11 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
 
             let builder = succ_bb.get_context().create_builder();
             builder.position_before(&phi_inst);
+            let old_phi_key = value_key_from_instruction(phi_inst);
             let replacement_phi = builder.build_phi(phi.as_basic_value().get_type(), "phi.edge")?;
+            if qubit_values.contains(&old_phi_key) {
+                qubit_values.insert(value_key_from_instruction(replacement_phi.as_instruction()));
+            }
 
             for (incoming_val, incoming_bb) in incomings {
                 if incoming_bb != original_block {
@@ -1808,7 +2188,8 @@ fn reconcile_successor_phi_incoming_blocks_after_duplication<'ctx>(
             }
 
             phi.replace_all_uses_with(&replacement_phi);
-            phi_inst.erase_from_basic_block();
+            forget_qubit_value(phi_inst, qubit_values);
+            erase_instruction(phi_inst);
         }
     }
 
@@ -1824,8 +2205,10 @@ fn reconcile_external_uses_after_duplication<'ctx>(
     clone_map: &HashMap<BasicBlock<'ctx>, BasicBlock<'ctx>>,
     clone_value_maps: &HashMap<BasicBlock<'ctx>, HashMap<ValueKey, BasicValueEnum<'ctx>>>,
     skipped_value_keys: &HashSet<ValueKey>,
+    qubit_values: &mut HashSet<ValueKey>,
 ) -> Result<()> {
     let mut resolver = DuplicationValueResolver::new(original_block, clone_map, clone_value_maps);
+    let sorted_clone_entries = sorted_clone_entries(clone_map);
 
     for inst in original_block.get_instructions() {
         if skipped_value_keys.contains(&value_key_from_instruction(inst)) {
@@ -1841,15 +2224,19 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 
         for user in external_users {
             if user.get_opcode() == InstructionOpcode::Phi {
-                let user_phi = unsafe { PhiValue::new(user.as_value_ref()) };
+                let user_phi: PhiValue = user.try_into().unwrap();
                 let user_block =
                     required_parent_block(user, "reconcile_external_uses_after_duplication")?;
                 let incomings = user_phi.get_incomings();
                 let builder = user_block.get_context().create_builder();
                 builder.position_before(&user);
+                let old_user_phi_key = value_key_from_instruction(user);
                 let replacement_phi =
                     builder.build_phi(user_phi.as_basic_value().get_type(), "phi.calluser")?;
-                let sorted_clone_entries = sorted_clone_entries(clone_map);
+                if qubit_values.contains(&old_user_phi_key) {
+                    qubit_values
+                        .insert(value_key_from_instruction(replacement_phi.as_instruction()));
+                }
 
                 for (incoming_val, incoming_bb) in incomings {
                     if incoming_bb == original_block {
@@ -1874,6 +2261,7 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                             incoming_bb,
                             value_key,
                             old_value,
+                            qubit_values,
                         )?
                     } else {
                         incoming_val
@@ -1882,7 +2270,8 @@ fn reconcile_external_uses_after_duplication<'ctx>(
                 }
 
                 user_phi.replace_all_uses_with(&replacement_phi);
-                user.erase_from_basic_block();
+                forget_qubit_value(user, qubit_values);
+                erase_instruction(user);
                 continue;
             }
 
@@ -1890,8 +2279,13 @@ fn reconcile_external_uses_after_duplication<'ctx>(
 
             let user_block =
                 required_parent_block(user, "reconcile_external_uses_after_duplication")?;
-            let replacement_value =
-                resolver.value_available_in_block(inst, user_block, value_key, old_value)?;
+            let replacement_value = resolver.value_available_in_block(
+                inst,
+                user_block,
+                value_key,
+                old_value,
+                qubit_values,
+            )?;
             replace_value_uses_in_instruction(user, old_value, replacement_value);
         }
     }
@@ -1972,7 +2366,7 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             .copied()
             .or_else(|| {
                 (original_inst.get_opcode() == InstructionOpcode::Phi).then(|| {
-                    let phi = unsafe { PhiValue::new(original_inst.as_value_ref()) };
+                    let phi: PhiValue = original_inst.try_into().unwrap();
                     incoming_for_predecessor(phi, original_pred).map(|(val, _)| val)
                 })?
             })
@@ -1995,6 +2389,7 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
         block: BasicBlock<'ctx>,
         value_key: ValueKey,
         value_type_source: BasicValueEnum<'ctx>,
+        qubit_values: &mut HashSet<ValueKey>,
     ) -> Result<BasicValueEnum<'ctx>> {
         if let Some(&cached) = self.available_value_cache.get(&(block, value_key)) {
             return Ok(cached);
@@ -2035,6 +2430,9 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
             builder.position_at_end(block);
         }
         let helper_phi = builder.build_phi(value_type_source.get_type(), "phi.calluser.edge")?;
+        if qubit_values.contains(&value_key) {
+            qubit_values.insert(value_key_from_instruction(helper_phi.as_instruction()));
+        }
         let mut added_pred_keys: HashSet<usize> = HashSet::new();
 
         for pred_block in preds {
@@ -2073,6 +2471,7 @@ impl<'a, 'ctx> DuplicationValueResolver<'a, 'ctx> {
                     pred_block,
                     value_key,
                     value_type_source,
+                    qubit_values,
                 )?
             };
 
@@ -2199,24 +2598,29 @@ fn redirect_edge<'ctx>(
         builder.position_at_end(from);
         match term.get_opcode() {
             Op::Br => {
-                if term.is_conditional() {
+                if term.is_conditional().unwrap() {
                     let cond = expect_inst_operand_value(term, 0).into_int_value();
-                    let then_bb = operand_as_bb(term, 1).unwrap();
-                    let else_bb = operand_as_bb(term, 2).unwrap();
-                    let new_then = if then_bb == old_to { new_to } else { then_bb };
-                    let new_else = if else_bb == old_to { new_to } else { else_bb };
+                    // NOTE: `get_operands` returns the else (false) branch as operand 1
+                    // and the then (true) branch as operand 2. But
+                    // `Builder::build_conditional_branch` takes the arguments in the
+                    // reverse order.
+                    let false_bb = operand_as_bb(term, 1).unwrap();
+                    let true_bb = operand_as_bb(term, 2).unwrap();
+                    let new_false = if false_bb == old_to { new_to } else { false_bb };
+                    let new_true = if true_bb == old_to { new_to } else { true_bb };
 
-                    // This order of fbb and tbb is not what I would expect but
-                    // if you do it the other way the branches get switched...
                     builder
-                        .build_conditional_branch(cond, new_else, new_then)
+                        .build_conditional_branch(cond, new_true, new_false)
                         .ok();
                 } else {
                     builder.build_unconditional_branch(new_to).ok();
                 }
                 term.erase_from_basic_block();
             }
-            _ => { /* extend for switch if needed */ }
+            _ => panic!(
+                "redirect_edge: unsupported terminator (switches should have been removed by 'lowerswitch'): {}",
+                term
+            ),
         }
     }
 }
@@ -2243,15 +2647,15 @@ pub fn rebuild_inst<'ctx>(
                 let idx = expect_inst_operand_value(inst, i);
                 indices.push(remap(vmap, idx).into_int_value());
             }
-            let built = builder.build_gep(base.into_pointer_value(), &indices, &name)?;
+            let gep_ty = inst.get_gep_source_element_type().unwrap();
+            let built = builder.build_gep(gep_ty, base.into_pointer_value(), &indices, &name)?;
             Ok(RebuildOutcome::Value(built.as_basic_value_enum()))
         },
 
         // ---------------- Casts (no `build_bitcast` fallback) ----------------
         Op::BitCast => {
-            // We implement bitcast via specialized casts. See comments in our previous message.
             let src_val = remap(vmap, expect_inst_operand_value(inst, 0));
-            let dst_any = inst.get_type(); // LLVM 14: typed pointers still exist
+            let dst_any = inst.get_type();
 
             match dst_any.try_into() {
                 Ok(BasicTypeEnum::PointerType(dst_ptr_ty)) => {
@@ -2284,7 +2688,7 @@ pub fn rebuild_inst<'ctx>(
                     let cast = builder.build_float_cast(src_fp, dst_fp_ty, &name)?;
                     Ok(RebuildOutcome::Value(cast.as_basic_value_enum()))
                 }
-                _ => bail!("Unsupported BitCase type"),
+                _ => bail!("Unsupported BitCast type"),
             }
         }
 
@@ -2368,8 +2772,11 @@ pub fn rebuild_inst<'ctx>(
         // ---------------- Memory ops ----------------
         Op::Load => {
             let addr = remap(vmap, expect_inst_operand_value(inst, 0)).into_pointer_value();
-            //let ty   = inst.get_type();
-            let load = builder.build_load(addr, &name)?;
+            let ty: BasicTypeEnum = inst
+                .get_type()
+                .try_into()
+                .expect("the result type of a load should be a BasicType");
+            let load = builder.build_load(ty, addr, &name)?;
             Ok(RebuildOutcome::Value(load))
         }
 
@@ -2472,7 +2879,6 @@ pub fn rebuild_inst<'ctx>(
             }
             let dup_callsite = builder.build_call(orig_callee, &args, &name)?;
             let dup_value = dup_callsite.try_as_basic_value();
-            builder.position_at_end(into_block);
 
             // If return type is void → Void; else produce the resulting SSA value
             match dup_value {
@@ -2505,22 +2911,36 @@ fn inst_operand_value(inst: InstructionValue, i: u32) -> Option<BasicValueEnum> 
 fn expect_inst_operand_value(inst: InstructionValue, i: u32) -> BasicValueEnum {
     inst.get_operand(i)
         .and_then(operand_as_value)
-        .expect("Cound not get operand value")
+        .expect("Could not get operand value")
 }
 
 /// Runs LLVM's CFG simplification pass over every function in the module.
-fn simp_cfg(module: &Module) -> bool {
-    let pm = PassManager::create(module);
-    let mut changed = false;
-    pm.add_cfg_simplification_pass();
-    pm.initialize();
-    for func in module.get_functions() {
-        if pm.run_on(&func) {
-            changed = true;
-        }
-    }
-    pm.finalize();
-    changed
+fn simp_cfg(module: &Module, target: &TargetMachine) -> Result<()> {
+    module
+        .run_passes("simplifycfg", target, PassBuilderOptions::create())
+        .map_err(|e| anyhow!("Error running simplifycfg: {e}"))
+}
+
+fn constprop(module: &Module, target: &TargetMachine) -> Result<()> {
+    // attributor adds `speculatable`/`memory(none)` attributes to LLVM intrinsics
+    // like llvm.fabs.f64, which then allows instcombine to constant-fold calls to
+    // them (e.g. llvm.fabs.f64(0.6) → 0.6).
+    //
+    // instcombine needs max-iterations=2 because it lowers switch statements into
+    // xor/and patterns on i1 in its first iteration, then folds those patterns
+    // (which may now have constant operands) in a second iteration. This is expected
+    // behaviour, not an infinite loop.
+    //
+    // sccp then makes branches on constant conditions unconditional (e.g.
+    // `br i1 true, label %a, label %b` → `br label %a`), and adce removes the
+    // now-unreachable dead blocks.
+    module
+        .run_passes(
+            "attributor,instcombine<max-iterations=2>,sccp,adce",
+            target,
+            PassBuilderOptions::create(),
+        )
+        .map_err(|e| anyhow!("Error running constprop passes: {e}"))
 }
 
 /// Produces a stable key for instruction-produced SSA values.
@@ -2608,15 +3028,6 @@ fn required_parent_block<'ctx>(
         .ok_or_else(|| anyhow!("{context}: instruction has no parent block"))
 }
 
-/// Returns the parent function of a block or a contextual error.
-fn required_parent_function<'ctx>(
-    bb: BasicBlock<'ctx>,
-    context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
-    bb.get_parent()
-        .ok_or_else(|| anyhow!("{context}: block has no parent function"))
-}
-
 /// Returns operand `idx` of `inst` as a block operand or a contextual error.
 fn required_block_operand<'ctx>(
     inst: InstructionValue<'ctx>,
@@ -2630,7 +3041,7 @@ fn required_block_operand<'ctx>(
 fn required_called_function<'ctx>(
     callsite: CallSiteValue<'ctx>,
     context: &str,
-) -> Result<inkwell::values::FunctionValue<'ctx>> {
+) -> Result<FunctionValue<'ctx>> {
     callsite
         .get_called_fn_value()
         .ok_or_else(|| anyhow!("{context}: indirect call is not supported"))
@@ -2673,8 +3084,8 @@ fn sorted_clone_entries<'ctx>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use inkwell::context::Context;
-    use inkwell::memory_buffer::MemoryBuffer;
+    use crate::inkwell::context::Context;
+    use crate::inkwell::memory_buffer::MemoryBuffer;
     use insta::assert_snapshot;
     use rstest::rstest;
     use std::path::PathBuf;
@@ -2700,14 +3111,19 @@ mod test {
         name: &str,
         ir: &str,
     ) -> Result<Module<'ctx>> {
-        let buffer = MemoryBuffer::create_from_memory_range_copy(ir.as_bytes(), name);
+        // Inkwell requires the buffer to be nul-terminated.
+        let mut ir_bytes = ir.as_bytes().to_vec();
+        if ir_bytes.last() != Some(&0) {
+            ir_bytes.push(0);
+        }
+        let buffer = MemoryBuffer::create_from_memory_range_copy(&ir_bytes, name);
         context
             .create_module_from_ir(buffer)
             .map_err(|err| anyhow!("Failed to parse inline IR {name}: {}", err.to_string()))
     }
 
     fn count_lowerable_qubit_selects_and_phis(module: &Module) -> usize {
-        count_matching_selects_and_phis(module, is_lowerable_qubit_select_or_phi_instruction)
+        collect_qubit_select_and_phi_values(module).len()
     }
 
     fn count_lowerable_float_selects_and_phis(module: &Module) -> usize {
@@ -2724,6 +3140,24 @@ mod test {
             .flat_map(|block| block.get_instructions())
             .filter(|inst| predicate(*inst))
             .count()
+    }
+
+    fn default_target_machine() -> TargetMachine {
+        use crate::inkwell::targets::{InitializationConfig, Target};
+
+        Target::initialize_all(&InitializationConfig::default());
+        let triple = TargetMachine::get_default_triple();
+        let target = Target::from_triple(&triple).unwrap();
+        target
+            .create_target_machine(
+                &triple,
+                "generic",
+                "",
+                crate::inkwell::OptimizationLevel::None,
+                crate::inkwell::targets::RelocMode::Default,
+                crate::inkwell::targets::CodeModel::Default,
+            )
+            .unwrap()
     }
 
     fn fixture_snapshot_suffix(fixture: &str) -> String {
@@ -2792,6 +3226,7 @@ mod test {
         expected_kind: &str,
         snapshot_name: &str,
     ) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = load_module_from_fixture(&context, fixture).unwrap();
 
@@ -2823,9 +3258,6 @@ mod test {
                 normalized_module_ir_for_snapshot(&module, fixture)
             );
         });
-
-        std::mem::forget(module);
-        std::mem::forget(context);
     }
 
     #[rstest]
@@ -2837,7 +3269,7 @@ mod test {
     #[case("multiple_qubit_phis_in_block.ll")]
     #[case("select_with_record_output.ll")]
     #[case("select_with_downstream_phi.ll")]
-    #[case("tail_int_ptr_casts.ll")]
+    // tail_int_ptr_casts.ll omitted: arithmetic on qubit pointer values is not supported
     #[case("tail_float_casts_and_cmp.ll")]
     #[case("tail_gep_bitcast_and_call.ll")]
     #[case("tail_switch_terminator.ll")]
@@ -2846,9 +3278,10 @@ mod test {
     #[case("tail_call_result_downstream_phi.ll")]
     #[case("qubit_phi_with_constant_successor_incoming.ll")]
     fn lowers_all_lowerable_qubit_selects_and_phis_from_fixture(#[case] fixture: &str) {
+        let tm = default_target_machine();
         assert_lowering_fixture(
             fixture,
-            lower_qubit_selects_and_phis,
+            |module| lower_qubit_selects_and_phis(module, &tm),
             count_lowerable_qubit_selects_and_phis,
             "qubit select or phi",
             "lowered_qubit_selects_and_phis",
@@ -2862,9 +3295,10 @@ mod test {
     #[case("float_select_with_downstream_call.ll")]
     #[case("float_phi_with_constant_successor_incoming.ll")]
     fn lowers_all_lowerable_float_selects_and_phis_from_fixture(#[case] fixture: &str) {
+        let tm = default_target_machine();
         assert_lowering_fixture(
             fixture,
-            lower_float_selects_and_phis,
+            |module| lower_float_selects_and_phis(module, &tm),
             count_lowerable_float_selects_and_phis,
             "float select or phi",
             "lowered_float_selects_and_phis",
@@ -2907,7 +3341,8 @@ declare void @__quantum__qis__reset__body(%Qubit*)
         )
         .unwrap();
 
-        let err = lower_qubit_selects_and_phis(&module)
+        let tm = default_target_machine();
+        let err = lower_qubit_selects_and_phis(&module, &tm)
             .unwrap_err()
             .to_string();
         assert!(
@@ -3041,5 +3476,42 @@ _kept:
                 .any(|block| name_of_block(block) == "_kept"),
             "underscore-prefixed block name was renamed"
         );
+    }
+
+    #[test]
+    fn conditional_branch_operand_order_matches_ir() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "condbr_operand_order",
+            r#"
+define void @main(i1 %cond) {
+entry:
+  br i1 %cond, label %then_block, label %else_block
+
+then_block:
+  ret void
+
+else_block:
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        let main_fn = module.get_function("main").unwrap();
+        let entry = main_fn.get_first_basic_block().unwrap();
+        let term = entry.get_terminator().unwrap();
+        assert!(term.is_conditional().unwrap());
+
+        let op1 =
+            required_block_operand(term, 1, "conditional_branch_operand_order_matches_ir").unwrap();
+        let op2 =
+            required_block_operand(term, 2, "conditional_branch_operand_order_matches_ir").unwrap();
+
+        // NOTE: In this build of LLVM/inkwell, conditional `br` operands are ordered
+        // as (cond, false_dest, true_dest).
+        assert_eq!(name_of_block(op1), "else_block");
+        assert_eq!(name_of_block(op2), "then_block");
     }
 }
