@@ -8,7 +8,7 @@ dependencies = [
     "click>=8.3.1,<8.5.0",
     "guppylang~=0.21.11",
     "hugr>=0.15.4",
-    "quantinuum-qircheck~=0.7.0",
+    "quantinuum-qircheck~=0.8.0",
 ]
 
 [project.scripts]
