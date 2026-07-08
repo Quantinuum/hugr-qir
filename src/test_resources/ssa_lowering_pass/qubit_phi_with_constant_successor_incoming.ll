@@ -24,8 +24,8 @@ other:
 
 succ:
   %downstream = phi %Qubit* [ inttoptr (i64 3 to %Qubit*), %merge ], [ inttoptr (i64 4 to %Qubit*), %other ]
-  call void @use_qubit(%Qubit* %downstream)
+  call void @__quantum__qis__reset__body(%Qubit* %downstream)
   ret void
 }
 
-declare void @use_qubit(%Qubit*)
+declare void @__quantum__qis__reset__body(%Qubit*)

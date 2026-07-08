@@ -1,0 +1,19 @@
+---
+source: src/qir/tket2_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define { ptr, ptr } @_hl.main.1(ptr %0, ptr %1) {
+alloca_block:
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  call void @__quantum__qis__cy__body(ptr %0, ptr %1)
+  %mrv = insertvalue { ptr, ptr } poison, ptr %0, 0
+  %mrv7 = insertvalue { ptr, ptr } %mrv, ptr %1, 1
+  ret { ptr, ptr } %mrv7
+}
+
+declare void @__quantum__qis__cy__body(ptr, ptr)

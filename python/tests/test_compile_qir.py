@@ -73,7 +73,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
         gen_version_pattern,
         qir,
     )
-    assert "call void @__quantum__rt__initialize(i8* null)" in qir
-    assert "declare void @__quantum__qis__mz__body(%Qubit*, %Result* writeonly)" in qir
-    assert "declare i1 @__quantum__rt__read_result(%Result* readonly)" in qir
+    assert "call void @__quantum__rt__initialize(ptr null)" in qir
+    assert "declare void @__quantum__qis__mz__body(ptr, ptr writeonly)" in qir
+    assert "declare i1 @__quantum__rt__read_result(ptr readonly)" in qir
     assert '"irreversible"' in qir

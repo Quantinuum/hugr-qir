@@ -39,11 +39,7 @@ pub struct QirPreludeCodegen;
 
 impl PreludeCodegen for QirPreludeCodegen {
     fn qubit_type<'c>(&self, session: &TypingSession<'c, '_>) -> impl BasicType<'c> {
-        let iw_ctx = session.iw_context();
-        iw_ctx
-            .get_struct_type("Qubit")
-            .unwrap_or_else(|| iw_ctx.opaque_struct_type("Qubit"))
-            .ptr_type(Default::default())
+        session.iw_context().ptr_type(Default::default())
     }
 
     fn emit_panic<H: HugrView<Node = Node>>(
@@ -65,9 +61,7 @@ impl PreludeCodegen for QirPreludeCodegen {
 
 /// Returns the qir "Result" type.
 fn result_type(ctx: &Context) -> impl BasicType<'_> {
-    ctx.get_struct_type("Result")
-        .unwrap_or_else(|| ctx.opaque_struct_type("Result"))
-        .ptr_type(Default::default())
+    ctx.ptr_type(Default::default())
 }
 
 fn qir_enum_attribute(context: &Context, name: &str) -> Result<Attribute> {

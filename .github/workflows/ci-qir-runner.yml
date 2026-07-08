@@ -50,12 +50,10 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
-      - name: Install LLVM and Clang
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
-          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
-          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        with:
+          packages: "llvm"
       - name: Build HUGR-QIR binary
         run: cargo build
       - name: Upload the binary to the artifacts
@@ -98,14 +96,10 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-
-      - name: Install LLVM and Clang
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y llvm-14 llvm-14-dev libpolly-14-dev clang-14 lld-14
-          echo "LLVM_SYS_140_PREFIX=/usr/lib/llvm-14" >> "$GITHUB_ENV"
-          echo "/usr/lib/llvm-14/bin" >> "$GITHUB_PATH"
-
+      - name: Install LLVM from hugrverse-env
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        with:
+          packages: "llvm"
       - name: Download the hugr-bin binary
         uses: actions/download-artifact@v8
         with:

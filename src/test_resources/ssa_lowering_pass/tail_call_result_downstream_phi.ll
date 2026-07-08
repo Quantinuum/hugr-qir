@@ -12,6 +12,7 @@ define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
   %selected = select i1 %cond0, %Qubit* null, %Qubit* inttoptr (i64 1 to %Qubit*)
   %flag = tail call i1 @__quantum__qis__read_result__body(%Result* null)
+  call void @__quantum__qis__reset__body(%Qubit* %selected)
   br i1 %cond1, label %left, label %right
 
 left:
@@ -27,4 +28,5 @@ join:
 }
 
 declare i1 @__quantum__qis__read_result__body(%Result*)
+declare void @__quantum__qis__reset__body(%Qubit*)
 declare void @__test__consume_bool(i1)

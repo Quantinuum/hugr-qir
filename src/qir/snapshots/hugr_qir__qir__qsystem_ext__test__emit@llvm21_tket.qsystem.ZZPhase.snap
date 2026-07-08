@@ -1,0 +1,19 @@
+---
+source: src/qir/qsystem_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define { ptr, ptr } @_hl.main.1(ptr %0, ptr %1, double %2) {
+alloca_block:
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  call void @__quantum__qis__rzz__body(double %2, ptr %0, ptr %1)
+  %mrv = insertvalue { ptr, ptr } poison, ptr %0, 0
+  %mrv8 = insertvalue { ptr, ptr } %mrv, ptr %1, 1
+  ret { ptr, ptr } %mrv8
+}
+
+declare void @__quantum__qis__rzz__body(double, ptr, ptr)

@@ -1,0 +1,26 @@
+---
+source: src/qir/tket2_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define ptr @_hl.main.1(ptr %0) {
+alloca_block:
+  %"0" = alloca ptr, align 8
+  %"2_0" = alloca ptr, align 8
+  %"4_0" = alloca ptr, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store ptr %0, ptr %"2_0", align 8
+  %"2_01" = load ptr, ptr %"2_0", align 8
+  call void @__quantum__qis__t__body(ptr %"2_01")
+  store ptr %"2_01", ptr %"4_0", align 8
+  %"4_02" = load ptr, ptr %"4_0", align 8
+  store ptr %"4_02", ptr %"0", align 8
+  %"03" = load ptr, ptr %"0", align 8
+  ret ptr %"03"
+}
+
+declare void @__quantum__qis__t__body(ptr)

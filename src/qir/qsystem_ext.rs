@@ -98,7 +98,7 @@ impl QirCodegenExtension {
             ),
             TryQAlloc => {
                 let qb = emit_qis_qalloc(context)?;
-                let option_ty = context.llvm_sum_type(option_type(qb_t()))?;
+                let option_ty = context.llvm_sum_type(option_type(vec![qb_t()]))?;
                 let qb = option_ty.build_tag(context.builder(), 1, vec![qb])?.into();
                 args.outputs.finish(context.builder(), [qb])
             }
@@ -128,6 +128,7 @@ mod test {
     };
     use rstest::rstest;
 
+    use tket::passes::ComposablePass;
     use tket_qsystem::extension::qsystem::QSystemOp;
 
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
@@ -160,6 +161,7 @@ mod test {
     #[case(QSystemOp::LazyMeasureReset)]
     #[case(QSystemOp::Measure)]
     fn emit(ctx: TestContext, #[case] op: impl Into<OpType>) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let op = op.into();
         let mut insta = insta::Settings::clone_current();
         insta.set_snapshot_suffix(format!("{}_{}", insta.snapshot_suffix().unwrap_or(""), op));

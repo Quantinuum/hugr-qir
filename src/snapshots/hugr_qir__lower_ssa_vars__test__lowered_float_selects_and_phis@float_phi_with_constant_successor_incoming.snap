@@ -7,7 +7,7 @@ source_filename = "float_phi_with_constant_successor_incoming"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
+define void @__hugr__.main.1(i1 noundef %cond0, i1 %cond1) {
 entry:
   br i1 %cond0, label %left, label %right
 
@@ -18,7 +18,7 @@ merge.dup:                                        ; preds = %left
   br i1 %cond1, label %succ.dup, label %other
 
 succ.dup:                                         ; preds = %merge.dup
-  call void @consume(double 3.000000e+00)
+  call void @consume(double noundef 3.000000e+00)
   ret void
 
 right:                                            ; preds = %entry
@@ -28,14 +28,14 @@ merge.dup1:                                       ; preds = %right
   br i1 %cond1, label %succ.dup2, label %other
 
 succ.dup2:                                        ; preds = %merge.dup1
-  call void @consume(double 3.000000e+00)
+  call void @consume(double noundef 3.000000e+00)
   ret void
 
 other:                                            ; preds = %merge.dup1, %merge.dup
   br label %succ.dup3
 
 succ.dup3:                                        ; preds = %other
-  call void @consume(double 4.000000e+00)
+  call void @consume(double noundef 4.000000e+00)
   ret void
 }
 

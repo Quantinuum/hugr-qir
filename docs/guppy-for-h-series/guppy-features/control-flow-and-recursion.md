@@ -28,7 +28,7 @@ Early exit using either `exit` or `panic` is not currently supported on H-Series
 
 Expected error (for both examples):
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/early-exit.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/early-exit.error
 :language: text
 ```
 
@@ -56,7 +56,7 @@ This loop depends on measurement results and therefore remains genuinely dynamic
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/non-unrollable-loops.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/non-unrollable-loops.error
 :language: text
 ```
 
@@ -82,7 +82,7 @@ Here the recursive path depends on a measurement result, so the generated CFG co
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/complex-recursion.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/complex-recursion.error
 :language: text
 ```
 
@@ -106,6 +106,6 @@ This example creates a cycle across multiple Guppy functions, which eventually l
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/cyclic-call-graph.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/cyclic-call-graph.error
 :language: text
 ```

@@ -26,7 +26,7 @@ This version looks structurally similar to the compile-time example above, but i
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/runtime-array.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/runtime-array.error
 :language: text
 ```
 
@@ -42,7 +42,7 @@ This fails because `measure_array` relies on borrowed array types that are not c
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/measure-array.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/measure-array.error
 :language: text
 ```
 
@@ -58,6 +58,6 @@ Like `measure_array`, this path depends on array borrowing support that is not y
 
 Expected error:
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/discard-array.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/discard-array.error
 :language: text
 ```

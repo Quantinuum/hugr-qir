@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from pytest_snapshot.plugin import Snapshot
 
 from tests.conftest import GUPPY_EXAMPLES_DIR
 from tests.unsupported_examples import assert_unsupported_example
@@ -14,5 +15,5 @@ FEATURES_FILES = list(FEATURES_DIR.glob("*.py"))
     FEATURES_FILES,
     ids=[str(guppy_file.stem) for guppy_file in FEATURES_FILES],
 )
-def test_unsupported_features_fail(guppy_file: Path) -> None:
-    assert_unsupported_example(guppy_file)
+def test_unsupported_features_fail(guppy_file: Path, snapshot: Snapshot) -> None:
+    assert_unsupported_example(guppy_file, snapshot)

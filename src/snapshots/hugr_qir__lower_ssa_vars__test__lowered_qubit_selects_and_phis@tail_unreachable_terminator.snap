@@ -7,19 +7,17 @@ source_filename = "tail_unreachable_terminator"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond) {
 entry:
-  br i1 %cond, label %entry.dup, label %entry.dup1
-
-entry.dup:                                        ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* null)
-  unreachable
+  br i1 %cond, label %entry.dup1, label %entry.dup
 
 entry.dup1:                                       ; preds = %entry
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 9 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr null)
+  unreachable
+
+entry.dup:                                        ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 9 to ptr))
   unreachable
 }
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

@@ -7,32 +7,30 @@ source_filename = "select_with_downstream_phi"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %entry.dup, label %entry.dup1
-
-entry.dup:                                        ; preds = %entry
-  br i1 %cond1, label %merge.dup, label %merge.dup4
-
-common.ret:                                       ; preds = %merge.dup4, %merge.dup3, %merge.dup
-  ret void
-
-merge.dup:                                        ; preds = %entry.dup
-  call void @__quantum__qis__reset__body(%Qubit* null)
-  br label %common.ret
+  br i1 %cond0, label %entry.dup1, label %entry.dup
 
 entry.dup1:                                       ; preds = %entry
   br i1 %cond1, label %merge.dup3, label %merge.dup4
 
+common.ret:                                       ; preds = %merge.dup4, %merge.dup, %merge.dup3
+  ret void
+
 merge.dup3:                                       ; preds = %entry.dup1
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 1 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr null)
+  br label %common.ret
+
+entry.dup:                                        ; preds = %entry
+  br i1 %cond1, label %merge.dup, label %merge.dup4
+
+merge.dup:                                        ; preds = %entry.dup
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 1 to ptr))
   br label %common.ret
 
 merge.dup4:                                       ; preds = %entry.dup, %entry.dup1
-  call void @__quantum__qis__reset__body(%Qubit* inttoptr (i64 2 to %Qubit*))
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 2 to ptr))
   br label %common.ret
 }
 
-declare void @__quantum__qis__reset__body(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)

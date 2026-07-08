@@ -1,0 +1,40 @@
+---
+source: src/qir/qsystem_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+define { ptr, ptr } @_hl.main.1(ptr %0, ptr %1, double %2) {
+alloca_block:
+  %"0" = alloca ptr, align 8
+  %"1" = alloca ptr, align 8
+  %"2_0" = alloca ptr, align 8
+  %"2_1" = alloca ptr, align 8
+  %"2_2" = alloca double, align 8
+  %"4_0" = alloca ptr, align 8
+  %"4_1" = alloca ptr, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store ptr %0, ptr %"2_0", align 8
+  store ptr %1, ptr %"2_1", align 8
+  store double %2, ptr %"2_2", align 8
+  %"2_01" = load ptr, ptr %"2_0", align 8
+  %"2_12" = load ptr, ptr %"2_1", align 8
+  %"2_23" = load double, ptr %"2_2", align 8
+  call void @__quantum__qis__rzz__body(double %"2_23", ptr %"2_01", ptr %"2_12")
+  store ptr %"2_01", ptr %"4_0", align 8
+  store ptr %"2_12", ptr %"4_1", align 8
+  %"4_04" = load ptr, ptr %"4_0", align 8
+  %"4_15" = load ptr, ptr %"4_1", align 8
+  store ptr %"4_04", ptr %"0", align 8
+  store ptr %"4_15", ptr %"1", align 8
+  %"06" = load ptr, ptr %"0", align 8
+  %"17" = load ptr, ptr %"1", align 8
+  %mrv = insertvalue { ptr, ptr } poison, ptr %"06", 0
+  %mrv8 = insertvalue { ptr, ptr } %mrv, ptr %"17", 1
+  ret { ptr, ptr } %mrv8
+}
+
+declare void @__quantum__qis__rzz__body(double, ptr, ptr)

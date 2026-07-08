@@ -105,8 +105,16 @@ impl Cli {
     pub fn write_module(&mut self, module: &inkwell::module::Module<'_>) -> Result<()> {
         match self.output_format() {
             OutputFormat::Bitcode => {
+                // LLVM's in-memory bitcode writer appends an implicit trailing NUL
+                // byte. That terminator is required for some in-process LLVM APIs but
+                // must not be exposed in the public bitcode payload.
                 let memory = module.write_bitcode_to_memory();
-                self.output.write_all(memory.as_slice())?;
+                let bytes = memory.as_slice();
+                let bytes = match bytes.last() {
+                    Some(0) => bytes[..bytes.len() - 1].to_vec(),
+                    _ => bytes.to_vec(),
+                };
+                self.output.write_all(&bytes)?;
             }
             OutputFormat::LlvmIr => {
                 let str = module.print_to_string();

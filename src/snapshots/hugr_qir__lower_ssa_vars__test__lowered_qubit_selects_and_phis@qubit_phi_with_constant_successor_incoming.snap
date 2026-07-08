@@ -7,32 +7,21 @@ source_filename = "qubit_phi_with_constant_successor_incoming"
 target datalayout = "<normalized>"
 target triple = "<normalized>"
 
-%Qubit = type opaque
-
 define void @__hugr__.main.1(i1 %cond0, i1 %cond1) {
 entry:
-  br i1 %cond0, label %merge.dup, label %merge.dup1
+  %. = select i1 %cond0, ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 2 to ptr)
+  br i1 %cond1, label %succ.dup, label %succ.dup1
 
-merge.dup:                                        ; preds = %entry
-  br i1 %cond1, label %succ.dup, label %succ.dup3
-
-common.ret:                                       ; preds = %succ.dup3, %succ.dup2, %succ.dup
+common.ret:                                       ; preds = %succ.dup1, %succ.dup
   ret void
 
-succ.dup:                                         ; preds = %merge.dup
-  call void @use_qubit(%Qubit* inttoptr (i64 3 to %Qubit*))
+succ.dup:                                         ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
   br label %common.ret
 
-merge.dup1:                                       ; preds = %entry
-  br i1 %cond1, label %succ.dup2, label %succ.dup3
-
-succ.dup2:                                        ; preds = %merge.dup1
-  call void @use_qubit(%Qubit* inttoptr (i64 3 to %Qubit*))
-  br label %common.ret
-
-succ.dup3:                                        ; preds = %merge.dup, %merge.dup1
-  call void @use_qubit(%Qubit* inttoptr (i64 4 to %Qubit*))
+succ.dup1:                                        ; preds = %entry
+  call void @__quantum__qis__reset__body(ptr inttoptr (i64 4 to ptr))
   br label %common.ret
 }
 
-declare void @use_qubit(%Qubit*)
+declare void @__quantum__qis__reset__body(ptr)
