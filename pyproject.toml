@@ -38,7 +38,7 @@ docs = [
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus>=0.37.1,<0.47.0",
+    "qnexus~=0.46.0",
 ]
 
 [build-system]
