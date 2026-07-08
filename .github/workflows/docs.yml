@@ -22,7 +22,7 @@ jobs:
     name: Run doc build and create artifact
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: "0"
           submodules: recursive
@@ -33,7 +33,7 @@ jobs:
         with:
           packages: "llvm"
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.3.0
         with:
           enable-cache: true
       - name: Setup dependencies.

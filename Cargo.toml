@@ -1,6 +1,6 @@
 [package]
 name = "hugr-qir"
-version = "0.1.1"
+version = "0.1.3-rc.1"
 edition = "2024"
 rust-version = "1.91"
 
@@ -17,18 +17,18 @@ hugr = { version = "0.27", features = ["llvm"] }
 hugr-cli = "0.27"
 hugr-core = "0.27"
 hugr-llvm = { version = "0.27", features = ["test-utils"] }
-itertools = "0.14.0"
+itertools = "0.15.0"
 lazy_static = "1.5.0"
-pyo3 = { version = "0.28", features = [
+pyo3 = { version = "0.29", features = [
     "abi3-py310",
     "anyhow",
 ], optional = true }
 serde = "1.0"
 # this needs to match the version used by tket so we can implement its traits.
-strum = "0.27.2"
+strum = "0.28.0"
 tket = "0.18.0"
 tket-qsystem = { version = "0.24.0", features = ["cli"] }
-wasmparser = { version = "0.250", default-features = false }
+wasmparser = { version = "0.252", default-features = false }
 
 [dev-dependencies]
 insta = "1.47"

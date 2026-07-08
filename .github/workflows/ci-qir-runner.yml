@@ -30,7 +30,7 @@ jobs:
     outputs:
       has-changes: ${{ github.ref_name == github.event.repository.default_branch || steps.filter.outputs.qir-runner }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -46,7 +46,7 @@ jobs:
       RUSTC_WRAPPER: "sccache"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -70,7 +70,7 @@ jobs:
       guppy-files: ${{ steps.set-matrix.outputs.files }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Generate guppy example file list
         id: set-matrix
         run: |
@@ -89,10 +89,10 @@ jobs:
           - { py: '3.13'}
         guppy-file: ${{ fromJson(needs.generate-file-list.outputs.guppy-files) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.3.0
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
@@ -106,12 +106,15 @@ jobs:
           name: hugr_qir_binary
           path: ${{env.HUGR_QIR_BIN_DIR}}
 
+      - name: Make the downloaded binary executable
+        run: chmod +x "${HUGR_QIR_BIN}"
+
       - name: Setup dependencies
-        run: uv sync --python ${{ matrix.python-version.py }}
+        run: uv sync --python ${{ matrix.python-version.py }} --no-install-project
 
       - name: run qir-runner
         run: |
-          uv run guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
-          uv run hugr-qir ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
+          uv run --no-sync python guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
+          "${HUGR_QIR_BIN}" ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
           cargo install --git https://github.com/Quantinuum/qir-runner runner
           qir-runner --file ${{ matrix.guppy-file }}.ll

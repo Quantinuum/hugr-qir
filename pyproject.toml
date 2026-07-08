@@ -5,10 +5,10 @@ description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "click~=8.3.1",
+    "click>=8.3.1,<8.5.0",
     "guppylang~=0.21.11",
     "hugr>=0.15.4",
-    "quantinuum-qircheck~=0.7.0",
+    "quantinuum-qircheck~=0.8.0",
 ]
 
 [project.scripts]
@@ -102,8 +102,16 @@ LLVM_SYS_211_PREFIX = '/host${HUGRENV_PATH}'
 [tool.cibuildwheel.linux]
 environment-pass = ["HUGRENV_PATH", "LLVM_SYS_211_PREFIX"]
 before-all = [
-    'curl -sSf https://sh.rustup.rs | sh -s -- -y',
     'dnf install libffi-devel -y',
+    'curl -LO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init',
+    'curl -LO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init.sha256',
+    'sha256sum -c rustup-init.sha256',
+    'chmod +x rustup-init',
+    './rustup-init -y --profile minimal --default-toolchain stable --no-modify-path',
+    'rustc --version',
+    'curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz',
+    'mkdir -p /tmp/llvm',
+    'tar xf clang+llvm-14.0.6-x86_64-linux-gnu-rhel-8.4.tar.xz -C /tmp/llvm --strip-components=1',
 ]
 repair-wheel-command = [
     'auditwheel repair -w {dest_dir} {wheel}',
@@ -116,7 +124,10 @@ LLVM_SYS_211_PREFIX = '${HUGRENV_PATH}'
 MACOSX_DEPLOYMENT_TARGET = "13.2"
 [tool.cibuildwheel.macos]
 before-all = [
-    'curl -sSf https://sh.rustup.rs | sh -s -- -y',
+    'if [ "$(uname -m)" = "arm64" ]; then ARCH_PREFIX=arm64-apple-darwin22.3.0; else ARCH_PREFIX=x86_64-apple-darwin; fi',
+    'curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang+llvm-14.0.6-$ARCH_PREFIX.tar.xz',
+    'mkdir -p /tmp/llvm',
+    'tar xf clang+llvm-14.0.6-$ARCH_PREFIX.tar.xz -C /tmp/llvm --strip-components=1',
 ]
 repair-wheel-command = [
     'DYLD_FALLBACK_LIBRARY_PATH=${HUGRENV_PATH}/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}',
@@ -128,7 +139,8 @@ PATH = '${HUGRENV_PATH}\\bin;$PATH'
 LLVM_SYS_211_PREFIX = '${HUGRENV_PATH}'
 [tool.cibuildwheel.windows]
 before-all = [
-    'rustup update',
+    'curl -LO https://github.com/PLC-lang/llvm-package-windows/releases/download/v14.0.6/LLVM-14.0.6-win64.7z',
+    '7z x LLVM-14.0.6-win64.7z "-oC:\LLVM" -y',
 ]
 before-build = ['uv pip install delvewheel']
 repair-wheel-command = [
