@@ -691,7 +691,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1040,7 +1040,7 @@ docs = [
 ]
 examples = [
     { name = "jupyterlab", specifier = ">=4.5.3" },
-    { name = "qnexus", specifier = "~=0.37.1" },
+    { name = "qnexus", specifier = ">=0.37.1,<0.47.0" },
 ]
 
 [[package]]
@@ -2003,15 +2003,6 @@ wheels = [
 ]
 
 [[package]]
-name = "nest-asyncio"
-version = "1.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/83/f8/51569ac65d696c8ecbee95938f89d4abf00f47d58d48f6fbabfe8f0baefe/nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe", size = 7418, upload-time = "2024-01-21T14:25:19.227Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c", size = 5195, upload-time = "2024-01-21T14:25:17.223Z" },
-]
-
-[[package]]
 name = "nest-asyncio2"
 version = "1.7.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2738,6 +2729,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyjwt"
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423", size = 107515, upload-time = "2026-05-21T19:54:36.618Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a3/5e/ecf12fdb62546d64385c158514e9b2b671f7832108ef2ecd2020ce0af2d1/pyjwt-2.13.0-py3-none-any.whl", hash = "sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728", size = 31274, upload-time = "2026-05-21T19:54:35.362Z" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3066,25 +3069,26 @@ wheels = [
 
 [[package]]
 name = "qnexus"
-version = "0.37.1"
+version = "0.46.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "colorama" },
     { name = "httpx" },
     { name = "hugr" },
-    { name = "nest-asyncio" },
+    { name = "nest-asyncio2" },
     { name = "pandas" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pyjwt" },
     { name = "pytket" },
     { name = "quantinuum-schemas" },
     { name = "rich" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/2a/cf70afe05fc3fcc3b8b877a4434075a562e9618a7355955a57a4f4d1809f/qnexus-0.37.1.tar.gz", hash = "sha256:6b71988b971e637e444ffb6dda1c053c0ac120e3ad935db11f06b6ccf9c2ae3e", size = 431149, upload-time = "2025-11-19T11:38:13.322Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/62/45f8ff878361ce84117fd23e475c3e52db346fba283ad197d653f49ce9ef/qnexus-0.46.0.tar.gz", hash = "sha256:2f679ecefb8d64c3090464501f3cb7633eb31250fe3af7a7220d2955fb19bbfc", size = 328226, upload-time = "2026-06-30T14:36:04.013Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/84/becca04c2c60e08c3b4bdea92a4342bc76ac211e2f985b6eb18c32a78045/qnexus-0.37.1-py3-none-any.whl", hash = "sha256:c9575acef6221c610beeeaf9aa69d61cfeefa46b3554e0b2cf1ad2afc935eecc", size = 70756, upload-time = "2025-11-19T11:38:12.128Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/d7/e60a575fbfa39373e769b4e888de14fd928c67f01a2c8154175fa8da357d/qnexus-0.46.0-py3-none-any.whl", hash = "sha256:4918c0edcbd2269ddab6bd31c7f0905a93a4c79dd380f69f281c774a1c544c0b", size = 81681, upload-time = "2026-06-30T14:36:02.931Z" },
 ]
 
 [[package]]
