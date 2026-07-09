@@ -1,5 +1,10 @@
 ## Changelog
 
+### v0.2.0-rc1
+
+- update LLVM version to 21.1
+- update to hugr 0.27
+
 ### v0.1.3-rc1
 
 - update quantinuum-qircheck version requirement to 0.8.0
