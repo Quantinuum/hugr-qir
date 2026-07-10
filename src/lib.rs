@@ -1,6 +1,7 @@
 use std::num::NonZero;
 use std::rc::Rc;
 
+use crate::emit::{EmitDebugInfo, EmitFuncContext};
 use anyhow::anyhow;
 use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
@@ -25,7 +26,8 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve, inline_acyclic,
+    ComposablePass, InlineFunctionsPass, PassScope, QSystemLLVMPass, QSystemRebasePass,
+    RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
 pub mod lower_ssa_vars;
@@ -112,8 +114,10 @@ impl CompileArgs {
             hugr.validate()?;
         }
         if self.qsystem_pass {
-            let pass = tket_qsystem::QSystemPass::default();
-            pass.run(hugr)?;
+            let passrebase = QSystemRebasePass::default();
+            passrebase.run(hugr)?;
+            let passllvm = QSystemLLVMPass::default();
+            passllvm.run(hugr)?;
             if self.validate {
                 hugr.validate()?;
             }
@@ -127,9 +131,11 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        inline_acyclic(hugr, |_, _| {
+        let pass = InlineFunctionsPass::default();
+        pass.run(hugr)?;
+        /*inline_acyclic_scoped(hugr, |_, _| {
             true // <- always inline, no matter what
-        })?;
+        })?;*/
         if self.validate {
             hugr.validate()?;
         }
@@ -176,9 +182,14 @@ impl CompileArgs {
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
         let extensions = self.codegen_extensions().into();
         let namer = Rc::new(Namer::new("__hugr__.", true));
-        let module = context.create_module(self.module_name().as_ref());
+        let module  = context.create_module(self.module_name().as_ref());
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
-        let module = emit.emit_module(hugr.fat_root().unwrap())?.finish();
+        let (module, _)  = emit
+            .emit_module(
+                hugr.fat_root().unwrap(),
+                EmitDebugInfo::Include { ptr_bits: 64 },
+            )?
+            .finish();
 
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
@@ -186,8 +197,10 @@ impl CompileArgs {
 
         // We optimize before `replace_int_opaque_pointer`ing, because that will fail if there are indirect function  calls, which must be removed in the end qir anyway.
         self.optimize_module_llvm(&module)?;
-        let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
-        let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
+        let qubit_count: u64 =
+            replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
+        let result_count: u64 =
+            replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
         add_qir_runtime_contracts(&namer, hugr, &module)?;

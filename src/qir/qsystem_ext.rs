@@ -26,7 +26,7 @@ impl QirCodegenExtension {
     ) -> Result<()> {
         use QSystemOp::*;
         match op {
-            Measure => {
+            _Measure => {
                 let qb = args.inputs[0];
                 // i.e. Result*
                 let result = emit_qis_measure_to_result(context, qb)?;
@@ -51,7 +51,7 @@ impl QirCodegenExtension {
                 // futures are i1s, so this is fine
                 args.outputs.finish(context.builder(), [result_i1.into()])
             }
-            MeasureReset => {
+            _MeasureReset => {
                 let qb = args.inputs[0];
                 // i.e. Result*
                 let result = emit_qis_measure_to_result(context, qb)?;

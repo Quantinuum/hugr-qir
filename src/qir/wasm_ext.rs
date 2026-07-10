@@ -197,7 +197,7 @@ fn result_type<'c>(
     if outputs.len() > 1 {
         bail!("Result type has more than one output value")
     }
-    session.llvm_type(&outputs[0].clone().try_into().unwrap())
+    session.llvm_type(&outputs.clone().try_into().unwrap())
 }
 
 fn insert_func<'c, H: HugrView<Node = Node>>(
