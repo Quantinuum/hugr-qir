@@ -27,7 +27,7 @@ serde = "1.0"
 # this needs to match the version used by tket so we can implement its traits.
 strum = "0.28.0"
 tket = "0.18.0"
-tket-qsystem = { version = "0.24.0", features = ["cli"] }
+tket-qsystem = { version = "0.27.1", features = ["cli"] }
 wasmparser = { version = "0.252", default-features = false }
 
 [dev-dependencies]
