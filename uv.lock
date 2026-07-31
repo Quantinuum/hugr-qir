@@ -1040,7 +1040,7 @@ docs = [
 ]
 examples = [
     { name = "jupyterlab", specifier = ">=4.5.3" },
-    { name = "qnexus", specifier = ">=0.37.1,<0.47.0" },
+    { name = "qnexus", specifier = "~=0.46.0" },
 ]
 
 [[package]]
