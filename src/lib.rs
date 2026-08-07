@@ -1,7 +1,7 @@
 use std::num::NonZero;
 use std::rc::Rc;
 
-use crate::emit::{EmitDebugInfo, EmitFuncContext};
+use hugr_llvm::emit::{EmitDebugInfo, EmitFuncContext};
 use anyhow::anyhow;
 use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
@@ -26,9 +26,12 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, InlineFunctionsPass, PassScope, QSystemLLVMPass, QSystemRebasePass,
-    RemoveDeadFuncsPass, WithScope, composable::Preserve,
+    ComposablePass, InlineFunctionsPass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
+use tket_qsystem::{QSystemLLVMPass};
+use tket_qsystem::{QSystemRebasePass};
+use tket_qsystem::{PlatformTarget, QSystemPlatform};
+
 pub mod cli;
 pub mod lower_ssa_vars;
 pub mod qir;
@@ -114,7 +117,7 @@ impl CompileArgs {
             hugr.validate()?;
         }
         if self.qsystem_pass {
-            let passrebase = QSystemRebasePass::default();
+            let passrebase = QSystemRebasePass::defaults(QSystemPlatform::Helios);
             passrebase.run(hugr)?;
             let passllvm = QSystemLLVMPass::default();
             passllvm.run(hugr)?;
