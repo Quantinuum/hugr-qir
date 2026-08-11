@@ -19,9 +19,9 @@ def main() -> None:
     h(q1)
     h(q0)
     my_int = 0
-    a = measure(q0)
-    b = measure(q1)
-    c = measure(q2)
+    a = measure(q0).read()
+    b = measure(q1).read()
+    c = measure(q2).read()
     if a:
         my_int += 1
     if b:
@@ -38,7 +38,7 @@ def main() -> None:
     else:
         z(q3)
 
-    d = measure(q3)
+    d = measure(q3).read()
     result("a", a)
     result("b", b)
     result("c", c)

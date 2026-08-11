@@ -2,5 +2,5 @@ QIR generation failed. This may be the result of a bug but can also happen when 
 
 Caused by:
     0: Failed to emit LLVM for node N<CFG:Node(4)> with optype CFG
-    1: Failed to emit LLVM for node N<DFG:Node(75)> with optype DFG
+    1: Failed to emit LLVM for node N<DFG:Node(64)> with optype DFG
     2: Unknown type: array(1, qubit)

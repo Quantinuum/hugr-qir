@@ -12,5 +12,5 @@ def main() -> None:
     q1 = qubit()
     h(q1)
     h(q1)
-    result("0", measure(q0))
-    result("1", measure(q1))
+    result("0", measure(q0).read())
+    result("1", measure(q1).read())

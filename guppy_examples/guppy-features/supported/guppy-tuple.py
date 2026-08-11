@@ -31,7 +31,7 @@ def steane_cx(
 def steane_measure(
     stq: list[qubit] @ owned,
 ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
-    return tuple([measure(stq[i]) for i in range(7)])
+    return tuple([measure(stq[i]).read() for i in range(7)])
 
 
 @no_type_check

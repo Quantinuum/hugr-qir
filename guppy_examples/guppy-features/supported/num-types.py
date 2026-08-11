@@ -21,7 +21,12 @@ def int_from_reg(
     qs: tuple[qubit, qubit, qubit, qubit] @ owned,
 ) -> tuple[tuple[bool, bool, bool, bool], int]:
     res_integer_value = 0
-    rs = measure(qs[0]), measure(qs[1]), measure(qs[2]), measure(qs[3])
+    rs = (
+        measure(qs[0]).read(),
+        measure(qs[1]).read(),
+        measure(qs[2]).read(),
+        measure(qs[3]).read(),
+    )
     for i in range(4):
         res_integer_value = (res_integer_value << 1) | int(rs[i])
     return rs, res_integer_value

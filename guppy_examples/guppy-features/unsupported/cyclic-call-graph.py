@@ -37,4 +37,4 @@ def d(q: qubit) -> None:
 def main() -> None:
     q = qubit()
     d(q)
-    result("0", measure(q))
+    result("0", measure(q).read())

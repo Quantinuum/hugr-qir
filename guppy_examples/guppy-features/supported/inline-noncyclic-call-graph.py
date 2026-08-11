@@ -55,4 +55,4 @@ def main() -> None:
     d(q)
     f(q)
 
-    result("0", measure(q))
+    result("0", measure(q).read())

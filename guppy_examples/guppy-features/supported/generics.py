@@ -45,4 +45,4 @@ def main() -> None:
         discard(arr3[i])
 
     result("arr1_1", arr1[1])
-    result("arr3_7", measure(arr3[7]))
+    result("arr3_7", measure(arr3[7]).read())

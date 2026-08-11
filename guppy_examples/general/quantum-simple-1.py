@@ -10,4 +10,4 @@ from guppylang.std.quantum import measure, x
 def main() -> None:
     q = qubit()
     x(q)
-    result("0", measure(q))
+    result("0", measure(q).read())

@@ -14,7 +14,7 @@ def a_function(n: int) -> int:
 def b_function() -> qubit:
     q1, q2 = qubit(), qubit()
     x(q1)
-    if measure(q1):
+    if measure(q1).read():
         x(q2)
     return q2
 
@@ -26,7 +26,7 @@ def main() -> None:
     my_function = a_function
     res = my_function(100)
     result("res", res)
-    result("q", measure(q_func()))
+    result("q", measure(q_func()).read())
 
 
 if __name__ == "__main__":

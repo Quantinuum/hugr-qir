@@ -20,5 +20,5 @@ def main() -> None:
     fun_func(q0)
     fun_func(q1)
 
-    result("0", measure(q0))
-    result("1", measure(q1))
+    result("0", measure(q0).read())
+    result("1", measure(q1).read())

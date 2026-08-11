@@ -14,9 +14,9 @@ def main() -> None:
     h(q0)
     cx(q0, q1)
 
-    b0 = measure(q0)
+    b0 = measure(q0).read()
 
     if b0:
         x(q1)
 
-    result("0", measure(q1))
+    result("0", measure(q1).read())

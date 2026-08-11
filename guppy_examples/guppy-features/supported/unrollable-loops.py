@@ -21,7 +21,7 @@ def main() -> None:
     for _ in range(30):
         x(q1)
 
-    result("q", measure(q1))
+    result("q", measure(q1).read())
 
 
 if __name__ == "__main__":

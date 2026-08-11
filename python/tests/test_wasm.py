@@ -7,7 +7,7 @@ from guppylang.std.platform import result
 from guppylang.std.quantum import measure
 from guppylang_internals.decorator import wasm, wasm_module
 from guppylang_internals.error import GuppyError
-from guppylang_internals.wasm_util import WasmPlatform
+from guppylang_internals.std._internal.wasm import WasmPlatform
 from hugr_qir.hugr_to_qir import hugr_to_qir
 
 
@@ -88,7 +88,7 @@ def test_h2_wasm_mod_supported_functions(h2_wasm_file: Path) -> None:
         mod1.no_return(thirty_six)
         mod1.no_return_id(new_int)
         mod1.discard()
-        result("q", measure(q))
+        result("q", measure(q).read())
         result("new_int2", new_int2)
 
     hugr = main.compile()
@@ -217,7 +217,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.consume_float_id(0.4)
             q = qubit()
             mod1.discard()
-            result("q", measure(q))
+            result("q", measure(q).read())
     elif func_name == "consume_float":
 
         @guppy
@@ -227,7 +227,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.consume_float(0.4)
             q = qubit()
             mod1.discard()
-            result("q", measure(q))
+            result("q", measure(q).read())
     elif func_name == "nothing" and lookup_by_id:
 
         @guppy
@@ -237,7 +237,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.nothing_id()
             q = qubit()
             mod1.discard()
-            result("q", measure(q))
+            result("q", measure(q).read())
     elif func_name == "nothing":
 
         @guppy
@@ -247,7 +247,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.nothing()
             q = qubit()
             mod1.discard()
-            result("q", measure(q))
+            result("q", measure(q).read())
     else:
         raise ValueError
 
@@ -265,7 +265,7 @@ def test_loading_but_not_using_helios_wasm_mod_is_not_an_error(
         mod1 = wasm_module_class(1)
         q = qubit()
         mod1.discard()
-        result("q", measure(q))
+        result("q", measure(q).read())
 
     hugr = main.compile()
     hugr_to_qir(hugr, wasm_file=helios_wasm_file)

@@ -27,5 +27,5 @@ def main() -> None:
     ry(q0, angle(1.5))
     rz(q0, angle(1.5))
 
-    result("0", measure(q0))
-    result("1", measure(q1))
+    result("0", measure(q0).read())
+    result("1", measure(q1).read())

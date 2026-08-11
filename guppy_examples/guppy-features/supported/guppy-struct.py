@@ -59,13 +59,13 @@ def steane_measure_result(steane_qb: SteaneQubit @ owned, name: str) -> None:
     :param steane_qb: The Steane Qubit to measure
     :param name: Name of Steane Qubit for result identification
     """
-    result(f"{name}_0", measure(steane_qb.pq0))
-    result(f"{name}_1", measure(steane_qb.pq1))
-    result(f"{name}_2", measure(steane_qb.pq2))
-    result(f"{name}_3", measure(steane_qb.pq3))
-    result(f"{name}_4", measure(steane_qb.pq4))
-    result(f"{name}_5", measure(steane_qb.pq5))
-    result(f"{name}_6", measure(steane_qb.pq6))
+    result(f"{name}_0", measure(steane_qb.pq0).read())
+    result(f"{name}_1", measure(steane_qb.pq1).read())
+    result(f"{name}_2", measure(steane_qb.pq2).read())
+    result(f"{name}_3", measure(steane_qb.pq3).read())
+    result(f"{name}_4", measure(steane_qb.pq4).read())
+    result(f"{name}_5", measure(steane_qb.pq5).read())
+    result(f"{name}_6", measure(steane_qb.pq6).read())
 
 
 def steane_cz(q1: SteaneQubit, q2: SteaneQubit) -> None:

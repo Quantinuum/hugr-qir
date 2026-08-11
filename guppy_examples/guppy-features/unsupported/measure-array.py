@@ -3,7 +3,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import array, qubit, result
-from guppylang.std.quantum import cx, h, measure_array
+from guppylang.std.quantum import cx, h, measure_array, collect_measurements
 
 
 @guppy.comptime
@@ -16,7 +16,8 @@ def main() -> None:
         else:
             cx(qbs[i - 1], qbs[i])
 
-    result("qbs", measure_array(qbs))
+    results = collect_measurements(measure_array(qbs))
+    result("qbs", results)
 
 
 if __name__ == "__main__":

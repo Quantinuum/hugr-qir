@@ -11,14 +11,6 @@ target triple = "aarch64-unknown-linux-gnu"
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr null)
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
@@ -27,10 +19,6 @@ alloca_block:
   tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
   ret void
 }
-
-declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
-
-declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1
 

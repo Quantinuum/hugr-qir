@@ -20,7 +20,7 @@ def main() -> None:
         toffoli(a, b, q)
         s(q)
         toffoli(a, b, q)
-        if not (measure(h(a)) | measure(h(b))):
+        if not (measure(h(a)).read() | measure(h(b)).read()):
             result("attempts", n)
             result("success", True)
             discard(q)

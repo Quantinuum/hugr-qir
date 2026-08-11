@@ -20,4 +20,4 @@ def rx(q: qubit, x: angle) -> None:
 def main() -> None:
     q = qubit()
     rx(q, angle(1.5))
-    result("1", measure(q))
+    result("1", measure(q).read())

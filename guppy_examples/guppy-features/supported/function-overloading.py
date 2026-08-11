@@ -34,8 +34,8 @@ def main() -> None:
     # compiler dispatches one_state() to be used here
     other_q = apply_x_to_something()
 
-    result("q", measure(q))
-    result("other_q", measure(other_q))
+    result("q", measure(q).read())
+    result("other_q", measure(other_q).read())
 
 
 if __name__ == "__main__":

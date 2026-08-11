@@ -10,14 +10,14 @@ from guppylang.std.quantum import h, measure
 def main() -> None:
     q0, q1 = qubit(), qubit()
     h(q0)
-    a = measure(q0)
+    a = measure(q0).read()
     b = False
     if a:
         h(q1)
-        b = measure(q1)
+        b = measure(q1).read()
         if b:
             b = False
     else:
-        b = measure(q1)
+        b = measure(q1).read()
     result("a", a)
     result("b", b)

@@ -23,40 +23,26 @@ alloca_block:
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 2 to ptr))
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 2 to ptr))
-  %"41_3.0" = zext i1 %0 to i64
+  %"40_3.0" = zext i1 %0 to i64
   %3 = select i1 %0, i64 2, i64 1
-  %"56_3.0" = select i1 %1, i64 %3, i64 %"41_3.0"
+  %"56_3.0" = select i1 %1, i64 %3, i64 %"40_3.0"
   %4 = zext i1 %2 to i64
-  %"71_3.0" = add nuw nsw i64 %"56_3.0", %4
-  %Pivot943 = icmp samesign ult i64 %"71_3.0", 2
-  br i1 %Pivot943, label %LeafBlock, label %NodeBlock
+  %"72_3.0" = add nuw nsw i64 %"56_3.0", %4
+  br label %NodeBlock577
 
-NodeBlock:                                        ; preds = %alloca_block
-  %Pivot = icmp eq i64 %"71_3.0", 2
-  br i1 %Pivot, label %bb1, label %bb2
+NodeBlock577:                                     ; preds = %alloca_block
+  %Pivot578 = icmp slt i64 %"72_3.0", 1
+  br i1 %Pivot578, label %bb0, label %NodeBlock
 
-LeafBlock:                                        ; preds = %alloca_block
-  %SwitchLeaf = icmp eq i64 %"71_3.0", 1
-  br i1 %SwitchLeaf, label %bb0, label %bb
+NodeBlock:                                        ; preds = %NodeBlock577
+  %Pivot = icmp slt i64 %"72_3.0", 2
+  br i1 %Pivot, label %bb1, label %LeafBlock
 
-bb:                                               ; preds = %LeafBlock
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  br label %cond_exit_466
+LeafBlock:                                        ; preds = %NodeBlock
+  %SwitchLeaf = icmp eq i64 %"72_3.0", 2
+  br i1 %SwitchLeaf, label %bb3, label %bb2
 
-bb0:                                              ; preds = %LeafBlock
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  br label %cond_exit_466
-
-bb1:                                              ; preds = %NodeBlock
-  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  br label %cond_exit_466
-
-bb2:                                              ; preds = %NodeBlock
-  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 3 to ptr))
-  br label %cond_exit_466
-
-cond_exit_466:                                    ; preds = %bb0, %bb2, %bb1, %bb
+bb:                                               ; preds = %bb1, %bb2, %bb3, %bb0
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 3 to ptr))
   %5 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 3 to ptr))
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
@@ -64,6 +50,23 @@ cond_exit_466:                                    ; preds = %bb0, %bb2, %bb1, %b
   tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @2)
   tail call void @__quantum__rt__bool_record_output(i1 %5, ptr nonnull @3)
   ret void
+
+bb0:                                              ; preds = %NodeBlock577
+  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
+  br label %bb
+
+bb1:                                              ; preds = %NodeBlock
+  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
+  br label %bb
+
+bb2:                                              ; preds = %LeafBlock
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 3 to ptr))
+  br label %bb
+
+bb3:                                              ; preds = %LeafBlock
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
+  br label %bb
 }
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr

@@ -13,14 +13,14 @@ def main() -> None:
     h(q0)
     barrier(q0)
     h(q0)
-    a = measure(q0)
+    a = measure(q0).read()
     b = False
     if a:
         h(q1)
-        b = measure(q1)
+        b = measure(q1).read()
         if b:
             b = False
     else:
-        b = measure(q1)
+        b = measure(q1).read()
     result("a", a)
     result("b", b)

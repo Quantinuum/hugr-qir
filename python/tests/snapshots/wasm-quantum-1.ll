@@ -11,13 +11,13 @@ target triple = "aarch64-unknown-linux-gnu"
 define void @__hugr__.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
+  %0 = tail call i64 @add_one(i64 1)
+  %1 = tail call i64 @multi(i64 2, i64 3)
+  %2 = add i64 %1, %0
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
-  %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
-  %1 = tail call i64 @add_one(i64 1)
-  %2 = tail call i64 @multi(i64 2, i64 3)
-  %3 = add i64 %2, %1
-  tail call void @__quantum__rt__int_record_output(i64 %3, ptr nonnull @1)
+  %3 = tail call i1 @__quantum__rt__read_result(ptr null)
+  tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @0)
+  tail call void @__quantum__rt__int_record_output(i64 %2, ptr nonnull @1)
   ret void
 }
 

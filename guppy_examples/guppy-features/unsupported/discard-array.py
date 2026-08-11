@@ -18,7 +18,7 @@ def main() -> None:
 
     measure_q, *discard_qs = qbs
 
-    result("qb0", measure(measure_q))
+    result("qb0", measure(measure_q).read())
     discard_array(discard_qs)
 
 

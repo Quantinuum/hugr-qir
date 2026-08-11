@@ -1,12 +1,12 @@
 import sys
-from collections.abc import Callable
 
 from guppylang import guppy
 from guppylang.std.platform import result
+from guppylang.std.builtins import Function
 
 
 @guppy
-def my_function(f: Callable[[int], bool]) -> Callable[[int], bool]:
+def my_function(f: Function[[int], bool]) -> Function[[int], bool]:
     # Takes a callable `f` that accepts an integer and returns a boolean.
     return f
 

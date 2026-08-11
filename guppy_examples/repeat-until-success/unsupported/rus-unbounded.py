@@ -21,7 +21,7 @@ def main() -> None:
         tdg(a)
         cx(b, a)
         t(a)
-        if measure(h(a)):
+        if measure(h(a)).read():
             discard(b)
             continue
 
@@ -29,11 +29,11 @@ def main() -> None:
         z(q)
         cx(q, b)
         t(b)
-        if measure(h(b)):
+        if measure(h(b)).read():
             z(q)
             continue
 
         result("attempts", n)
         result("success", True)
-        result("q", measure(q))
+        result("q", measure(q).read())
         break

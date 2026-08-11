@@ -17,5 +17,5 @@ def main() -> None:
     if r.random_int_bounded(100) == 5:
         h(q1)
     r.discard()
-    result("0", measure(q0))
-    result("1", measure(q1))
+    result("0", measure(q0).read())
+    result("1", measure(q1).read())

@@ -21,7 +21,7 @@ def main() -> None:
     q = qubit()
     x(q)
     recursive_func(q, 0)
-    result("q", measure(q))
+    result("q", measure(q).read())
 
 
 if __name__ == "__main__":

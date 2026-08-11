@@ -8,7 +8,7 @@ def main() -> None:
     q = qubit()
     fake_ancilla = qubit()
     h(fake_ancilla)
-    if measure(fake_ancilla):
+    if measure(fake_ancilla).read():
         exit("Postselected: Criteria not met", 1)
     x(q)
-    result("q", measure(q))
+    result("q", measure(q).read())

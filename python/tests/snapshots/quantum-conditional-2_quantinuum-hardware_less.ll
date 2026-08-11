@@ -15,25 +15,25 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  br i1 %0, label %cond_64_case_1, label %bb
+  br i1 %0, label %cond_exit_20, label %bb0
 
-cond_exit_201:                                    ; preds = %cond_64_case_1, %bb
-  %"55_1.sroa.0.0" = phi i1 [ false, %cond_64_case_1 ], [ %1, %bb ]
+bb:                                               ; preds = %cond_exit_20, %bb0
+  %"1.0" = phi i1 [ %1, %bb0 ], [ false, %cond_exit_20 ]
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
-  tail call void @__quantum__rt__bool_record_output(i1 %"55_1.sroa.0.0", ptr nonnull @1)
+  tail call void @__quantum__rt__bool_record_output(i1 %"1.0", ptr nonnull @1)
   ret void
 
-bb:                                               ; preds = %alloca_block
+bb0:                                              ; preds = %alloca_block
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
-  br label %cond_exit_201
+  br label %bb
 
-cond_64_case_1:                                   ; preds = %alloca_block
+cond_exit_20:                                     ; preds = %alloca_block
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 2 to ptr))
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 2 to ptr))
-  br label %cond_exit_201
+  br label %bb
 }
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr

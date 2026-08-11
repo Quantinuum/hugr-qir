@@ -20,8 +20,8 @@ def main() -> None:
     h(q0)
     h(q1)
 
-    b0 = measure(q0)
-    b1 = measure(q1)
+    b0 = measure(q0).read()
+    b1 = measure(q1).read()
     b2 = b0 ^ b1
 
     result("0", b2)

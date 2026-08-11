@@ -57,7 +57,7 @@ def main() -> None:
     result("s1", bool_array_as_int(syndromes_1))
     indices = decoder_1(syndromes_1)
     correction(indices, data_qubits)
-    result("c", bool_array_as_int([measure(q) for q in data_qubits]))
+    result("c", bool_array_as_int([measure(q).read() for q in data_qubits]))
 
 
 def syndrome_extraction(q: list[qubit], indices: list[int]) -> bool:
@@ -66,7 +66,7 @@ def syndrome_extraction(q: list[qubit], indices: list[int]) -> bool:
         h(q[i])
         cx(q[i], ancilla)
         h(q[i])
-    return measure(ancilla)
+    return measure(ancilla).read()
 
 
 @guppy

@@ -36,8 +36,8 @@ def rus_attempt(q: qubit, a: qubit, b: qubit) -> bool:
     toffoli(a, b, q)
     h(a)
     h(b)
-    c0 = measure_and_reset(a)
-    c1 = measure_and_reset(b)
+    c0 = measure_and_reset(a).read()
+    c1 = measure_and_reset(b).read()
     if not (c0 | c1):
         return True
     z(q)

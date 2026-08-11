@@ -14,4 +14,4 @@ def main() -> None:
     r = RNG(11)
     r.random_advance(1)
     r.discard()
-    result("0", measure(q0))
+    result("0", measure(q0).read())

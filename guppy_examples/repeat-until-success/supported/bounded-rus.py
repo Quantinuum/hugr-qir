@@ -16,14 +16,14 @@ def rus_attempt(q: qubit) -> bool:
     tdg(a)
     cx(b, a)
     t(a)
-    if measure(h(a)):
+    if measure(h(a)).read():
         discard(b)
         return False
     t(q)
     z(q)
     cx(q, b)
     t(b)
-    if measure(h(b)):
+    if measure(h(b)).read():
         z(q)
         return False
     return True
@@ -55,4 +55,4 @@ def main() -> None:
         ok, n = rus_step(q, ok, n)
     result("attempts", n)
     result("success", ok)
-    result("q", measure(q))
+    result("q", measure(q).read())
