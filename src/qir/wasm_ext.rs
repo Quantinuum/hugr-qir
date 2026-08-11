@@ -189,6 +189,7 @@ fn result_type<'c>(
     let wasm::WasmType::Result { outputs } = hugr_type.clone().try_into()? else {
         anyhow::bail!("Expected WasmType::Result");
     };
+    let outputs: TypeRow = outputs.try_into()?;
 
     if outputs.is_empty() {
         return Ok(empty_struct_type(session.iw_context()).into());
@@ -271,7 +272,7 @@ fn validate_lookup_row_against_wasm(
             ValType::I32 if hugr_type_matches_wasm_i32(requested_ty) => None,
             _ => Some(format!(
                 "{row_kind} {idx} has requested type {} but wasm function expects {wasm_ty}",
-                requested_ty.as_type_enum()
+                requested_ty
             )),
         })
         .collect_vec();

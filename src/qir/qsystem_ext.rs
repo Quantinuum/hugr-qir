@@ -26,14 +26,6 @@ impl QirCodegenExtension {
     ) -> Result<()> {
         use QSystemOp::*;
         match op {
-            Measure => {
-                let qb = args.inputs[0];
-                // i.e. Result*
-                let result = emit_qis_measure_to_result(context, qb)?;
-
-                let result_bool = emit_qis_read_result(context, result)?;
-                args.outputs.finish(context.builder(), [result_bool])
-            }
             LazyMeasure => {
                 let qb = args.inputs[0];
                 // i.e. Result*
@@ -50,14 +42,6 @@ impl QirCodegenExtension {
                 let result_i1 = context.builder().build_int_truncate(result_i32, i1, "")?;
                 // futures are i1s, so this is fine
                 args.outputs.finish(context.builder(), [result_i1.into()])
-            }
-            MeasureReset => {
-                let qb = args.inputs[0];
-                // i.e. Result*
-                let result = emit_qis_measure_to_result(context, qb)?;
-                let _ = emit_qis_gate(context, "__quantum__qis__reset__body", [], [qb])?;
-                let result_bool = emit_qis_read_result(context, result)?;
-                args.outputs.finish(context.builder(), [qb, result_bool])
             }
             LazyMeasureReset => {
                 let qb = args.inputs[0];
@@ -130,7 +114,7 @@ mod test {
 
     use tket::passes::ComposablePass;
     use tket_qsystem::extension::qsystem::QSystemOp;
-
+    use tket_qsystem::QSystemPlatform;
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
     use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
@@ -150,7 +134,6 @@ mod test {
     }
 
     #[rstest]
-    #[case(QSystemOp::MeasureReset)]
     #[case(QSystemOp::Reset)]
     #[case(QSystemOp::QFree)]
     #[case(QSystemOp::TryQAlloc)]
@@ -159,17 +142,16 @@ mod test {
     #[case(QSystemOp::Rz)]
     #[case(QSystemOp::LazyMeasure)]
     #[case(QSystemOp::LazyMeasureReset)]
-    #[case(QSystemOp::Measure)]
     fn emit(ctx: TestContext, #[case] op: impl Into<OpType>) {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let op = op.into();
         let mut insta = insta::Settings::clone_current();
         insta.set_snapshot_suffix(format!("{}_{}", insta.snapshot_suffix().unwrap_or(""), op));
         insta.bind(|| {
-            use tket_qsystem::QSystemPass;
+            use tket_qsystem::QSystemRebasePass;
 
             let mut hugr = single_op_hugr(op);
-            QSystemPass::default().run(&mut hugr).unwrap();
+            QSystemRebasePass::defaults(QSystemPlatform::Helios).run(&mut hugr).unwrap();
             check_emission!(hugr, ctx);
         })
     }

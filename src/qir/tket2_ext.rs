@@ -162,7 +162,6 @@ mod test {
     use rstest::rstest;
     use tket::TketOp;
 
-    use crate::qir::boolcodegenextension_workaround::BoolCodegenExtension;
     use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
     use crate::{

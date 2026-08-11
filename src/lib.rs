@@ -13,6 +13,7 @@ use hugr::llvm::utils::fat::FatExt;
 use hugr::ops::OpType;
 use hugr::{Hugr, Node};
 use hugr_core::hugr::internal::HugrMutInternals;
+use hugr_llvm::emit::EmitDebugInfo;
 pub(crate) use hugr_llvm::inkwell;
 use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
@@ -25,7 +26,8 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve, inline_acyclic,
+    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
+    InlineFunctionsPass
 };
 pub mod cli;
 pub mod lower_ssa_vars;
@@ -40,6 +42,7 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 use itertools::Itertools;
+use tket_qsystem::QSystemPlatform;
 
 #[cfg(feature = "py")]
 mod py;
@@ -112,8 +115,8 @@ impl CompileArgs {
             hugr.validate()?;
         }
         if self.qsystem_pass {
-            let pass = tket_qsystem::QSystemPass::default();
-            pass.run(hugr)?;
+            let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(QSystemPlatform::Helios);
+            qsystem_pass.run(hugr)?;
             if self.validate {
                 hugr.validate()?;
             }
@@ -127,9 +130,8 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        inline_acyclic(hugr, |_, _| {
-            true // <- always inline, no matter what
-        })?;
+        let inline_pass = InlineFunctionsPass::default();
+        inline_pass.run(hugr)?;
         if self.validate {
             hugr.validate()?;
         }
@@ -178,7 +180,9 @@ impl CompileArgs {
         let namer = Rc::new(Namer::new("__hugr__.", true));
         let module = context.create_module(self.module_name().as_ref());
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
-        let module = emit.emit_module(hugr.fat_root().unwrap())?.finish();
+
+        // Don't use debug info for now
+        let module = emit.emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)?.finish().0;
 
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
@@ -396,17 +400,13 @@ pub fn add_module_metadata(
             .metadata_node(&[val_3_0.into(), val_3_1.into(), val_3_2.into()]);
 
     module
-        .add_global_metadata("llvm.module.flags", &md_node_0)
-        .unwrap();
+        .add_global_metadata("llvm.module.flags", &md_node_0)?;
     module
-        .add_global_metadata("llvm.module.flags", &md_node_1)
-        .unwrap();
+        .add_global_metadata("llvm.module.flags", &md_node_1)?;
     module
-        .add_global_metadata("llvm.module.flags", &md_node_2)
-        .unwrap();
+        .add_global_metadata("llvm.module.flags", &md_node_2)?;
     module
-        .add_global_metadata("llvm.module.flags", &md_node_3)
-        .unwrap();
+        .add_global_metadata("llvm.module.flags", &md_node_3)?;
 
     Ok(())
 }
