@@ -1,5 +1,5 @@
 ---
-source: src/qir/tket2_ext.rs
+source: src/qir/qsystem_ext.rs
 expression: mod_str
 ---
 ; ModuleID = 'test_context'
@@ -17,7 +17,6 @@ entry_block:                                      ; preds = %alloca_block
   %"2_01" = load ptr, ptr %"2_0", align 8
   %1 = call ptr @__QIR__CONV_Qubit_TO_Result(ptr %"2_01"), !dbg !9
   call void @__quantum__qis__mz__body(ptr %"2_01", ptr %1), !dbg !9
-  call void @__quantum__rt__qubit_release(ptr %"2_01"), !dbg !9
   %2 = call i1 @__quantum__rt__read_result(ptr %1), !dbg !9
   %3 = select i1 %2, i1 true, i1 false, !dbg !9
   store i1 %3, ptr %"4_0", align 1, !dbg !9
@@ -30,8 +29,6 @@ entry_block:                                      ; preds = %alloca_block
 declare ptr @__QIR__CONV_Qubit_TO_Result(ptr)
 
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) #0
-
-declare void @__quantum__rt__qubit_release(ptr)
 
 declare i1 @__quantum__rt__read_result(ptr readonly)
 

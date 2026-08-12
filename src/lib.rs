@@ -26,8 +26,8 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
-    InlineFunctionsPass
+    ComposablePass, InlineFunctionsPass, PassScope, RemoveDeadFuncsPass, WithScope,
+    composable::Preserve,
 };
 pub mod cli;
 pub mod lower_ssa_vars;
@@ -35,7 +35,9 @@ pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
-use crate::lower_ssa_vars::{lower_float_selects_and_phis, lower_qubit_selects_and_phis, normalize_block_names};
+use crate::lower_ssa_vars::{
+    lower_float_selects_and_phis, lower_qubit_selects_and_phis, normalize_block_names,
+};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -180,7 +182,10 @@ impl CompileArgs {
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
 
         // Don't use debug info for now
-        let module = emit.emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)?.finish().0;
+        let module = emit
+            .emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)?
+            .finish()
+            .0;
 
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
@@ -397,14 +402,10 @@ pub fn add_module_metadata(
             .get_context()
             .metadata_node(&[val_3_0.into(), val_3_1.into(), val_3_2.into()]);
 
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_0)?;
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_1)?;
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_2)?;
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_3)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_0)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_1)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_2)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_3)?;
 
     Ok(())
 }

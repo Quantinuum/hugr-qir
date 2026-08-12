@@ -3,7 +3,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import array, qubit, result
-from guppylang.std.quantum import cx, h, measure_array, collect_measurements
+from guppylang.std.quantum import collect_measurements, cx, h, measure_array
 
 
 @guppy.comptime

@@ -112,12 +112,12 @@ mod test {
     };
     use rstest::rstest;
 
-    use tket::passes::ComposablePass;
-    use tket_qsystem::extension::qsystem::QSystemOp;
-    use tket_qsystem::QSystemPlatform;
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
     use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
+    use tket::passes::ComposablePass;
+    use tket_qsystem::QSystemPlatform;
+    use tket_qsystem::extension::qsystem::QSystemOp;
 
     #[rstest::fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
@@ -151,7 +151,9 @@ mod test {
             use tket_qsystem::QSystemRebasePass;
 
             let mut hugr = single_op_hugr(op);
-            QSystemRebasePass::defaults(QSystemPlatform::Helios).run(&mut hugr).unwrap();
+            QSystemRebasePass::defaults(QSystemPlatform::Helios)
+                .run(&mut hugr)
+                .unwrap();
             check_emission!(hugr, ctx);
         })
     }

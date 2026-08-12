@@ -277,50 +277,66 @@ def test_loading_but_not_using_helios_wasm_mod_is_not_an_error(
         (
             "add",
             False,
-            r"(?=.*wasm function)(?=.*add)"
-            "(?=.*unsupported parameter types)(?=.*i64)",
+            (
+                r"(?=.*wasm function)(?=.*add)"
+                "(?=.*unsupported parameter types)(?=.*i64)"
+            ),
         ),
         (
             "add",
             True,
-            r"(?=.*wasm function)(?=.*add)"
-            "(?=.*unsupported parameter types)(?=.*i64)",
+            (
+                r"(?=.*wasm function)(?=.*add)"
+                "(?=.*unsupported parameter types)(?=.*i64)"
+            ),
         ),
         (
             "two",
             False,
-            r"(?=.*wasm function)(?=.*two)"
-            "(?=.*unsupported result type)(?=.*i64)",
+            (
+                r"(?=.*wasm function)(?=.*two)"
+                "(?=.*unsupported result type)(?=.*i64)"
+            ),
         ),
         (
             "two",
             True,
-            r"(?=.*wasm function)(?=.*two)"
-            "(?=.*unsupported result type)(?=.*i64)",
+            (
+                r"(?=.*wasm function)(?=.*two)"
+                "(?=.*unsupported result type)(?=.*i64)"
+            ),
         ),
         (
             "fid",
             False,
-            r"(?=.*wasm function)(?=.*fid)"
-            "(?=.*unsupported parameter types)(?=.*f64)",
+            (
+                r"(?=.*wasm function)(?=.*fid)"
+                "(?=.*unsupported parameter types)(?=.*f64)"
+            ),
         ),
         (
             "fid",
             True,
-            r"(?=.*wasm function)(?=.*fid)"
-            "(?=.*unsupported parameter types)(?=.*f64)",
+            (
+                r"(?=.*wasm function)(?=.*fid)"
+                "(?=.*unsupported parameter types)(?=.*f64)"
+            ),
         ),
         (
             "consume_float",
             False,
-            r"(?=.*wasm function)(?=.*consume_float)"
-            "(?=.*unsupported parameter types)(?=.*f64)",
+            (
+                r"(?=.*wasm function)(?=.*consume_float)"
+                "(?=.*unsupported parameter types)(?=.*f64)"
+            ),
         ),
         (
             "consume_float",
             True,
-            r"(?=.*wasm function)(?=.*consume_float)"
-            "(?=.*unsupported parameter types)(?=.*f64)",
+            (
+                r"(?=.*wasm function)(?=.*consume_float)"
+                "(?=.*unsupported parameter types)(?=.*f64)"
+            ),
         ),
     ],
     ids=[

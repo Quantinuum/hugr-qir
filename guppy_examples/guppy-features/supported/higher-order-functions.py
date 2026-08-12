@@ -1,8 +1,8 @@
 import sys
 
 from guppylang import guppy
-from guppylang.std.platform import result
 from guppylang.std.builtins import Function
+from guppylang.std.platform import result
 
 
 @guppy

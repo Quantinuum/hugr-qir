@@ -1,32 +1,20 @@
 ---
-source: src/qir/tket2_ext.rs
+source: src/qir/qsystem_ext.rs
 expression: mod_str
 ---
 ; ModuleID = 'test_context'
 source_filename = "test_context"
 
-define i1 @_hl.main.1(ptr %0) !dbg !3 {
+define void @_hl.main.1(ptr %0) !dbg !3 {
 alloca_block:
   br label %entry_block
 
 entry_block:                                      ; preds = %alloca_block
-  %1 = call ptr @__QIR__CONV_Qubit_TO_Result(ptr %0), !dbg !9
-  call void @__quantum__qis__mz__body(ptr %0, ptr %1), !dbg !9
-  call void @__quantum__rt__qubit_release(ptr %0), !dbg !9
-  %2 = call i1 @__quantum__rt__read_result(ptr %1), !dbg !9
-  %3 = select i1 %2, i1 true, i1 false, !dbg !9
-  ret i1 %3
+  call void @__quantum__rt__qubit_release(ptr %0), !dbg !8
+  ret void
 }
 
-declare ptr @__QIR__CONV_Qubit_TO_Result(ptr)
-
-declare void @__quantum__qis__mz__body(ptr, ptr writeonly) #0
-
 declare void @__quantum__rt__qubit_release(ptr)
-
-declare i1 @__quantum__rt__read_result(ptr readonly)
-
-attributes #0 = { "irreversible" }
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}
@@ -37,7 +25,6 @@ attributes #0 = { "irreversible" }
 !3 = distinct !DISubprogram(name: "_hl.main.1", linkageName: "_hl.main.1", scope: null, file: !4, line: 25254, type: !5, scopeLine: 25255, spFlags: DISPFlagDefinition, unit: !1)
 !4 = !DIFile(filename: "/cmJrSnVYeXFf/zCkHdtWCCnkJhPKiWSKICgZuRNRvR/mbrfVq.gpy.py", directory: "")
 !5 = !DISubroutineType(types: !6)
-!6 = !{!7, !8}
-!7 = !DIBasicType(name: "i1", size: 1, encoding: DW_ATE_unsigned)
-!8 = !DIBasicType(name: "ptr", size: 64, encoding: DW_ATE_address)
-!9 = !DILocation(line: 27062, column: 402, scope: !3)
+!6 = !{null, !7}
+!7 = !DIBasicType(name: "ptr", size: 64, encoding: DW_ATE_address)
+!8 = !DILocation(line: 27062, column: 402, scope: !3)

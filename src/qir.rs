@@ -1,4 +1,5 @@
 pub mod futures_ext;
+pub mod measurement_ext;
 pub mod qsystem_ext;
 pub mod random_ext;
 pub mod result_ext;
@@ -24,6 +25,7 @@ use inkwell::{
     types::BasicType,
 };
 use itertools::Itertools;
+use tket::extension::measurement;
 use tket_qsystem::extension::futures;
 
 use crate::target::CompileTarget;
@@ -139,8 +141,6 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
     else {
         bail!("expected a result from measure")
     };
-
-    println!("{:?}", result.get_type());
 
     let measure_t = iw_ctx
         .void_type()
@@ -262,5 +262,19 @@ impl CodegenExtension for QirCodegenExtension {
                     move |session, custom_type| s.convert_future_type(session, custom_type)
                 },
             )
+            .custom_type(
+                (
+                    measurement::MEASUREMENT_EXTENSION_ID,
+                    measurement::MEASUREMENT_TYPE_ID.to_string().into(),
+                ),
+                {
+                    let s = self.clone();
+                    move |session, custom_type| s.convert_measurement_type(session, custom_type)
+                },
+            )
+            .simple_extension_op::<tket::extension::measurement::MeasurementOp>({
+                let s = self.clone();
+                move |context, args, op| s.emit_measurement_op(context, args, op)
+            })
     }
 }

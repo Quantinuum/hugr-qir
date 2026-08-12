@@ -155,7 +155,10 @@ impl QirCodegenExtension {
 #[cfg(test)]
 mod test {
     use hugr::ops::OpType;
-    use hugr_llvm::{check_emission, test::{TestContext, llvm_ctx}, CodegenExtension};
+    use hugr_llvm::{
+        check_emission,
+        test::{TestContext, llvm_ctx},
+    };
     use rstest::rstest;
     use tket::TketOp;
 
@@ -182,8 +185,8 @@ mod test {
     #[rstest]
     #[case(TketOp::QFree)]
     #[case(TketOp::QAlloc)]
-    //#[case(TketOp::Measure)]
-    //#[case(TketOp::MeasureFree)]
+    #[case(TketOp::Measure)]
+    #[case(TketOp::MeasureFree)]
     #[case(TketOp::Reset)]
     #[case(TketOp::Rz)]
     #[case(TketOp::Ry)]
