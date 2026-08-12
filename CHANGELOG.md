@@ -3,6 +3,7 @@
 ### v0.2.0-rc2
 
 - update to guppylang v1.0.1
+- drop support for python 3.10 and 3.11
 - update to hugr 0.29
 - update to tket 0.21
 - update to tket-qsystem 0.27
