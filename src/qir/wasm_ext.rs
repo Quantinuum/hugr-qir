@@ -509,7 +509,7 @@ mod test {
                     wasm_file: Some("example.wasm".into()),
                 })
         });
-        let hugr = single_op_hugr(op.into());
+        let mut hugr = single_op_hugr(op.into());
         check_emission!(hugr, llvm_ctx);
     }
 

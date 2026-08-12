@@ -140,6 +140,8 @@ fn emit_qis_measure_to_result<'c, H: HugrView<Node = Node>>(
         bail!("expected a result from measure")
     };
 
+    println!("{:?}", result.get_type());
+
     let measure_t = iw_ctx
         .void_type()
         .fn_type(&[qb.get_type().into(), result.get_type().into()], false);

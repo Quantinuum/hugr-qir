@@ -10,33 +10,33 @@ source_filename = "test_context"
 @1 = private unnamed_addr constant [37 x i8] c"Expected variant 1 but got variant 0\00", align 1
 @prelude.panic_template.1 = private unnamed_addr constant [34 x i8] c"Program panicked (signal %i): %s\0A\00", align 1
 
-define internal void @_hl.main.1(double %0) {
+define internal void @_hl.main.1(double %0) !dbg !3 {
 alloca_block:
   br label %entry_block
 
 entry_block:                                      ; preds = %alloca_block
-  %1 = fcmp oeq double %0, 0x7FF0000000000000
-  %2 = fcmp oeq double %0, 0xFFF0000000000000
-  %3 = fcmp uno double %0, 0.000000e+00
-  %4 = or i1 %1, %2
-  %5 = or i1 %4, %3
-  %6 = xor i1 %5, true
-  br i1 %6, label %9, label %7
+  %1 = fcmp oeq double %0, 0x7FF0000000000000, !dbg !8
+  %2 = fcmp oeq double %0, 0xFFF0000000000000, !dbg !8
+  %3 = fcmp uno double %0, 0.000000e+00, !dbg !8
+  %4 = or i1 %1, %2, !dbg !8
+  %5 = or i1 %4, %3, !dbg !8
+  %6 = xor i1 %5, true, !dbg !8
+  br i1 %6, label %9, label %7, !dbg !8
 
 7:                                                ; preds = %entry_block
-  %8 = call i32 (ptr, ...) @printf(ptr @prelude.panic_template, i32 1, ptr @0)
-  call void @abort()
-  unreachable
+  %8 = call i32 (ptr, ...) @printf(ptr @prelude.panic_template, i32 1, ptr @0), !dbg !8
+  call void @abort(), !dbg !8
+  unreachable, !dbg !8
 
 9:                                                ; preds = %entry_block
-  %10 = fcmp oeq double %0, 0x7FF0000000000000
-  %11 = fcmp oeq double %0, 0xFFF0000000000000
-  %12 = fcmp uno double %0, 0.000000e+00
-  %13 = or i1 %10, %11
-  %14 = or i1 %13, %12
-  %15 = xor i1 %14, true
-  %16 = insertvalue { i1, double } { i1 true, double poison }, double %0, 1
-  %17 = select i1 %15, { i1, double } %16, { i1, double } { i1 false, double poison }
+  %10 = fcmp oeq double %0, 0x7FF0000000000000, !dbg !9
+  %11 = fcmp oeq double %0, 0xFFF0000000000000, !dbg !9
+  %12 = fcmp uno double %0, 0.000000e+00, !dbg !9
+  %13 = or i1 %10, %11, !dbg !9
+  %14 = or i1 %13, %12, !dbg !9
+  %15 = xor i1 %14, true, !dbg !9
+  %16 = insertvalue { i1, double } { i1 true, double poison }, double %0, 1, !dbg !9
+  %17 = select i1 %15, { i1, double } %16, { i1, double } { i1 false, double poison }, !dbg !9
   %18 = extractvalue { i1, double } %17, 0
   switch i1 %18, label %19 [
     i1 true, label %20
@@ -50,10 +50,10 @@ entry_block:                                      ; preds = %alloca_block
   br label %cond_7_case_1
 
 cond_7_case_0:                                    ; preds = %19
-  %22 = extractvalue { i32, ptr } { i32 1, ptr @1 }, 0
-  %23 = extractvalue { i32, ptr } { i32 1, ptr @1 }, 1
-  %24 = call i32 (ptr, ...) @printf(ptr @prelude.panic_template.1, i32 %22, ptr %23)
-  call void @abort()
+  %22 = extractvalue { i32, ptr } { i32 1, ptr @1 }, 0, !dbg !10
+  %23 = extractvalue { i32, ptr } { i32 1, ptr @1 }, 1, !dbg !10
+  %24 = call i32 (ptr, ...) @printf(ptr @prelude.panic_template.1, i32 %22, ptr %23), !dbg !10
+  call void @abort(), !dbg !10
   br label %cond_exit_7
 
 cond_7_case_1:                                    ; preds = %20
@@ -61,10 +61,26 @@ cond_7_case_1:                                    ; preds = %20
 
 cond_exit_7:                                      ; preds = %cond_7_case_1, %cond_7_case_0
   %"0.0" = phi double [ 0.000000e+00, %cond_7_case_0 ], [ %21, %cond_7_case_1 ]
-  %25 = fadd double %0, %"0.0"
+  %25 = fadd double %0, %"0.0", !dbg !11
   ret void
 }
 
 declare i32 @printf(ptr, ...)
 
 declare void @abort()
+
+!llvm.module.flags = !{!0}
+!llvm.dbg.cu = !{!1}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = distinct !DICompileUnit(language: DW_LANG_Python, file: !2, producer: "hugr_llvm_test", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!2 = !DIFile(filename: "/cmJrSnVYeXFf/zCkHdtWCCnkJhPKiWSKICgZuRNRvR/mbrfVq.gpy.py", directory: "/lA")
+!3 = distinct !DISubprogram(name: "_hl.main.1", linkageName: "_hl.main.1", scope: null, file: !4, line: 25254, type: !5, scopeLine: 25255, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !1)
+!4 = !DIFile(filename: "/cmJrSnVYeXFf/zCkHdtWCCnkJhPKiWSKICgZuRNRvR/mbrfVq.gpy.py", directory: "")
+!5 = !DISubroutineType(types: !6)
+!6 = !{null, !7}
+!7 = !DIBasicType(name: "f64", size: 64, encoding: DW_ATE_float)
+!8 = !DILocation(line: 27062, column: 402, scope: !3)
+!9 = !DILocation(line: 10060, column: 368, scope: !3)
+!10 = !DILocation(line: 32551, column: 131, scope: !3)
+!11 = !DILocation(line: 13582, column: 372, scope: !3)

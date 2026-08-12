@@ -364,7 +364,7 @@ const PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME: &str = "__prepare_module_record_ou
 ///
 /// At present this moves runtime `*_record_output` calls to a single sink at
 /// the end of each function so later tail duplication cannot duplicate them.
-fn prepare_module(module: &Module) -> Result<()> {
+pub fn prepare_module(module: &Module) -> Result<()> {
     for func in module.get_functions() {
         move_record_output_calls_to_function_end(func)?;
     }
