@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.collections.stack import empty_stack
 
 
@@ -13,9 +13,9 @@ def main() -> None:
     stack = empty_stack[int, 4]()
     stack.push(3)
     stack.push(5)
-    result("stack_len", len(stack))
-    result("stack_top", stack.pop())
-    result("stack_next", stack.pop())
+    output("stack_len", len(stack))
+    output("stack_top", stack.pop())
+    output("stack_next", stack.pop())
     stack.discard_empty()
 
 

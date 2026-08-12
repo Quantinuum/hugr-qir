@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import h, measure, x, y, z
 
 
@@ -39,10 +39,10 @@ def main() -> None:
         z(q3)
 
     d = measure(q3).read()
-    result("a", a)
-    result("b", b)
-    result("c", c)
-    result("d", d)
+    output("a", a)
+    output("b", b)
+    output("c", c)
+    output("d", d)
 
 
 if __name__ == "__main__":

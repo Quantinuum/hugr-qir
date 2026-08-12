@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import discard, measure, qubit, s, toffoli, z
 from guppylang.std.quantum.functional import h
 
@@ -21,8 +21,8 @@ def main() -> None:
         s(q)
         toffoli(a, b, q)
         if not (measure(h(a)).read() | measure(h(b)).read()):
-            result("attempts", n)
-            result("success", True)
+            output("attempts", n)
+            output("success", True)
             discard(q)
             break
         z(q)

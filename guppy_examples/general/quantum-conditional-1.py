@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import cx, h, measure, x
 
 
@@ -19,4 +19,4 @@ def main() -> None:
     if b0:
         x(q1)
 
-    result("0", measure(q1).read())
+    output("0", measure(q1).read())

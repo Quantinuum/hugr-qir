@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 
 
 @guppy.enum
@@ -19,4 +19,4 @@ class Flag:
 @no_type_check
 def main() -> None:
     flag = Flag.On(4)
-    result("enum_score", flag.score())
+    output("enum_score", flag.score())

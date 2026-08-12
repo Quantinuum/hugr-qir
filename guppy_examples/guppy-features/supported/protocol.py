@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 
 
 @guppy.protocol
@@ -29,4 +29,4 @@ def read_weight(x: HasWeight) -> int:
 @guppy
 @no_type_check
 def main() -> None:
-    result("protocol_weight", read_weight(WeightedInt(3)))
+    output("protocol_weight", read_weight(WeightedInt(3)))

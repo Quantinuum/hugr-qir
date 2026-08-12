@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING, no_type_check
 
 from guppylang.decorator import guppy
-from guppylang.std.builtins import qubit, result
+from guppylang.std.builtins import output, qubit
 from guppylang.std.quantum import cx, cz, measure, x
 
 if TYPE_CHECKING:
@@ -59,13 +59,13 @@ def steane_measure_result(steane_qb: SteaneQubit @ owned, name: str) -> None:
     :param steane_qb: The Steane Qubit to measure
     :param name: Name of Steane Qubit for result identification
     """
-    result(f"{name}_0", measure(steane_qb.pq0).read())
-    result(f"{name}_1", measure(steane_qb.pq1).read())
-    result(f"{name}_2", measure(steane_qb.pq2).read())
-    result(f"{name}_3", measure(steane_qb.pq3).read())
-    result(f"{name}_4", measure(steane_qb.pq4).read())
-    result(f"{name}_5", measure(steane_qb.pq5).read())
-    result(f"{name}_6", measure(steane_qb.pq6).read())
+    output(f"{name}_0", measure(steane_qb.pq0).read())
+    output(f"{name}_1", measure(steane_qb.pq1).read())
+    output(f"{name}_2", measure(steane_qb.pq2).read())
+    output(f"{name}_3", measure(steane_qb.pq3).read())
+    output(f"{name}_4", measure(steane_qb.pq4).read())
+    output(f"{name}_5", measure(steane_qb.pq5).read())
+    output(f"{name}_6", measure(steane_qb.pq6).read())
 
 
 def steane_cz(q1: SteaneQubit, q2: SteaneQubit) -> None:

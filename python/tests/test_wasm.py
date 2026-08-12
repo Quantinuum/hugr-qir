@@ -3,7 +3,7 @@ from typing import Any, no_type_check
 
 import pytest
 from guppylang import guppy, qubit
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 from guppylang.std.quantum import measure
 from guppylang_internals.decorator import wasm, wasm_module
 from guppylang_internals.error import GuppyError
@@ -88,8 +88,8 @@ def test_h2_wasm_mod_supported_functions(h2_wasm_file: Path) -> None:
         mod1.no_return(thirty_six)
         mod1.no_return_id(new_int)
         mod1.discard()
-        result("q", measure(q).read())
-        result("new_int2", new_int2)
+        output("q", measure(q).read())
+        output("new_int2", new_int2)
 
     hugr = main.compile()
     hugr_to_qir(hugr, wasm_file=h2_wasm_file)
@@ -162,7 +162,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.add_id(1, 2)
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "add":
 
         @guppy
@@ -171,7 +171,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.add(1, 2)
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "two" and lookup_by_id:
 
         @guppy
@@ -180,7 +180,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.two_id()
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "two":
 
         @guppy
@@ -189,7 +189,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.two()
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "fid" and lookup_by_id:
 
         @guppy
@@ -198,7 +198,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.fid_id(0.4)
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "fid":
 
         @guppy
@@ -207,7 +207,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1 = wasm_module_class(1)
             x = mod1.fid(0.4)
             mod1.discard()
-            result("x", x)
+            output("x", x)
     elif func_name == "consume_float" and lookup_by_id:
 
         @guppy
@@ -217,7 +217,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.consume_float_id(0.4)
             q = qubit()
             mod1.discard()
-            result("q", measure(q).read())
+            output("q", measure(q).read())
     elif func_name == "consume_float":
 
         @guppy
@@ -227,7 +227,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.consume_float(0.4)
             q = qubit()
             mod1.discard()
-            result("q", measure(q).read())
+            output("q", measure(q).read())
     elif func_name == "nothing" and lookup_by_id:
 
         @guppy
@@ -237,7 +237,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.nothing_id()
             q = qubit()
             mod1.discard()
-            result("q", measure(q).read())
+            output("q", measure(q).read())
     elif func_name == "nothing":
 
         @guppy
@@ -247,7 +247,7 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
             mod1.nothing()
             q = qubit()
             mod1.discard()
-            result("q", measure(q).read())
+            output("q", measure(q).read())
     else:
         raise ValueError
 
@@ -265,7 +265,7 @@ def test_loading_but_not_using_helios_wasm_mod_is_not_an_error(
         mod1 = wasm_module_class(1)
         q = qubit()
         mod1.discard()
-        result("q", measure(q).read())
+        output("q", measure(q).read())
 
     hugr = main.compile()
     hugr_to_qir(hugr, wasm_file=helios_wasm_file)

@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.either import Either, left, right
 from guppylang.std.err import Result, ok
 from guppylang.std.option import Option, some
@@ -34,8 +34,8 @@ def main() -> None:
     res = result_value(9)
     either = choose(True)
 
-    result("option_is_some", opt.is_some())
-    result("option_value", opt.unwrap())
-    result("result_is_ok", res.is_ok())
-    result("result_value", res.unwrap())
-    result("either_is_left", either.is_left())
+    output("option_is_some", opt.is_some())
+    output("option_value", opt.unwrap())
+    output("result_is_ok", res.is_ok())
+    output("result_value", res.unwrap())
+    output("either_is_left", either.is_left())

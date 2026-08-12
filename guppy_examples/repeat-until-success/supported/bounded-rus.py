@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import cx, discard, measure, t, tdg, z
 from guppylang.std.quantum.functional import h
 
@@ -53,6 +53,6 @@ def main() -> None:
     ok = False
     for _ in range(N):
         ok, n = rus_step(q, ok, n)
-    result("attempts", n)
-    result("success", ok)
-    result("q", measure(q).read())
+    output("attempts", n)
+    output("success", ok)
+    output("q", measure(q).read())

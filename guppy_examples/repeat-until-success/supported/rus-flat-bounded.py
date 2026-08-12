@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import comptime, result
+from guppylang.std.builtins import comptime, output
 from guppylang.std.qsystem import measure_and_reset
 from guppylang.std.quantum import discard, h, qubit, s, toffoli, z
 
@@ -68,6 +68,6 @@ def main() -> None:
     # if all attempts fail.
     q = qubit()
     success, attempts = repeat_until_success(q, comptime(N))
-    result("success", success)
-    result("attempts", attempts)
+    output("success", success)
+    output("attempts", attempts)
     discard(q)

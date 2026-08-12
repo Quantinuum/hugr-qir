@@ -2,7 +2,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.angles import pi
-from guppylang.std.builtins import dagger, qubit, result
+from guppylang.std.builtins import dagger, output, qubit
 from guppylang.std.quantum import measure, rz, x
 
 
@@ -15,4 +15,4 @@ def main() -> None:
         rz(target, pi / 4.0)
         x(target)
 
-    result("dagger_target", measure(target).read())
+    output("dagger_target", measure(target).read())

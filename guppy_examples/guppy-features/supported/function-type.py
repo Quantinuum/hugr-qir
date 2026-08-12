@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import Function, result
+from guppylang.std.builtins import Function, output
 
 
 @guppy
@@ -19,4 +19,4 @@ def apply_twice(f: Function[[int], int], value: int) -> int:
 @guppy
 @no_type_check
 def main() -> None:
-    result("function_type", apply_twice(increment, 3))
+    output("function_type", apply_twice(increment, 3))

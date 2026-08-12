@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 
 
 @guppy
@@ -14,4 +14,4 @@ def split_pair(pair: tuple[int, int]) -> int:
 @guppy
 @no_type_check
 def main() -> None:
-    result("split_pair", split_pair((4, 7)))
+    output("split_pair", split_pair((4, 7)))

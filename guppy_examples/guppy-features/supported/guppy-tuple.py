@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import qubit, result
+from guppylang.std.builtins import output, qubit
 from guppylang.std.lang import owned
 from guppylang.std.quantum import cx, measure, x
 
@@ -42,7 +42,7 @@ def steane_measure_result(
     qblist = list(qbs)
     res = steane_measure(qblist)
     for i in range(7):
-        result(f"{name}_{i}", res[i])
+        output(f"{name}_{i}", res[i])
 
 
 @guppy.comptime

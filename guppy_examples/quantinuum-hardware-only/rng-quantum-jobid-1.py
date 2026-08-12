@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.qsystem.utils import get_current_shot
 from guppylang.std.quantum import h, measure
 
@@ -15,5 +15,5 @@ def main() -> None:
     h(q1)
     if get_current_shot() == 5:
         h(q1)
-    result("0", measure(q0).read())
-    result("1", measure(q1).read())
+    output("0", measure(q0).read())
+    output("1", measure(q1).read())

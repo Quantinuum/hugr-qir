@@ -1,7 +1,7 @@
 r"""Even-distanced [[16, 2, 4]] code"""
 
 from guppylang import guppy
-from guppylang.std.builtins import comptime, result
+from guppylang.std.builtins import comptime, output
 from guppylang.std.quantum import cx, h, measure, qubit, z
 
 stabilizer_indices_z = [
@@ -44,7 +44,7 @@ def main() -> None:
         syndromes_0[i] = syndrome_extraction(
             data_qubits, stab_indices_x[index_0_guppy[i]]
         )
-    result("s0", bool_array_as_int(syndromes_0))
+    output("s0", bool_array_as_int(syndromes_0))
 
     indices = decoder_0(syndromes_0)
     correction(indices, data_qubits)
@@ -54,10 +54,10 @@ def main() -> None:
         syndromes_1[i] = syndrome_extraction(
             data_qubits, stab_indices_x[index_1_guppy[i]]
         )
-    result("s1", bool_array_as_int(syndromes_1))
+    output("s1", bool_array_as_int(syndromes_1))
     indices = decoder_1(syndromes_1)
     correction(indices, data_qubits)
-    result("c", bool_array_as_int([measure(q).read() for q in data_qubits]))
+    output("c", bool_array_as_int([measure(q).read() for q in data_qubits]))
 
 
 def syndrome_extraction(q: list[qubit], indices: list[int]) -> bool:

@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import control, qubit, result
+from guppylang.std.builtins import control, output, qubit
 from guppylang.std.quantum import h, measure, x
 
 
@@ -18,8 +18,8 @@ def main() -> None:
     with control(ctl):
         x(target)
 
-    result("control_target", measure(target).read())
-    result("control_ctl", measure(ctl).read())
+    output("control_target", measure(target).read())
+    output("control_ctl", measure(ctl).read())
 
 
 if __name__ == "__main__":

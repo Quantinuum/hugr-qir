@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import array, qubit, result
+from guppylang.std.builtins import array, output, qubit
 from guppylang.std.quantum import collect_measurements, cx, h, measure_array
 
 
@@ -17,7 +17,7 @@ def main() -> None:
             cx(qbs[i - 1], qbs[i])
 
     results = collect_measurements(measure_array(qbs))
-    result("qbs", results)
+    output("qbs", results)
 
 
 if __name__ == "__main__":

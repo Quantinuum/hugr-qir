@@ -8,6 +8,7 @@ Where possible, each page pairs a supported example with one or more nearby coun
 :maxdepth: 1
 
 arrays
+quantum-operations
 control-flow-and-recursion
 functions-and-generics
 data-types-and-structs

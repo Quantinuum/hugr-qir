@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import array, result
+from guppylang.std.builtins import array, output
 
 
 @guppy.comptime
@@ -12,6 +12,6 @@ def main() -> None:
     first, *tail = copied
     values[0] = 10
 
-    result("array_first", first)
-    result("array_tail_1", tail[1])
-    result("array_mutated", values[0])
+    output("array_first", first)
+    output("array_tail_1", tail[1])
+    output("array_mutated", values[0])

@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.platform import barrier
 from guppylang.std.quantum import h, measure
 
@@ -22,5 +22,5 @@ def main() -> None:
             b = False
     else:
         b = measure(q1).read()
-    result("a", a)
-    result("b", b)
+    output("a", a)
+    output("b", b)

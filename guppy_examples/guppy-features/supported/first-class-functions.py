@@ -1,7 +1,7 @@
 import sys
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import measure, x
 
 
@@ -25,8 +25,8 @@ def main() -> None:
     q_func = b_function
     my_function = a_function
     res = my_function(100)
-    result("res", res)
-    result("q", measure(q_func()).read())
+    output("res", res)
+    output("q", measure(q_func()).read())
 
 
 if __name__ == "__main__":

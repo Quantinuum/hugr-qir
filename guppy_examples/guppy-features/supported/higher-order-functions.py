@@ -2,7 +2,7 @@ import sys
 
 from guppylang import guppy
 from guppylang.std.builtins import Function
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 
 
 @guppy
@@ -20,7 +20,7 @@ def main() -> None:
     my_function_composition = my_function(is_even)
 
     res = my_function_composition(42)
-    result("res", res)
+    output("res", res)
 
 
 if __name__ == "__main__":

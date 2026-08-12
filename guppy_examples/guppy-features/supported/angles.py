@@ -2,7 +2,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.angles import angle, pi
-from guppylang.std.builtins import qubit, result
+from guppylang.std.builtins import output, qubit
 from guppylang.std.quantum import measure, rz
 
 
@@ -12,4 +12,4 @@ def main() -> None:
     q = qubit()
     theta = (pi / 2.0) + angle(0.25)
     rz(q, theta)
-    result("angle", measure(q).read())
+    output("angle", measure(q).read())

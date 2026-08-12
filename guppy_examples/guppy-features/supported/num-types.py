@@ -4,7 +4,7 @@ from guppylang import guppy, qubit
 from guppylang.std.angles import angle
 from guppylang.std.lang import owned
 from guppylang.std.num import nat
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 from guppylang.std.quantum import h, measure, rz
 
 
@@ -45,21 +45,21 @@ def main() -> None:
     h(qs[2])
     h(qs[1])
     rs, rs_int = int_from_reg(qs)
-    result("q0", rs[0])
-    result("q1", rs[1])
-    result("q2", rs[2])
-    result("q3", rs[3])
-    result("big_endian_res", rs_int)
+    output("q0", rs[0])
+    output("q1", rs[1])
+    output("q2", rs[2])
+    output("q3", rs[3])
+    output("big_endian_res", rs_int)
 
     random_sum = 0
     random_sum += plus_or_minus(rs[0])
     random_sum += plus_or_minus(rs[1])
     random_sum += plus_or_minus(rs[2])
     random_sum += plus_or_minus(rs[3])
-    result("random_sum", random_sum)
+    output("random_sum", random_sum)
 
     rsum2 = random_sum * random_sum
     six = nat(6)
     four = nat(4)
     example_result = six + four - rsum2
-    result("int_res", example_result)
+    output("int_res", example_result)
