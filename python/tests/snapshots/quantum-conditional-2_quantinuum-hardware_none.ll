@@ -29,36 +29,36 @@ alloca_block:
   %"12_0" = alloca i1, align 1
   %"9_0" = alloca ptr, align 8
   %"8_0" = alloca ptr, align 8
-  %"88_0" = alloca { i1, ptr }, align 8
-  %"89_0" = alloca ptr, align 8
+  %"90_0" = alloca { i1, ptr }, align 8
+  %"91_0" = alloca ptr, align 8
   %"02" = alloca ptr, align 8
-  %"95_0" = alloca { i32, ptr }, align 8
-  %"96_0" = alloca ptr, align 8
+  %"97_0" = alloca { i32, ptr }, align 8
+  %"98_0" = alloca ptr, align 8
   %"06" = alloca ptr, align 8
-  %"97_0" = alloca ptr, align 8
-  %"101_0" = alloca { i1, ptr }, align 8
-  %"102_0" = alloca ptr, align 8
-  %"011" = alloca ptr, align 8
-  %"108_0" = alloca { i32, ptr }, align 8
-  %"109_0" = alloca ptr, align 8
-  %"015" = alloca ptr, align 8
-  %"110_0" = alloca ptr, align 8
+  %"99_0" = alloca ptr, align 8
   %"10_0" = alloca ptr, align 8
+  %"114_0" = alloca ptr, align 8
+  %"121_0" = alloca double, align 8
   %"119_0" = alloca double, align 8
+  %"122_0" = alloca ptr, align 8
   %"117_0" = alloca double, align 8
-  %"115_0" = alloca double, align 8
+  %"123_0" = alloca ptr, align 8
+  %"103_0" = alloca { i1, ptr }, align 8
+  %"104_0" = alloca ptr, align 8
+  %"018" = alloca ptr, align 8
+  %"110_0" = alloca { i32, ptr }, align 8
+  %"111_0" = alloca ptr, align 8
+  %"022" = alloca ptr, align 8
   %"112_0" = alloca ptr, align 8
-  %"120_0" = alloca ptr, align 8
-  %"121_0" = alloca ptr, align 8
   %"11_0" = alloca i1, align 1
   %"20_0" = alloca { i1, i1, i1 }, align 8
   %"17_0" = alloca ptr, align 8
+  %"124_0" = alloca ptr, align 8
+  %"131_0" = alloca double, align 8
   %"129_0" = alloca double, align 8
+  %"132_0" = alloca ptr, align 8
   %"127_0" = alloca double, align 8
-  %"125_0" = alloca double, align 8
-  %"122_0" = alloca ptr, align 8
-  %"130_0" = alloca ptr, align 8
-  %"131_0" = alloca ptr, align 8
+  %"133_0" = alloca ptr, align 8
   %"18_0" = alloca i1, align 1
   %"19_0" = alloca i1, align 1
   %"050" = alloca { i1, i1, i1 }, align 8
@@ -86,9 +86,9 @@ entry_block:                                      ; preds = %alloca_block
 
 bb:                                               ; preds = %entry_block
   %0 = insertvalue { i1, ptr } { i1 true, ptr poison }, ptr null, 1
-  store { i1, ptr } %0, ptr %"88_0", align 8
-  %"88_01" = load { i1, ptr }, ptr %"88_0", align 8
-  %1 = extractvalue { i1, ptr } %"88_01", 0
+  store { i1, ptr } %0, ptr %"90_0", align 8
+  %"90_01" = load { i1, ptr }, ptr %"90_0", align 8
+  %1 = extractvalue { i1, ptr } %"90_01", 0
   br label %LeafBlock
 
 LeafBlock:                                        ; preds = %bb
@@ -96,12 +96,12 @@ LeafBlock:                                        ; preds = %bb
   br i1 %SwitchLeaf, label %bb1, label %bb0
 
 bb0:                                              ; preds = %LeafBlock
-  br label %cond_89_case_0
+  br label %cond_91_case_0
 
 bb1:                                              ; preds = %LeafBlock
-  %2 = extractvalue { i1, ptr } %"88_01", 1
+  %2 = extractvalue { i1, ptr } %"90_01", 1
   store ptr %2, ptr %"06", align 8
-  br label %cond_89_case_1
+  br label %cond_91_case_1
 
 bb2:                                              ; preds = %bb17
   %"15_036" = load i1, ptr %"15_0", align 1
@@ -109,21 +109,21 @@ bb2:                                              ; preds = %bb17
   store i1 %"15_036", ptr %"15_0", align 1
   store ptr %"15_137", ptr %"15_1", align 8
   %"15_138" = load ptr, ptr %"15_1", align 8
-  store double 0xBFF921FB54442D18, ptr %"129_0", align 8
-  store double 0x3FF921FB54442D18, ptr %"127_0", align 8
-  store double 0x400921FB54442D18, ptr %"125_0", align 8
-  store ptr %"15_138", ptr %"122_0", align 8
-  %"122_039" = load ptr, ptr %"122_0", align 8
-  %"127_040" = load double, ptr %"127_0", align 8
-  %"129_041" = load double, ptr %"129_0", align 8
-  call void @__quantum__qis__phasedx__body(double %"127_040", double %"129_041", ptr %"122_039")
-  store ptr %"122_039", ptr %"130_0", align 8
-  %"130_042" = load ptr, ptr %"130_0", align 8
-  %"125_043" = load double, ptr %"125_0", align 8
-  call void @__quantum__qis__rz__body(double %"125_043", ptr %"130_042")
-  store ptr %"130_042", ptr %"131_0", align 8
-  %"131_044" = load ptr, ptr %"131_0", align 8
-  store ptr %"131_044", ptr %"17_0", align 8
+  store ptr %"15_138", ptr %"124_0", align 8
+  store double 0xBFF921FB54442D18, ptr %"131_0", align 8
+  store double 0x3FF921FB54442D18, ptr %"129_0", align 8
+  %"124_039" = load ptr, ptr %"124_0", align 8
+  %"129_040" = load double, ptr %"129_0", align 8
+  %"131_041" = load double, ptr %"131_0", align 8
+  call void @__quantum__qis__phasedx__body(double %"129_040", double %"131_041", ptr %"124_039")
+  store ptr %"124_039", ptr %"132_0", align 8
+  store double 0x400921FB54442D18, ptr %"127_0", align 8
+  %"132_042" = load ptr, ptr %"132_0", align 8
+  %"127_043" = load double, ptr %"127_0", align 8
+  call void @__quantum__qis__rz__body(double %"127_043", ptr %"132_042")
+  store ptr %"132_042", ptr %"133_0", align 8
+  %"133_044" = load ptr, ptr %"133_0", align 8
+  store ptr %"133_044", ptr %"17_0", align 8
   %"17_045" = load ptr, ptr %"17_0", align 8
   call void @__quantum__qis__mz__body(ptr %"17_045", ptr null)
   %3 = call i1 @__quantum__rt__read_result(ptr null)
@@ -154,7 +154,6 @@ bb4:                                              ; preds = %LeafBlock102
 bb5:                                              ; preds = %bb16
   %"30_067" = load i1, ptr %"30_0", align 1
   %"30_168" = load ptr, ptr %"30_1", align 8
-  store {} undef, ptr %"34_0", align 1
   store i1 %"30_067", ptr %"30_0", align 1
   store ptr %"30_168", ptr %"30_1", align 8
   %"30_169" = load ptr, ptr %"30_1", align 8
@@ -162,6 +161,7 @@ bb5:                                              ; preds = %bb16
   %6 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 1 to ptr))
   %7 = select i1 %6, i1 true, i1 false
   store i1 %7, ptr %"32_0", align 1
+  store {} undef, ptr %"34_0", align 1
   %"32_070" = load i1, ptr %"32_0", align 1
   %8 = select i1 %"32_070", i1 true, i1 false
   store i1 %8, ptr %"33_0", align 1
@@ -183,9 +183,9 @@ bb6:                                              ; preds = %bb5
 
 bb7:                                              ; preds = %bb19
   %"37_077" = load i1, ptr %"37_0", align 1
+  store i1 %"37_077", ptr %"37_0", align 1
   store {} undef, ptr %"41_0", align 1
   store i1 false, ptr %"39_0", align 1
-  store i1 %"37_077", ptr %"37_0", align 1
   %"41_078" = load {}, ptr %"41_0", align 1
   %"37_079" = load i1, ptr %"37_0", align 1
   %"39_080" = load i1, ptr %"39_0", align 1
@@ -205,9 +205,9 @@ bb8:                                              ; preds = %bb7
 bb9:                                              ; preds = %bb18
   %"44_084" = load i1, ptr %"44_0", align 1
   %"44_185" = load i1, ptr %"44_1", align 1
-  store {} undef, ptr %"46_0", align 1
   store i1 %"44_084", ptr %"44_0", align 1
   store i1 %"44_185", ptr %"44_1", align 1
+  store {} undef, ptr %"46_0", align 1
   %"46_086" = load {}, ptr %"46_0", align 1
   %"44_087" = load i1, ptr %"44_0", align 1
   %"44_188" = load i1, ptr %"44_1", align 1
@@ -227,9 +227,9 @@ bb10:                                             ; preds = %bb9
 bb11:                                             ; preds = %bb10, %bb8
   %"49_092" = load i1, ptr %"49_0", align 1
   %"49_193" = load i1, ptr %"49_1", align 1
-  store {} undef, ptr %"51_0", align 1
   store i1 %"49_092", ptr %"49_0", align 1
   store i1 %"49_193", ptr %"49_1", align 1
+  store {} undef, ptr %"51_0", align 1
   %"51_094" = load {}, ptr %"51_0", align 1
   %"49_095" = load i1, ptr %"49_0", align 1
   %"49_196" = load i1, ptr %"49_1", align 1
@@ -257,82 +257,82 @@ bb13:                                             ; preds = %bb12, %bb6
   call void @__quantum__rt__bool_record_output(i1 %"4_1101", ptr @3)
   ret void
 
-cond_89_case_0:                                   ; preds = %bb0
-  store { i32, ptr } { i32 1, ptr @0 }, ptr %"95_0", align 8
-  %"95_04" = load { i32, ptr }, ptr %"95_0", align 8
+cond_91_case_0:                                   ; preds = %bb0
+  store { i32, ptr } { i32 1, ptr @0 }, ptr %"97_0", align 8
+  %"97_04" = load { i32, ptr }, ptr %"97_0", align 8
   call void @abort()
-  store ptr null, ptr %"96_0", align 8
-  %"96_05" = load ptr, ptr %"96_0", align 8
-  store ptr %"96_05", ptr %"02", align 8
-  br label %cond_exit_89
+  store ptr null, ptr %"98_0", align 8
+  %"98_05" = load ptr, ptr %"98_0", align 8
+  store ptr %"98_05", ptr %"02", align 8
+  br label %cond_exit_91
 
-cond_89_case_1:                                   ; preds = %bb1
+cond_91_case_1:                                   ; preds = %bb1
   %"07" = load ptr, ptr %"06", align 8
-  store ptr %"07", ptr %"97_0", align 8
-  %"97_08" = load ptr, ptr %"97_0", align 8
-  store ptr %"97_08", ptr %"02", align 8
-  br label %cond_exit_89
+  store ptr %"07", ptr %"99_0", align 8
+  %"99_08" = load ptr, ptr %"99_0", align 8
+  store ptr %"99_08", ptr %"02", align 8
+  br label %cond_exit_91
 
-cond_exit_89:                                     ; preds = %cond_89_case_1, %cond_89_case_0
+cond_exit_91:                                     ; preds = %cond_91_case_1, %cond_91_case_0
   %"03" = load ptr, ptr %"02", align 8
-  store ptr %"03", ptr %"89_0", align 8
-  %"89_09" = load ptr, ptr %"89_0", align 8
-  store ptr %"89_09", ptr %"8_0", align 8
+  store ptr %"03", ptr %"91_0", align 8
+  %"91_09" = load ptr, ptr %"91_0", align 8
+  store ptr %"91_09", ptr %"8_0", align 8
+  %"8_010" = load ptr, ptr %"8_0", align 8
+  store ptr %"8_010", ptr %"114_0", align 8
+  store double 0xBFF921FB54442D18, ptr %"121_0", align 8
+  store double 0x3FF921FB54442D18, ptr %"119_0", align 8
+  %"114_011" = load ptr, ptr %"114_0", align 8
+  %"119_012" = load double, ptr %"119_0", align 8
+  %"121_013" = load double, ptr %"121_0", align 8
+  call void @__quantum__qis__phasedx__body(double %"119_012", double %"121_013", ptr %"114_011")
+  store ptr %"114_011", ptr %"122_0", align 8
+  store double 0x400921FB54442D18, ptr %"117_0", align 8
+  %"122_014" = load ptr, ptr %"122_0", align 8
+  %"117_015" = load double, ptr %"117_0", align 8
+  call void @__quantum__qis__rz__body(double %"117_015", ptr %"122_014")
+  store ptr %"122_014", ptr %"123_0", align 8
+  %"123_016" = load ptr, ptr %"123_0", align 8
+  store ptr %"123_016", ptr %"10_0", align 8
   %9 = insertvalue { i1, ptr } { i1 true, ptr poison }, ptr inttoptr (i64 1 to ptr), 1
-  store { i1, ptr } %9, ptr %"101_0", align 8
-  %"101_010" = load { i1, ptr }, ptr %"101_0", align 8
-  %10 = extractvalue { i1, ptr } %"101_010", 0
+  store { i1, ptr } %9, ptr %"103_0", align 8
+  %"103_017" = load { i1, ptr }, ptr %"103_0", align 8
+  %10 = extractvalue { i1, ptr } %"103_017", 0
   br label %LeafBlock104
 
-LeafBlock104:                                     ; preds = %cond_exit_89
+LeafBlock104:                                     ; preds = %cond_exit_91
   %SwitchLeaf105 = icmp eq i1 %10, true
   br i1 %SwitchLeaf105, label %bb15, label %bb14
 
 bb14:                                             ; preds = %LeafBlock104
-  br label %cond_102_case_0
+  br label %cond_104_case_0
 
 bb15:                                             ; preds = %LeafBlock104
-  %11 = extractvalue { i1, ptr } %"101_010", 1
-  store ptr %11, ptr %"015", align 8
-  br label %cond_102_case_1
+  %11 = extractvalue { i1, ptr } %"103_017", 1
+  store ptr %11, ptr %"022", align 8
+  br label %cond_104_case_1
 
-cond_102_case_0:                                  ; preds = %bb14
-  store { i32, ptr } { i32 1, ptr @1 }, ptr %"108_0", align 8
-  %"108_013" = load { i32, ptr }, ptr %"108_0", align 8
+cond_104_case_0:                                  ; preds = %bb14
+  store { i32, ptr } { i32 1, ptr @1 }, ptr %"110_0", align 8
+  %"110_020" = load { i32, ptr }, ptr %"110_0", align 8
   call void @abort()
-  store ptr null, ptr %"109_0", align 8
-  %"109_014" = load ptr, ptr %"109_0", align 8
-  store ptr %"109_014", ptr %"011", align 8
-  br label %cond_exit_102
+  store ptr null, ptr %"111_0", align 8
+  %"111_021" = load ptr, ptr %"111_0", align 8
+  store ptr %"111_021", ptr %"018", align 8
+  br label %cond_exit_104
 
-cond_102_case_1:                                  ; preds = %bb15
-  %"016" = load ptr, ptr %"015", align 8
-  store ptr %"016", ptr %"110_0", align 8
-  %"110_017" = load ptr, ptr %"110_0", align 8
-  store ptr %"110_017", ptr %"011", align 8
-  br label %cond_exit_102
+cond_104_case_1:                                  ; preds = %bb15
+  %"023" = load ptr, ptr %"022", align 8
+  store ptr %"023", ptr %"112_0", align 8
+  %"112_024" = load ptr, ptr %"112_0", align 8
+  store ptr %"112_024", ptr %"018", align 8
+  br label %cond_exit_104
 
-cond_exit_102:                                    ; preds = %cond_102_case_1, %cond_102_case_0
-  %"012" = load ptr, ptr %"011", align 8
-  store ptr %"012", ptr %"102_0", align 8
-  %"102_018" = load ptr, ptr %"102_0", align 8
-  store ptr %"102_018", ptr %"9_0", align 8
-  %"8_019" = load ptr, ptr %"8_0", align 8
-  store double 0xBFF921FB54442D18, ptr %"119_0", align 8
-  store double 0x3FF921FB54442D18, ptr %"117_0", align 8
-  store double 0x400921FB54442D18, ptr %"115_0", align 8
-  store ptr %"8_019", ptr %"112_0", align 8
-  %"112_020" = load ptr, ptr %"112_0", align 8
-  %"117_021" = load double, ptr %"117_0", align 8
-  %"119_022" = load double, ptr %"119_0", align 8
-  call void @__quantum__qis__phasedx__body(double %"117_021", double %"119_022", ptr %"112_020")
-  store ptr %"112_020", ptr %"120_0", align 8
-  %"120_023" = load ptr, ptr %"120_0", align 8
-  %"115_024" = load double, ptr %"115_0", align 8
-  call void @__quantum__qis__rz__body(double %"115_024", ptr %"120_023")
-  store ptr %"120_023", ptr %"121_0", align 8
-  %"121_025" = load ptr, ptr %"121_0", align 8
-  store ptr %"121_025", ptr %"10_0", align 8
+cond_exit_104:                                    ; preds = %cond_104_case_1, %cond_104_case_0
+  %"019" = load ptr, ptr %"018", align 8
+  store ptr %"019", ptr %"104_0", align 8
+  %"104_025" = load ptr, ptr %"104_0", align 8
+  store ptr %"104_025", ptr %"9_0", align 8
   %"10_026" = load ptr, ptr %"10_0", align 8
   call void @__quantum__qis__mz__body(ptr %"10_026", ptr inttoptr (i64 2 to ptr))
   %12 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
@@ -352,7 +352,7 @@ cond_exit_102:                                    ; preds = %cond_102_case_1, %c
   %"9_033" = load ptr, ptr %"9_0", align 8
   br label %LeafBlock106
 
-LeafBlock106:                                     ; preds = %cond_exit_102
+LeafBlock106:                                     ; preds = %cond_exit_104
   %SwitchLeaf107 = icmp eq i1 %"12_031", true
   br i1 %SwitchLeaf107, label %bb17, label %bb16
 

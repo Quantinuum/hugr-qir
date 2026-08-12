@@ -25,20 +25,20 @@ alloca_block:
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 3 to ptr))
   %3 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 3 to ptr))
-  %"056.0" = zext i1 %3 to i64
-  %"071.0" = select i1 %2, i64 2, i64 0
-  %"086.0" = select i1 %1, i64 4, i64 0
-  %"0101.0" = select i1 %0, i64 8, i64 0
-  %"0136.0" = select i1 %3, i64 1, i64 -1
-  %"0150.0" = select i1 %2, i64 1, i64 -1
-  %"0164.0" = select i1 %1, i64 1, i64 -1
-  %"0178.0" = select i1 %0, i64 1, i64 -1
-  %4 = or disjoint i64 %"086.0", %"0101.0"
-  %5 = or disjoint i64 %4, %"071.0"
-  %6 = or disjoint i64 %5, %"056.0"
-  %7 = add nsw i64 %"0164.0", %"0178.0"
-  %8 = add nsw i64 %7, %"0150.0"
-  %9 = add nsw i64 %8, %"0136.0"
+  %"053.0" = zext i1 %3 to i64
+  %"068.0" = select i1 %2, i64 2, i64 0
+  %"083.0" = select i1 %1, i64 4, i64 0
+  %"098.0" = select i1 %0, i64 8, i64 0
+  %"0133.0" = select i1 %3, i64 1, i64 -1
+  %"0147.0" = select i1 %2, i64 1, i64 -1
+  %"0161.0" = select i1 %1, i64 1, i64 -1
+  %"0175.0" = select i1 %0, i64 1, i64 -1
+  %4 = or disjoint i64 %"083.0", %"098.0"
+  %5 = or disjoint i64 %4, %"068.0"
+  %6 = or disjoint i64 %5, %"053.0"
+  %7 = add nsw i64 %"0161.0", %"0175.0"
+  %8 = add nsw i64 %7, %"0147.0"
+  %9 = add nsw i64 %8, %"0133.0"
   %10 = mul nsw i64 %9, %9
   %11 = sub nsw i64 10, %10
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)

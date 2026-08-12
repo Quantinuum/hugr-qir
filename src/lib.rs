@@ -117,6 +117,8 @@ impl CompileArgs {
         if self.qsystem_pass {
             let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(QSystemPlatform::Helios);
             qsystem_pass.run(hugr)?;
+            let qsystem_llvm_pass = tket_qsystem::QSystemLLVMPass::default();
+            qsystem_llvm_pass.run(hugr)?;
             if self.validate {
                 hugr.validate()?;
             }

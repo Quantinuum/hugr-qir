@@ -14,9 +14,9 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0xBFF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr null, ptr nonnull inttoptr (i64 1 to ptr))
+  tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr null)
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
   br i1 %0, label %bb0, label %bb

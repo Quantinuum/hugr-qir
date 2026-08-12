@@ -68,9 +68,9 @@ NodeBlock.dup1245:                                ; preds = %.critedge.dup1218
   %"0759.01221" = zext i1 %8 to i64
   %13 = or disjoint i64 %"79_2.0", %"0759.01221"
   %Pivot.not1246 = icmp eq i64 %13, 3
-  br i1 %Pivot.not1246, label %cond_460_case_1.dup1295, label %cond_460_case_1.sink.split.dup1289
+  br i1 %Pivot.not1246, label %cond_465_case_1.dup1295, label %cond_465_case_1.sink.split.dup1289
 
-cond_460_case_1.dup1295:                          ; preds = %NodeBlock.dup1245
+cond_465_case_1.dup1295:                          ; preds = %NodeBlock.dup1245
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %14 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -80,12 +80,12 @@ cond_460_case_1.dup1295:                          ; preds = %NodeBlock.dup1245
   %16 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_460_case_1.sink.split.dup1289:               ; preds = %NodeBlock.dup1245
+cond_465_case_1.sink.split.dup1289:               ; preds = %NodeBlock.dup1245
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %cond_460_case_1.dup1301
+  br label %cond_465_case_1.dup1301
 
-cond_460_case_1.dup1301:                          ; preds = %cond_460_case_1.sink.split.dup1289
+cond_465_case_1.dup1301:                          ; preds = %cond_465_case_1.sink.split.dup1289
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %17 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -133,13 +133,13 @@ LeafBlock.dup:                                    ; preds = %.critedge.dup
   %"0759.01215" = zext i1 %26 to i64
   %31 = or disjoint i64 %"79_2.0", %"0759.01215"
   %SwitchLeaf1259 = icmp eq i64 %31, 1
-  br i1 %SwitchLeaf1259, label %cond_460_case_1.sink.split.dup1274, label %cond_460_case_1.sink.split.dup1281
+  br i1 %SwitchLeaf1259, label %cond_465_case_1.sink.split.dup1274, label %cond_465_case_1.sink.split.dup1281
 
-cond_460_case_1.sink.split.dup1281:               ; preds = %LeafBlock.dup
+cond_465_case_1.sink.split.dup1281:               ; preds = %LeafBlock.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 6 to ptr))
-  br label %cond_460_case_1.dup1298
+  br label %cond_465_case_1.dup1298
 
-cond_460_case_1.dup1298:                          ; preds = %cond_460_case_1.sink.split.dup1281
+cond_465_case_1.dup1298:                          ; preds = %cond_465_case_1.sink.split.dup1281
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %32 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -149,11 +149,11 @@ cond_460_case_1.dup1298:                          ; preds = %cond_460_case_1.sin
   %34 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-cond_460_case_1.sink.split.dup1274:               ; preds = %LeafBlock.dup
+cond_465_case_1.sink.split.dup1274:               ; preds = %LeafBlock.dup
   call void @__quantum__qis__phasedx__body(double noundef 0x400921FB54442D18, double noundef 0.000000e+00, ptr noundef nonnull inttoptr (i64 7 to ptr))
-  br label %cond_460_case_1.dup1296
+  br label %cond_465_case_1.dup1296
 
-cond_460_case_1.dup1296:                          ; preds = %cond_460_case_1.sink.split.dup1274
+cond_465_case_1.dup1296:                          ; preds = %cond_465_case_1.sink.split.dup1274
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 6 to ptr), ptr noundef nonnull inttoptr (i64 10 to ptr))
   %35 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 10 to ptr))
   call void @__quantum__qis__mz__body(ptr noundef nonnull inttoptr (i64 7 to ptr), ptr noundef nonnull inttoptr (i64 11 to ptr))
@@ -163,15 +163,15 @@ cond_460_case_1.dup1296:                          ; preds = %cond_460_case_1.sin
   %37 = call i1 @__quantum__rt__read_result(ptr noundef nonnull inttoptr (i64 12 to ptr))
   br label %__prepare_module_record_output_final
 
-__prepare_module_record_output_final:             ; preds = %cond_460_case_1.dup1301, %cond_460_case_1.dup1298, %cond_460_case_1.dup1296, %cond_460_case_1.dup1295
-  %phi.calluser.edge1308 = phi i1 [ %16, %cond_460_case_1.dup1295 ], [ %37, %cond_460_case_1.dup1296 ], [ %34, %cond_460_case_1.dup1298 ], [ %19, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge1307 = phi i1 [ %15, %cond_460_case_1.dup1295 ], [ %36, %cond_460_case_1.dup1296 ], [ %33, %cond_460_case_1.dup1298 ], [ %18, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge1306 = phi i1 [ %14, %cond_460_case_1.dup1295 ], [ %35, %cond_460_case_1.dup1296 ], [ %32, %cond_460_case_1.dup1298 ], [ %17, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge1305 = phi i1 [ %2, %cond_460_case_1.dup1295 ], [ %20, %cond_460_case_1.dup1296 ], [ %20, %cond_460_case_1.dup1298 ], [ %2, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge1304 = phi i1 [ %3, %cond_460_case_1.dup1295 ], [ %21, %cond_460_case_1.dup1296 ], [ %21, %cond_460_case_1.dup1298 ], [ %3, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge1303 = phi i1 [ %4, %cond_460_case_1.dup1295 ], [ %22, %cond_460_case_1.dup1296 ], [ %22, %cond_460_case_1.dup1298 ], [ %4, %cond_460_case_1.dup1301 ]
-  %phi.calluser.edge = phi i1 [ %5, %cond_460_case_1.dup1295 ], [ %23, %cond_460_case_1.dup1296 ], [ %23, %cond_460_case_1.dup1298 ], [ %5, %cond_460_case_1.dup1301 ]
-  %phi.edge1302 = phi i64 [ %12, %cond_460_case_1.dup1295 ], [ %30, %cond_460_case_1.dup1296 ], [ %30, %cond_460_case_1.dup1298 ], [ %12, %cond_460_case_1.dup1301 ]
+__prepare_module_record_output_final:             ; preds = %cond_465_case_1.dup1301, %cond_465_case_1.dup1298, %cond_465_case_1.dup1296, %cond_465_case_1.dup1295
+  %phi.calluser.edge1308 = phi i1 [ %16, %cond_465_case_1.dup1295 ], [ %37, %cond_465_case_1.dup1296 ], [ %34, %cond_465_case_1.dup1298 ], [ %19, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge1307 = phi i1 [ %15, %cond_465_case_1.dup1295 ], [ %36, %cond_465_case_1.dup1296 ], [ %33, %cond_465_case_1.dup1298 ], [ %18, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge1306 = phi i1 [ %14, %cond_465_case_1.dup1295 ], [ %35, %cond_465_case_1.dup1296 ], [ %32, %cond_465_case_1.dup1298 ], [ %17, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge1305 = phi i1 [ %2, %cond_465_case_1.dup1295 ], [ %20, %cond_465_case_1.dup1296 ], [ %20, %cond_465_case_1.dup1298 ], [ %2, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge1304 = phi i1 [ %3, %cond_465_case_1.dup1295 ], [ %21, %cond_465_case_1.dup1296 ], [ %21, %cond_465_case_1.dup1298 ], [ %3, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge1303 = phi i1 [ %4, %cond_465_case_1.dup1295 ], [ %22, %cond_465_case_1.dup1296 ], [ %22, %cond_465_case_1.dup1298 ], [ %4, %cond_465_case_1.dup1301 ]
+  %phi.calluser.edge = phi i1 [ %5, %cond_465_case_1.dup1295 ], [ %23, %cond_465_case_1.dup1296 ], [ %23, %cond_465_case_1.dup1298 ], [ %5, %cond_465_case_1.dup1301 ]
+  %phi.edge1302 = phi i64 [ %12, %cond_465_case_1.dup1295 ], [ %30, %cond_465_case_1.dup1296 ], [ %30, %cond_465_case_1.dup1298 ], [ %12, %cond_465_case_1.dup1301 ]
   call void @__quantum__rt__bool_record_output(i1 %0, ptr noundef nonnull @0)
   call void @__quantum__rt__bool_record_output(i1 noundef %1, ptr noundef nonnull @1)
   call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge, ptr noundef nonnull @2)
