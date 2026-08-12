@@ -97,6 +97,11 @@ impl QirCodegenExtension {
                 &args.inputs,
                 args.outputs,
             ),
+            FutureToMeasurement => {
+                // Normally removed by the qsystem pass; this is only relevant
+                // when that pass is disabled.
+                args.outputs.finish(context.builder(), [args.inputs[0]])
+            }
             _ => anyhow::bail!("Unknown op: {op:?}"),
         }
     }
@@ -156,5 +161,12 @@ mod test {
                 .unwrap();
             check_emission!(hugr, ctx);
         })
+    }
+
+    #[rstest]
+    fn emit_future_to_measurement_without_qsystem_pass(ctx: TestContext) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let mut hugr = single_op_hugr(QSystemOp::FutureToMeasurement.into());
+        check_emission!(hugr, ctx);
     }
 }
