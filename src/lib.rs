@@ -31,12 +31,16 @@ use tket::passes::{
 };
 pub mod cli;
 pub mod lower_ssa_vars;
+mod preserved_barrier;
 pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
 use crate::lower_ssa_vars::{
     lower_float_selects_and_phis, lower_qubit_selects_and_phis, normalize_block_names,
+};
+use crate::preserved_barrier::{
+    preserve_barriers_before_qsystem_pass, restore_preserved_barriers_after_qsystem_pass,
 };
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
@@ -115,8 +119,10 @@ impl CompileArgs {
             hugr.validate()?;
         }
         if self.qsystem_pass {
+            preserve_barriers_before_qsystem_pass(hugr)?;
             let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(QSystemPlatform::Helios);
             qsystem_pass.run(hugr)?;
+            restore_preserved_barriers_after_qsystem_pass(hugr)?;
             let qsystem_llvm_pass = tket_qsystem::QSystemLLVMPass::default();
             qsystem_llvm_pass.run(hugr)?;
             if self.validate {

@@ -44,21 +44,15 @@ Expected error:
 :language: text
 ```
 
-## Unsupported: barrier
+## Barrier
 
-Source file: `guppy_examples/guppy-features/unsupported/barrier.py`
+Source file: `guppy_examples/guppy-features/supported/barrier.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/barrier.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/barrier.py
 :language: python
 ```
 
-The current lowering path for barriers also introduces array-typed values, so barriers are not currently supported in the H-Series QIR subset.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/barrier.error
-:language: text
-```
+Any non-qubit arguments are ignored for the emitted QIR barrier call.
 
 ## Memory swap
 

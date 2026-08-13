@@ -1,4 +1,5 @@
 {
+  "barrier-array-unpack": "d37d068e9cfdb4e02a99585cb412ef2488816024420a626a81406ea16ccc8568",
   "generates-llvm-switch": "6bff49fb7272233109463b8315436ccccf7ad8218a0fba47442fd699df5ee9da",
   "generates-qubit-selects-1": "d3e56d865d396539cb09985ef7f17fe9f4eb0d7a8ac8581705c1ebca9c9f79d6",
   "generates-qubit-selects-2": "d8a45de21cb02347691070572f930137ef8e216af7b2e18460b9fed673d84ff5",

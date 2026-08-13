@@ -11,6 +11,7 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 | if elif else constructs                               | ✅       |                                                                        |
 | Measurement objects from `measure(q)`                 | ✅       | Read the classical value with `.read()`                                |
 | Angle values and arithmetic                           | ✅       | Supported for gate parameters such as `rz`                             |
+| `barrier`                                             | ✅       | Non-qubit arguments are ignored                                        |
 | function overloading                                  | ✅       |                                                                        |
 | Generics (`type_var`/`nat_var`)                       | ✅       | `nat_var`s are less useful without runtime array support               |
 | Function type annotations                             | ✅       |                                                                        |
@@ -26,7 +27,6 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 | Recursive functions or loops within `@guppy`          | *️⃣     | Only if unrollable/serializable through chosen LLVM optimization level |
 | `Stack`, `Queue`, and `PriorityQueue`                 | ❌       | Backed by runtime arrays                                               |
 | `measure_array` or `discard_array`                    | ❌       | Use non-comptime arrays internally                                     |
-| `barrier`                                             | ❌       | Uses non-comptime arrays internally                                    |
 | `exit` and `panic`                                    | ❌       | Currently unsupported on H2 hardware                                   |
 | RNG: `__new__`, `discard`, `random_int/_bounded`      | ✅       | Specific to Quantinuum hardware                                        |
 | RNG: `random_advance`                                 | ❌       | Currently unsupported on H2 hardware                                   |
