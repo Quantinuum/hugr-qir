@@ -23,7 +23,8 @@ impl QirCodegenExtension {
         ensure!(
             custom_type.extension() == &MEASUREMENT_EXTENSION_ID
                 && custom_type.name() == MEASUREMENT_TYPE_ID.as_str()
-                && custom_type.args().is_empty()
+                && custom_type.args().is_empty(),
+            "expected type tket.measurement.Measurement"
         );
         Ok(session.iw_context().bool_type().into())
     }
