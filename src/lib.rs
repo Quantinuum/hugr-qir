@@ -26,8 +26,7 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, InlineFunctionsPass, PassScope, RemoveDeadFuncsPass, WithScope,
-    composable::Preserve,
+    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
 pub mod lower_ssa_vars;
@@ -42,7 +41,7 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 use itertools::Itertools;
-use tket::passes::inline_funcs::InlineFuncsHeuristic;
+use tket::passes::inline_funcs::inline_acyclic_scoped;
 use tket_qsystem::QSystemPlatform;
 
 #[cfg(feature = "py")]
@@ -135,8 +134,9 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        let inline_pass = InlineFunctionsPass::default().with_heuristic(InlineFuncsHeuristic::All);
-        inline_pass.run(hugr)?;
+        inline_acyclic_scoped(hugr, PassScope::Global(Preserve::Entrypoint), |_, _| {
+            true // <- always inline, no matter what
+        })?;
         if self.validate {
             hugr.validate()?;
         }

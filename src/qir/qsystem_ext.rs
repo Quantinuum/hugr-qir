@@ -124,7 +124,7 @@ mod test {
     use crate::test::single_op_hugr;
     use tket::passes::ComposablePass;
     use tket_qsystem::QSystemPlatform;
-    use tket_qsystem::extension::qsystem::QSystemOp;
+    use tket_qsystem::extension::qsystem::helios::HeliosOp;
 
     #[rstest::fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
@@ -141,14 +141,14 @@ mod test {
     }
 
     #[rstest]
-    #[case(QSystemOp::Reset)]
-    #[case(QSystemOp::QFree)]
-    #[case(QSystemOp::TryQAlloc)]
-    #[case(QSystemOp::ZZPhase)]
-    #[case(QSystemOp::PhasedX)]
-    #[case(QSystemOp::Rz)]
-    #[case(QSystemOp::LazyMeasure)]
-    #[case(QSystemOp::LazyMeasureReset)]
+    #[case(HeliosOp::Reset)]
+    #[case(HeliosOp::QFree)]
+    #[case(HeliosOp::TryQAlloc)]
+    #[case(HeliosOp::ZZPhase)]
+    #[case(HeliosOp::PhasedX)]
+    #[case(HeliosOp::Rz)]
+    #[case(HeliosOp::LazyMeasure)]
+    #[case(HeliosOp::LazyMeasureReset)]
     fn emit(ctx: TestContext, #[case] op: impl Into<OpType>) {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let op = op.into();
@@ -168,7 +168,7 @@ mod test {
     #[rstest]
     fn emit_future_to_measurement_without_qsystem_pass(ctx: TestContext) {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
-        let mut hugr = single_op_hugr(QSystemOp::FutureToMeasurement.into());
+        let mut hugr = single_op_hugr(HeliosOp::FutureToMeasurement.into());
         check_emission!(hugr, ctx);
     }
 }
