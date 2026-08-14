@@ -42,6 +42,7 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 use itertools::Itertools;
+use tket::passes::inline_funcs::InlineFuncsHeuristic;
 use tket_qsystem::QSystemPlatform;
 
 #[cfg(feature = "py")]
@@ -110,12 +111,14 @@ impl CompileArgs {
     }
 
     /// TODO: Change to "hugr: &mut impl HugrMut" once QSeriesPass works on &mut impl HugrMut
+    /// TODO: Set platform to H2 once supported in tket-qsystem. Make configurable from args if/when we move to supporting the NG systems
     pub fn hugr_to_hugr(&self, hugr: &mut Hugr) -> Result<()> {
         if self.validate {
             hugr.validate()?;
         }
+        let qsystem_platform = QSystemPlatform::Helios;
         if self.qsystem_pass {
-            let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(QSystemPlatform::Helios);
+            let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(qsystem_platform);
             qsystem_pass.run(hugr)?;
             let qsystem_llvm_pass = tket_qsystem::QSystemLLVMPass::default();
             qsystem_llvm_pass.run(hugr)?;
@@ -132,7 +135,7 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        let inline_pass = InlineFunctionsPass::default();
+        let inline_pass = InlineFunctionsPass::default().with_heuristic(InlineFuncsHeuristic::All);
         inline_pass.run(hugr)?;
         if self.validate {
             hugr.validate()?;
@@ -177,13 +180,13 @@ impl CompileArgs {
         Ok(ctm)
     }
 
+    /// TODO: Use hugr-llvm debug info <https://github.com/Quantinuum/hugr-qir/issues/363>
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
         let extensions = self.codegen_extensions().into();
         let namer = Rc::new(Namer::new("__hugr__.", true));
         let module = context.create_module(self.module_name().as_ref());
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
 
-        // Don't use debug info for now
         let module = emit
             .emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)?
             .finish()

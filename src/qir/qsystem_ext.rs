@@ -15,16 +15,16 @@ use hugr_llvm::{
     sum::LLVMSumValue,
     types::HugrSumType,
 };
-use tket_qsystem::extension::qsystem::QSystemOp;
+use tket_qsystem::extension::qsystem::helios::HeliosOp;
 
 impl QirCodegenExtension {
     pub fn emit_qsystem_op<'c, H: HugrView<Node = Node>>(
         &self,
         context: &mut EmitFuncContext<'c, '_, H>,
         args: EmitOpArgs<'c, '_, ExtensionOp, H>,
-        op: QSystemOp,
+        op: HeliosOp,
     ) -> Result<()> {
-        use QSystemOp::*;
+        use HeliosOp::*;
         match op {
             LazyMeasure => {
                 let qb = args.inputs[0];
@@ -100,6 +100,8 @@ impl QirCodegenExtension {
             FutureToMeasurement => {
                 // Normally removed by the qsystem pass; this is only relevant
                 // when that pass is disabled.
+                // Both futures and measurements lower to i1s, so we just pass this
+                // through.
                 args.outputs.finish(context.builder(), [args.inputs[0]])
             }
             _ => anyhow::bail!("Unknown op: {op:?}"),
