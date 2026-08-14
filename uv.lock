@@ -896,7 +896,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "guppylang-internals", specifier = ">=1.0.1" },
+    { name = "guppylang-internals", specifier = ">=1.0.1,<2.0.0" },
     { name = "maturin", specifier = ">=1.11.5,<2.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=7.0.0,<8" },
