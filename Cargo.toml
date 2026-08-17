@@ -15,7 +15,7 @@ clap-verbosity-flag = "3.0"
 clio = { version = "0.3.5", features = ["clap-parse"] }
 hugr = { version = "0.27", features = ["llvm"] }
 hugr-cli = "0.27"
-hugr-core = "0.27"
+hugr-core = "0.29"
 hugr-llvm = { version = "0.27", features = ["test-utils"] }
 itertools = "0.15.0"
 lazy_static = "1.5.0"
