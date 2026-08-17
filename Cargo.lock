@@ -250,6 +250,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "capnp"
+version = "0.26.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58ddce707ad9fb2ae92770523cd0e17a0cf34e79b66a9ca4db2dd993535fe718"
+dependencies = [
+ "embedded-io",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -829,9 +838,19 @@ version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e91648ee98355c1d502a0d466eec0b67ca2612f81ef5d261e62fca8aa567ab52"
 dependencies = [
- "hugr-core",
+ "hugr-core 0.27.1",
  "hugr-llvm",
- "hugr-model",
+ "hugr-model 0.27.1",
+]
+
+[[package]]
+name = "hugr"
+version = "0.29.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdf82d7df5459b76cf6818f5b0df72f4ccfafc60678736301b35aa908da8b903"
+dependencies = [
+ "hugr-core 0.29.3",
+ "hugr-model 0.29.3",
 ]
 
 [[package]]
@@ -845,14 +864,36 @@ dependencies = [
  "clap-verbosity-flag",
  "clio",
  "derive_more 2.1.1",
- "hugr",
+ "hugr 0.27.1",
  "schemars 1.2.1",
  "serde",
  "serde_json",
- "tabled",
+ "tabled 0.20.0",
  "thiserror 2.0.18",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "hugr-cli"
+version = "0.29.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "389149b17f459d52540b9569c8d4721c44b350d0d73ef9eb08745a04e77f99a6"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap-verbosity-flag",
+ "clio",
+ "derive_more 2.1.1",
+ "hugr 0.29.3",
+ "schemars 1.2.1",
+ "serde",
+ "serde_json",
+ "tabled 0.21.0",
+ "thiserror 2.0.18",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]
@@ -868,9 +909,47 @@ dependencies = [
  "downcast-rs",
  "enum_dispatch",
  "html-escape",
- "hugr-model",
+ "hugr-model 0.27.1",
  "indexmap 2.14.0",
  "itertools 0.14.0",
+ "ordered-float",
+ "pastey",
+ "petgraph 0.8.3",
+ "portgraph",
+ "regex",
+ "relrc",
+ "rustc-hash",
+ "schemars 1.2.1",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "smallvec",
+ "smol_str",
+ "static_assertions",
+ "strum",
+ "thiserror 2.0.18",
+ "tracing",
+ "typetag",
+ "zstd",
+]
+
+[[package]]
+name = "hugr-core"
+version = "0.29.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e6c737d774c8d4847822a8c4543404c588fb0a3dd9f5418a15c4132c8000230"
+dependencies = [
+ "base64",
+ "cgmath",
+ "delegate",
+ "derive_more 2.1.1",
+ "downcast-rs",
+ "enum_dispatch",
+ "html-escape",
+ "hugr-model 0.29.3",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
  "ordered-float",
  "pastey",
  "petgraph 0.8.3",
@@ -903,7 +982,7 @@ dependencies = [
  "cc",
  "delegate",
  "derive_more 2.1.1",
- "hugr-core",
+ "hugr-core 0.27.1",
  "inkwell",
  "insta",
  "itertools 0.14.0",
@@ -921,10 +1000,32 @@ checksum = "9699c56c272a729b110e989d799e63beb6f077b5bcc118cd76c088453693615e"
 dependencies = [
  "base64",
  "bumpalo",
- "capnp",
+ "capnp 0.25.6",
  "derive_more 2.1.1",
  "indexmap 2.14.0",
  "itertools 0.14.0",
+ "ordered-float",
+ "pest",
+ "pest_derive",
+ "pretty",
+ "rustc-hash",
+ "semver",
+ "smol_str",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "hugr-model"
+version = "0.29.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7108e9a20434b90d6f8770f078331233ad5fd5d3289a1d95dca2fd265d2c5d6"
+dependencies = [
+ "base64",
+ "bumpalo",
+ "capnp 0.26.2",
+ "derive_more 2.1.1",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
  "ordered-float",
  "pest",
  "pest_derive",
@@ -943,9 +1044,9 @@ dependencies = [
  "clap",
  "clap-verbosity-flag",
  "clio",
- "hugr",
- "hugr-cli",
- "hugr-core",
+ "hugr 0.27.1",
+ "hugr-cli 0.27.1",
+ "hugr-core 0.27.1",
  "hugr-llvm",
  "insta",
  "itertools 0.15.0",
@@ -954,7 +1055,7 @@ dependencies = [
  "rstest",
  "serde",
  "strum",
- "tket",
+ "tket 0.18.0",
  "tket-qsystem",
  "typetag",
  "wasmparser",
@@ -1009,6 +1110,7 @@ checksum = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
 dependencies = [
  "equivalent",
  "hashbrown 0.17.1",
+ "rayon",
  "serde",
  "serde_core",
 ]
@@ -1273,6 +1375,17 @@ name = "papergrid"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6978128c8b51d8f4080631ceb2302ab51e32cc6e8615f735ee2f83fd269ae3f1"
+dependencies = [
+ "bytecount",
+ "fnv",
+ "unicode-width",
+]
+
+[[package]]
+name = "papergrid"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0984e668274d34691bc2b262ef0d115de5fa9973bcdee7ae32213f93099153e"
 dependencies = [
  "bytecount",
  "fnv",
@@ -1994,7 +2107,18 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e39a2ee1fbcd360805a771e1b300f78cc88fec7b8d3e2f71cd37bbf23e725c7d"
 dependencies = [
- "papergrid",
+ "papergrid 0.17.0",
+ "tabled_derive",
+ "testing_table",
+]
+
+[[package]]
+name = "tabled"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5dc662e6da844ad6e428ad16b57967c9d33c82e16bb1c258326c0c078605dff"
+dependencies = [
+ "papergrid 0.18.0",
  "tabled_derive",
  "testing_table",
 ]
@@ -2155,10 +2279,50 @@ dependencies = [
  "delegate",
  "derive_more 2.1.1",
  "fxhash",
- "hugr",
- "hugr-core",
+ "hugr 0.27.1",
+ "hugr-core 0.27.1",
  "indexmap 2.14.0",
  "itertools 0.14.0",
+ "lazy_static",
+ "num-rational",
+ "pastey",
+ "pest",
+ "pest_derive",
+ "petgraph 0.8.3",
+ "portgraph",
+ "priority-queue",
+ "rayon",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "smol_str",
+ "strum",
+ "thiserror 2.0.18",
+ "tket-json-rs",
+ "tracing",
+ "typetag",
+ "zstd",
+]
+
+[[package]]
+name = "tket"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "118f46fa4a3cf414af79c125e66a770f29fed3a799e02c5cca95789a56316d20"
+dependencies = [
+ "ascent",
+ "bytemuck",
+ "cgmath",
+ "chrono",
+ "crossbeam-channel",
+ "csv",
+ "delegate",
+ "derive_more 2.1.1",
+ "fxhash",
+ "hugr 0.29.3",
+ "hugr-core 0.29.3",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
  "lazy_static",
  "num-rational",
  "pastey",
@@ -2195,24 +2359,24 @@ dependencies = [
 
 [[package]]
 name = "tket-qsystem"
-version = "0.24.0"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04aecdc44b24c95bba3ba49cb9a022d199fa0aa22dc015519a1abbb77e5e037e"
+checksum = "2e5304bc4462759177968822de5e24907c154f8afc1045ecf0d8e5a75081038c"
 dependencies = [
  "anyhow",
  "clap",
  "delegate",
  "derive_more 2.1.1",
- "hugr",
- "hugr-cli",
- "hugr-core",
+ "hugr 0.29.3",
+ "hugr-cli 0.29.3",
+ "hugr-core 0.29.3",
  "indexmap 2.14.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "lazy_static",
  "serde",
  "smol_str",
  "strum",
- "tket",
+ "tket 0.21.2",
  "tket-json-rs",
  "typetag",
 ]
