@@ -13,6 +13,7 @@ use hugr::llvm::utils::fat::FatExt;
 use hugr::ops::OpType;
 use hugr::{Hugr, Node};
 use hugr_core::hugr::internal::HugrMutInternals;
+use hugr_llvm::emit::EmitDebugInfo;
 pub(crate) use hugr_llvm::inkwell;
 use inkwell::attributes::AttributeLoc;
 use inkwell::context::Context;
@@ -25,7 +26,7 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve, inline_acyclic,
+    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
 pub mod lower_ssa_vars;
@@ -40,6 +41,8 @@ use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
 use itertools::Itertools;
+use tket::passes::inline_funcs::inline_acyclic_scoped;
+use tket_qsystem::QSystemPlatform;
 
 #[cfg(feature = "py")]
 mod py;
@@ -107,13 +110,17 @@ impl CompileArgs {
     }
 
     /// TODO: Change to "hugr: &mut impl HugrMut" once QSeriesPass works on &mut impl HugrMut
+    /// TODO: Set platform to H2 once supported in tket-qsystem. Make configurable from args if/when we move to supporting the NG systems
     pub fn hugr_to_hugr(&self, hugr: &mut Hugr) -> Result<()> {
         if self.validate {
             hugr.validate()?;
         }
+        let qsystem_platform = QSystemPlatform::Helios;
         if self.qsystem_pass {
-            let pass = tket_qsystem::QSystemPass::default();
-            pass.run(hugr)?;
+            let qsystem_pass = tket_qsystem::QSystemRebasePass::defaults(qsystem_platform);
+            qsystem_pass.run(hugr)?;
+            let qsystem_llvm_pass = tket_qsystem::QSystemLLVMPass::default();
+            qsystem_llvm_pass.run(hugr)?;
             if self.validate {
                 hugr.validate()?;
             }
@@ -127,7 +134,7 @@ impl CompileArgs {
     }
 
     pub fn inline_calls(&self, hugr: &mut Hugr) -> Result<()> {
-        inline_acyclic(hugr, |_, _| {
+        inline_acyclic_scoped(hugr, PassScope::Global(Preserve::Entrypoint), |_, _| {
             true // <- always inline, no matter what
         })?;
         if self.validate {
@@ -173,12 +180,17 @@ impl CompileArgs {
         Ok(ctm)
     }
 
+    /// TODO: Use hugr-llvm debug info <https://github.com/Quantinuum/hugr-qir/issues/363>
     pub fn hugr_to_llvm<'c>(&self, hugr: &Hugr, context: &'c Context) -> Result<Module<'c>> {
         let extensions = self.codegen_extensions().into();
         let namer = Rc::new(Namer::new("__hugr__.", true));
         let module = context.create_module(self.module_name().as_ref());
         let emit = EmitHugr::new(context, module, namer.clone(), extensions);
-        let module = emit.emit_module(hugr.fat_root().unwrap())?.finish();
+
+        let module = emit
+            .emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)?
+            .finish()
+            .0;
 
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
@@ -395,18 +407,10 @@ pub fn add_module_metadata(
             .get_context()
             .metadata_node(&[val_3_0.into(), val_3_1.into(), val_3_2.into()]);
 
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_0)
-        .unwrap();
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_1)
-        .unwrap();
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_2)
-        .unwrap();
-    module
-        .add_global_metadata("llvm.module.flags", &md_node_3)
-        .unwrap();
+    module.add_global_metadata("llvm.module.flags", &md_node_0)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_1)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_2)?;
+    module.add_global_metadata("llvm.module.flags", &md_node_3)?;
 
     Ok(())
 }

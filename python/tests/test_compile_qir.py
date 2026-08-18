@@ -4,7 +4,7 @@ from typing import no_type_check
 
 import pytest
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import h, measure
 from hugr_qir.guppy_to_qir import guppy_to_qir_str
 from hugr_qir.hugr_to_qir import to_qir_str
@@ -20,11 +20,11 @@ def main() -> None:
     h(q0)
     h(q1)
 
-    b0 = measure(q0)
-    b1 = measure(q1)
+    b0 = measure(q0).read()
+    b1 = measure(q1).read()
     b2 = b0 ^ b1
 
-    result("0", b2)
+    output("0", b2)
 
 
 hugr_package = main.compile()

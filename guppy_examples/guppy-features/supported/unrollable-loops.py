@@ -1,7 +1,7 @@
 import sys
 
 from guppylang import guppy
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 from guppylang.std.quantum import h, measure, qubit, x
 
 
@@ -21,7 +21,7 @@ def main() -> None:
     for _ in range(30):
         x(q1)
 
-    result("q", measure(q1))
+    output("q", measure(q1).read())
 
 
 if __name__ == "__main__":

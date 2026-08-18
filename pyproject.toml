@@ -3,11 +3,11 @@ name = "hugr-qir"
 dynamic = ["version"]
 description = "Quantinuum's tool for converting HUGR to QIR"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "click>=8.3.1,<8.5.0",
-    "guppylang~=0.21.11",
-    "hugr>=0.15.4",
+    "guppylang>=1.0.1,<2.0.0",
+    "hugr>=0.18.3",
     "quantinuum-qircheck~=0.8.0",
 ]
 
@@ -16,7 +16,7 @@ hugr-qir = "hugr_qir.cli:hugr_qir"
 
 [dependency-groups]
 dev = [
-    "guppylang-internals>=0.32.0",
+    "guppylang-internals>=1.0.1,<2.0.0",
     "maturin>=1.11.5,<2.0",
     "pytest-cov>=7.0.0,<8",
     "pytest-mock>=3.15.1",
@@ -38,7 +38,7 @@ docs = [
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus~=0.46.0",
+    "qnexus~=0.48.0",
 ]
 
 [build-system]
@@ -63,7 +63,7 @@ include = ["python"]
 error-on-warning = true
 
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.12"
 
 [tool.deptry]
 known_first_party = ["hugr_qir"]
@@ -85,7 +85,7 @@ python-packages = ["hugr_qir"]
 bindings = "pyo3"
 
 [tool.cibuildwheel]
-build = "cp310-*"
+build = "cp312-*"
 build-frontend = "build[uv]"
 skip = "*-win32 *-manylinux_i686 *-musllinux*"
 manylinux-x86_64-image = "manylinux_2_34"

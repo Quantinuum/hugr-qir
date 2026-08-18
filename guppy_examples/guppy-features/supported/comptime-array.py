@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING, no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import array, qubit, result
+from guppylang.std.builtins import array, output, qubit
 from guppylang.std.quantum import cx, measure, x
 
 if TYPE_CHECKING:
@@ -34,7 +34,7 @@ def steane_cx(
 def steane_measure(
     stq: list[qubit] @ owned,
 ) -> tuple[bool, bool, bool, bool, bool, bool, bool]:
-    return tuple([measure(stq[i]) for i in range(7)])
+    return tuple([measure(stq[i]).read() for i in range(7)])
 
 
 @no_type_check
@@ -44,7 +44,7 @@ def steane_measure_result(
     name, qbs = stq1
     res = steane_measure(qbs)
     for i in range(len(res)):
-        result(f"{name}_{i}", res[i])
+        output(f"{name}_{i}", res[i])
 
 
 @guppy.comptime

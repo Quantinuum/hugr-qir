@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.qsystem.functional import measure_and_reset
 from guppylang.std.quantum import measure, x
 
@@ -12,9 +12,9 @@ def main() -> None:
     q0, q1, q2, q3 = qubit(), qubit(), qubit(), qubit()
     qc0, qc1 = qubit(), qubit()
     x(qc1)
-    c0, c1 = measure(qc0), measure(qc1)
-    result("c0", c0)  # -> false
-    result("c1", c1)  # -> true
+    c0, c1 = measure(qc0).read(), measure(qc1).read()
+    output("c0", c0)  # -> false
+    output("c1", c1)  # -> true
 
     int_res = 0
 
@@ -37,11 +37,11 @@ def main() -> None:
     q2, q2m1 = measure_and_reset(q2)
     q3, q3m1 = measure_and_reset(q3)
 
-    result("q0", q0m1)  # -> false
-    result("q1", q1m1)  # -> false
-    result("q2", q2m1)  # -> true
-    result("q3", q3m1)  # -> false
-    result("c0 + c1", int_res)  # -> 1
+    output("q0", q0m1.read())  # -> false
+    output("q1", q1m1.read())  # -> false
+    output("q2", q2m1.read())  # -> true
+    output("q3", q3m1.read())  # -> false
+    output("c0 + c1", int_res)  # -> 1
 
     if c0:
         x(q0)
@@ -49,13 +49,13 @@ def main() -> None:
         x(q1)
 
     mtup = (
-        measure(q0),  # -> false
-        measure(q1),  # -> true
-        measure(q2),  # -> false
-        measure(q3),  # -> false
+        measure(q0).read(),  # -> false
+        measure(q1).read(),  # -> true
+        measure(q2).read(),  # -> false
+        measure(q3).read(),  # -> false
     )
     integer_value = to_int(mtup)
-    result("2nd result as int", integer_value)  # -> [0100] = 4
+    output("2nd result as int", integer_value)  # -> [0100] = 4
 
     q4 = qubit()
     q5 = qubit()
@@ -70,8 +70,8 @@ def main() -> None:
         x(q4)
         x(q5)
 
-    result("q4", measure(q4))  # -> false
-    result("q5", measure(q5))  # -> true
+    output("q4", measure(q4).read())  # -> false
+    output("q5", measure(q5).read())  # -> true
 
 
 @guppy.comptime

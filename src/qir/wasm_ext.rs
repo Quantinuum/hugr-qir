@@ -189,6 +189,7 @@ fn result_type<'c>(
     let wasm::WasmType::Result { outputs } = hugr_type.clone().try_into()? else {
         anyhow::bail!("Expected WasmType::Result");
     };
+    let outputs: TypeRow = outputs.try_into()?;
 
     if outputs.is_empty() {
         return Ok(empty_struct_type(session.iw_context()).into());
@@ -197,7 +198,7 @@ fn result_type<'c>(
     if outputs.len() > 1 {
         bail!("Result type has more than one output value")
     }
-    session.llvm_type(&outputs[0].clone().try_into().unwrap())
+    session.llvm_type(&outputs[0].clone())
 }
 
 fn insert_func<'c, H: HugrView<Node = Node>>(
@@ -271,7 +272,7 @@ fn validate_lookup_row_against_wasm(
             ValType::I32 if hugr_type_matches_wasm_i32(requested_ty) => None,
             _ => Some(format!(
                 "{row_kind} {idx} has requested type {} but wasm function expects {wasm_ty}",
-                requested_ty.as_type_enum()
+                requested_ty
             )),
         })
         .collect_vec();
@@ -508,7 +509,7 @@ mod test {
                     wasm_file: Some("example.wasm".into()),
                 })
         });
-        let hugr = single_op_hugr(op.into());
+        let mut hugr = single_op_hugr(op.into());
         check_emission!(hugr, llvm_ctx);
     }
 

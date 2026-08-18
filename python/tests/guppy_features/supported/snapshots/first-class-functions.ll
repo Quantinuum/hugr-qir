@@ -15,28 +15,28 @@ alloca_block:
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  br i1 %0, label %bb, label %__hugr__.guppy_example_mod.b_function.22.exit
+  br i1 %0, label %bb0, label %bb
 
-bb:                                               ; preds = %alloca_block
-  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
-  br label %__hugr__.guppy_example_mod.b_function.22.exit
-
-__hugr__.guppy_example_mod.b_function.22.exit:    ; preds = %alloca_block, %bb
+bb:                                               ; preds = %alloca_block, %bb0
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
   ret void
+
+bb0:                                              ; preds = %alloca_block
+  tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
+  br label %bb
 }
 
 declare void @__quantum__rt__int_record_output(i64, ptr) local_unnamed_addr
+
+declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1
 
 declare i1 @__quantum__rt__read_result(ptr readonly) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, ptr) local_unnamed_addr
-
-declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__rt__initialize(ptr) local_unnamed_addr
 

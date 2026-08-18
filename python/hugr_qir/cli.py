@@ -83,7 +83,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Name of wasm binary file to link against (optional)",
 )
 @click.version_option(version=version("hugr_qir"))
-def hugr_qir(  # noqa: PLR0913
+def hugr_qir(  # noqa: PLR0913, PLR0917
     validate_qir: bool,
     validate_hugr: bool,
     target: str,
@@ -111,7 +111,7 @@ def hugr_qir(  # noqa: PLR0913
     )
 
 
-def hugr_qir_impl(  # noqa: PLR0913
+def hugr_qir_impl(  # noqa: PLR0913, PLR0917
     validate_qir: bool,
     validate_hugr: bool,
     target: str,

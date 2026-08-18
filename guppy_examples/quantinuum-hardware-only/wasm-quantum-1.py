@@ -2,10 +2,10 @@ from typing import no_type_check
 
 from guppylang import guppy, qubit
 from guppylang.std.num import nat
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 from guppylang.std.qsystem.functional import measure
 from guppylang_internals.decorator import wasm, wasm_module
-from guppylang_internals.wasm_util import WasmPlatform
+from guppylang_internals.std._internal.wasm import WasmPlatform
 
 
 @wasm_module("wasm-quantum-1.wasm", wasm_platform=WasmPlatform.H2)
@@ -32,5 +32,5 @@ def main() -> None:
     two = mod.add_one(1)
     six = mod.multi(2, 3)
     mod.discard()
-    result("qub", measure(qub))
-    result("2 + 6", two + six)
+    output("qub", measure(qub).read())
+    output("2 + 6", two + six)

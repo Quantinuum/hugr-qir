@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.platform import result
+from guppylang.std.platform import output
 from guppylang.std.quantum import measure, x
 
 
@@ -34,8 +34,8 @@ def main() -> None:
     # compiler dispatches one_state() to be used here
     other_q = apply_x_to_something()
 
-    result("q", measure(q))
-    result("other_q", measure(other_q))
+    output("q", measure(q).read())
+    output("other_q", measure(other_q).read())
 
 
 if __name__ == "__main__":

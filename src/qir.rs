@@ -1,5 +1,5 @@
-mod boolcodegenextension_workaround;
 pub mod futures_ext;
+pub mod measurement_ext;
 pub mod qsystem_ext;
 pub mod random_ext;
 pub mod result_ext;
@@ -25,13 +25,15 @@ use inkwell::{
     types::BasicType,
 };
 use itertools::Itertools;
-use tket_qsystem::extension::futures;
+use tket::extension::measurement;
+use tket_qsystem;
 
 use crate::target::CompileTarget;
 use hugr_llvm::{
     emit::{EmitFuncContext, emit_value},
     types::TypingSession,
 };
+use tket_qsystem::extension::futures;
 
 #[derive(Clone, Debug)]
 /// Customises how we lower prelude ops, types, and constants.
@@ -243,7 +245,7 @@ impl CodegenExtension for QirCodegenExtension {
                 let s = self.clone();
                 move |context, args, op| s.emit_result_op(context, args, op)
             })
-            .simple_extension_op::<tket_qsystem::extension::qsystem::QSystemOp>({
+            .simple_extension_op::<tket_qsystem::extension::qsystem::helios::HeliosOp>({
                 let s = self.clone();
                 move |context, args, op| s.emit_qsystem_op(context, args, op)
             })
@@ -261,5 +263,19 @@ impl CodegenExtension for QirCodegenExtension {
                     move |session, custom_type| s.convert_future_type(session, custom_type)
                 },
             )
+            .custom_type(
+                (
+                    measurement::MEASUREMENT_EXTENSION_ID,
+                    measurement::MEASUREMENT_TYPE_ID.to_string().into(),
+                ),
+                {
+                    let s = self.clone();
+                    move |session, custom_type| s.convert_measurement_type(session, custom_type)
+                },
+            )
+            .simple_extension_op::<measurement::MeasurementOp>({
+                let s = self.clone();
+                move |context, args, op| s.emit_measurement_op(context, args, op)
+            })
     }
 }

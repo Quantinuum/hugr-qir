@@ -2,7 +2,7 @@ import sys
 from typing import no_type_check
 
 from guppylang import guppy
-from guppylang.std.builtins import qubit, result
+from guppylang.std.builtins import output, qubit
 from guppylang.std.quantum import h, measure, x
 
 
@@ -11,7 +11,7 @@ from guppylang.std.quantum import h, measure, x
 def recursive_func(q: qubit) -> None:
     x(q)
     q_temp = qubit()
-    if measure(q_temp):
+    if measure(q_temp).read():
         return recursive_func(q)
     return None
 
@@ -22,7 +22,7 @@ def main() -> None:
     q = qubit()
     h(q)
     recursive_func(q)
-    result("q", measure(q))
+    output("q", measure(q).read())
 
 
 if __name__ == "__main__":

@@ -390,7 +390,17 @@ fn move_record_output_calls_to_function_end<'ctx>(function: FunctionValue<'ctx>)
     let context = first_block.get_context();
     let builder = context.create_builder();
 
-    let existing_final_block = find_prepare_module_record_final_block(function)?;
+    let existing_final_block =
+        find_prepare_module_record_final_block(function)?.and_then(|(block, is_stale)| {
+            if is_stale {
+                // Reset the block name so that record-output calls are
+                // again separated into a final named block.
+                block.set_name("");
+                None
+            } else {
+                Some(block)
+            }
+        });
 
     let mut calls_to_rebuild: Vec<InstructionValue<'ctx>> = Vec::new();
     for block in function.get_basic_blocks() {
@@ -514,7 +524,7 @@ fn move_record_output_calls_to_function_end<'ctx>(function: FunctionValue<'ctx>)
 
 fn find_prepare_module_record_final_block<'ctx>(
     function: FunctionValue<'ctx>,
-) -> Result<Option<BasicBlock<'ctx>>> {
+) -> Result<Option<(BasicBlock<'ctx>, bool)>> {
     let mut matching_blocks = Vec::new();
     let mut return_blocks = Vec::new();
 
@@ -543,7 +553,12 @@ fn find_prepare_module_record_final_block<'ctx>(
 
     let block = matching_blocks[0];
     if !block_is_prepare_module_record_final_block(block)? {
-        bail!("prepare_module: found named final record-output block with unexpected structure");
+        // LLVM passes may have merged other blocks into the final record block.
+        // This leaves the final block in a potentially undesirable shape, since
+        // we want to have all the record-output calls in this final block separated
+        // from any other instructions (except potential merge phis).
+        // The caller decides how to recover from this "stale" state.
+        return Ok(Some((block, true)));
     }
     if return_blocks.len() != 1 || return_blocks[0] != block {
         bail!(
@@ -551,7 +566,7 @@ fn find_prepare_module_record_final_block<'ctx>(
         );
     }
 
-    Ok(Some(block))
+    Ok(Some((block, false)))
 }
 
 fn block_is_prepare_module_record_final_block(block: BasicBlock) -> Result<bool> {
@@ -3214,9 +3229,14 @@ mod test {
         let function = module
             .get_function(function_name)
             .unwrap_or_else(|| panic!("expected function {function_name}"));
-        find_prepare_module_record_final_block(function)
+        let (block, is_stale) = find_prepare_module_record_final_block(function)
             .unwrap()
-            .unwrap_or_else(|| panic!("expected final prepare_module block in {function_name}"))
+            .unwrap_or_else(|| panic!("expected final prepare_module block in {function_name}"));
+        assert!(
+            !is_stale,
+            "expected canonical final prepare_module block in {function_name}"
+        );
+        block
     }
 
     fn assert_lowering_fixture(
@@ -3432,6 +3452,58 @@ merge:
         let after_second_prepare = module.to_string();
 
         assert_eq!(after_first_prepare, after_second_prepare);
+    }
+
+    #[test]
+    fn prepare_module_recovers_from_generic_renamed_final_block() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "prepare_module_generic_renamed_final_block",
+            r#"
+declare void @__quantum__rt__int_record_output(i64, i8*)
+
+define void @main(i64 %value) {
+entry:
+  br label %__prepare_module_record_output_final
+
+__prepare_module_record_output_final:
+  %shifted = add i64 %value, 1
+  call void @__quantum__rt__int_record_output(i64 %shifted, i8* null)
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        let main_fn = module.get_function("main").unwrap();
+        let (stale_block, is_stale) = find_prepare_module_record_final_block(main_fn)
+            .unwrap()
+            .expect("expected stale final block");
+        assert!(is_stale);
+        assert_eq!(
+            name_of_block(stale_block),
+            PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME
+        );
+
+        prepare_module(&module).unwrap();
+        verify_module(&module).unwrap();
+
+        let block_names: Vec<_> = main_fn
+            .get_basic_blocks()
+            .into_iter()
+            .map(name_of_block)
+            .collect();
+        assert_eq!(
+            block_names
+                .iter()
+                .filter(|name| name.as_str() == PREPARE_MODULE_RECORD_FINAL_BLOCK_NAME)
+                .count(),
+            1
+        );
+
+        let final_block = prepare_module_final_block(&module, "main");
+        assert!(block_is_prepare_module_record_final_block(final_block).unwrap());
     }
 
     #[test]

@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import array, result
+from guppylang.std.builtins import array, output
 from guppylang.std.lang import owned
 from guppylang.std.quantum import discard, measure
 
@@ -44,5 +44,5 @@ def main() -> None:
     for i in range(7):
         discard(arr3[i])
 
-    result("arr1_1", arr1[1])
-    result("arr3_7", measure(arr3[7]))
+    output("arr1_1", arr1[1])
+    output("arr3_7", measure(arr3[7]).read())

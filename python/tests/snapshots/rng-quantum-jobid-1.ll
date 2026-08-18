@@ -13,13 +13,9 @@ alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
   %shot = tail call i64 @___get_current_shot()
   %0 = icmp eq i64 %shot, 5
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  br i1 %0, label %bb, label %cond_125_case_1
+  br i1 %0, label %bb0, label %bb
 
-cond_125_case_1:                                  ; preds = %alloca_block, %bb
+bb:                                               ; preds = %alloca_block, %bb0
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %1 = tail call i1 @__quantum__rt__read_result(ptr null)
   tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @0)
@@ -28,10 +24,10 @@ cond_125_case_1:                                  ; preds = %alloca_block, %bb
   tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @1)
   ret void
 
-bb:                                               ; preds = %alloca_block
+bb0:                                              ; preds = %alloca_block
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  br label %cond_125_case_1
+  br label %bb
 }
 
 declare i64 @___get_current_shot() local_unnamed_addr

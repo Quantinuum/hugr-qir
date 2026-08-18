@@ -95,7 +95,7 @@ mod test {
         let mut insta = insta::Settings::clone_current();
         insta.set_snapshot_suffix(format!("{}_{}", insta.snapshot_suffix().unwrap_or(""), op));
         insta.bind(|| {
-            let hugr = single_op_hugr(op);
+            let mut hugr = single_op_hugr(op);
             check_emission!(hugr, ctx);
         })
     }

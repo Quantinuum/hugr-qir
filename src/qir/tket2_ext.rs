@@ -162,7 +162,6 @@ mod test {
     use rstest::rstest;
     use tket::TketOp;
 
-    use crate::qir::boolcodegenextension_workaround::BoolCodegenExtension;
     use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
     use crate::{
@@ -179,7 +178,6 @@ mod test {
                 })
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
-                .add_extension(BoolCodegenExtension)
         });
         llvm_ctx
     }
@@ -187,8 +185,8 @@ mod test {
     #[rstest]
     #[case(TketOp::QFree)]
     #[case(TketOp::QAlloc)]
-    #[case(TketOp::MeasureFree)]
     #[case(TketOp::Measure)]
+    #[case(TketOp::MeasureFree)]
     #[case(TketOp::Reset)]
     #[case(TketOp::Rz)]
     #[case(TketOp::Ry)]
@@ -208,7 +206,7 @@ mod test {
         let mut insta = insta::Settings::clone_current();
         insta.set_snapshot_suffix(format!("{}_{}", insta.snapshot_suffix().unwrap_or(""), op));
         insta.bind(|| {
-            let hugr = single_op_hugr(op);
+            let mut hugr = single_op_hugr(op);
             check_emission!(hugr, ctx);
         })
     }

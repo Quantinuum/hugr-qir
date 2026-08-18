@@ -20,6 +20,9 @@ devenv.local.nix
 # jetbrains ide
 .idea
 
+# macOS
+.DS_Store
+
 # examples
 
 .ipynb_checkpoints/*

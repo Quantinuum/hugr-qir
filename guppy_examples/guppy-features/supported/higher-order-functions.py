@@ -1,12 +1,12 @@
 import sys
-from collections.abc import Callable
 
 from guppylang import guppy
-from guppylang.std.platform import result
+from guppylang.std.builtins import Function
+from guppylang.std.platform import output
 
 
 @guppy
-def my_function(f: Callable[[int], bool]) -> Callable[[int], bool]:
+def my_function(f: Function[[int], bool]) -> Function[[int], bool]:
     # Takes a callable `f` that accepts an integer and returns a boolean.
     return f
 
@@ -20,7 +20,7 @@ def main() -> None:
     my_function_composition = my_function(is_even)
 
     res = my_function_composition(42)
-    result("res", res)
+    output("res", res)
 
 
 if __name__ == "__main__":

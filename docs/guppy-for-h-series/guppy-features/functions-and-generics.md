@@ -26,6 +26,14 @@ Source file: `guppy_examples/guppy-features/supported/higher-order-functions.py`
 :language: python
 ```
 
+## Function type annotations
+
+Source file: `guppy_examples/guppy-features/supported/function-type.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/function-type.py
+:language: python
+```
+
 ## Generics
 
 Source file: `guppy_examples/guppy-features/supported/generics.py`
@@ -35,3 +43,11 @@ Source file: `guppy_examples/guppy-features/supported/generics.py`
 ```
 
 The generic array example is still constrained by the same array rules described in [Arrays](arrays.md): it works here because the array manipulation happens from Python under `@guppy.comptime`.
+
+## Protocols
+
+Source file: `guppy_examples/guppy-features/supported/protocol.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/protocol.py
+:language: python
+```

@@ -16,18 +16,6 @@ target triple = "aarch64-unknown-linux-gnu"
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x3FF41B2F769CF0E0, ptr null)
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
@@ -37,33 +25,31 @@ alloca_block:
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 3 to ptr))
   %3 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 3 to ptr))
-  %"872_0.0" = select i1 %0, i64 8, i64 0
-  %"910_0.0" = select i1 %1, i64 4, i64 0
-  %"948_0.0" = select i1 %2, i64 2, i64 0
-  %"986_0.0" = zext i1 %3 to i64
-  %4 = or disjoint i64 %"910_0.0", %"872_0.0"
-  %5 = or disjoint i64 %4, %"948_0.0"
-  %6 = or disjoint i64 %5, %"986_0.0"
+  %"053.0" = zext i1 %3 to i64
+  %"068.0" = select i1 %2, i64 2, i64 0
+  %"083.0" = select i1 %1, i64 4, i64 0
+  %"098.0" = select i1 %0, i64 8, i64 0
+  %"0133.0" = select i1 %3, i64 1, i64 -1
+  %"0147.0" = select i1 %2, i64 1, i64 -1
+  %"0161.0" = select i1 %1, i64 1, i64 -1
+  %"0175.0" = select i1 %0, i64 1, i64 -1
+  %4 = or disjoint i64 %"083.0", %"098.0"
+  %5 = or disjoint i64 %4, %"068.0"
+  %6 = or disjoint i64 %5, %"053.0"
+  %7 = add nsw i64 %"0161.0", %"0175.0"
+  %8 = add nsw i64 %7, %"0147.0"
+  %9 = add nsw i64 %8, %"0133.0"
+  %10 = mul nsw i64 %9, %9
+  %11 = sub nsw i64 10, %10
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
   tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
   tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @2)
   tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @3)
   tail call void @__quantum__rt__int_record_output(i64 %6, ptr nonnull @4)
-  %"0495.0" = select i1 %0, i64 1, i64 -1
-  %"0523.0" = select i1 %1, i64 1, i64 -1
-  %"0551.0" = select i1 %2, i64 1, i64 -1
-  %"0579.0" = select i1 %3, i64 1, i64 -1
-  %7 = add nsw i64 %"0523.0", %"0495.0"
-  %8 = add nsw i64 %7, %"0551.0"
-  %9 = add nsw i64 %8, %"0579.0"
-  %10 = mul nsw i64 %9, %9
-  %11 = sub nsw i64 10, %10
   tail call void @__quantum__rt__int_record_output(i64 %9, ptr nonnull @5)
   tail call void @__quantum__rt__int_record_output(i64 %11, ptr nonnull @6)
   ret void
 }
-
-declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 

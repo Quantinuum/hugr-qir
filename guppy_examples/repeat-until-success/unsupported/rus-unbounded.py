@@ -1,7 +1,7 @@
 from typing import no_type_check
 
 from guppylang import guppy, qubit
-from guppylang.std.builtins import result
+from guppylang.std.builtins import output
 from guppylang.std.quantum import cx, discard, measure, t, tdg, z
 from guppylang.std.quantum.functional import h
 
@@ -21,7 +21,7 @@ def main() -> None:
         tdg(a)
         cx(b, a)
         t(a)
-        if measure(h(a)):
+        if measure(h(a)).read():
             discard(b)
             continue
 
@@ -29,11 +29,11 @@ def main() -> None:
         z(q)
         cx(q, b)
         t(b)
-        if measure(h(b)):
+        if measure(h(b)).read():
             z(q)
             continue
 
-        result("attempts", n)
-        result("success", True)
-        result("q", measure(q))
+        output("attempts", n)
+        output("success", True)
+        output("q", measure(q).read())
         break

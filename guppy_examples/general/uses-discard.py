@@ -13,5 +13,5 @@ def main() -> None:
     x(q0)
     x(q1)
     cx(q0, q1)
-    measure(q0)
+    measure(q0).read()
     discard(q1)

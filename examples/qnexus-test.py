@@ -19,7 +19,7 @@ jobname_suffix = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
 from typing import no_type_check  # noqa: E402
 
 from guppylang import guppy, qubit  # noqa: E402
-from guppylang.std.builtins import result  # noqa: E402
+from guppylang.std.builtins import output  # noqa: E402
 from guppylang.std.quantum import h, measure  # noqa: E402
 from hugr_qir.guppy_to_qir import guppy_to_qir_bytes  # noqa: E402
 
@@ -33,11 +33,11 @@ def main() -> None:
     h(q0)
     h(q1)
 
-    b0 = measure(q0)
-    b1 = measure(q1)
+    b0 = measure(q0).read()
+    b1 = measure(q1).read()
     b2 = b0 ^ b1
 
-    result("0", b2)
+    output("0", b2)
 
 
 qir_bitcode = guppy_to_qir_bytes(main)
