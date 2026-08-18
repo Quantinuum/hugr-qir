@@ -27,7 +27,7 @@ jobs:
           fetch-depth: "0"
           submodules: recursive
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@v0.0.11
       - name: Install LLVM from hugrverse-env
         uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
