@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@v0.0.11
       - name: Install LLVM from hugrverse-env
         uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
         with:
@@ -86,7 +86,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - uses: mozilla-actions/sccache-action@v0.0.10
+      - uses: mozilla-actions/sccache-action@v0.0.11
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install LLVM from hugrverse-env
