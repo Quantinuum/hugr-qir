@@ -6,6 +6,7 @@ That workflow is already usable today, but it supports only a subset of Guppy. T
 
 - Start with the [Support matrix](support-matrix.md) for a quick feature-level overview.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.
+- See [Result recording](result_recording.md) for caveats around recorded results and retrieval through H-Series submission workflows.
 - Browse [Guppy feature examples](guppy-features/index.md) for paired supported examples and unsupported counterexamples from the repository.
 
 ```{toctree}
@@ -13,5 +14,6 @@ That workflow is already usable today, but it supports only a subset of Guppy. T
 
 support-matrix
 collections-and-structs
+result_recording
 guppy-features/index
 ```

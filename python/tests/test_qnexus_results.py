@@ -1,0 +1,135 @@
+import json
+from pathlib import Path
+
+import pytest
+from hugr_qir.h_series_helpers.results import (
+    HugrQirResults,
+    ResultRepresentation,
+)
+from pytket.backends.backendresult import BackendResult
+
+from tests.conftest import TEST_DIR
+
+BACKEND_RESULT = TEST_DIR / Path("resources/backend_results/backend_result.json")
+EXPECTED_SHOTS = 10
+INTEGER_VALUE = 3
+
+
+def load_backend_result(
+    result_representations: dict[str, ResultRepresentation] | None = None,
+) -> HugrQirResults:
+    with BACKEND_RESULT.open() as f:
+        backend_result = BackendResult.from_dict(json.load(f))
+
+    return HugrQirResults(
+        backend_result,
+        result_representations=result_representations,
+    )
+
+
+def test_backend_result_resource_get_shots_bit_repr_first_shot() -> None:
+    results = load_backend_result()
+
+    assert results.get_shots_bit_repr()[0] == {
+        "two": "0" * 62 + "10",
+        "true2": "0" * 63 + "1",
+        "true0": "0" * 63 + "1",
+        "three": "0" * 62 + "11",
+        "ten": "0" * 60 + "1010",
+        "qubit0": "0" * 63 + "1",
+        "one": "0" * 63 + "1",
+        "integer_value": "0" * 62 + "11",
+        "false": "0" * 64,
+        "2pow32": "0" * 31 + "1" + "0" * 32,
+    }
+
+
+def test_backend_result_resource_get_shots_bit_repr() -> None:
+    results = load_backend_result()
+
+    assert len(results.get_shots_bit_repr()) == EXPECTED_SHOTS
+    assert all(
+        shot == results.get_shots_bit_repr()[0] for shot in results.get_shots_bit_repr()
+    )
+
+
+def test_backend_result_resource_get_shots_int_repr_first_shot() -> None:
+    results = load_backend_result()
+
+    assert results.get_shots_int_repr()[0] == {
+        "two": 2,
+        "true2": 1,
+        "true0": 1,
+        "three": 3,
+        "ten": 10,
+        "qubit0": 1,
+        "one": 1,
+        "integer_value": 3,
+        "false": 0,
+        "2pow32": 2**32,
+    }
+
+
+def test_backend_result_resource_get_shots_int_repr() -> None:
+    results = load_backend_result()
+
+    assert len(results.get_shots_int_repr()) == EXPECTED_SHOTS
+    assert all(
+        shot == results.get_shots_int_repr()[0] for shot in results.get_shots_int_repr()
+    )
+
+
+def test_backend_result_resource_shots_uses_default_bitstring_representation() -> None:
+    results = load_backend_result()
+
+    assert results.get_shots() == results.get_shots_bit_repr()
+
+
+def test_backend_result_resource_shots_uses_tag_representations() -> None:
+    results = load_backend_result(
+        {
+            "false": ResultRepresentation.BOOL,
+            "true0": ResultRepresentation.BOOL,
+            "true2": ResultRepresentation.BOOL_BITSTRING,
+            "integer_value": ResultRepresentation.INT,
+        }
+    )
+
+    first_shot = results.get_shots()[0]
+
+    assert first_shot["false"] is False
+    assert first_shot["true0"] is True
+    assert first_shot["true2"] == "1"
+    assert first_shot["integer_value"] == INTEGER_VALUE
+    assert first_shot["two"] == "0" * 62 + "10"
+
+
+def test_backend_result_resource_shots_uses_default_int_representation() -> None:
+    results = load_backend_result()
+
+    assert results.get_shots(default_representation=ResultRepresentation.INT) == (
+        results.get_shots_int_repr()
+    )
+
+
+def test_backend_result_resource_rejects_bool_representation_for_int_tag() -> None:
+    with pytest.raises(
+        ValueError, match="Result 'two' cannot be represented as a bool"
+    ):
+        load_backend_result({"two": ResultRepresentation.BOOL})
+
+
+def test_backend_result_resource_rejects_bool_bitstring_for_int_tag() -> None:
+    with pytest.raises(
+        ValueError, match="Result 'two' cannot be represented as a bool"
+    ):
+        load_backend_result({"two": ResultRepresentation.BOOL_BITSTRING})
+
+
+def test_backend_result_resource_rejects_default_bool_for_int_tags() -> None:
+    results = load_backend_result()
+
+    with pytest.raises(
+        ValueError, match="Result 'two' cannot be represented as a bool"
+    ):
+        results.get_shots(default_representation=ResultRepresentation.BOOL)

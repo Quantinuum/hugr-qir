@@ -27,6 +27,7 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 | `Stack`, `Queue`, and `PriorityQueue`                 | ❌       | Backed by runtime arrays                                               |
 | `measure_array` or `discard_array`                    | ❌       | Use non-comptime arrays internally                                     |
 | `barrier`                                             | ❌       | Uses non-comptime arrays internally                                    |
+| `output`                                              | *️⃣     | Only available for recording bools and ints; see [Result recording](result_recording.md) |
 | `exit` and `panic`                                    | ❌       | Currently unsupported on H2 hardware                                   |
 | RNG: `__new__`, `discard`, `random_int/_bounded`      | ✅       | Specific to Quantinuum hardware                                        |
 | RNG: `random_advance`                                 | ❌       | Currently unsupported on H2 hardware                                   |
