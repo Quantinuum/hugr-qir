@@ -93,14 +93,14 @@ result_spec = ResultRepresentationSpec({
 })
 
 # Create a HugrQirResultHelper from the Nexus results and representation spec
-hgr_result = HugrQirResultHelper(
+hugr_qir_result_helper = HugrQirResultHelper(
     result,
     result_spec,
 )
 
 # Get the shot data in the specified format
-shots = hgr_result.get_shots()
+shots = hugr_qir_result_helper.get_shots()
 
 # Print shot results
-for i, shot in enumerate(shots):
-    print(f"Shot {i}: ", "".join([shot[f"q{i}"] for i in range(8)]), " ",  shot["random_int"])
+for i, shot_dict in enumerate(shots):
+    print(f"Shot {i}: ", "".join([shot_dict[f"q{j}"] for j in range(8)]), " ",  shot_dict["random_int"])
