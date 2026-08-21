@@ -1,12 +1,13 @@
 # Guppy for H-Series
 
-`hugr-qir` is aimed at Guppy programs that compile through HUGR and then target Quantinuum's H-Series systems via QIR. The example below shows a full compilation and submission workflow for running Guppy on H-Series through Quantinuum Nexus.
+The current main target of `hugr-qir` is to allow running Guppy programs to target Quantinuum's H-Series systems via QIR. The [example](#nexus-submission-example) below shows a full compilation and submission workflow for running Guppy on H-Series through Quantinuum Nexus.
 
-That workflow is already usable today, but it supports only a subset of Guppy. This section summarizes the current limitations to keep in mind when writing programs for H-Series targets.
+That workflow is already usable today, but it does not support the full Guppy feature set, in part because of the H-series hardware limitations. The documents here summarize the current limitations and workarounds to keep in mind when writing Guppy programs for H-Series targets.
 
-- Start with the [Support matrix](support-matrix.md) for a quick feature-level overview.
+- Start with the [Nexus submission example](#nexus-submission-example) for a simple overview of the full submission pipeline.
+- See the [Support matrix](support-matrix.md) for a feature support overview.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.
-- See [Result recording](result_recording.md) for caveats around recorded results and retrieval through H-Series submission workflows.
+- See [Result recording](result_recording.md) for information on result recording and retrieval through H-Series submission workflows.
 - Browse [Guppy feature examples](guppy-features/index.md) for paired supported examples and unsupported counterexamples from the repository.
 
 ```{toctree}
