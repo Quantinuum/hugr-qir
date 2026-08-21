@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TypeAlias
 
@@ -26,6 +27,21 @@ class ResultRepresentation(StrEnum):
     INT = "int"
 
 
+@dataclass
+class ResultRepresentationSpec:
+    """Configure user-facing representations for named recorded results.
+
+    Args:
+        result_representations: Mapping from result tag to the representation to
+            use for that tag in :meth:`HugrQirResultHelper.get_shots`. Tags
+            omitted from the mapping use the method's default representation.
+    """
+
+    result_representations: dict[str, ResultRepresentation] = field(
+        default_factory=dict
+    )
+
+
 def _handle_results(results: BackendResult) -> list[dict[str, list[int]]]:
     bitlist = results.get_bitlist()
     shots = results.get_shots()
@@ -46,34 +62,37 @@ def _handle_results(results: BackendResult) -> list[dict[str, list[int]]]:
     return hqr_results
 
 
-class HugrQirResults:
+class HugrQirResultHelper:
     """Convert H-Series ``BackendResult`` data into tag-keyed shot dictionaries."""
 
     def __init__(
         self,
         results: BackendResult,
-        result_representations: dict[str, ResultRepresentation] | None = None,
+        result_representation_spec: ResultRepresentationSpec | None = None,
     ) -> None:
         """Create a helper around a ``BackendResult``.
 
         Args:
             results: The backend result returned by the H-Series submission flow.
-            result_representations: Optional mapping from result tag to the
-                representation to use for that tag in ``get_shots``. Tags omitted
-                from the mapping use the ``get_shots`` default representation.
+            result_representation_spec: Optional configuration of per-tag
+                representations for ``get_shots``.
 
         Raises:
             ValueError: If a configured tag is unknown, or if a tag configured as
                 ``BOOL`` or ``BOOL_BITSTRING`` is not representable as a bool.
         """
         self._shots = _handle_results(results)
-        self._result_representations = result_representations or {}
+        self._result_representations = (
+            result_representation_spec.result_representations
+            if result_representation_spec is not None
+            else {}
+        )
         self._validate_result_representations()
 
     def __str__(self) -> str:
         return str(self._shots)
 
-    def get_shots_bit_repr(self) -> list[dict[str, str]]:
+    def get_shots_all_bitstring(self) -> list[dict[str, str]]:
         """Return all shots as 64-bit bitstrings keyed by result tag.
 
         Returns:
@@ -85,7 +104,7 @@ class HugrQirResults:
             for shot in self._shots
         ]
 
-    def get_shots_int_repr(self) -> list[dict[str, int]]:
+    def get_shots_all_integer(self) -> list[dict[str, int]]:
         """Return all shots as integers keyed by result tag.
 
         Returns:
@@ -98,7 +117,7 @@ class HugrQirResults:
                 name: int(bitstring, 2) if bitstring else 0
                 for name, bitstring in shot.items()
             }
-            for shot in self.get_shots_bit_repr()
+            for shot in self.get_shots_all_bitstring()
         ]
 
     def _repr_for(
@@ -107,7 +126,7 @@ class HugrQirResults:
         return self._result_representations.get(name, default_representation)
 
     def _validate_result_representations(self) -> None:
-        known_tags = {name for shot in self.get_shots_bit_repr() for name in shot}
+        known_tags = {name for shot in self.get_shots_all_bitstring() for name in shot}
         for name, representation in self._result_representations.items():
             if name not in known_tags:
                 msg = f"Unknown result tag {name!r}."
@@ -116,7 +135,7 @@ class HugrQirResults:
                 ResultRepresentation.BOOL,
                 ResultRepresentation.BOOL_BITSTRING,
             ):
-                for shot in self.get_shots_bit_repr():
+                for shot in self.get_shots_all_bitstring():
                     self._validate_bool_bitstring(name, shot[name])
 
     def _convert_bitstring(
@@ -166,5 +185,5 @@ class HugrQirResults:
                 )
                 for name, bitstring in shot.items()
             }
-            for shot in self.get_shots_bit_repr()
+            for shot in self.get_shots_all_bitstring()
         ]

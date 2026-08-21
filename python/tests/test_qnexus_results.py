@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pytest
 from hugr_qir.h_series_helpers.results import (
-    HugrQirResults,
+    HugrQirResultHelper,
     ResultRepresentation,
+    ResultRepresentationSpec,
 )
 from pytket.backends.backendresult import BackendResult
 
@@ -17,20 +18,20 @@ INTEGER_VALUE = 3
 
 def load_backend_result(
     result_representations: dict[str, ResultRepresentation] | None = None,
-) -> HugrQirResults:
+) -> HugrQirResultHelper:
     with BACKEND_RESULT.open() as f:
         backend_result = BackendResult.from_dict(json.load(f))
 
-    return HugrQirResults(
+    return HugrQirResultHelper(
         backend_result,
-        result_representations=result_representations,
+        ResultRepresentationSpec(result_representations or {}),
     )
 
 
-def test_backend_result_resource_get_shots_bit_repr_first_shot() -> None:
+def test_backend_result_resource_get_shots_all_bitstring_first_shot() -> None:
     results = load_backend_result()
 
-    assert results.get_shots_bit_repr()[0] == {
+    assert results.get_shots_all_bitstring()[0] == {
         "two": "0" * 62 + "10",
         "true2": "0" * 63 + "1",
         "true0": "0" * 63 + "1",
@@ -44,19 +45,20 @@ def test_backend_result_resource_get_shots_bit_repr_first_shot() -> None:
     }
 
 
-def test_backend_result_resource_get_shots_bit_repr() -> None:
+def test_backend_result_resource_get_shots_all_bitstring() -> None:
     results = load_backend_result()
 
-    assert len(results.get_shots_bit_repr()) == EXPECTED_SHOTS
+    assert len(results.get_shots_all_bitstring()) == EXPECTED_SHOTS
     assert all(
-        shot == results.get_shots_bit_repr()[0] for shot in results.get_shots_bit_repr()
+        shot == results.get_shots_all_bitstring()[0]
+        for shot in results.get_shots_all_bitstring()
     )
 
 
-def test_backend_result_resource_get_shots_int_repr_first_shot() -> None:
+def test_backend_result_resource_get_shots_all_integer_first_shot() -> None:
     results = load_backend_result()
 
-    assert results.get_shots_int_repr()[0] == {
+    assert results.get_shots_all_integer()[0] == {
         "two": 2,
         "true2": 1,
         "true0": 1,
@@ -70,19 +72,20 @@ def test_backend_result_resource_get_shots_int_repr_first_shot() -> None:
     }
 
 
-def test_backend_result_resource_get_shots_int_repr() -> None:
+def test_backend_result_resource_get_shots_all_integer() -> None:
     results = load_backend_result()
 
-    assert len(results.get_shots_int_repr()) == EXPECTED_SHOTS
+    assert len(results.get_shots_all_integer()) == EXPECTED_SHOTS
     assert all(
-        shot == results.get_shots_int_repr()[0] for shot in results.get_shots_int_repr()
+        shot == results.get_shots_all_integer()[0]
+        for shot in results.get_shots_all_integer()
     )
 
 
 def test_backend_result_resource_shots_uses_default_bitstring_representation() -> None:
     results = load_backend_result()
 
-    assert results.get_shots() == results.get_shots_bit_repr()
+    assert results.get_shots() == results.get_shots_all_bitstring()
 
 
 def test_backend_result_resource_shots_uses_tag_representations() -> None:
@@ -108,7 +111,7 @@ def test_backend_result_resource_shots_uses_default_int_representation() -> None
     results = load_backend_result()
 
     assert results.get_shots(default_representation=ResultRepresentation.INT) == (
-        results.get_shots_int_repr()
+        results.get_shots_all_integer()
     )
 
 
