@@ -29,7 +29,7 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.11
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Set up uv

@@ -68,7 +68,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: llvm
 
