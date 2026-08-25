@@ -5,10 +5,10 @@ import datetime
 
 from qnexus.exceptions import AuthenticationError
 
+from hugr_qir.h_series_helpers import to_int
 from hugr_qir.h_series_helpers.results import (
     HugrQirResultHelper,
-    ResultRepresentation,
-    ResultRepresentationSpec,
+    ResultRep,
 )
 
 from guppylang import guppy, qubit
@@ -47,14 +47,12 @@ def main() -> None:
         output(f"q{i}", res)
 
     # Create an integer from the random bits
-    integer_value = 0
-    for b in results:
-        integer_value = (integer_value << 1) | int(b)  # for big-endian
+    integer_value = to_int(results)
     output(f"random_int", integer_value)
 
 # Use hugr-qir to translate the guppy entrypoint directly into qir
 # that is ready to submit to Nexus
-qir_bitcode = guppy_to_qir_bytes(main)
+qir_bitcode, result_spec = guppy_to_qir_bytes(main)
 
 # Upload the program to Nexus
 qir_program_ref = qnx.qir.upload(qir=qir_bitcode, name=qir_name, project=project)
@@ -82,15 +80,10 @@ print("Job id: ", ref_execute_job.id)
 execute_job_result_refs = qnx.jobs.results(ref_execute_job)
 result = execute_job_result_refs[0].download_result()
 
-# Use a result representation spec to define how results will be
-# formatted by the HugrQirResultHelper class
-# Here we choose to represent the booleans as a 1-bit bitstring
-# and "random_int" as an integer
-# The tags must match those used in the guppy program `output` calls
-result_spec = ResultRepresentationSpec({
-    **{f"q{i}": ResultRepresentation.BOOL_BITSTRING for i in range(8)},
-    "random_int": ResultRepresentation.INT,
-})
+# Customize the inferred result spec to represent the booleans as bits.
+result_spec.result_representations.update(
+    {f"q{i}": ResultRep.BIT for i in range(8)}
+)
 
 # Create a HugrQirResultHelper from the Nexus results and representation spec
 hugr_qir_result_helper = HugrQirResultHelper(

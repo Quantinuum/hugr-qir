@@ -55,24 +55,24 @@ Each of these methods returns one dictionary per shot, keyed by result tag.
 
 ## Configuring Representations
 
-Users can provide a `ResultRepresentationSpec` containing a dictionary that maps specific result tags to a `ResultRepresentation`. Tags omitted from this dictionary use the fallback representation passed to `get_shots()`, which defaults to `ResultRepresentation.BITSTRING`.
+Users can provide a `ResultSpec` containing a dictionary that maps specific result tags to a `ResultRep`. Tags omitted from this dictionary use the fallback representation passed to `get_shots()`, which defaults to `ResultRep.BITSTRING`.
 
 ```python
 from hugr_qir.h_series_helpers.results import (
     HugrQirResultHelper,
-    ResultRepresentation,
-    ResultRepresentationSpec,
+    ResultRep,
+    ResultSpec,
 )
 
 result_representations = {
-    "q0": ResultRepresentation.BOOL_BITSTRING,
-    "q1": ResultRepresentation.BOOL_BITSTRING,
-    "random_int": ResultRepresentation.INT,
+    "q0": ResultRep.BIT,
+    "q1": ResultRep.BIT,
+    "random_int": ResultRep.INT,
 }
 
 hqr_result = HugrQirResultHelper(
     backend_result,
-    ResultRepresentationSpec(result_representations),
+    ResultSpec(result_representations),
 )
 
 shots = hqr_result.get_shots()
@@ -82,9 +82,9 @@ The available representations are:
 
 | Representation | Output shape | Notes |
 |----------------|--------------|-------|
-| `ResultRepresentation.BITSTRING` | Full 64-bit string | Default fallback |
-| `ResultRepresentation.INT` | Python `int` | Interprets the 64-bit bitstring as a base-2 integer |
-| `ResultRepresentation.BOOL` | Python `bool` | Only valid when all bits except the last bit are zero |
-| `ResultRepresentation.BOOL_BITSTRING` | `"0"` or `"1"` | Only valid when all bits except the last bit are zero |
+| `ResultRep.BITSTRING` | Full 64-bit string | Default fallback |
+| `ResultRep.INT` | Python `int` | Interprets the 64-bit bitstring as a signed two's-complement integer |
+| `ResultRep.BOOL` | Python `bool` | Only valid when all bits except the last bit are zero |
+| `ResultRep.BIT` | `"0"` or `"1"` | Only valid when all bits except the last bit are zero |
 
 Boolean representations are validated when `HugrQirResultHelper` is constructed for explicitly configured tags. If `get_shots(default_representation=...)` uses a boolean representation as a fallback, any non-boolean-shaped fallback tag raises an error when shots are requested.

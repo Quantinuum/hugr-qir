@@ -2,33 +2,36 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import TypeAlias
 
+from hugr import ops, tys
+from hugr.package import Package
 from pytket.backends.backendresult import BackendResult
 
 ShotValue: TypeAlias = bool | int | str
 
 
-class ResultRepresentation(StrEnum):
+class ResultRep(StrEnum):
     """Supported user-facing representations for recorded result values.
 
     Examples:
         ``BOOL`` converts to a bool ``True``/ ``False``.
 
-        ``BOOL_BITSTRING`` converts to ``"1"``/``"0"``.
+        ``BIT`` converts to ``"1"``/``"0"``.
 
         ``BITSTRING`` shows full 64-bit bitstring, such as
          ``"0000000000000000100000000000000000000000000000000010000000000000"``.
 
-        ``INT`` converts to an int, such as to ``2``.
+        ``INT`` converts a signed two's-complement bitstring to an int, such as
+        to ``-2``.
     """
 
     BOOL = "bool"
-    BOOL_BITSTRING = "bool_bitstring"
+    BIT = "bit"
     BITSTRING = "bitstring"
     INT = "int"
 
 
 @dataclass
-class ResultRepresentationSpec:
+class ResultSpec:
     """Configure user-facing representations for named recorded results.
 
     Args:
@@ -37,9 +40,64 @@ class ResultRepresentationSpec:
             omitted from the mapping use the method's default representation.
     """
 
-    result_representations: dict[str, ResultRepresentation] = field(
-        default_factory=dict
-    )
+    result_representations: dict[str, ResultRep] = field(default_factory=dict)
+
+
+def hugr_to_result_spec(hugr: Package) -> ResultSpec:
+    """Infer result representations from a HUGR package.
+
+    Guppy lowers calls to ``output`` to operations in the ``tket.result``
+    extension. Boolean outputs are represented as Python booleans and signed or
+    unsigned integer outputs are represented as Python integers.
+
+    Args:
+        hugr: HUGR package to inspect.
+
+    Returns:
+        A result specification containing every supported tagged result in the
+        package.
+
+    Raises:
+        ValueError: If the package contains an unsupported result operation, a
+            malformed result tag, or conflicting operations for the same tag.
+    """
+    operation_representations = {
+        "result_bool": ResultRep.BOOL,
+        "result_int": ResultRep.INT,
+    }
+    result_representations: dict[str, ResultRep] = {}
+
+    for module in hugr.modules:
+        for _, node_data in module.nodes():
+            op = node_data.op
+            if not isinstance(op, ops.ExtOp):
+                continue
+
+            custom_op = op.to_custom_op()
+            if custom_op.extension != "tket.result":
+                continue
+
+            representation = operation_representations.get(custom_op.op_name)
+            if representation is None:
+                msg = f"Unsupported HUGR result operation {custom_op.op_name!r}"
+                raise ValueError(msg)
+
+            type_args = op.type_args()
+            if not type_args or not isinstance(type_args[0], tys.StringArg):
+                msg = f"Malformed result tag for operation {custom_op.op_name!r}"
+                raise ValueError(msg)
+            tag = type_args[0].value
+
+            previous_representation = result_representations.get(tag)
+            if (
+                previous_representation is not None
+                and previous_representation != representation
+            ):
+                msg = f"Conflicting result representations for tag {tag!r}"
+                raise ValueError(msg)
+            result_representations[tag] = representation
+
+    return ResultSpec(result_representations)
 
 
 def _handle_results(results: BackendResult) -> list[dict[str, list[int]]]:
@@ -68,7 +126,7 @@ class HugrQirResultHelper:
     def __init__(
         self,
         results: BackendResult,
-        result_representation_spec: ResultRepresentationSpec | None = None,
+        result_representation_spec: ResultSpec | None = None,
     ) -> None:
         """Create a helper around a ``BackendResult``.
 
@@ -79,7 +137,7 @@ class HugrQirResultHelper:
 
         Raises:
             ValueError: If a configured tag is unknown, or if a tag configured as
-                ``BOOL`` or ``BOOL_BITSTRING`` is not representable as a bool.
+                ``BOOL`` or ``BIT`` is not representable as a bool.
         """
         self._shots = _handle_results(results)
         self._result_representations = (
@@ -105,7 +163,7 @@ class HugrQirResultHelper:
         ]
 
     def get_shots_all_integer(self) -> list[dict[str, int]]:
-        """Return all shots as integers keyed by result tag.
+        """Return all shots as signed integers keyed by result tag.
 
         Returns:
             One dictionary per shot. Each dictionary maps a result tag to the
@@ -114,15 +172,13 @@ class HugrQirResultHelper:
         """
         return [
             {
-                name: int(bitstring, 2) if bitstring else 0
+                name: self._bitstring_to_signed_int(bitstring)
                 for name, bitstring in shot.items()
             }
             for shot in self.get_shots_all_bitstring()
         ]
 
-    def _repr_for(
-        self, name: str, default_representation: ResultRepresentation
-    ) -> ResultRepresentation:
+    def _repr_for(self, name: str, default_representation: ResultRep) -> ResultRep:
         return self._result_representations.get(name, default_representation)
 
     def _validate_result_representations(self) -> None:
@@ -132,42 +188,49 @@ class HugrQirResultHelper:
                 msg = f"Unknown result tag {name!r}."
                 raise ValueError(msg)
             if representation in (
-                ResultRepresentation.BOOL,
-                ResultRepresentation.BOOL_BITSTRING,
+                ResultRep.BOOL,
+                ResultRep.BIT,
             ):
                 for shot in self.get_shots_all_bitstring():
-                    self._validate_bool_bitstring(name, shot[name])
+                    self._validate_bit(name, shot[name])
 
     def _convert_bitstring(
-        self, name: str, bitstring: str, representation: ResultRepresentation
+        self, name: str, bitstring: str, representation: ResultRep
     ) -> ShotValue:
         match representation:
-            case ResultRepresentation.BOOL:
-                self._validate_bool_bitstring(name, bitstring)
+            case ResultRep.BOOL:
+                self._validate_bit(name, bitstring)
                 return bitstring[-1] == "1"
-            case ResultRepresentation.BOOL_BITSTRING:
-                self._validate_bool_bitstring(name, bitstring)
+            case ResultRep.BIT:
+                self._validate_bit(name, bitstring)
                 return bitstring[-1]
-            case ResultRepresentation.BITSTRING:
+            case ResultRep.BITSTRING:
                 return bitstring
-            case ResultRepresentation.INT:
-                return int(bitstring, 2) if bitstring else 0
+            case ResultRep.INT:
+                return self._bitstring_to_signed_int(bitstring)
 
-    def _validate_bool_bitstring(self, name: str, bitstring: str) -> None:
+    @staticmethod
+    def _bitstring_to_signed_int(bitstring: str) -> int:
+        if not bitstring:
+            return 0
+        value = int(bitstring, 2)
+        return value - (1 << len(bitstring)) if bitstring[0] == "1" else value
+
+    def _validate_bit(self, name: str, bitstring: str) -> None:
         if not bitstring or any(bit != "0" for bit in bitstring[:-1]):
             msg = f"Result {name!r} cannot be represented as a bool"
             raise ValueError(msg)
 
     def get_shots(
         self,
-        default_representation: ResultRepresentation = ResultRepresentation.BITSTRING,
+        default_representation: ResultRep = ResultRep.BITSTRING,
     ) -> list[dict[str, ShotValue]]:
         """Return all shots using configured per-tag result representations.
 
         Args:
             default_representation: Representation to use for tags that were not
                 included in ``result_representations`` at construction time.
-                Defaults to ``ResultRepresentation.BITSTRING``.
+                Defaults to ``ResultRep.BITSTRING``.
 
         Returns:
             One dictionary per shot. Each dictionary maps a result tag to a bool,
@@ -175,8 +238,8 @@ class HugrQirResultHelper:
             representation.
 
         Raises:
-            ValueError: If ``default_representation`` is ``BOOL`` or
-                ``BOOL_BITSTRING`` and a fallback tag is not representable as a bool.
+            ValueError: If ``default_representation`` is ``BOOL`` or ``BIT`` and
+                a fallback tag is not representable as a bool.
         """
         return [
             {
