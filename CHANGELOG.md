@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.2.0-rc2
+### v0.2.0
 
 - update to guppylang v1.0.1
 - drop support for python 3.10 and 3.11
@@ -8,14 +8,8 @@
 - update to tket 0.21
 - update to tket-qsystem 0.27
 - update docs
-
-### v0.2.0-rc1
-
 - update LLVM version to 21.1
 - update to hugr 0.27
-
-### v0.1.3-rc1
-
 - update quantinuum-qircheck version requirement to 0.8.0
 - add support for sext in qir
 
