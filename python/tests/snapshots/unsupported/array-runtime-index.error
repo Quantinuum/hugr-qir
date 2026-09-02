@@ -1,0 +1,1 @@
+QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: QIR call __quantum__qis__phasedx__body has a dynamic qubit argument at position 2; qubit array indexing must be made static before QIR emission: "  %6 = load ptr, ptr %5, align 8"
