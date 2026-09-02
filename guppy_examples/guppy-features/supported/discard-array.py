@@ -9,7 +9,7 @@ from guppylang.std.quantum import cx, discard_array, h, measure
 @guppy.comptime
 @no_type_check
 def main() -> None:
-    qbs = array(qubit() for _ in range(8))  # comptime array is ok
+    qbs = array(qubit() for _ in range(8))
     for i in range(8):
         if i % 2 == 0:
             h(qbs[i])

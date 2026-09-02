@@ -85,6 +85,52 @@ pub fn lower_qubit_selects_and_phis(module: &Module, target: &TargetMachine) -> 
     Ok(changed)
 }
 
+/// Ensure that every qubit passed to a supported QIR quantum instruction is a
+/// compile-time constant resource pointer.
+///
+/// This is deliberately run after LLVM optimization and qubit SSA lowering.
+/// A non-constant operand at that point means that an array access or another
+/// source of dynamic qubit addressing could not be made static.
+pub fn ensure_static_qubit_operands(module: &Module) -> Result<()> {
+    for function in module.get_functions() {
+        for block in function.get_basic_blocks() {
+            for inst in block.get_instructions() {
+                if inst.get_opcode() != InstructionOpcode::Call {
+                    continue;
+                }
+                let Ok(callsite) = CallSiteValue::try_from(inst) else {
+                    continue;
+                };
+                let Some(callee) = callsite.get_called_fn_value() else {
+                    continue;
+                };
+                let Ok(func_name) = callee.get_name().to_str() else {
+                    continue;
+                };
+                let Some(qubit_arg_positions) = qis_qubit_arg_positions(func_name) else {
+                    continue;
+                };
+
+                for &arg_idx in qubit_arg_positions {
+                    let Some(BasicValueEnum::PointerValue(arg)) =
+                        inst_operand_value(inst, arg_idx as u32)
+                    else {
+                        bail!(
+                            "QIR call {func_name} has no pointer-valued qubit argument at position {arg_idx}"
+                        );
+                    };
+                    if !arg.is_const() {
+                        bail!(
+                            "QIR call {func_name} has a dynamic qubit argument at position {arg_idx}; qubit array indexing must be made static before QIR emission: {arg}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Lowers select and phi instructions returning floating-point values to control flow.
 ///
 /// This follows the same lowering strategy as the qubit-pointer pass, but does not
@@ -1865,7 +1911,7 @@ fn block_has_successor(from: BasicBlock, to: BasicBlock) -> Result<bool> {
 
 /// Returns the direct CFG successors of `bb` for the terminator kinds this pass
 /// reasons about explicitly.
-fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
+pub(crate) fn direct_successors(bb: BasicBlock) -> Result<Vec<BasicBlock>> {
     let Some(term) = bb.get_terminator() else {
         return Ok(Vec::new());
     };
@@ -3370,6 +3416,54 @@ declare void @__quantum__qis__reset__body(%Qubit*)
                 "Verification failed for input module to lower_qubit_selects_and_phis pass"
             ),
             "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn static_qubit_operand_check_accepts_constant_resource_pointers() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "static_qubit_operands",
+            r#"
+declare void @__quantum__qis__x__body(ptr)
+
+define void @main() {
+entry:
+  call void @__quantum__qis__x__body(ptr inttoptr (i64 3 to ptr))
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        ensure_static_qubit_operands(&module).unwrap();
+    }
+
+    #[test]
+    fn static_qubit_operand_check_rejects_dynamic_resource_pointers() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "dynamic_qubit_operands",
+            r#"
+declare void @__quantum__qis__x__body(ptr)
+
+define void @main(ptr %qubit) {
+entry:
+  call void @__quantum__qis__x__body(ptr %qubit)
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        let error = ensure_static_qubit_operands(&module)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("__quantum__qis__x__body has a dynamic qubit argument at position 0"),
+            "unexpected error: {error}"
         );
     }
 

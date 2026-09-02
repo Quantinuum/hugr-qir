@@ -1,7 +1,13 @@
 from pathlib import Path
 
 import pytest
-from hugr_qir._hugr_qir import compile_target_choices, opt_level_choices
+from click.testing import CliRunner
+from hugr_qir._hugr_qir import (
+    compile_target_choices,
+    max_loop_unroll_default,
+    opt_level_choices,
+)
+from hugr_qir.cli import hugr_qir as hugr_qir_cli
 from hugr_qir.hugr_to_qir import hugr_to_qir
 from hugr_qir.output import OutputFormat, expected_file_extension
 from pytest_snapshot.plugin import Snapshot
@@ -27,6 +33,23 @@ def test_guppy_files(guppy_example: GuppyExample) -> None:
     if "wasm" in guppy_file.stem:
         wasm_binary_filepath = guppy_file.parent / f"{guppy_file.stem}.wasm"
     hugr_to_qir(hugr, wasm_file=wasm_binary_filepath)
+
+
+def test_max_loop_unroll_default() -> None:
+    assert max_loop_unroll_default() == 800  # noqa: PLR2004
+
+
+def test_cli_exposes_max_loop_unroll() -> None:
+    result = CliRunner().invoke(hugr_qir_cli, ["--help"])
+    assert result.exit_code == 0
+    assert "--max-loop-unroll" in result.output
+    assert "[default: 800;" in result.output
+
+
+def test_max_loop_unroll_is_forwarded_to_compiler() -> None:
+    hugr = guppy_example_dict["runtime-array"].hugr_binary
+    with pytest.raises(ValueError, match=r"configured QIR unroll limit \(1\)"):
+        hugr_to_qir(hugr, max_loop_unroll=1)
 
 
 @pytest.mark.parametrize(

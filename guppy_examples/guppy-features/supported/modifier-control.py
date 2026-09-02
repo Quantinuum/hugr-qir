@@ -13,8 +13,6 @@ def main() -> None:
     target = qubit()
     h(ctl)
 
-    # The control modifier lowers to an array of control qubits, which is not
-    # currently supported by QIR lowering.
     with control(ctl):
         x(target)
 

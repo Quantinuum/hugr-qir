@@ -20,13 +20,14 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 | `Option`, `Result`, and `Either`                      | ✅       | Supported when payload types are supported                             |
 | `mem_swap`                                            | ✅       |                                                                        |
 | Dagger modifier                                       | ✅       |                                                                        |
-| Control modifier                                      | ❌       | Lowers to an array of control qubits                                   |
+| Control modifier                                      | ✅       | Lowers through a statically-addressable array of control qubits        |
 | `get_current_shot`                                    | ✅       |                                                                        |
 | Recursive functions or loops within `@guppy.comptime` | ✅       | As long as compilation to HUGR succeeds                                |
-| Recursive functions or loops within `@guppy`          | *️⃣     | Only if unrollable/serializable through chosen LLVM optimization level |
+| Recursive functions or loops within `@guppy`          | *️⃣     | Only if fully unrollable; default maximum static trip count is 800     |
 | `Stack`, `Queue`, and `PriorityQueue`                 | ❌       | Backed by runtime arrays                                               |
-| `measure_array` or `discard_array`                    | ❌       | Use non-comptime arrays internally                                     |
-| `barrier`                                             | ❌       | Uses non-comptime arrays internally                                    |
+| `measure_array`                                       | ❌       | Result-array operation is not implemented                              |
+| `discard_array`                                       | ✅       | Supported when qubit addresses become static                           |
+| `barrier`                                             | ❌       | `RuntimeBarrier` code generation is not implemented                    |
 | `exit` and `panic`                                    | ❌       | Currently unsupported on H2 hardware                                   |
 | RNG: `__new__`, `discard`, `random_int/_bounded`      | ✅       | Specific to Quantinuum hardware                                        |
 | RNG: `random_advance`                                 | ❌       | Currently unsupported on H2 hardware                                   |

@@ -26,17 +26,22 @@ use qir::{QirCodegenExtension, QirPreludeCodegen};
 use rotation::RotationCodegenExtension;
 use target::CompileTarget;
 use tket::passes::{
-    ComposablePass, PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
+    BorrowSquashPass, ComposablePass, ConstantFoldPass, DeadCodeElimPass, NormalizeCFGPass,
+    PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
+mod llvm_unroll;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
+use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
 use crate::lower_ssa_vars::{
-    lower_float_selects_and_phis, lower_qubit_selects_and_phis, normalize_block_names,
+    ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
+    normalize_block_names,
 };
+use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -52,6 +57,7 @@ const GENERATOR_NAME_KEY: &str = "gen_name";
 const GENERATOR_VERSION_KEY: &str = "gen_version";
 const VERSION_TEST_OVERRIDE_ENV_VAR: &str = "HUGR_QIR_VERSION_TEST_OVERRIDE";
 const VERSION_TEST_OVERRIDE_VALUE: &str = "X.Y.Z";
+pub const DEFAULT_MAX_LOOP_UNROLL: usize = 800;
 
 // TODO this was copy pasted, ideally it would live in tket2-hseries
 pub mod rotation;
@@ -66,6 +72,9 @@ pub struct CompileArgs {
     pub qsystem_pass: bool,
     pub target: CompileTarget,
     pub opt_level: CliOptimizationLevel,
+    /// Maximum statically-known trip count accepted by the forced full-loop
+    /// unroll pass. All loops must be eliminated before QIR emission.
+    pub max_loop_unroll: usize,
     pub wasm_file: Option<String>,
 }
 
@@ -78,6 +87,7 @@ impl Default for CompileArgs {
             qsystem_pass: true,
             target: CompileTarget::QuantinuumHardware,
             opt_level: CliOptimizationLevel::Aggressive,
+            max_loop_unroll: DEFAULT_MAX_LOOP_UNROLL,
             wasm_file: None,
         }
     }
@@ -94,6 +104,8 @@ impl CompileArgs {
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
+            .add_array_extensions(QirArrayCodegen)
+            .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
             .add_extension(QirCodegenExtension {
                 target: self.target,
@@ -130,6 +142,31 @@ impl CompileArgs {
         self.remove_dead_functions(hugr)?;
         self.inline_calls(hugr)?;
         self.remove_dead_functions(hugr)?;
+        self.normalize_hugr(hugr)?;
+        Ok(())
+    }
+
+    /// Normalize the inlined HUGR so that statically-known array accesses are
+    /// exposed before LLVM emission.
+    pub fn normalize_hugr(&self, hugr: &mut Hugr) -> Result<()> {
+        let scope = PassScope::Global(Preserve::Entrypoint);
+
+        NormalizeCFGPass::default()
+            .with_scope(scope.clone())
+            .run(hugr)?;
+        ConstantFoldPass::default()
+            .with_scope(scope.clone())
+            .run(hugr)?;
+        BorrowSquashPass::default()
+            .with_scope(scope.clone())
+            .run(hugr)?;
+        DeadCodeElimPass::<Hugr>::default()
+            .with_scope(scope)
+            .run(hugr)?;
+
+        if self.validate {
+            hugr.validate()?;
+        }
         Ok(())
     }
 
@@ -160,6 +197,12 @@ impl CompileArgs {
 
     /// Optimize the module using LLVM passes
     fn optimize_module_llvm(&self, module: &Module) -> Result<TargetMachine> {
+        if self.max_loop_unroll == 0 {
+            bail!("max_loop_unroll must be greater than zero");
+        }
+        if self.max_loop_unroll > u32::MAX as usize {
+            bail!("max_loop_unroll must not exceed {}", u32::MAX);
+        }
         self.target.initialise();
 
         let ctm = self.target.machine(self.opt_level.into());
@@ -167,15 +210,30 @@ impl CompileArgs {
         module.set_triple(&ctm.get_triple());
         module.set_data_layout(&ctm.get_target_data().get_data_layout());
 
-        let mut opt_str = String::from(match self.opt_level {
+        let opt_str = match self.opt_level {
             CliOptimizationLevel::None => "default<O0>",
             CliOptimizationLevel::Less => "default<O1>",
             CliOptimizationLevel::Default => "default<O2>",
             CliOptimizationLevel::Aggressive => "default<O3>",
-        });
-        opt_str.push_str(",lower-switch");
+        };
+        let default_pass_options = PassBuilderOptions::create();
+        default_pass_options.set_loop_unrolling(false);
         module
-            .run_passes(opt_str.as_str(), &ctm, PassBuilderOptions::create())
+            .run_passes(opt_str, &ctm, default_pass_options)
+            .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
+
+        if !matches!(self.opt_level, CliOptimizationLevel::None) {
+            configure_forced_unrolling();
+            let loop_cleanup = format!(
+                "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={}>,sroa<modify-cfg>,instcombine,simplifycfg)",
+                self.max_loop_unroll
+            );
+            module
+                .run_passes(&loop_cleanup, &ctm, PassBuilderOptions::create())
+                .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
+        }
+        module
+            .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
         Ok(ctm)
     }
@@ -214,6 +272,13 @@ impl CompileArgs {
         let target = self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
+        // `None` is an explicitly supported diagnostic mode whose output is
+        // allowed to retain non-QIR LLVM constructs. At every optimization
+        // level intended to produce QIR, dynamic qubit operands are illegal.
+        if !matches!(self.opt_level, CliOptimizationLevel::None) {
+            ensure_no_loops(&module, self.max_loop_unroll)?;
+            ensure_static_qubit_operands(&module)?;
+        }
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
@@ -269,54 +334,46 @@ pub fn find_hugr_entry_point(hugr: &impl HugrView<Node = Node>) -> Result<Node> 
 }
 
 pub fn replace_int_opque_pointer(module: &Module, funcname: &str) -> Result<u64> {
-    let first_func = module.get_first_function().unwrap();
-
     let mut pointer_counter: u64 = 0;
 
-    debug_assert_eq!(
-        1,
-        module
-            .get_functions()
-            .filter(|f| f.get_first_basic_block().is_some())
-            .count()
-    );
+    for function in module.get_functions() {
+        for block in function.get_basic_blocks() {
+            for ins in block.get_instructions() {
+                let Ok(call) = CallSiteValue::try_from(ins) else {
+                    continue;
+                };
+                let Some(func) = call.get_called_fn_value() else {
+                    bail!("Indirect call {:?}", call);
+                };
+                let global = func.as_global_value();
 
-    for block in first_func.get_basic_blocks() {
-        for ins in block.get_instructions() {
-            let Ok(call) = CallSiteValue::try_from(ins) else {
-                continue;
-            };
-            let Some(func) = call.get_called_fn_value() else {
-                bail!("Indirect call {:?}", call);
-            };
-            let global = func.as_global_value();
+                if global.get_name().to_bytes() == funcname.as_bytes() {
+                    let ptr = PointerValue::try_from(ins).unwrap();
 
-            if global.get_name().to_bytes() == funcname.as_bytes() {
-                let ptr = PointerValue::try_from(ins).unwrap();
+                    // TODO: it would be more accurate to use Context::ptr_sized_int_type
+                    let ptr_width = ptr
+                        .get_type()
+                        .size_of()
+                        .get_zero_extended_constant()
+                        .unwrap_or(64);
 
-                // TODO: it would be more accurate to use Context::ptr_sized_int_type
-                let ptr_width = ptr
-                    .get_type()
-                    .size_of()
-                    .get_zero_extended_constant()
-                    .unwrap_or(64);
+                    let ptr_width_nz =
+                        NonZero::new(ptr_width as u32).expect("pointers should have nonzero width");
+                    let ptr_int_type = module
+                        .get_context()
+                        .custom_width_int_type(ptr_width_nz)
+                        .expect("an int type with pointer width should be valid");
 
-                let ptr_width_nz =
-                    NonZero::new(ptr_width as u32).expect("pointers should have nonzero width");
-                let ptr_int_type = module
-                    .get_context()
-                    .custom_width_int_type(ptr_width_nz)
-                    .expect("an int type with pointer width should be valid");
+                    let r = ptr_int_type
+                        .const_int(pointer_counter, false)
+                        .const_to_pointer(ptr.get_type());
 
-                let r = ptr_int_type
-                    .const_int(pointer_counter, false)
-                    .const_to_pointer(ptr.get_type());
+                    pointer_counter += 1;
 
-                pointer_counter += 1;
+                    ptr.replace_all_uses_with(r);
 
-                ptr.replace_all_uses_with(r);
-
-                ins.erase_from_basic_block();
+                    ins.erase_from_basic_block();
+                }
             }
         }
     }

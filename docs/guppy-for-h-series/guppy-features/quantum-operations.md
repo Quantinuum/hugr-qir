@@ -28,21 +28,16 @@ Source file: `guppy_examples/guppy-features/supported/modifier-dagger.py`
 :language: python
 ```
 
-## Unsupported: control modifier
+## Control modifier
 
-Source file: `guppy_examples/guppy-features/unsupported/modifier-control.py`
+Source file: `guppy_examples/guppy-features/supported/modifier-control.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/modifier-control.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/modifier-control.py
 :language: python
 ```
 
-The control modifier lowers to an array of control qubits, which is not currently supported by QIR lowering.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/modifier-control.error
-:language: text
-```
+The control modifier lowers through a statically-addressable array of control
+qubits.
 
 ## Unsupported: barrier
 
@@ -52,7 +47,8 @@ Source file: `guppy_examples/guppy-features/unsupported/barrier.py`
 :language: python
 ```
 
-The current lowering path for barriers also introduces array-typed values, so barriers are not currently supported in the H-Series QIR subset.
+The array-typed operands can now be lowered, but the backend does not yet have
+code generation for the `RuntimeBarrier` operation itself.
 
 Expected error:
 

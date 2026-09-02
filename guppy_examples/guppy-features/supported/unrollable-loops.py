@@ -18,7 +18,7 @@ def main() -> None:
             break
         i -= 1
 
-    for _ in range(30):
+    for _ in range(90):
         x(q1)
 
     output("q", measure(q1).read())

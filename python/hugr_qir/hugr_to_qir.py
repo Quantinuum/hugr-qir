@@ -3,7 +3,11 @@ from pathlib import Path
 
 from hugr.package import Package
 
-from ._hugr_qir import compile_target_default, opt_level_default
+from ._hugr_qir import (
+    compile_target_default,
+    max_loop_unroll_default,
+    opt_level_default,
+)
 from .cli import hugr_qir_impl
 from .output import OutputFormat
 
@@ -15,6 +19,7 @@ def hugr_to_qir(  # noqa: PLR0913
     validate_hugr: bool = False,
     target: str = compile_target_default(),
     opt_level: str = opt_level_default(),
+    max_loop_unroll: int = max_loop_unroll_default(),
     output_format: OutputFormat = OutputFormat.BASE64,
     wasm_file: Path | None = None,
 ) -> str | bytes:
@@ -28,6 +33,8 @@ def hugr_to_qir(  # noqa: PLR0913
      run hugr-qir --help to see available options and default
     :param opt_level: LLVM optimization level, same options as cli,
      run hugr-qir --help to see available options and default
+    :param max_loop_unroll: Maximum statically-known loop trip count to fully
+     unroll before QIR emission
     :param output_format: Output format, see OutputFormat enum
      for available options
     :param wasm_file: Optional path to WASM binary file
@@ -53,6 +60,7 @@ def hugr_to_qir(  # noqa: PLR0913
             validate_hugr,
             target,
             opt_level,
+            max_loop_unroll,
             output_format,
             tmp_infile_path,
             tmp_outfile_path,
@@ -65,7 +73,12 @@ def hugr_to_qir(  # noqa: PLR0913
             return cli_output.read()
 
 
-def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
+def to_qir_str(
+    hugr: Package | bytes,
+    *,
+    validate_qir: bool = True,
+    max_loop_unroll: int = max_loop_unroll_default(),
+) -> str:
     """
     Converts hugr package to qir str
 
@@ -75,18 +88,27 @@ def to_qir_str(hugr: Package | bytes, *, validate_qir: bool = True) -> str:
     :type hugr: Package
     :param validate_qir: Whether to validate the created QIR
     :type validate_qir: bool
+    :param max_loop_unroll: Maximum statically-known loop trip count to fully unroll
     :return: QIR corresponding to the HUGR input as str
     :rtype: str
     """
 
     qir_str = hugr_to_qir(
-        hugr, output_format=OutputFormat.LLVM_IR, validate_qir=validate_qir
+        hugr,
+        output_format=OutputFormat.LLVM_IR,
+        validate_qir=validate_qir,
+        max_loop_unroll=max_loop_unroll,
     )
     assert isinstance(qir_str, str)  # noqa: S101
     return qir_str
 
 
-def to_qir_bytes(hugr: Package | bytes, *, validate_qir: bool = True) -> bytes:
+def to_qir_bytes(
+    hugr: Package | bytes,
+    *,
+    validate_qir: bool = True,
+    max_loop_unroll: int = max_loop_unroll_default(),
+) -> bytes:
     """
     Converts hugr package to qir bytes.
 
@@ -96,12 +118,16 @@ def to_qir_bytes(hugr: Package | bytes, *, validate_qir: bool = True) -> bytes:
     :type hugr: Package
     :param validate_qir: Whether to validate the created QIR
     :type validate_qir: bool
+    :param max_loop_unroll: Maximum statically-known loop trip count to fully unroll
     :return: QIR corresponding to the HUGR input as bytes
     :rtype: bytes
     """
 
     qir_bytes = hugr_to_qir(
-        hugr, output_format=OutputFormat.BITCODE, validate_qir=validate_qir
+        hugr,
+        output_format=OutputFormat.BITCODE,
+        validate_qir=validate_qir,
+        max_loop_unroll=max_loop_unroll,
     )
     assert isinstance(qir_bytes, bytes)  # noqa: S101
     return qir_bytes

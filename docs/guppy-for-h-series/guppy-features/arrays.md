@@ -2,7 +2,8 @@
 
 These examples show the current boundary for array-like programming for H-Series compatible Guppy.
 
-The important theme is that compile-time arrays can be useful as a structuring tool, but runtime array values and helpers that depend on borrowed array representations are not yet supported by `hugr-qir`.
+Compile-time arrays and statically addressable runtime qubit arrays can both be
+lowered to QIR. Runtime indexing must become static during LLVM optimization.
 
 ## Supported: compile-time arrays
 
@@ -24,21 +25,21 @@ Source file: `guppy_examples/guppy-features/supported/comptime-array-copy-unpack
 
 Copying and starred unpacking produce array-like values, so this pattern stays under `@guppy.comptime`.
 
-## Unsupported: runtime arrays
+## Supported: statically-addressable runtime qubit arrays
 
-Source file: `guppy_examples/guppy-features/unsupported/runtime-array.py`
+Source file: `guppy_examples/guppy-features/supported/runtime-array.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/runtime-array.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/runtime-array.py
 :language: python
 ```
 
-This version looks structurally similar to the compile-time example above, but it keeps the arrays in ordinary `@guppy` functions and therefore requires runtime array support during lowering.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/runtime-array.error
-:language: text
-```
+This version keeps qubit arrays in ordinary `@guppy` functions. The backend
+lowers them to temporary stack storage, then relies on LLVM loop unrolling and
+scalar replacement to turn every quantum operation into a statically-addressed
+QIR call. If normal optimization leaves array storage behind, the backend
+forces full unrolling of natural loops with statically-known trip counts up to
+the configured limit (800 by default). Programs are rejected if any dynamic
+qubit address remains afterward.
 
 ## Unsupported: `measure_array`
 
@@ -48,7 +49,8 @@ Source file: `guppy_examples/guppy-features/unsupported/measure-array.py`
 :language: python
 ```
 
-This fails because `measure_array` relies on borrowed array types that are not currently emitted by the backend.
+Array storage is lowered successfully, but the backend does not yet implement
+the `result_array_bool` operation produced by `measure_array`.
 
 Expected error:
 
@@ -56,25 +58,21 @@ Expected error:
 :language: text
 ```
 
-## Unsupported: `discard_array`
+## Supported: `discard_array`
 
-Source file: `guppy_examples/guppy-features/unsupported/discard-array.py`
+Source file: `guppy_examples/guppy-features/supported/discard-array.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/discard-array.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/discard-array.py
 :language: python
 ```
 
-Like `measure_array`, this path depends on array borrowing support that is not yet available in QIR emission.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/discard-array.error
-:language: text
-```
+`discard_array` is supported when its qubit array can be statically resolved.
 
 ## Unsupported: array-backed collections
 
-`Stack`, `Queue`, and `PriorityQueue` are higher-level collection APIs, but they are implemented with runtime arrays internally. That means they currently hit the same QIR lowering boundary as direct runtime arrays.
+`Stack`, `Queue`, and `PriorityQueue` are higher-level collection APIs built on
+runtime arrays. Their generated bounds and borrow-check failure paths retain
+`unreachable` instructions, which are outside the supported QIR profile.
 
 Source file: `guppy_examples/guppy-features/unsupported/collections-stack.py`
 
