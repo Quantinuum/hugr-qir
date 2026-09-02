@@ -1,0 +1,53 @@
+---
+source: src/qir/result_ext.rs
+expression: mod_str
+---
+; ModuleID = 'test_context'
+source_filename = "test_context"
+
+@0 = private unnamed_addr constant [14 x i8] c"foo_arr_f64:0\00", align 1
+@1 = private unnamed_addr constant [14 x i8] c"foo_arr_f64:1\00", align 1
+@2 = private unnamed_addr constant [14 x i8] c"foo_arr_f64:2\00", align 1
+
+define void @_hl.main.1({ ptr, i64 } %0) !dbg !3 {
+alloca_block:
+  %"2_0" = alloca { ptr, i64 }, align 8
+  br label %entry_block
+
+entry_block:                                      ; preds = %alloca_block
+  store { ptr, i64 } %0, ptr %"2_0", align 8
+  %"2_01" = load { ptr, i64 }, ptr %"2_0", align 8
+  %array_ptr = extractvalue { ptr, i64 } %"2_01", 0, !dbg !11
+  %array_offset = extractvalue { ptr, i64 } %"2_01", 1, !dbg !11
+  %1 = add i64 %array_offset, 0, !dbg !11
+  %2 = getelementptr inbounds double, ptr %array_ptr, i64 %1, !dbg !11
+  %3 = load double, ptr %2, align 8, !dbg !11
+  %4 = add i64 %array_offset, 1, !dbg !11
+  %5 = getelementptr inbounds double, ptr %array_ptr, i64 %4, !dbg !11
+  %6 = load double, ptr %5, align 8, !dbg !11
+  %7 = add i64 %array_offset, 2, !dbg !11
+  %8 = getelementptr inbounds double, ptr %array_ptr, i64 %7, !dbg !11
+  %9 = load double, ptr %8, align 8, !dbg !11
+  call void @__quantum__rt__double_record_output(double %3, ptr @0), !dbg !11
+  call void @__quantum__rt__double_record_output(double %6, ptr @1), !dbg !11
+  call void @__quantum__rt__double_record_output(double %9, ptr @2), !dbg !11
+  ret void
+}
+
+declare void @__quantum__rt__double_record_output(double, ptr)
+
+!llvm.module.flags = !{!0}
+!llvm.dbg.cu = !{!1}
+
+!0 = !{i32 2, !"Debug Info Version", i32 3}
+!1 = distinct !DICompileUnit(language: DW_LANG_Python, file: !2, producer: "hugr_llvm_test", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)
+!2 = !DIFile(filename: "/cmJrSnVYeXFf/zCkHdtWCCnkJhPKiWSKICgZuRNRvR/mbrfVq.gpy.py", directory: "/lPNzlV/ClAphFG/yrhvZs/eDgUn/eIVwAutKJHaZEPSZwPXPeycUvnujGxZ")
+!3 = distinct !DISubprogram(name: "_hl.main.1", linkageName: "_hl.main.1", scope: null, file: !4, line: 25254, type: !5, scopeLine: 25255, spFlags: DISPFlagDefinition, unit: !1)
+!4 = !DIFile(filename: "/cmJrSnVYeXFf/zCkHdtWCCnkJhPKiWSKICgZuRNRvR/mbrfVq.gpy.py", directory: "")
+!5 = !DISubroutineType(types: !6)
+!6 = !{null, !7}
+!7 = !DICompositeType(tag: DW_TAG_structure_type, name: "{ ptr, i64 }", file: !2, size: 128, align: 8, elements: !8)
+!8 = !{!9, !10}
+!9 = !DIBasicType(name: "ptr", size: 64, encoding: DW_ATE_address)
+!10 = !DIBasicType(name: "i64", size: 64, encoding: DW_ATE_unsigned)
+!11 = !DILocation(line: 27062, column: 402, scope: !3)
