@@ -9,9 +9,62 @@ use anyhow::Result;
 use hugr::{HugrView, Node};
 use hugr_llvm::{
     emit::{EmitFuncContext, libc::emit_libc_abort},
-    extension::collections::{array::ArrayCodegen, borrow_array::BorrowArrayCodegen},
-    inkwell::values::{BasicValueEnum, IntValue, PointerValue},
+    extension::collections::{
+        array::{ArrayCodegen, decompose_array_fat_pointer},
+        borrow_array::{BorrowArrayCodegen, decompose_barray_fat_pointer},
+    },
+    inkwell::{
+        types::BasicTypeEnum,
+        values::{BasicValueEnum, IntValue, PointerValue},
+    },
 };
+
+/// Load every element of a statically sized array, accounting for its offset.
+pub(super) fn load_array_elements<'c, H: HugrView<Node = Node>>(
+    context: &mut EmitFuncContext<'c, '_, H>,
+    array: BasicValueEnum<'c>,
+    elem_ty: BasicTypeEnum<'c>,
+    length: u64,
+) -> Result<Vec<BasicValueEnum<'c>>> {
+    let (array_ptr, array_offset) = decompose_array_fat_pointer(context.builder(), array)?;
+    load_elements_from_pointer(context, array_ptr, array_offset, elem_ty, length)
+}
+
+/// Load every element of a statically sized borrow array, ignoring its borrow mask.
+pub(super) fn load_borrow_array_elements<'c, H: HugrView<Node = Node>>(
+    context: &mut EmitFuncContext<'c, '_, H>,
+    array: BasicValueEnum<'c>,
+    elem_ty: BasicTypeEnum<'c>,
+    length: u64,
+) -> Result<Vec<BasicValueEnum<'c>>> {
+    let array = decompose_barray_fat_pointer(context.builder(), array)?;
+    load_elements_from_pointer(context, array.elems_ptr, array.offset, elem_ty, length)
+}
+
+fn load_elements_from_pointer<'c, H: HugrView<Node = Node>>(
+    context: &mut EmitFuncContext<'c, '_, H>,
+    array_ptr: PointerValue<'c>,
+    array_offset: IntValue<'c>,
+    elem_ty: BasicTypeEnum<'c>,
+    length: u64,
+) -> Result<Vec<BasicValueEnum<'c>>> {
+    let index_ty = array_offset.get_type();
+    (0..length)
+        .map(|index| {
+            let index = context.builder().build_int_add(
+                array_offset,
+                index_ty.const_int(index, false),
+                "",
+            )?;
+            let elem_ptr = unsafe {
+                context
+                    .builder()
+                    .build_in_bounds_gep(elem_ty, array_ptr, &[index], "")?
+            };
+            Ok(context.builder().build_load(elem_ty, elem_ptr, "")?)
+        })
+        .collect()
+}
 
 /// Lowers ordinary fixed-size arrays to temporary stack storage.
 #[derive(Clone, Debug, Default)]

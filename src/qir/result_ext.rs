@@ -6,16 +6,14 @@ use hugr::{
 };
 use hugr_llvm::{
     emit::{EmitFuncContext, EmitOpArgs, emit_value},
-    extension::collections::array::decompose_array_fat_pointer,
-    inkwell::{
-        types::{BasicType as _, BasicTypeEnum},
-        values::BasicValueEnum,
-    },
+    inkwell::{types::BasicType as _, values::BasicValueEnum},
     sum::LLVMSumValue,
     types::HugrSumType,
 };
 use std::num::NonZeroU32;
 use tket_qsystem::extension::result::{ResultArgs, ResultOp, ResultOpDef, SimpleArgs};
+
+use super::array_codegen::load_array_elements;
 
 const MAX_ARR_BOOL_SIZE: u64 = 63;
 
@@ -24,31 +22,6 @@ fn emit_tag<'c, H: HugrView<Node = Node>>(
     tag: impl Into<String>,
 ) -> Result<BasicValueEnum<'c>> {
     emit_value(context, &ConstString::new(tag.into()).into())
-}
-
-fn load_array_elements<'c, H: HugrView<Node = Node>>(
-    context: &mut EmitFuncContext<'c, '_, H>,
-    array: BasicValueEnum<'c>,
-    elem_ty: BasicTypeEnum<'c>,
-    length: u64,
-) -> Result<Vec<BasicValueEnum<'c>>> {
-    let (array_ptr, array_offset) = decompose_array_fat_pointer(context.builder(), array)?;
-    let index_ty = array_offset.get_type();
-    (0..length)
-        .map(|index| {
-            let index = context.builder().build_int_add(
-                array_offset,
-                index_ty.const_int(index, false),
-                "",
-            )?;
-            let elem_ptr = unsafe {
-                context
-                    .builder()
-                    .build_in_bounds_gep(elem_ty, array_ptr, &[index], "")?
-            };
-            Ok(context.builder().build_load(elem_ty, elem_ptr, "")?)
-        })
-        .collect()
 }
 
 fn array_length(result_op: &ResultOp) -> Result<u64> {
