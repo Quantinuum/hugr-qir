@@ -60,114 +60,66 @@ target triple = "aarch64-unknown-linux-gnu"
 @53 = private unnamed_addr constant [11 x i8] c"arr_res_53\00", align 1
 @54 = private unnamed_addr constant [11 x i8] c"arr_res_54\00", align 1
 @55 = private unnamed_addr constant [11 x i8] c"arr_res_55\00", align 1
-@56 = private unnamed_addr constant [11 x i8] c"arr_res_56\00", align 1
-@57 = private unnamed_addr constant [11 x i8] c"arr_res_57\00", align 1
-@58 = private unnamed_addr constant [11 x i8] c"arr_res_58\00", align 1
-@59 = private unnamed_addr constant [11 x i8] c"arr_res_59\00", align 1
-@60 = private unnamed_addr constant [11 x i8] c"arr_res_60\00", align 1
-@61 = private unnamed_addr constant [11 x i8] c"arr_res_61\00", align 1
-@62 = private unnamed_addr constant [11 x i8] c"arr_res_62\00", align 1
-@63 = private unnamed_addr constant [11 x i8] c"arr_res_63\00", align 1
-@64 = private unnamed_addr constant [11 x i8] c"arr_res_64\00", align 1
-@65 = private unnamed_addr constant [11 x i8] c"arr_res_65\00", align 1
-@66 = private unnamed_addr constant [11 x i8] c"arr_res_66\00", align 1
-@67 = private unnamed_addr constant [11 x i8] c"arr_res_67\00", align 1
-@68 = private unnamed_addr constant [11 x i8] c"arr_res_68\00", align 1
-@69 = private unnamed_addr constant [11 x i8] c"arr_res_69\00", align 1
-@70 = private unnamed_addr constant [11 x i8] c"arr_res_70\00", align 1
-@71 = private unnamed_addr constant [11 x i8] c"arr_res_71\00", align 1
-@72 = private unnamed_addr constant [11 x i8] c"arr_res_72\00", align 1
-@73 = private unnamed_addr constant [11 x i8] c"arr_res_73\00", align 1
-@74 = private unnamed_addr constant [11 x i8] c"arr_res_74\00", align 1
-@75 = private unnamed_addr constant [11 x i8] c"arr_res_75\00", align 1
-@76 = private unnamed_addr constant [11 x i8] c"arr_res_76\00", align 1
-@77 = private unnamed_addr constant [11 x i8] c"arr_res_77\00", align 1
-@78 = private unnamed_addr constant [11 x i8] c"arr_res_78\00", align 1
-@79 = private unnamed_addr constant [11 x i8] c"arr_res_79\00", align 1
-@80 = private unnamed_addr constant [6 x i8] c"iar_0\00", align 1
-@81 = private unnamed_addr constant [6 x i8] c"iar_1\00", align 1
-@82 = private unnamed_addr constant [6 x i8] c"iar_2\00", align 1
-@83 = private unnamed_addr constant [6 x i8] c"iar_3\00", align 1
-@84 = private unnamed_addr constant [6 x i8] c"iar_4\00", align 1
-@85 = private unnamed_addr constant [6 x i8] c"iar_5\00", align 1
-@86 = private unnamed_addr constant [6 x i8] c"iar_6\00", align 1
-@87 = private unnamed_addr constant [6 x i8] c"iar_7\00", align 1
-@88 = private unnamed_addr constant [6 x i8] c"iar_8\00", align 1
-@89 = private unnamed_addr constant [6 x i8] c"iar_9\00", align 1
-@90 = private unnamed_addr constant [7 x i8] c"iar_10\00", align 1
-@91 = private unnamed_addr constant [7 x i8] c"iar_11\00", align 1
-@92 = private unnamed_addr constant [7 x i8] c"iar_12\00", align 1
-@93 = private unnamed_addr constant [7 x i8] c"iar_13\00", align 1
-@94 = private unnamed_addr constant [7 x i8] c"iar_14\00", align 1
-@95 = private unnamed_addr constant [7 x i8] c"iar_15\00", align 1
-@96 = private unnamed_addr constant [7 x i8] c"iar_16\00", align 1
-@97 = private unnamed_addr constant [7 x i8] c"iar_17\00", align 1
-@98 = private unnamed_addr constant [7 x i8] c"iar_18\00", align 1
-@99 = private unnamed_addr constant [7 x i8] c"iar_19\00", align 1
-@100 = private unnamed_addr constant [7 x i8] c"iar_20\00", align 1
-@101 = private unnamed_addr constant [7 x i8] c"iar_21\00", align 1
-@102 = private unnamed_addr constant [7 x i8] c"iar_22\00", align 1
-@103 = private unnamed_addr constant [7 x i8] c"iar_23\00", align 1
-@104 = private unnamed_addr constant [7 x i8] c"iar_24\00", align 1
-@105 = private unnamed_addr constant [7 x i8] c"iar_25\00", align 1
-@106 = private unnamed_addr constant [7 x i8] c"iar_26\00", align 1
-@107 = private unnamed_addr constant [7 x i8] c"iar_27\00", align 1
-@108 = private unnamed_addr constant [7 x i8] c"iar_28\00", align 1
-@109 = private unnamed_addr constant [7 x i8] c"iar_29\00", align 1
-@110 = private unnamed_addr constant [7 x i8] c"iar_30\00", align 1
-@111 = private unnamed_addr constant [7 x i8] c"iar_31\00", align 1
-@112 = private unnamed_addr constant [7 x i8] c"iar_32\00", align 1
-@113 = private unnamed_addr constant [7 x i8] c"iar_33\00", align 1
-@114 = private unnamed_addr constant [7 x i8] c"iar_34\00", align 1
-@115 = private unnamed_addr constant [7 x i8] c"iar_35\00", align 1
-@116 = private unnamed_addr constant [7 x i8] c"iar_36\00", align 1
-@117 = private unnamed_addr constant [7 x i8] c"iar_37\00", align 1
-@118 = private unnamed_addr constant [7 x i8] c"iar_38\00", align 1
-@119 = private unnamed_addr constant [7 x i8] c"iar_39\00", align 1
-@120 = private unnamed_addr constant [7 x i8] c"iar_40\00", align 1
-@121 = private unnamed_addr constant [7 x i8] c"iar_41\00", align 1
-@122 = private unnamed_addr constant [7 x i8] c"iar_42\00", align 1
-@123 = private unnamed_addr constant [7 x i8] c"iar_43\00", align 1
-@124 = private unnamed_addr constant [7 x i8] c"iar_44\00", align 1
-@125 = private unnamed_addr constant [7 x i8] c"iar_45\00", align 1
-@126 = private unnamed_addr constant [7 x i8] c"iar_46\00", align 1
-@127 = private unnamed_addr constant [7 x i8] c"iar_47\00", align 1
-@128 = private unnamed_addr constant [7 x i8] c"iar_48\00", align 1
-@129 = private unnamed_addr constant [7 x i8] c"iar_49\00", align 1
-@130 = private unnamed_addr constant [7 x i8] c"iar_50\00", align 1
-@131 = private unnamed_addr constant [7 x i8] c"iar_51\00", align 1
-@132 = private unnamed_addr constant [7 x i8] c"iar_52\00", align 1
-@133 = private unnamed_addr constant [7 x i8] c"iar_53\00", align 1
-@134 = private unnamed_addr constant [7 x i8] c"iar_54\00", align 1
-@135 = private unnamed_addr constant [7 x i8] c"iar_55\00", align 1
-@136 = private unnamed_addr constant [7 x i8] c"iar_56\00", align 1
-@137 = private unnamed_addr constant [7 x i8] c"iar_57\00", align 1
-@138 = private unnamed_addr constant [7 x i8] c"iar_58\00", align 1
-@139 = private unnamed_addr constant [7 x i8] c"iar_59\00", align 1
-@140 = private unnamed_addr constant [7 x i8] c"iar_60\00", align 1
-@141 = private unnamed_addr constant [7 x i8] c"iar_61\00", align 1
-@142 = private unnamed_addr constant [7 x i8] c"iar_62\00", align 1
-@143 = private unnamed_addr constant [7 x i8] c"iar_63\00", align 1
-@144 = private unnamed_addr constant [7 x i8] c"iar_64\00", align 1
-@145 = private unnamed_addr constant [7 x i8] c"iar_65\00", align 1
-@146 = private unnamed_addr constant [7 x i8] c"iar_66\00", align 1
-@147 = private unnamed_addr constant [7 x i8] c"iar_67\00", align 1
-@148 = private unnamed_addr constant [7 x i8] c"iar_68\00", align 1
-@149 = private unnamed_addr constant [7 x i8] c"iar_69\00", align 1
-@150 = private unnamed_addr constant [7 x i8] c"iar_70\00", align 1
-@151 = private unnamed_addr constant [7 x i8] c"iar_71\00", align 1
-@152 = private unnamed_addr constant [7 x i8] c"iar_72\00", align 1
-@153 = private unnamed_addr constant [7 x i8] c"iar_73\00", align 1
-@154 = private unnamed_addr constant [7 x i8] c"iar_74\00", align 1
-@155 = private unnamed_addr constant [7 x i8] c"iar_75\00", align 1
-@156 = private unnamed_addr constant [7 x i8] c"iar_76\00", align 1
-@157 = private unnamed_addr constant [7 x i8] c"iar_77\00", align 1
-@158 = private unnamed_addr constant [7 x i8] c"iar_78\00", align 1
-@159 = private unnamed_addr constant [7 x i8] c"iar_79\00", align 1
-@160 = private unnamed_addr constant [7 x i8] c"siar_0\00", align 1
-@161 = private unnamed_addr constant [7 x i8] c"siar_1\00", align 1
-@162 = private unnamed_addr constant [7 x i8] c"siar_2\00", align 1
-@163 = private unnamed_addr constant [7 x i8] c"siar_3\00", align 1
+@56 = private unnamed_addr constant [6 x i8] c"iar_0\00", align 1
+@57 = private unnamed_addr constant [6 x i8] c"iar_1\00", align 1
+@58 = private unnamed_addr constant [6 x i8] c"iar_2\00", align 1
+@59 = private unnamed_addr constant [6 x i8] c"iar_3\00", align 1
+@60 = private unnamed_addr constant [6 x i8] c"iar_4\00", align 1
+@61 = private unnamed_addr constant [6 x i8] c"iar_5\00", align 1
+@62 = private unnamed_addr constant [6 x i8] c"iar_6\00", align 1
+@63 = private unnamed_addr constant [6 x i8] c"iar_7\00", align 1
+@64 = private unnamed_addr constant [6 x i8] c"iar_8\00", align 1
+@65 = private unnamed_addr constant [6 x i8] c"iar_9\00", align 1
+@66 = private unnamed_addr constant [7 x i8] c"iar_10\00", align 1
+@67 = private unnamed_addr constant [7 x i8] c"iar_11\00", align 1
+@68 = private unnamed_addr constant [7 x i8] c"iar_12\00", align 1
+@69 = private unnamed_addr constant [7 x i8] c"iar_13\00", align 1
+@70 = private unnamed_addr constant [7 x i8] c"iar_14\00", align 1
+@71 = private unnamed_addr constant [7 x i8] c"iar_15\00", align 1
+@72 = private unnamed_addr constant [7 x i8] c"iar_16\00", align 1
+@73 = private unnamed_addr constant [7 x i8] c"iar_17\00", align 1
+@74 = private unnamed_addr constant [7 x i8] c"iar_18\00", align 1
+@75 = private unnamed_addr constant [7 x i8] c"iar_19\00", align 1
+@76 = private unnamed_addr constant [7 x i8] c"iar_20\00", align 1
+@77 = private unnamed_addr constant [7 x i8] c"iar_21\00", align 1
+@78 = private unnamed_addr constant [7 x i8] c"iar_22\00", align 1
+@79 = private unnamed_addr constant [7 x i8] c"iar_23\00", align 1
+@80 = private unnamed_addr constant [7 x i8] c"iar_24\00", align 1
+@81 = private unnamed_addr constant [7 x i8] c"iar_25\00", align 1
+@82 = private unnamed_addr constant [7 x i8] c"iar_26\00", align 1
+@83 = private unnamed_addr constant [7 x i8] c"iar_27\00", align 1
+@84 = private unnamed_addr constant [7 x i8] c"iar_28\00", align 1
+@85 = private unnamed_addr constant [7 x i8] c"iar_29\00", align 1
+@86 = private unnamed_addr constant [7 x i8] c"iar_30\00", align 1
+@87 = private unnamed_addr constant [7 x i8] c"iar_31\00", align 1
+@88 = private unnamed_addr constant [7 x i8] c"iar_32\00", align 1
+@89 = private unnamed_addr constant [7 x i8] c"iar_33\00", align 1
+@90 = private unnamed_addr constant [7 x i8] c"iar_34\00", align 1
+@91 = private unnamed_addr constant [7 x i8] c"iar_35\00", align 1
+@92 = private unnamed_addr constant [7 x i8] c"iar_36\00", align 1
+@93 = private unnamed_addr constant [7 x i8] c"iar_37\00", align 1
+@94 = private unnamed_addr constant [7 x i8] c"iar_38\00", align 1
+@95 = private unnamed_addr constant [7 x i8] c"iar_39\00", align 1
+@96 = private unnamed_addr constant [7 x i8] c"iar_40\00", align 1
+@97 = private unnamed_addr constant [7 x i8] c"iar_41\00", align 1
+@98 = private unnamed_addr constant [7 x i8] c"iar_42\00", align 1
+@99 = private unnamed_addr constant [7 x i8] c"iar_43\00", align 1
+@100 = private unnamed_addr constant [7 x i8] c"iar_44\00", align 1
+@101 = private unnamed_addr constant [7 x i8] c"iar_45\00", align 1
+@102 = private unnamed_addr constant [7 x i8] c"iar_46\00", align 1
+@103 = private unnamed_addr constant [7 x i8] c"iar_47\00", align 1
+@104 = private unnamed_addr constant [7 x i8] c"iar_48\00", align 1
+@105 = private unnamed_addr constant [7 x i8] c"iar_49\00", align 1
+@106 = private unnamed_addr constant [7 x i8] c"iar_50\00", align 1
+@107 = private unnamed_addr constant [7 x i8] c"iar_51\00", align 1
+@108 = private unnamed_addr constant [7 x i8] c"iar_52\00", align 1
+@109 = private unnamed_addr constant [7 x i8] c"iar_53\00", align 1
+@110 = private unnamed_addr constant [7 x i8] c"iar_54\00", align 1
+@111 = private unnamed_addr constant [7 x i8] c"iar_55\00", align 1
+@112 = private unnamed_addr constant [7 x i8] c"siar_0\00", align 1
+@113 = private unnamed_addr constant [7 x i8] c"siar_1\00", align 1
+@114 = private unnamed_addr constant [7 x i8] c"siar_2\00", align 1
+@115 = private unnamed_addr constant [7 x i8] c"siar_3\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
@@ -286,54 +238,6 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 54 to ptr))
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 55 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 55 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 56 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 56 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 57 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 57 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 58 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 58 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 59 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 59 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 60 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 60 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 61 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 61 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 62 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 62 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 63 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 63 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 64 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 64 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 65 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 65 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 66 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 66 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 67 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 67 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 68 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 68 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 69 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 69 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 70 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 70 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 71 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 71 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 72 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 72 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 73 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 73 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 74 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 74 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 75 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 75 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 76 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 76 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 77 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 77 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 78 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 78 to ptr))
-  tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 79 to ptr))
-  tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 79 to ptr))
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
@@ -502,162 +406,66 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 55 to ptr), ptr nonnull inttoptr (i64 55 to ptr))
   %55 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 55 to ptr))
   tail call void @__quantum__rt__bool_record_output(i1 %55, ptr nonnull @55)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 56 to ptr), ptr nonnull inttoptr (i64 56 to ptr))
-  %56 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 56 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %56, ptr nonnull @56)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 57 to ptr), ptr nonnull inttoptr (i64 57 to ptr))
-  %57 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 57 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %57, ptr nonnull @57)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 58 to ptr), ptr nonnull inttoptr (i64 58 to ptr))
-  %58 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 58 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %58, ptr nonnull @58)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 59 to ptr), ptr nonnull inttoptr (i64 59 to ptr))
-  %59 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 59 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %59, ptr nonnull @59)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 60 to ptr), ptr nonnull inttoptr (i64 60 to ptr))
-  %60 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 60 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %60, ptr nonnull @60)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 61 to ptr), ptr nonnull inttoptr (i64 61 to ptr))
-  %61 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 61 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %61, ptr nonnull @61)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 62 to ptr), ptr nonnull inttoptr (i64 62 to ptr))
-  %62 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 62 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %62, ptr nonnull @62)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 63 to ptr), ptr nonnull inttoptr (i64 63 to ptr))
-  %63 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 63 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %63, ptr nonnull @63)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 64 to ptr), ptr nonnull inttoptr (i64 64 to ptr))
-  %64 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 64 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %64, ptr nonnull @64)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 65 to ptr), ptr nonnull inttoptr (i64 65 to ptr))
-  %65 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 65 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %65, ptr nonnull @65)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 66 to ptr), ptr nonnull inttoptr (i64 66 to ptr))
-  %66 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 66 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %66, ptr nonnull @66)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 67 to ptr), ptr nonnull inttoptr (i64 67 to ptr))
-  %67 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 67 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %67, ptr nonnull @67)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 68 to ptr), ptr nonnull inttoptr (i64 68 to ptr))
-  %68 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 68 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %68, ptr nonnull @68)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 69 to ptr), ptr nonnull inttoptr (i64 69 to ptr))
-  %69 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 69 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %69, ptr nonnull @69)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 70 to ptr), ptr nonnull inttoptr (i64 70 to ptr))
-  %70 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 70 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %70, ptr nonnull @70)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 71 to ptr), ptr nonnull inttoptr (i64 71 to ptr))
-  %71 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 71 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %71, ptr nonnull @71)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 72 to ptr), ptr nonnull inttoptr (i64 72 to ptr))
-  %72 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 72 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %72, ptr nonnull @72)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 73 to ptr), ptr nonnull inttoptr (i64 73 to ptr))
-  %73 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 73 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %73, ptr nonnull @73)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 74 to ptr), ptr nonnull inttoptr (i64 74 to ptr))
-  %74 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 74 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %74, ptr nonnull @74)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 75 to ptr), ptr nonnull inttoptr (i64 75 to ptr))
-  %75 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 75 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %75, ptr nonnull @75)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 76 to ptr), ptr nonnull inttoptr (i64 76 to ptr))
-  %76 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 76 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %76, ptr nonnull @76)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 77 to ptr), ptr nonnull inttoptr (i64 77 to ptr))
-  %77 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 77 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %77, ptr nonnull @77)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 78 to ptr), ptr nonnull inttoptr (i64 78 to ptr))
-  %78 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 78 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %78, ptr nonnull @78)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 79 to ptr), ptr nonnull inttoptr (i64 79 to ptr))
-  %79 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 79 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %79, ptr nonnull @79)
-  tail call void @__quantum__rt__int_record_output(i64 0, ptr nonnull @80)
-  tail call void @__quantum__rt__int_record_output(i64 1, ptr nonnull @81)
-  tail call void @__quantum__rt__int_record_output(i64 2, ptr nonnull @82)
-  tail call void @__quantum__rt__int_record_output(i64 3, ptr nonnull @83)
-  tail call void @__quantum__rt__int_record_output(i64 4, ptr nonnull @84)
-  tail call void @__quantum__rt__int_record_output(i64 5, ptr nonnull @85)
-  tail call void @__quantum__rt__int_record_output(i64 6, ptr nonnull @86)
-  tail call void @__quantum__rt__int_record_output(i64 7, ptr nonnull @87)
-  tail call void @__quantum__rt__int_record_output(i64 8, ptr nonnull @88)
-  tail call void @__quantum__rt__int_record_output(i64 9, ptr nonnull @89)
-  tail call void @__quantum__rt__int_record_output(i64 10, ptr nonnull @90)
-  tail call void @__quantum__rt__int_record_output(i64 11, ptr nonnull @91)
-  tail call void @__quantum__rt__int_record_output(i64 12, ptr nonnull @92)
-  tail call void @__quantum__rt__int_record_output(i64 13, ptr nonnull @93)
-  tail call void @__quantum__rt__int_record_output(i64 14, ptr nonnull @94)
-  tail call void @__quantum__rt__int_record_output(i64 15, ptr nonnull @95)
-  tail call void @__quantum__rt__int_record_output(i64 16, ptr nonnull @96)
-  tail call void @__quantum__rt__int_record_output(i64 17, ptr nonnull @97)
-  tail call void @__quantum__rt__int_record_output(i64 18, ptr nonnull @98)
-  tail call void @__quantum__rt__int_record_output(i64 19, ptr nonnull @99)
-  tail call void @__quantum__rt__int_record_output(i64 20, ptr nonnull @100)
-  tail call void @__quantum__rt__int_record_output(i64 21, ptr nonnull @101)
-  tail call void @__quantum__rt__int_record_output(i64 22, ptr nonnull @102)
-  tail call void @__quantum__rt__int_record_output(i64 23, ptr nonnull @103)
-  tail call void @__quantum__rt__int_record_output(i64 24, ptr nonnull @104)
-  tail call void @__quantum__rt__int_record_output(i64 25, ptr nonnull @105)
-  tail call void @__quantum__rt__int_record_output(i64 26, ptr nonnull @106)
-  tail call void @__quantum__rt__int_record_output(i64 27, ptr nonnull @107)
-  tail call void @__quantum__rt__int_record_output(i64 28, ptr nonnull @108)
-  tail call void @__quantum__rt__int_record_output(i64 29, ptr nonnull @109)
-  tail call void @__quantum__rt__int_record_output(i64 30, ptr nonnull @110)
-  tail call void @__quantum__rt__int_record_output(i64 31, ptr nonnull @111)
-  tail call void @__quantum__rt__int_record_output(i64 32, ptr nonnull @112)
-  tail call void @__quantum__rt__int_record_output(i64 33, ptr nonnull @113)
-  tail call void @__quantum__rt__int_record_output(i64 34, ptr nonnull @114)
-  tail call void @__quantum__rt__int_record_output(i64 35, ptr nonnull @115)
-  tail call void @__quantum__rt__int_record_output(i64 36, ptr nonnull @116)
-  tail call void @__quantum__rt__int_record_output(i64 37, ptr nonnull @117)
-  tail call void @__quantum__rt__int_record_output(i64 38, ptr nonnull @118)
-  tail call void @__quantum__rt__int_record_output(i64 39, ptr nonnull @119)
-  tail call void @__quantum__rt__int_record_output(i64 40, ptr nonnull @120)
-  tail call void @__quantum__rt__int_record_output(i64 41, ptr nonnull @121)
-  tail call void @__quantum__rt__int_record_output(i64 42, ptr nonnull @122)
-  tail call void @__quantum__rt__int_record_output(i64 43, ptr nonnull @123)
-  tail call void @__quantum__rt__int_record_output(i64 44, ptr nonnull @124)
-  tail call void @__quantum__rt__int_record_output(i64 45, ptr nonnull @125)
-  tail call void @__quantum__rt__int_record_output(i64 46, ptr nonnull @126)
-  tail call void @__quantum__rt__int_record_output(i64 47, ptr nonnull @127)
-  tail call void @__quantum__rt__int_record_output(i64 48, ptr nonnull @128)
-  tail call void @__quantum__rt__int_record_output(i64 49, ptr nonnull @129)
-  tail call void @__quantum__rt__int_record_output(i64 50, ptr nonnull @130)
-  tail call void @__quantum__rt__int_record_output(i64 51, ptr nonnull @131)
-  tail call void @__quantum__rt__int_record_output(i64 52, ptr nonnull @132)
-  tail call void @__quantum__rt__int_record_output(i64 53, ptr nonnull @133)
-  tail call void @__quantum__rt__int_record_output(i64 54, ptr nonnull @134)
-  tail call void @__quantum__rt__int_record_output(i64 55, ptr nonnull @135)
-  tail call void @__quantum__rt__int_record_output(i64 56, ptr nonnull @136)
-  tail call void @__quantum__rt__int_record_output(i64 57, ptr nonnull @137)
-  tail call void @__quantum__rt__int_record_output(i64 58, ptr nonnull @138)
-  tail call void @__quantum__rt__int_record_output(i64 59, ptr nonnull @139)
-  tail call void @__quantum__rt__int_record_output(i64 60, ptr nonnull @140)
-  tail call void @__quantum__rt__int_record_output(i64 61, ptr nonnull @141)
-  tail call void @__quantum__rt__int_record_output(i64 62, ptr nonnull @142)
-  tail call void @__quantum__rt__int_record_output(i64 63, ptr nonnull @143)
-  tail call void @__quantum__rt__int_record_output(i64 64, ptr nonnull @144)
-  tail call void @__quantum__rt__int_record_output(i64 65, ptr nonnull @145)
-  tail call void @__quantum__rt__int_record_output(i64 66, ptr nonnull @146)
-  tail call void @__quantum__rt__int_record_output(i64 67, ptr nonnull @147)
-  tail call void @__quantum__rt__int_record_output(i64 68, ptr nonnull @148)
-  tail call void @__quantum__rt__int_record_output(i64 69, ptr nonnull @149)
-  tail call void @__quantum__rt__int_record_output(i64 70, ptr nonnull @150)
-  tail call void @__quantum__rt__int_record_output(i64 71, ptr nonnull @151)
-  tail call void @__quantum__rt__int_record_output(i64 72, ptr nonnull @152)
-  tail call void @__quantum__rt__int_record_output(i64 73, ptr nonnull @153)
-  tail call void @__quantum__rt__int_record_output(i64 74, ptr nonnull @154)
-  tail call void @__quantum__rt__int_record_output(i64 75, ptr nonnull @155)
-  tail call void @__quantum__rt__int_record_output(i64 76, ptr nonnull @156)
-  tail call void @__quantum__rt__int_record_output(i64 77, ptr nonnull @157)
-  tail call void @__quantum__rt__int_record_output(i64 78, ptr nonnull @158)
-  tail call void @__quantum__rt__int_record_output(i64 79, ptr nonnull @159)
-  tail call void @__quantum__rt__int_record_output(i64 3, ptr nonnull @160)
-  tail call void @__quantum__rt__int_record_output(i64 4, ptr nonnull @161)
-  tail call void @__quantum__rt__int_record_output(i64 5, ptr nonnull @162)
-  tail call void @__quantum__rt__int_record_output(i64 6, ptr nonnull @163)
+  tail call void @__quantum__rt__int_record_output(i64 0, ptr nonnull @56)
+  tail call void @__quantum__rt__int_record_output(i64 1, ptr nonnull @57)
+  tail call void @__quantum__rt__int_record_output(i64 2, ptr nonnull @58)
+  tail call void @__quantum__rt__int_record_output(i64 3, ptr nonnull @59)
+  tail call void @__quantum__rt__int_record_output(i64 4, ptr nonnull @60)
+  tail call void @__quantum__rt__int_record_output(i64 5, ptr nonnull @61)
+  tail call void @__quantum__rt__int_record_output(i64 6, ptr nonnull @62)
+  tail call void @__quantum__rt__int_record_output(i64 7, ptr nonnull @63)
+  tail call void @__quantum__rt__int_record_output(i64 8, ptr nonnull @64)
+  tail call void @__quantum__rt__int_record_output(i64 9, ptr nonnull @65)
+  tail call void @__quantum__rt__int_record_output(i64 10, ptr nonnull @66)
+  tail call void @__quantum__rt__int_record_output(i64 11, ptr nonnull @67)
+  tail call void @__quantum__rt__int_record_output(i64 12, ptr nonnull @68)
+  tail call void @__quantum__rt__int_record_output(i64 13, ptr nonnull @69)
+  tail call void @__quantum__rt__int_record_output(i64 14, ptr nonnull @70)
+  tail call void @__quantum__rt__int_record_output(i64 15, ptr nonnull @71)
+  tail call void @__quantum__rt__int_record_output(i64 16, ptr nonnull @72)
+  tail call void @__quantum__rt__int_record_output(i64 17, ptr nonnull @73)
+  tail call void @__quantum__rt__int_record_output(i64 18, ptr nonnull @74)
+  tail call void @__quantum__rt__int_record_output(i64 19, ptr nonnull @75)
+  tail call void @__quantum__rt__int_record_output(i64 20, ptr nonnull @76)
+  tail call void @__quantum__rt__int_record_output(i64 21, ptr nonnull @77)
+  tail call void @__quantum__rt__int_record_output(i64 22, ptr nonnull @78)
+  tail call void @__quantum__rt__int_record_output(i64 23, ptr nonnull @79)
+  tail call void @__quantum__rt__int_record_output(i64 24, ptr nonnull @80)
+  tail call void @__quantum__rt__int_record_output(i64 25, ptr nonnull @81)
+  tail call void @__quantum__rt__int_record_output(i64 26, ptr nonnull @82)
+  tail call void @__quantum__rt__int_record_output(i64 27, ptr nonnull @83)
+  tail call void @__quantum__rt__int_record_output(i64 28, ptr nonnull @84)
+  tail call void @__quantum__rt__int_record_output(i64 29, ptr nonnull @85)
+  tail call void @__quantum__rt__int_record_output(i64 30, ptr nonnull @86)
+  tail call void @__quantum__rt__int_record_output(i64 31, ptr nonnull @87)
+  tail call void @__quantum__rt__int_record_output(i64 32, ptr nonnull @88)
+  tail call void @__quantum__rt__int_record_output(i64 33, ptr nonnull @89)
+  tail call void @__quantum__rt__int_record_output(i64 34, ptr nonnull @90)
+  tail call void @__quantum__rt__int_record_output(i64 35, ptr nonnull @91)
+  tail call void @__quantum__rt__int_record_output(i64 36, ptr nonnull @92)
+  tail call void @__quantum__rt__int_record_output(i64 37, ptr nonnull @93)
+  tail call void @__quantum__rt__int_record_output(i64 38, ptr nonnull @94)
+  tail call void @__quantum__rt__int_record_output(i64 39, ptr nonnull @95)
+  tail call void @__quantum__rt__int_record_output(i64 40, ptr nonnull @96)
+  tail call void @__quantum__rt__int_record_output(i64 41, ptr nonnull @97)
+  tail call void @__quantum__rt__int_record_output(i64 42, ptr nonnull @98)
+  tail call void @__quantum__rt__int_record_output(i64 43, ptr nonnull @99)
+  tail call void @__quantum__rt__int_record_output(i64 44, ptr nonnull @100)
+  tail call void @__quantum__rt__int_record_output(i64 45, ptr nonnull @101)
+  tail call void @__quantum__rt__int_record_output(i64 46, ptr nonnull @102)
+  tail call void @__quantum__rt__int_record_output(i64 47, ptr nonnull @103)
+  tail call void @__quantum__rt__int_record_output(i64 48, ptr nonnull @104)
+  tail call void @__quantum__rt__int_record_output(i64 49, ptr nonnull @105)
+  tail call void @__quantum__rt__int_record_output(i64 50, ptr nonnull @106)
+  tail call void @__quantum__rt__int_record_output(i64 51, ptr nonnull @107)
+  tail call void @__quantum__rt__int_record_output(i64 52, ptr nonnull @108)
+  tail call void @__quantum__rt__int_record_output(i64 53, ptr nonnull @109)
+  tail call void @__quantum__rt__int_record_output(i64 54, ptr nonnull @110)
+  tail call void @__quantum__rt__int_record_output(i64 55, ptr nonnull @111)
+  tail call void @__quantum__rt__int_record_output(i64 3, ptr nonnull @112)
+  tail call void @__quantum__rt__int_record_output(i64 4, ptr nonnull @113)
+  tail call void @__quantum__rt__int_record_output(i64 5, ptr nonnull @114)
+  tail call void @__quantum__rt__int_record_output(i64 6, ptr nonnull @115)
   ret void
 }
 
@@ -675,7 +483,7 @@ declare void @__quantum__rt__int_record_output(i64, ptr) local_unnamed_addr
 
 declare void @__quantum__rt__initialize(ptr) local_unnamed_addr
 
-attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="80" "required_num_results"="80" }
+attributes #0 = { "entry_point" "output_labeling_schema" "qir_profiles"="adaptive_profile" "required_num_qubits"="56" "required_num_results"="56" }
 attributes #1 = { "irreversible" }
 
 !llvm.module.flags = !{!0, !1, !2, !3}

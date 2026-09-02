@@ -34,4 +34,4 @@ examples/.ipynb_checkpoints/*
 docs/_build
 
 
-python/hqs_compiler_tests
+python/tests/test_guppy_to_dfl.py
