@@ -104,6 +104,7 @@ impl CompileArgs {
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
+            .add_default_static_array_extensions()
             .add_array_extensions(QirArrayCodegen)
             .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
