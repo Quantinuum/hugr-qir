@@ -23,7 +23,7 @@ def iarr_res(label: str @ comptime, qbs: array[int, n]) -> None:
 
 py_array = [3, 4, 5, 6]
 
-N = 56
+N = 16
 
 
 @guppy

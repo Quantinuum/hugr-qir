@@ -3,7 +3,7 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@"sa.static_pyarray.%tmp913.894387fa.0" = local_unnamed_addr constant { i64, [5 x i64] } { i64 5, [5 x i64] [i64 0, i64 2, i64 4, i64 6, i64 8] }
+@"sa.static_pyarray.%tmp1102.ea02112f.0" = local_unnamed_addr constant { i64, [5 x i64] } { i64 5, [5 x i64] [i64 0, i64 2, i64 4, i64 6, i64 8] }
 @0 = private unnamed_addr constant [7 x i8] c"mirror\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
