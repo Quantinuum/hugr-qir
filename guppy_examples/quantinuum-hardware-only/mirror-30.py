@@ -50,63 +50,49 @@ def reverse_mirror(qbs: list[qubit]) -> None:
 
 @guppy
 @no_type_check
-def runtime_forward(  # noqa: PLR0913, PLR0917
-    q1: qubit,
-    q2: qubit,
-    q4: qubit,
-    q7: qubit,
-    q13: qubit,
-    q19: qubit,
-    q21: qubit,
-    q25: qubit,
+def runtime_forward(
+    q: array[qubit, N_QUBITS],
     random_choice: bool,
     shot_choice: bool,
 ) -> None:
     # Exercise Guppy's dagger modifier on an array element.
     with dagger():
-        quantum_rz(q2, pi / 2)
-        x(q2)
+        quantum_rz(q[2], pi / 2)
+        x(q[2])
 
     # Quantinuum-only runtime values choose additional reversible work. Both
     # choices are undone after the barrier, so they cannot affect the result.
     if random_choice:
-        rz(q1, pi / 2)
-        rz(q7, pi / 2)
-        rz(q13, pi / 2)
-        rz(q19, pi / 2)
-        rz(q25, pi / 2)
+        rz(q[1], pi / 2)
+        rz(q[7], pi / 2)
+        rz(q[13], pi / 2)
+        rz(q[19], pi / 2)
+        rz(q[25], pi / 2)
     if shot_choice:
-        x(q4)
-        x(q21)
+        x(q[4])
+        x(q[21])
 
 
 @guppy
 @no_type_check
-def runtime_reverse(  # noqa: PLR0913, PLR0917
-    q1: qubit,
-    q2: qubit,
-    q4: qubit,
-    q7: qubit,
-    q13: qubit,
-    q19: qubit,
-    q21: qubit,
-    q25: qubit,
+def runtime_reverse(
+    q: array[qubit, N_QUBITS],
     random_choice: bool,
     shot_choice: bool,
 ) -> None:
     if shot_choice:
-        x(q21)
-        x(q4)
+        x(q[21])
+        x(q[4])
     if random_choice:
-        rz(q25, -pi / 2)
-        rz(q19, -pi / 2)
-        rz(q13, -pi / 2)
-        rz(q7, -pi / 2)
-        rz(q1, -pi / 2)
+        rz(q[25], -pi / 2)
+        rz(q[19], -pi / 2)
+        rz(q[13], -pi / 2)
+        rz(q[7], -pi / 2)
+        rz(q[1], -pi / 2)
 
     # Invert the daggered block.
-    quantum_rz(q2, pi / 2)
-    x(q2)
+    quantum_rz(q[2], pi / 2)
+    x(q[2])
 
 
 @guppy
@@ -118,70 +104,8 @@ def controlled_x(ctl: qubit, target: qubit) -> None:
 
 @guppy
 @no_type_check
-def mirror_barrier(  # noqa: PLR0913, PLR0917
-    q0: qubit,
-    q1: qubit,
-    q2: qubit,
-    q3: qubit,
-    q4: qubit,
-    q5: qubit,
-    q6: qubit,
-    q7: qubit,
-    q8: qubit,
-    q9: qubit,
-    q10: qubit,
-    q11: qubit,
-    q12: qubit,
-    q13: qubit,
-    q14: qubit,
-    q15: qubit,
-    q16: qubit,
-    q17: qubit,
-    q18: qubit,
-    q19: qubit,
-    q20: qubit,
-    q21: qubit,
-    q22: qubit,
-    q23: qubit,
-    q24: qubit,
-    q25: qubit,
-    q26: qubit,
-    q27: qubit,
-    q28: qubit,
-    q29: qubit,
-) -> None:
-    barrier(
-        q0,
-        q1,
-        q2,
-        q3,
-        q4,
-        q5,
-        q6,
-        q7,
-        q8,
-        q9,
-        q10,
-        q11,
-        q12,
-        q13,
-        q14,
-        q15,
-        q16,
-        q17,
-        q18,
-        q19,
-        q20,
-        q21,
-        q22,
-        q23,
-        q24,
-        q25,
-        q26,
-        q27,
-        q28,
-        q29,
-    )
+def mirror_barrier(qbs: array[qubit, N_QUBITS]) -> None:
+    barrier(qbs)
 
 
 @guppy
@@ -192,6 +116,22 @@ def record_result(qbs: array[qubit, N_QUBITS] @ owned) -> None:
     output("mirror", collect_measurements(measure_array(qbs)))
 
 
+# hqscompiler doesn't like llvm `srem` which would arise
+# from get_current_shot() % 2 == 0
+# so choosing like this for now
+even_numbers_less_than_10 = [0, 2, 4, 6, 8]
+
+
+@guppy
+@no_type_check
+def get_shot_choice() -> bool:
+    cshot = get_current_shot()
+    for even in array(i for i in even_numbers_less_than_10):  # noqa: SIM110
+        if cshot == even:
+            return True
+    return False
+
+
 @guppy.comptime
 @no_type_check
 def main() -> None:
@@ -200,67 +140,14 @@ def main() -> None:
     rng = RNG(2026)
     random_choice = rng.random_int_bounded(2) == 1
     rng.discard()
-    shot_choice = get_current_shot() % 2 == 1
+    shot_choice = get_shot_choice()
 
     forward_mirror(qbs)
-    runtime_forward(
-        qbs[1],
-        qbs[2],
-        qbs[4],
-        qbs[7],
-        qbs[13],
-        qbs[19],
-        qbs[21],
-        qbs[25],
-        random_choice,
-        shot_choice,
-    )
+    runtime_forward(qbs, random_choice, shot_choice)
     controlled_x(qbs[0], qbs[29])
-    mirror_barrier(
-        qbs[0],
-        qbs[1],
-        qbs[2],
-        qbs[3],
-        qbs[4],
-        qbs[5],
-        qbs[6],
-        qbs[7],
-        qbs[8],
-        qbs[9],
-        qbs[10],
-        qbs[11],
-        qbs[12],
-        qbs[13],
-        qbs[14],
-        qbs[15],
-        qbs[16],
-        qbs[17],
-        qbs[18],
-        qbs[19],
-        qbs[20],
-        qbs[21],
-        qbs[22],
-        qbs[23],
-        qbs[24],
-        qbs[25],
-        qbs[26],
-        qbs[27],
-        qbs[28],
-        qbs[29],
-    )
+    mirror_barrier(qbs)
     controlled_x(qbs[0], qbs[29])
-    runtime_reverse(
-        qbs[1],
-        qbs[2],
-        qbs[4],
-        qbs[7],
-        qbs[13],
-        qbs[19],
-        qbs[21],
-        qbs[25],
-        random_choice,
-        shot_choice,
-    )
+    runtime_reverse(qbs, random_choice, shot_choice)
     reverse_mirror(qbs)
 
     record_result(qbs)
