@@ -111,7 +111,7 @@ pub fn ensure_static_qubit_operands(module: &Module) -> Result<()> {
                     continue;
                 };
 
-                for &arg_idx in qubit_arg_positions {
+                for arg_idx in qubit_arg_positions {
                     let Some(BasicValueEnum::PointerValue(arg)) =
                         inst_operand_value(inst, arg_idx as u32)
                     else {
@@ -204,8 +204,18 @@ fn lowered_kind_description(kind: LoweredSsaKind) -> &'static str {
     }
 }
 
-fn qis_qubit_arg_positions(func_name: &str) -> Option<&'static [usize]> {
-    Some(match func_name {
+fn qis_qubit_arg_positions(func_name: &str) -> Option<Vec<usize>> {
+    // Barriers need to be treated separately due to their variable number
+    // of parameters. All parameters are qubits
+    if let Some(qubit_count) = func_name
+        .strip_prefix("__quantum__qis__barrier")
+        .and_then(|suffix| suffix.strip_suffix("__body"))
+        && let Ok(qubit_count) = qubit_count.parse::<usize>()
+    {
+        return Some((0..qubit_count).collect());
+    }
+
+    let static_slice: &'static [usize] = match func_name {
         "__quantum__qis__h__body" => &[0],
         "__quantum__qis__x__body" => &[0],
         "__quantum__qis__y__body" => &[0],
@@ -227,7 +237,9 @@ fn qis_qubit_arg_positions(func_name: &str) -> Option<&'static [usize]> {
         "__quantum__rt__qubit_release" => &[0],
         "__QIR__CONV_Qubit_TO_Result" => &[0],
         _ => return None,
-    })
+    };
+
+    Some(static_slice.to_vec())
 }
 
 fn collect_qubit_select_and_phi_values(module: &Module) -> HashSet<ValueKey> {
@@ -252,7 +264,7 @@ fn collect_qubit_select_and_phi_values(module: &Module) -> HashSet<ValueKey> {
                     continue;
                 };
 
-                for &arg_idx in qubit_arg_positions {
+                for arg_idx in qubit_arg_positions {
                     let Some(arg) = inst_operand_value(inst, arg_idx as u32) else {
                         continue;
                     };
@@ -3188,6 +3200,74 @@ mod test {
             .map_err(|err| anyhow!("Failed to parse inline IR {name}: {}", err.to_string()))
     }
 
+    #[derive(Clone, Copy)]
+    enum TestQubitOperand {
+        Constant,
+        Dynamic,
+        Undefined,
+    }
+
+    fn static_qubit_operand_ir(
+        function_name: &str,
+        argument_count: usize,
+        qubit_positions: &[usize],
+        tested_operand: TestQubitOperand,
+        tested_position: Option<usize>,
+    ) -> String {
+        if let Some(position) = tested_position {
+            assert!(
+                qubit_positions.contains(&position),
+                "position {position} is not a qubit operand of {function_name}"
+            );
+        }
+
+        let declaration_args = (0..argument_count)
+            .map(|position| {
+                if qubit_positions.contains(&position) {
+                    "ptr"
+                } else {
+                    "double"
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let call_args = (0..argument_count)
+            .map(|position| {
+                if !qubit_positions.contains(&position) {
+                    "double 0.000000e+00".to_string()
+                } else if tested_position == Some(position) {
+                    match tested_operand {
+                        TestQubitOperand::Constant => {
+                            format!("ptr inttoptr (i64 {} to ptr)", position + 1)
+                        }
+                        TestQubitOperand::Dynamic => "ptr %qubit".to_string(),
+                        TestQubitOperand::Undefined => "ptr undef".to_string(),
+                    }
+                } else {
+                    format!("ptr inttoptr (i64 {} to ptr)", position + 1)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let main_args = if matches!(tested_operand, TestQubitOperand::Dynamic) {
+            "ptr %qubit"
+        } else {
+            ""
+        };
+
+        format!(
+            r#"
+declare void @{function_name}({declaration_args})
+
+define void @main({main_args}) {{
+entry:
+  call void @{function_name}({call_args})
+  ret void
+}}
+"#
+        )
+    }
+
     fn count_lowerable_qubit_selects_and_phis(module: &Module) -> usize {
         collect_qubit_select_and_phi_values(module).len()
     }
@@ -3424,79 +3504,117 @@ declare void @__quantum__qis__reset__body(%Qubit*)
         );
     }
 
-    #[test]
-    fn static_qubit_operand_check_accepts_constant_resource_pointers() {
+    #[rstest]
+    #[case::x("__quantum__qis__x__body", 1, &[0])]
+    #[case::rz("__quantum__qis__rz__body", 2, &[1])]
+    #[case::phased_x("__quantum__qis__phasedx__body", 3, &[2])]
+    #[case::rzz("__quantum__qis__rzz__body", 3, &[1, 2])]
+    #[case::barrier_1("__quantum__qis__barrier1__body", 1, &[0])]
+    #[case::barrier_2("__quantum__qis__barrier2__body", 2, &[0, 1])]
+    #[case::barrier_4("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3])]
+    fn static_qubit_operand_check_accepts_constant_resource_pointers(
+        #[case] function_name: &str,
+        #[case] argument_count: usize,
+        #[case] qubit_positions: &[usize],
+    ) {
+        assert_eq!(
+            qis_qubit_arg_positions(function_name),
+            Some(qubit_positions.to_vec())
+        );
         let context = Context::create();
-        let module = load_module_from_ir(
-            &context,
-            "static_qubit_operands",
-            r#"
-declare void @__quantum__qis__x__body(ptr)
-
-define void @main() {
-entry:
-  call void @__quantum__qis__x__body(ptr inttoptr (i64 3 to ptr))
-  ret void
-}
-"#,
-        )
-        .unwrap();
+        let ir = static_qubit_operand_ir(
+            function_name,
+            argument_count,
+            qubit_positions,
+            TestQubitOperand::Constant,
+            None,
+        );
+        let module = load_module_from_ir(&context, "static_qubit_operands", &ir).unwrap();
 
         ensure_static_qubit_operands(&module).unwrap();
     }
 
-    #[test]
-    fn static_qubit_operand_check_rejects_dynamic_resource_pointers() {
+    #[rstest]
+    #[case::x_arg_0("__quantum__qis__x__body", 1, &[0], 0)]
+    #[case::rz_arg_1("__quantum__qis__rz__body", 2, &[1], 1)]
+    #[case::phased_x_arg_2("__quantum__qis__phasedx__body", 3, &[2], 2)]
+    #[case::rzz_arg_1("__quantum__qis__rzz__body", 3, &[1, 2], 1)]
+    #[case::rzz_arg_2("__quantum__qis__rzz__body", 3, &[1, 2], 2)]
+    #[case::barrier_1_arg_0("__quantum__qis__barrier1__body", 1, &[0], 0)]
+    #[case::barrier_2_arg_0("__quantum__qis__barrier2__body", 2, &[0, 1], 0)]
+    #[case::barrier_2_arg_1("__quantum__qis__barrier2__body", 2, &[0, 1], 1)]
+    #[case::barrier_4_arg_0("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 0)]
+    #[case::barrier_4_arg_1("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 1)]
+    #[case::barrier_4_arg_2("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 2)]
+    #[case::barrier_4_arg_3("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 3)]
+    fn static_qubit_operand_check_rejects_dynamic_resource_pointers(
+        #[case] function_name: &str,
+        #[case] argument_count: usize,
+        #[case] qubit_positions: &[usize],
+        #[case] invalid_position: usize,
+    ) {
+        assert_eq!(
+            qis_qubit_arg_positions(function_name),
+            Some(qubit_positions.to_vec())
+        );
         let context = Context::create();
-        let module = load_module_from_ir(
-            &context,
-            "dynamic_qubit_operands",
-            r#"
-declare void @__quantum__qis__x__body(ptr)
-
-define void @main(ptr %qubit) {
-entry:
-  call void @__quantum__qis__x__body(ptr %qubit)
-  ret void
-}
-"#,
-        )
-        .unwrap();
+        let ir = static_qubit_operand_ir(
+            function_name,
+            argument_count,
+            qubit_positions,
+            TestQubitOperand::Dynamic,
+            Some(invalid_position),
+        );
+        let module = load_module_from_ir(&context, "dynamic_qubit_operands", &ir).unwrap();
 
         let error = ensure_static_qubit_operands(&module)
             .unwrap_err()
             .to_string();
-        assert!(
-            error.contains("__quantum__qis__x__body has a dynamic qubit argument at position 0"),
-            "unexpected error: {error}"
-        );
+        let expected =
+            format!("{function_name} has a dynamic qubit argument at position {invalid_position}");
+        assert!(error.contains(&expected), "unexpected error: {error}");
     }
 
-    #[test]
-    fn static_qubit_operand_check_rejects_undefined_resource_pointers() {
+    #[rstest]
+    #[case::x_arg_0("__quantum__qis__x__body", 1, &[0], 0)]
+    #[case::rz_arg_1("__quantum__qis__rz__body", 2, &[1], 1)]
+    #[case::phased_x_arg_2("__quantum__qis__phasedx__body", 3, &[2], 2)]
+    #[case::rzz_arg_1("__quantum__qis__rzz__body", 3, &[1, 2], 1)]
+    #[case::rzz_arg_2("__quantum__qis__rzz__body", 3, &[1, 2], 2)]
+    #[case::barrier_1_arg_0("__quantum__qis__barrier1__body", 1, &[0], 0)]
+    #[case::barrier_2_arg_0("__quantum__qis__barrier2__body", 2, &[0, 1], 0)]
+    #[case::barrier_2_arg_1("__quantum__qis__barrier2__body", 2, &[0, 1], 1)]
+    #[case::barrier_4_arg_0("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 0)]
+    #[case::barrier_4_arg_1("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 1)]
+    #[case::barrier_4_arg_2("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 2)]
+    #[case::barrier_4_arg_3("__quantum__qis__barrier4__body", 4, &[0, 1, 2, 3], 3)]
+    fn static_qubit_operand_check_rejects_undefined_resource_pointers(
+        #[case] function_name: &str,
+        #[case] argument_count: usize,
+        #[case] qubit_positions: &[usize],
+        #[case] invalid_position: usize,
+    ) {
+        assert_eq!(
+            qis_qubit_arg_positions(function_name),
+            Some(qubit_positions.to_vec())
+        );
         let context = Context::create();
-        let module = load_module_from_ir(
-            &context,
-            "undefined_qubit_operands",
-            r#"
-declare void @__quantum__qis__x__body(ptr)
-
-define void @main() {
-entry:
-  call void @__quantum__qis__x__body(ptr undef)
-  ret void
-}
-"#,
-        )
-        .unwrap();
+        let ir = static_qubit_operand_ir(
+            function_name,
+            argument_count,
+            qubit_positions,
+            TestQubitOperand::Undefined,
+            Some(invalid_position),
+        );
+        let module = load_module_from_ir(&context, "undefined_qubit_operands", &ir).unwrap();
 
         let error = ensure_static_qubit_operands(&module)
             .unwrap_err()
             .to_string();
-        assert!(
-            error.contains("__quantum__qis__x__body has an undefined qubit argument at position 0"),
-            "unexpected error: {error}"
+        let expected = format!(
+            "{function_name} has an undefined qubit argument at position {invalid_position}"
         );
+        assert!(error.contains(&expected), "unexpected error: {error}");
     }
 
     #[test]
