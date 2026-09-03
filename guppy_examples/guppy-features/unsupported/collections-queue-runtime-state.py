@@ -4,18 +4,24 @@ from typing import no_type_check
 from guppylang import guppy
 from guppylang.std.builtins import output
 from guppylang.std.collections.queue import empty_queue
+from guppylang.std.qsystem.utils import get_current_shot
 
 
 @guppy
 @no_type_check
 def main() -> None:
-    # Queue is backed by a runtime array, which is not supported by QIR lowering.
+    # The queue's size depends on a runtime value, so its backing storage cannot
+    # be fully removed during QIR compilation.
     queue = empty_queue[int, 4]()
     queue.push(3)
-    queue.push(5)
+    push_second = get_current_shot() % 2 == 0
+    if push_second:
+        queue.push(5)
+
     output("queue_len", len(queue))
-    output("queue_front", queue.pop())
-    output("queue_next", queue.pop())
+    if push_second:
+        queue.pop()
+    queue.pop()
     queue.discard_empty()
 
 

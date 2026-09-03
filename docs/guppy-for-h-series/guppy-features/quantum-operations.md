@@ -28,37 +28,27 @@ Source file: `guppy_examples/guppy-features/supported/modifier-dagger.py`
 :language: python
 ```
 
-## Unsupported: control modifier
+## Control modifier
 
-Source file: `guppy_examples/guppy-features/unsupported/modifier-control.py`
+Source file: `guppy_examples/guppy-features/supported/modifier-control.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/modifier-control.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/modifier-control.py
 :language: python
 ```
 
-The control modifier lowers to an array of control qubits, which is not currently supported by QIR lowering.
+Control modifiers are supported when the controlled operation can be resolved
+during compilation.
 
-Expected error:
+## Barrier
 
-```{literalinclude} ../../../python/tests/snapshots/unsupported/modifier-control.error
-:language: text
-```
+Source file: `guppy_examples/guppy-features/supported/barrier.py`
 
-## Unsupported: barrier
-
-Source file: `guppy_examples/guppy-features/unsupported/barrier.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/barrier.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/barrier.py
 :language: python
 ```
 
-The current lowering path for barriers also introduces array-typed values, so barriers are not currently supported in the H-Series QIR subset.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/barrier.error
-:language: text
-```
+Barriers accept individual qubits and fixed-size qubit arrays. Non-qubit values
+passed to a barrier are ignored. A barrier containing no qubits has no effect.
 
 ## Memory swap
 

@@ -17,12 +17,7 @@ def identity(me: T @ owned) -> T:
 
 @no_type_check
 def apply_identity(a: array) -> array:
-    """Since we are passing in an array, this must be pure python
-    that we call from guppy.comptime.
-
-    However, we can still call a guppy function from here, even a
-    generic one
-    """
+    """Manipulate this array at comptime while calling a generic Guppy function."""
     ret = array()
     for i in range(len(a)):
         ret.append(identity(a[i]))

@@ -1,5 +1,11 @@
 ## Changelog
 
+### v0.2.1
+
+- add best-effort support for guppy arrays
+- add support for barrier
+- add support for output of bool and int arrays
+
 ### v0.2.0
 
 - update to guppylang v1.0.1

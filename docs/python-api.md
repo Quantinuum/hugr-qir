@@ -28,6 +28,7 @@ Key parameters:
 - `validate_hugr`: validate the input HUGR before and during compilation
 - `target`: compilation target passed through to the Rust backend
 - `opt_level`: LLVM optimization level
+- `max_loop_unroll`: maximum static loop trip count to fully unroll (default: `800`)
 - `output_format`: `LLVM_IR`, `BITCODE`, or `BASE64`
 - `wasm_file`: optional path to a Wasm module used by the Wasm extension
 

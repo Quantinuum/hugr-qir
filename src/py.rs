@@ -43,6 +43,11 @@ pub fn opt_level_default() -> String {
 }
 
 #[pyfunction]
+pub fn max_loop_unroll_default() -> usize {
+    CompileArgs::default().max_loop_unroll
+}
+
+#[pyfunction]
 pub fn compile_target_choices() -> Vec<String> {
     CompileTarget::value_variants()
         .iter()
@@ -64,6 +69,7 @@ pub fn _hugr_qir(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(cli, m)?)?;
     m.add_function(wrap_pyfunction!(opt_level_choices, m)?)?;
     m.add_function(wrap_pyfunction!(opt_level_default, m)?)?;
+    m.add_function(wrap_pyfunction!(max_loop_unroll_default, m)?)?;
     m.add_function(wrap_pyfunction!(compile_target_choices, m)?)?;
     m.add_function(wrap_pyfunction!(compile_target_default, m)?)?;
     Ok(())

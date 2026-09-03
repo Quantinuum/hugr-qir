@@ -6,7 +6,7 @@ use clap_verbosity_flag::log::Level;
 use hugr::llvm::inkwell;
 use hugr::package::PackageValidationError;
 
-use crate::CompileArgs;
+use crate::{CompileArgs, DEFAULT_MAX_LOOP_UNROLL};
 
 use clap_verbosity_flag::InfoLevel;
 use clap_verbosity_flag::Verbosity;
@@ -53,6 +53,14 @@ pub struct Cli {
     #[arg(value_parser, short = 'l', long, help = "LLVM optimization level")]
     pub optimization_level: Option<CliOptimizationLevel>,
 
+    #[arg(
+        long,
+        value_parser = parse_positive_usize,
+        default_value_t = DEFAULT_MAX_LOOP_UNROLL,
+        help = "Maximum statically-known loop trip count to fully unroll"
+    )]
+    pub max_loop_unroll: usize,
+
     #[arg(long, help = "Optional path to WASM binary file")]
     pub wasm_file: Option<String>,
 }
@@ -69,6 +77,16 @@ pub enum CliOptimizationLevel {
     Less,
     Default,
     Aggressive,
+}
+
+fn parse_positive_usize(value: &str) -> std::result::Result<usize, String> {
+    let value = value
+        .parse::<usize>()
+        .map_err(|_| "must be a positive integer".to_string())?;
+    if value == 0 {
+        return Err("must be greater than zero".to_string());
+    }
+    Ok(value)
 }
 
 impl From<CliOptimizationLevel> for OptimizationLevel {
@@ -150,6 +168,7 @@ impl Cli {
             qsystem_pass: self.qsystem_pass,
             target: self.target.unwrap_or(default_args.target),
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
+            max_loop_unroll: self.max_loop_unroll,
             wasm_file: self.wasm_file.clone(),
         }
     }

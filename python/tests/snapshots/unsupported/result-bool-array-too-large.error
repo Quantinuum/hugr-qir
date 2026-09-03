@@ -1,4 +1,5 @@
 QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: Failed to emit LLVM for function guppy_example_mod.main at node Node(1)
 
 Caused by:
-    Unknown type: borrow_array(7, qubit)
+    0: Failed to emit LLVM for node N<tket.result.result_array_bool:Node(111)> with optype tket.result.result_array_bool
+    1: ArrBool result only supports arrays up to size 63; larger bool arrays should be split up

@@ -1,3 +1,4 @@
+pub mod array_codegen;
 pub mod futures_ext;
 pub mod measurement_ext;
 pub mod qsystem_ext;
@@ -10,11 +11,16 @@ pub mod wasm_ext;
 use anyhow::{Result, bail, ensure};
 use hugr::{
     HugrView,
-    extension::prelude::qb_t,
+    extension::{
+        prelude::{Barrier, qb_t},
+        simple_op::MakeExtensionOp,
+    },
     llvm::{CodegenExtension, CodegenExtsBuilder, extension::PreludeCodegen},
-    ops::Value,
+    ops::{ExtensionOp, Value},
+    std_extensions::collections::{array::Array, borrow_array::BorrowArray},
 };
 use hugr::{Node, llvm as hugr_llvm};
+use hugr_llvm::emit::EmitOpArgs;
 use hugr_llvm::emit::RowPromise;
 use hugr_llvm::emit::libc::emit_libc_abort;
 use hugr_llvm::inkwell;
@@ -26,8 +32,10 @@ use inkwell::{
 };
 use itertools::Itertools;
 use tket::extension::measurement;
+use tket::passes::utils::unpack_container::type_unpack::is_array_of;
 use tket_qsystem;
 
+use crate::qir::array_codegen::{load_array_elements, load_borrow_array_elements};
 use crate::target::CompileTarget;
 use hugr_llvm::{
     emit::{EmitFuncContext, emit_value},
@@ -58,6 +66,37 @@ impl PreludeCodegen for QirPreludeCodegen {
         _text: inkwell::values::BasicValueEnum,
     ) -> Result<()> {
         Ok(()) // we don't want to convert print, just do nothing
+    }
+
+    fn emit_barrier<'c, H: HugrView<Node = Node>>(
+        &self,
+        ctx: &mut EmitFuncContext<'c, '_, H>,
+        args: EmitOpArgs<'c, '_, ExtensionOp, H>,
+    ) -> Result<()> {
+        let barrier = Barrier::from_extension_op(args.node().as_ref())?;
+        let qb_type = qb_t();
+        let qb_llvm_type = ctx.llvm_type(&qb_type)?;
+        let mut qbs = Vec::new();
+        for (ty, input) in barrier.type_row.iter().zip(args.inputs.iter().copied()) {
+            if ty == &qb_type {
+                qbs.push(input);
+            } else if let Some(length) = is_array_of::<Array>(ty, &qb_type) {
+                qbs.extend(load_array_elements(ctx, input, qb_llvm_type, length)?);
+            } else if let Some(length) = is_array_of::<BorrowArray>(ty, &qb_type) {
+                qbs.extend(load_borrow_array_elements(
+                    ctx,
+                    input,
+                    qb_llvm_type,
+                    length,
+                )?);
+            }
+        }
+
+        if !qbs.is_empty() {
+            let func = format!("__quantum__qis__barrier{}__body", qbs.len());
+            emit_qis_gate(ctx, func, [], &qbs)?;
+        }
+        args.outputs.finish(ctx.builder(), args.inputs)
     }
 }
 
@@ -249,6 +288,16 @@ impl CodegenExtension for QirCodegenExtension {
                 let s = self.clone();
                 move |context, args, op| s.emit_qsystem_op(context, args, op)
             })
+            .extension_op(
+                tket_qsystem::extension::qsystem::helios::EXTENSION_ID,
+                tket_qsystem::extension::qsystem::helios::RUNTIME_BARRIER_NAME,
+                |context, args| args.outputs.finish(context.builder(), args.inputs),
+            )
+            .extension_op(
+                tket_qsystem::extension::qsystem::sol::EXTENSION_ID,
+                tket_qsystem::extension::qsystem::sol::RUNTIME_BARRIER_NAME,
+                |context, args| args.outputs.finish(context.builder(), args.inputs),
+            )
             .simple_extension_op::<tket_qsystem::extension::futures::FutureOpDef>({
                 let s = self.clone();
                 move |context, args, op| s.emit_futures_op(context, args, op)
@@ -277,5 +326,106 @@ impl CodegenExtension for QirCodegenExtension {
                 let s = self.clone();
                 move |context, args, op| s.emit_measurement_op(context, args, op)
             })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use hugr::{
+        extension::prelude::{Barrier, bool_t, qb_t},
+        std_extensions::collections::{array::array_type, borrow_array::borrow_array_type},
+        types::Type,
+    };
+    use hugr_llvm::{
+        emit::test::{Emission, TEST_EMIT_DEBUG},
+        test::{TestContext, llvm_ctx},
+        utils::fat::FatExt,
+    };
+    use rstest::{fixture, rstest};
+
+    use crate::{
+        qir::{
+            QirCodegenExtension, QirPreludeCodegen,
+            array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen},
+        },
+        target::CompileTarget,
+        test::{LLVM_TEST_LOCK, single_op_hugr},
+    };
+
+    #[fixture]
+    fn ctx(mut llvm_ctx: TestContext) -> TestContext {
+        llvm_ctx.add_extensions(|builder| {
+            builder
+                .add_extension(QirCodegenExtension {
+                    target: CompileTarget::Native,
+                })
+                .add_prelude_extensions(QirPreludeCodegen)
+                .add_array_extensions(QirArrayCodegen)
+                .add_borrow_array_extensions(QirBorrowArrayCodegen)
+        });
+        llvm_ctx
+    }
+
+    #[rstest]
+    fn emits_qis_barrier_for_qubit_barrier(ctx: TestContext) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let hugr = single_op_hugr(Barrier::new(vec![qb_t(), qb_t()]).into());
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert!(llvm.contains("__quantum__qis__barrier2__body"));
+    }
+
+    #[rstest]
+    fn ignores_non_qubit_barrier_inputs(ctx: TestContext) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let hugr = single_op_hugr(Barrier::new(vec![qb_t(), bool_t()]).into());
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert!(llvm.contains("__quantum__qis__barrier1__body"));
+        assert!(!llvm.contains("__quantum__qis__barrier2__body"));
+    }
+
+    #[rstest]
+    fn emits_nothing_for_barrier_without_qubits(ctx: TestContext) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let hugr = single_op_hugr(Barrier::new(vec![bool_t()]).into());
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert!(!llvm.contains("__quantum__qis__barrier"));
+    }
+
+    #[rstest]
+    #[case(array_type(2, qb_t()))]
+    #[case(borrow_array_type(2, qb_t()))]
+    fn extracts_qubits_from_array_barrier(ctx: TestContext, #[case] array_ty: Type) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let hugr = single_op_hugr(Barrier::new(vec![array_ty]).into());
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert!(llvm.contains("__quantum__qis__barrier2__body"));
     }
 }

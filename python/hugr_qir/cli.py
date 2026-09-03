@@ -13,6 +13,7 @@ from hugr_qir._hugr_qir import (
     cli,
     compile_target_choices,
     compile_target_default,
+    max_loop_unroll_default,
     opt_level_choices,
     opt_level_default,
 )
@@ -67,6 +68,14 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Choice of output format",
 )
 @click.option(
+    "--max-loop-unroll",
+    "max_loop_unroll",
+    type=click.IntRange(min=1),
+    default=max_loop_unroll_default(),
+    show_default=True,
+    help="Maximum statically-known loop trip count to fully unroll",
+)
+@click.option(
     "-o",
     "--output",
     "outfile",
@@ -88,6 +97,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
     validate_hugr: bool,
     target: str,
     opt_level: str,
+    max_loop_unroll: int,
     output_format: str,
     hugr_file: Path,
     outfile: Path | None,
@@ -104,6 +114,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
         validate_hugr,
         target,
         opt_level,
+        max_loop_unroll,
         OutputFormat(output_format),
         hugr_file,
         outfile,
@@ -116,6 +127,7 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
     validate_hugr: bool,
     target: str,
     opt_level: str,
+    max_loop_unroll: int,
     output_format: OutputFormat,
     hugr_file: Path,
     outfile: Path | None,
@@ -124,6 +136,7 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
     options = ["-q"]
     options.extend(["-t", target])
     options.extend(["-l", opt_level])
+    options.extend(["--max-loop-unroll", str(max_loop_unroll)])
     format_setting, read_mode = tmp_file_settings(output_format)
     options.extend(["-f", format_setting])
     if wasm_file:

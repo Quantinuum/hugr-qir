@@ -3,7 +3,7 @@ from typing import no_type_check
 
 from guppylang import guppy
 from guppylang.std.builtins import array, output, qubit
-from guppylang.std.quantum import cx, h, measure
+from guppylang.std.quantum import collect_measurements, cx, h, measure_array
 
 
 @guppy
@@ -37,22 +37,8 @@ def main() -> None:
     steane_h(steane_q1)
     steane_h(steane_q2)
     steane_cx(steane_q1, steane_q2)
-    q1_0, q1_1, q1_2, q1_3, q1_4, q1_5, q1_6 = steane_q1
-    q2_0, q2_1, q2_2, q2_3, q2_4, q2_5, q2_6 = steane_q2
-    output("st1_0", measure(q1_0).read())
-    output("st1_1", measure(q1_1).read())
-    output("st1_2", measure(q1_2).read())
-    output("st1_3", measure(q1_3).read())
-    output("st1_4", measure(q1_4).read())
-    output("st1_5", measure(q1_5).read())
-    output("st1_6", measure(q1_6).read())
-    output("st2_0", measure(q2_0).read())
-    output("st2_1", measure(q2_1).read())
-    output("st2_2", measure(q2_2).read())
-    output("st2_3", measure(q2_3).read())
-    output("st2_4", measure(q2_4).read())
-    output("st2_5", measure(q2_5).read())
-    output("st2_6", measure(q2_6).read())
+    output("steane_q1", collect_measurements(measure_array(steane_q1)))
+    output("steane_q2", collect_measurements(measure_array(steane_q2)))
 
 
 if __name__ == "__main__":

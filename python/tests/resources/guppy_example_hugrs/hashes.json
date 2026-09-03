@@ -1,10 +1,13 @@
 {
+  "array": "bf83e8aa707acfdc86d71bbc6f02b6f2b64a5ce0cd158c12cdf744147da6e75c",
   "generates-llvm-switch": "6bff49fb7272233109463b8315436ccccf7ad8218a0fba47442fd699df5ee9da",
   "generates-qubit-selects-1": "d3e56d865d396539cb09985ef7f17fe9f4eb0d7a8ac8581705c1ebca9c9f79d6",
   "generates-qubit-selects-2": "d8a45de21cb02347691070572f930137ef8e216af7b2e18460b9fed673d84ff5",
   "generates-qubit-selects-and-float-phi": "4163852d95b14fca609f69a0966bdea7e93124492534bc5a4dc4e61288b2b31d",
   "guppylang_hugr_version": "guppy-v1.0.1 hugr-v0.18.3",
   "hugr_generation_module": "6e8543537797e9eef773daa340b76b85b7bf6ecdd46b00a7484aa8f725bc93ef",
+  "mirror-10": "dcf3aae833e4f5155f678d780c05f1148451fb6b8c39092b50b7688c6e2af6b5",
+  "mirror-30": "616dba31450e19c75922294b51ac67175c5a901a0df9e112cc475e6511cb8714",
   "planqc-1": "1ad2c049ea3ef472d76b57d8c6f605b8603be2a3c127c515f0396a6ba9ca4ba7",
   "quantum-classical-1": "0cd9a3c2ed9504a6265f60dd8ef266a8cf1f8902271512851805e2a5b533fe63",
   "quantum-complex-1": "c8e2bd2708299540cb8e834737fff4ebbebf11c07b67994fc54d9ccf9837fca9",
@@ -21,7 +24,8 @@
   "rng-quantum-jobid-1": "8816b476a27a6fbbb93e712d48600c974a19a03eea83168fe2897ad961afdfbc",
   "rng-quantum-rng-1": "789f911a490b1ce284ae35f9fe43a724f2a8ff6641130cfc365b1e51b93f74cb",
   "rng-quantum-rng-2": "7c126900d5319e50644ef29ae470b59aa6b19306ec0f167cfe3bd00bec763f4c",
-  "toric_code": "0529c3fc64b911043752a45022d8d86e7bed0fe0171208732028d666a1139ed3",
-  "uses-discard": "3ac865a317c625d2f262c36e5d3f149bca58f1517bbc2309f43d569998905978",
+  "toric_code": "7c2049b0459c1f436edb1c80390215503412c6ddfed9283e3e34e73c529e393b",
+  "toric_code_comptime": "0529c3fc64b911043752a45022d8d86e7bed0fe0171208732028d666a1139ed3",
+  "uses-discard": "0b581602a70383db506da7a1e95f830db88ef3b35eb6d41603129a6958018211",
   "wasm-quantum-1": "93e0c37cde55ff3f73b9221ba3a50af3e05b553abff656f932ee9f4df7c5c056"
 }

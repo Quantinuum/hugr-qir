@@ -8,8 +8,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @2 = private unnamed_addr constant [3 x i8] c"q2\00", align 1
 @3 = private unnamed_addr constant [3 x i8] c"q3\00", align 1
 @4 = private unnamed_addr constant [15 x i8] c"big_endian_res\00", align 1
-@5 = private unnamed_addr constant [11 x i8] c"random_sum\00", align 1
-@6 = private unnamed_addr constant [8 x i8] c"int_res\00", align 1
+@5 = private unnamed_addr constant [8 x i8] c"nat_sum\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
@@ -29,25 +28,15 @@ alloca_block:
   %"068.0" = select i1 %2, i64 2, i64 0
   %"083.0" = select i1 %1, i64 4, i64 0
   %"098.0" = select i1 %0, i64 8, i64 0
-  %"0133.0" = select i1 %3, i64 1, i64 -1
-  %"0147.0" = select i1 %2, i64 1, i64 -1
-  %"0161.0" = select i1 %1, i64 1, i64 -1
-  %"0175.0" = select i1 %0, i64 1, i64 -1
   %4 = or disjoint i64 %"083.0", %"098.0"
   %5 = or disjoint i64 %4, %"068.0"
   %6 = or disjoint i64 %5, %"053.0"
-  %7 = add nsw i64 %"0161.0", %"0175.0"
-  %8 = add nsw i64 %7, %"0147.0"
-  %9 = add nsw i64 %8, %"0133.0"
-  %10 = mul nsw i64 %9, %9
-  %11 = sub nsw i64 10, %10
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
   tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
   tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @2)
   tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @3)
   tail call void @__quantum__rt__int_record_output(i64 %6, ptr nonnull @4)
-  tail call void @__quantum__rt__int_record_output(i64 %9, ptr nonnull @5)
-  tail call void @__quantum__rt__int_record_output(i64 %11, ptr nonnull @6)
+  tail call void @__quantum__rt__int_record_output(i64 10, ptr nonnull @5)
   ret void
 }
 

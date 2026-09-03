@@ -1,8 +1,69 @@
 # Arrays
 
-These examples show the current boundary for array-like programming for H-Series compatible Guppy.
+Fixed-size arrays are supported in both `@guppy` and `@guppy.comptime` code.
+This includes arrays created from Python lists.
 
-The important theme is that compile-time arrays can be useful as a structuring tool, but runtime array values and helpers that depend on borrowed array representations are not yet supported by `hugr-qir`.
+H-Series requires the exact qubit used by every quantum operation to be known
+when the program is compiled. `hugr-qir` makes a best effort to simplify array
+indices and fully expand loops. Compilation fails if a qubit index cannot be
+made static or if a loop cannot be fully expanded.
+
+This means runtime indexing sometimes works, but is not guaranteed to work just
+because the array has a fixed size.
+
+## Supported: runtime arrays and array parameters
+
+Source file: `guppy_examples/guppy-features/supported/runtime-array.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/runtime-array.py
+:language: python
+```
+
+This example creates qubit arrays in an ordinary `@guppy` function, passes them
+to other Guppy functions, and accesses them in fixed-size loops.
+
+## Supported: fixed-size iteration
+
+Source file: `guppy_examples/guppy-features/supported/array-static-full-iteration.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/array-static-full-iteration.py
+:language: python
+```
+
+Iterating over an entire fixed-size array can be fully expanded during
+compilation.
+
+## Supported: finite runtime selection
+
+Source file: `guppy_examples/guppy-features/supported/array-branch-selected-borrow.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/array-branch-selected-borrow.py
+:language: python
+```
+
+The index in this example depends on a measurement, but can only be zero or
+one. It can therefore be compiled into two branches, each using a known qubit.
+
+## Supported: bounded data-dependent exit
+
+Source file: `guppy_examples/guppy-features/supported/array-data-dependent-early-exit.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/array-data-dependent-early-exit.py
+:language: python
+```
+
+Although a measurement determines when this loop exits, its maximum number of
+iterations is fixed. The loop can be fully expanded into conditional steps.
+
+## Supported: implicit discard
+
+Source file: `guppy_examples/guppy-features/supported/array-implicit-discard.py`
+
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/array-implicit-discard.py
+:language: python
+```
+
+Arrays of copyable, droppable values can be discarded after use.
 
 ## Supported: compile-time arrays
 
@@ -12,101 +73,85 @@ Source file: `guppy_examples/guppy-features/supported/comptime-array.py`
 :language: python
 ```
 
-This example works because the array manipulation happens under `@guppy.comptime`, so the loop structure and indexing can be resolved before QIR emission.
-
-## Supported: compile-time array copy and unpacking
-
-Source file: `guppy_examples/guppy-features/supported/comptime-array-copy-unpack.py`
+`@guppy.comptime` is useful when all array indices and loop bounds can be
+decided during compilation. Copying and starred unpacking at compile time are
+demonstrated separately:
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/supported/comptime-array-copy-unpack.py
 :language: python
 ```
 
-Copying and starred unpacking produce array-like values, so this pattern stays under `@guppy.comptime`.
+## Supported: measurement and discard helpers
 
-## Unsupported: runtime arrays
+`measure_array` and `discard_array` follow the same array rules.
 
-Source file: `guppy_examples/guppy-features/unsupported/runtime-array.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/runtime-array.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/measure-array.py
 :language: python
 ```
 
-This version looks structurally similar to the compile-time example above, but it keeps the arrays in ordinary `@guppy` functions and therefore requires runtime array support during lowering.
+The boolean array passed to `output` is packed into one integer. At most 63
+boolean values can be recorded under one tag; split larger arrays into multiple
+outputs. See [Result recording](../result-recording.md) for the result encoding.
 
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/runtime-array.error
-:language: text
-```
-
-## Unsupported: `measure_array`
-
-Source file: `guppy_examples/guppy-features/unsupported/measure-array.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/measure-array.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/discard-array.py
 :language: python
 ```
 
-This fails because `measure_array` relies on borrowed array types that are not currently emitted by the backend.
+## Unsupported: unresolved runtime index
 
-Expected error:
+Source file: `guppy_examples/guppy-features/unsupported/array-runtime-index.py`
 
-```{literalinclude} ../../../python/tests/snapshots/unsupported/measure-array.error
-:language: text
-```
-
-## Unsupported: `discard_array`
-
-Source file: `guppy_examples/guppy-features/unsupported/discard-array.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/discard-array.py
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/array-runtime-index.py
 :language: python
 ```
 
-Like `measure_array`, this path depends on array borrowing support that is not yet available in QIR emission.
+Here an RNG selects the qubit. The compiler cannot determine a fixed qubit for
+the `x` operation, so compilation fails.
 
 Expected error:
 
-```{literalinclude} ../../../python/tests/snapshots/unsupported/discard-array.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/array-runtime-index.error
 :language: text
 ```
 
-## Unsupported: array-backed collections
+## Array-backed collections
 
-`Stack`, `Queue`, and `PriorityQueue` are higher-level collection APIs, but they are implemented with runtime arrays internally. That means they currently hit the same QIR lowering boundary as direct runtime arrays.
+Fixed sequences of `Stack` and `Queue` operations are supported when the
+compiler can completely remove the collection's internal storage and control
+flow.
 
-Source file: `guppy_examples/guppy-features/unsupported/collections-stack.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-stack.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/collections-stack.py
 :language: python
 ```
 
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/collections-stack.error
-:language: text
-```
-
-Source file: `guppy_examples/guppy-features/unsupported/collections-queue.py`
-
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-queue.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/collections-queue.py
 :language: python
 ```
 
-Expected error:
+## Unsupported: runtime-dependent collection state
 
-```{literalinclude} ../../../python/tests/snapshots/unsupported/collections-queue.error
-:language: text
+Collection state that depends on runtime values may leave internal storage or
+dynamic addressing in the generated program. These examples cannot be reduced
+to the static operations required by H-Series QIR.
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-stack-runtime-state.py
+:language: python
 ```
 
-Source file: `guppy_examples/guppy-features/unsupported/collections-priority-queue.py`
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-queue-runtime-state.py
+:language: python
+```
+
+## Unsupported: priority queue
+
+`PriorityQueue` currently leaves unsupported internal storage even for a fixed
+sequence of operations.
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-priority-queue.py
 :language: python
 ```
 
-Expected error:
+Example error:
 
 ```{literalinclude} ../../../python/tests/snapshots/unsupported/collections-priority-queue.error
 :language: text
