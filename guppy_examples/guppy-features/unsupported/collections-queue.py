@@ -9,7 +9,7 @@ from guppylang.std.collections.queue import empty_queue
 @guppy
 @no_type_check
 def main() -> None:
-    # Queue is backed by a runtime array, which is not supported by QIR lowering.
+    # The queue's data-dependent internal loops cannot be fully unrolled for QIR.
     queue = empty_queue[int, 4]()
     queue.push(3)
     queue.push(5)

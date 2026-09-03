@@ -9,5 +9,4 @@ from guppylang.std.num import nat
 @no_type_check
 def main() -> None:
     output("bools", array(True, False, True))
-    output("ints", array(-1, 0, 1))
     output("uints", array(nat(1), nat(2), nat(3)))

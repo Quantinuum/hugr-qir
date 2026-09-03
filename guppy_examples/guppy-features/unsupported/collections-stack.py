@@ -9,7 +9,7 @@ from guppylang.std.collections.stack import empty_stack
 @guppy
 @no_type_check
 def main() -> None:
-    # Stack is backed by a runtime array, which is not supported by QIR lowering.
+    # The stack's data-dependent internal loops cannot be fully unrolled for QIR.
     stack = empty_stack[int, 4]()
     stack.push(3)
     stack.push(5)

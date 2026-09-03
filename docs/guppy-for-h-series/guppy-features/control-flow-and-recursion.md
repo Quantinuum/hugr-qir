@@ -1,6 +1,7 @@
 # Control Flow and Recursion
 
-These examples show the distinction between control flow that can be made static for QIR generation and control flow that still implies dynamic or cyclic structure in the lowered program. They also detail some Guppy features that are not currently supported by H-Series hardware.
+H-Series programs cannot contain loops. Loops and recursion are supported when
+`hugr-qir` can fully expand them during compilation.
 
 ## Supported: `if` / `elif` / `else`
 
@@ -24,7 +25,7 @@ Source file: `guppy_examples/guppy-features/unsupported/panic.py`
 :language: python
 ```
 
-Early exit using either `exit` or `panic` is not currently supported on H-Series hardware and will not pass the QIR validation step.
+Early exit using either `exit` or `panic` is unsupported on H-Series.
 
 Expected error (for both examples):
 
@@ -40,16 +41,13 @@ Source file: `guppy_examples/guppy-features/supported/unrollable-loops.py`
 :language: python
 ```
 
-This pattern works because the loop structure can be serialized into static
-control flow during lowering. After normal optimization, the backend marks all
-remaining natural loops for full unrolling with a maximum static trip count of
-800 by default. The limit is configurable, and no loop is permitted to remain
-in emitted QIR.
+This loop has a fixed number of iterations, so `hugr-qir` can fully expand it.
+The default maximum is 800 iterations and can be configured using
+`max_loop_unroll` in Python or `--max-loop-unroll` on the command line.
 
-Writing loops within `@guppy.comptime` remains useful for loops larger than this
-limit or whose structure is difficult for LLVM to analyze. Such loops execute
-during Guppy compilation rather than becoming LLVM control flow. This is not
-possible if the loop branches on runtime values such as measurement results.
+For larger static loops, consider using `@guppy.comptime` so Guppy expands the
+loop during compilation. This cannot be used when the loop itself depends on a
+runtime value such as a measurement result.
 
 ## Unsupported: non-unrollable loops
 
@@ -59,7 +57,8 @@ Source file: `guppy_examples/guppy-features/unsupported/non-unrollable-loops.py`
 :language: python
 ```
 
-This loop depends on measurement results and therefore remains genuinely dynamic in the generated control-flow graph.
+The number of iterations depends on measurement results, so the loop cannot be
+fully expanded during compilation.
 
 Expected error:
 
@@ -75,7 +74,7 @@ Source file: `guppy_examples/guppy-features/supported/simple-recursion.py`
 :language: python
 ```
 
-This recursive form works because it can be turned into static control flow for QIR generation.
+This recursive form has a fixed depth and can be fully expanded.
 
 ## Unsupported: complex recursion
 
@@ -85,7 +84,8 @@ Source file: `guppy_examples/guppy-features/unsupported/complex-recursion.py`
 :language: python
 ```
 
-Here the recursive path depends on a measurement result, so the generated CFG contains a loop that the current backend rejects during validation.
+Here the recursive path depends on a measurement result, so it cannot be fully
+expanded.
 
 Expected error:
 
@@ -109,7 +109,8 @@ Source file: `guppy_examples/guppy-features/unsupported/cyclic-call-graph.py`
 :language: python
 ```
 
-This example creates a cycle across multiple Guppy functions, which eventually lowers to an unsupported loop in the control-flow graph.
+This example creates recursion across multiple Guppy functions that cannot be
+fully expanded.
 
 Expected error:
 

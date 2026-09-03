@@ -10,8 +10,8 @@ from guppylang.std.quantum import measure, x
 @guppy
 @no_type_check
 def main() -> None:
-    # Unlike a Boolean selector, this runtime integer cannot be expanded into
-    # a small set of statically addressed QIR qubit operations.
+    # Unlike the supported Boolean-selector example, optimization does not
+    # turn this runtime index into statically addressed QIR operations.
     rng = RNG(11)
     index = rng.random_int_bounded(4)
     rng.discard()

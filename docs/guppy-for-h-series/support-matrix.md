@@ -1,53 +1,55 @@
 # Support Matrix
 
-This matrix summarizes the current Guppylang subset that can be lowered through HUGR into QIR for H-Series targets.
+This matrix summarizes the Guppy features supported when targeting H-Series
+systems with `hugr-qir`.
 
 ✅ = full support, *️⃣ = partial support, ❌ = unsupported
 
 ## Guppy features
 
-| Features                                              | Support | Remarks                                                                |
-|-------------------------------------------------------|---------|:-----------------------------------------------------------------------|
-| if elif else constructs                               | ✅       |                                                                        |
-| Measurement objects from `measure(q)`                 | ✅       | Read the classical value with `.read()`                                |
-| Angle values and arithmetic                           | ✅       | Supported for gate parameters such as `rz`                             |
-| function overloading                                  | ✅       |                                                                        |
-| Generics (`type_var`/`nat_var`)                       | ✅       | `nat_var`s are less useful without runtime array support               |
-| Function type annotations                             | ✅       |                                                                        |
-| First class or higher order functions                 | ✅       |                                                                        |
-| Protocols                                             | ✅       |                                                                        |
-| Type aliases                                          | ✅       | Avoid aliases that expand to runtime arrays                            |
-| `Option`, `Result`, and `Either`                      | ✅       | Supported when payload types are supported                             |
-| `mem_swap`                                            | ✅       |                                                                        |
-| Dagger modifier                                       | ✅       |                                                                        |
-| Control modifier                                      | ✅       | Lowers through a statically-addressable array of control qubits        |
-| `get_current_shot`                                    | ✅       |                                                                        |
-| Recursive functions or loops within `@guppy.comptime` | ✅       | As long as compilation to HUGR succeeds                                |
-| Recursive functions or loops within `@guppy`          | *️⃣     | Only if fully unrollable; default maximum static trip count is 800     |
-| `Stack`, `Queue`, and `PriorityQueue`                 | ❌       | Backed by runtime arrays                                               |
-| `measure_array`                                       | ❌       | Result-array operation is not implemented                              |
-| `discard_array`                                       | ✅       | Supported when qubit addresses become static                           |
-| `barrier`                                             | ❌       | `RuntimeBarrier` code generation is not implemented                    |
-| `exit` and `panic`                                    | ❌       | Currently unsupported on H2 hardware                                   |
-| RNG: `__new__`, `discard`, `random_int/_bounded`      | ✅       | Specific to Quantinuum hardware                                        |
-| RNG: `random_advance`                                 | ❌       | Currently unsupported on H2 hardware                                   |
-| RNG: `shuffle`                                        | ❌       | Uses non-comptime arrays internally                                    |
-| RNG: `random(_clifford)_angle`, `random_float`        | ❌       | No dynamic float support planned for H2 hardware                       |
+| Feature | Support | Remarks |
+|---------|---------|---------|
+| `if` / `elif` / `else` | ✅ | |
+| Measurement objects from `measure(q)` | ✅ | Read the classical value with `.read()` |
+| Scalar and array `output` | *️⃣ | Supports booleans and unsigned integers; see [Result recording](result-recording.md) |
+| Angle values and arithmetic | ✅ | Supported for gate parameters such as `rz` |
+| `measure_array` and `discard_array` | ✅ | Boolean measurement arrays are limited to 63 results when recorded |
+| `barrier` | ✅ | Accepts individual qubits and fixed-size qubit arrays |
+| Function overloading | ✅ | |
+| Generics (`type_var` / `nat_var`) | ✅ | Fixed-size generic arrays follow the normal array rules |
+| Function type annotations | ✅ | |
+| First-class and higher-order functions | ✅ | |
+| Protocols | ✅ | |
+| Type aliases | ✅ | The expanded type must be supported |
+| `Option`, `Result`, and `Either` | ✅ | Payload types must be supported |
+| `mem_swap` | ✅ | |
+| Dagger modifier | ✅ | |
+| Control modifier | ✅ | |
+| `get_current_shot` | ✅ | |
+| RNG: `__new__`, `discard`, `random_int/_bounded` | ✅ | |
+| Recursive functions or loops within `@guppy.comptime` | ✅ | As long as Guppy compilation succeeds |
+| Recursive functions or loops within `@guppy` | *️⃣ | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations |
+| `Stack`, `Queue`, and `PriorityQueue` | ❌ | Their internal loops cannot be fully unrolled |
+| `exit` and `panic` | ❌ | Early exit is unsupported on H-Series |
+| RNG: `random_advance` | ❌ | Unsupported on H-Series |
+| RNG: `shuffle` | ❌ | Its array accesses cannot be made static |
+| RNG: `random(_clifford)_angle`, `random_float` | ❌ | Dynamic floating-point values are unsupported on H-Series |
 
 ## Data types
 
-| Data Types | Support | Caveats                                            |
-|------------|---------|----------------------------------------------------|
-| int        | ✅      |                                                    |
-| bool       | ✅      |                                                    |
-| nat        | ✅      |                                                    |
-| struct     | ✅      | Cannot contain arrays                              |
-| float      | *️⃣      | Must be runtime constant, arithmetic comptime only |
-| array      | *️⃣      | Comptime only                                      |
-| tuple      | *️⃣      | Unpacking with `*` returns an array, so only at comptime |
-| enum       | ✅      | Supported when variant payloads are supported      |
-| `Option`   | ✅      | Supported when payload type is supported           |
-| `Result`   | ✅      | Supported when payload types are supported         |
-| `Either`   | ✅      | Supported when payload types are supported         |
+| Data type | Support | Caveats                                                                             |
+|-----------|---------|-------------------------------------------------------------------------------------|
+| int | *️⃣ | Negative values can silently produce incorrect results; see [Integers](integers.md) |
+| float | *️⃣ | May be used as a constant gate parameter; calculations and output are unsupported   |
+| array | *️⃣ | Fixed-size arrays are supported when all qubit accesses can be made static          |
+| bool | ✅ |                                                                                     |
+| nat | ✅ |                                                                                     |
+| struct | ✅ |                                                                                     |
+| tuple | ✅ |                                                                                     |
+| enum | ✅ |                                                                                     |
+| `Option` | ✅ |                                                                                     |
+| `Result` | ✅ |                                                                                     |
+| `Either` | ✅ |                                                                                     |
 
-The more detailed rules behind the partial entries are covered in [Collections and structs](collections-and-structs.md).
+See [Integers](integers.md), [Collections and structs](collections-and-structs.md),
+and [Arrays](guppy-features/arrays.md) for the rules behind the partial entries.

@@ -36,25 +36,19 @@ Source file: `guppy_examples/guppy-features/supported/modifier-control.py`
 :language: python
 ```
 
-The control modifier lowers through a statically-addressable array of control
-qubits.
+Control modifiers are supported for gates whose control qubits can be determined
+during compilation.
 
-## Unsupported: barrier
+## Barrier
 
-Source file: `guppy_examples/guppy-features/unsupported/barrier.py`
+Source file: `guppy_examples/guppy-features/supported/barrier.py`
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/barrier.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/barrier.py
 :language: python
 ```
 
-The array-typed operands can now be lowered, but the backend does not yet have
-code generation for the `RuntimeBarrier` operation itself.
-
-Expected error:
-
-```{literalinclude} ../../../python/tests/snapshots/unsupported/barrier.error
-:language: text
-```
+Barriers accept individual qubits and fixed-size qubit arrays. Non-qubit values
+passed to a barrier are ignored. A barrier containing no qubits has no effect.
 
 ## Memory swap
 

@@ -1,51 +1,44 @@
 # Collections and Structs
 
-The main limits in the current H-Series flow come from how Guppy collections are represented during lowering to HUGR and then to QIR.
-
 ## Arrays
 
-Guppy qubit arrays are generally allowed to be indexed into using a runtime integer, but this is incompatible with H-Series hardware, where any addressing of qubits must be static. The workaround here is to use "comptime" arrays, ones that are generated within `@guppy.comptime` and are interchangeable with python lists. These arrays can be passed into pure python functions, but not other guppy functions.
+Fixed-size Guppy arrays are supported, including arrays created in ordinary
+`@guppy` functions, passed to other Guppy functions, or created from Python
+lists.
 
-- Arrays are only supported within comptime Guppy.
-- Arrays cannot be used inside structs.
-- Arrays cannot be used as parameters to either `@guppy` or `@guppy.comptime` decorated functions.
-- Guppy builtins that rely on runtime arrays internally are not supported.
+H-Series requires the qubit used by each quantum operation to be known during
+compilation. `hugr-qir` tries to make array indexing static by expanding loops
+and simplifying indices. Compilation fails if it cannot determine the qubit
+used by an operation.
+
+An index does not have to be written as a literal. Some runtime choices can be
+expanded into a small number of branches with a known qubit in each branch.
+See [Arrays](guppy-features/arrays.md) for supported and unsupported examples.
+
+Using `@guppy.comptime` is a useful alternative when array indices and loops can
+be decided while the program is compiled.
 
 ## Array-backed collections
 
-`Stack`, `Queue`, and `PriorityQueue` from `guppylang.std.collections` are currently unsupported for H-Series. Although they provide a higher-level API than direct array manipulation, their implementations store values in fixed-size Guppy arrays:
+`Stack`, `Queue`, and `PriorityQueue` from `guppylang.std.collections` are
+unsupported. Their implementations contain data-dependent loops that cannot be
+fully expanded for H-Series. Calling `discard_empty()` does not remove these
+loops.
 
-- `Stack` stores its elements in an `array[Option[T], MAX_SIZE]`.
-- `Queue` stores its circular buffer in an `array[Option[T], MAX_SIZE]`.
-- `PriorityQueue` stores its heap in an `array[Option[tuple[int, T]], MAX_SIZE]`.
-
-That means using these collections still introduces runtime array values into the lowered program. Prefer tuples, structs, individual variables, or comptime arrays for H-Series-compatible code.
-
-Example:
-
-```python
-def py_function(arr: array[qubit]) -> None:
-    for q in arr:
-        h(q)
-
-@guppy.comptime
-def main() -> None:
-    comptime_array = array(qubit() for _ in range(4))
-    py_function(comptime_array)
-```
-
-Counterexamples and support boundaries are summarized in [Examples](../examples/index.md) and exercised in the repository test suite.
+Use direct fixed-size arrays, tuples, structs, or individual variables instead.
 
 ## Tuples
 
-- Unpacking with `*` is only supported at comptime.
+Fixed-shape tuple operations are supported. Starred unpacking creates an array
+for the starred portion, which follows the usual array rules.
 
 ## Structs
 
-- Structs cannot contain arrays.
+Structs are supported when their field types are supported. Array fields follow
+the usual array rules.
 
 ## Where to look next
 
-- General example and full flow: [Getting Started](../getting-started.md)
-- Wasm examples: [Examples: Wasm integration](../examples/wasm.md)
-- Architecture overview: [Architecture](../architecture.md)
+- Detailed array examples: [Arrays](guppy-features/arrays.md)
+- Feature overview: [Support matrix](support-matrix.md)
+- General workflow: [Getting Started](../getting-started.md)

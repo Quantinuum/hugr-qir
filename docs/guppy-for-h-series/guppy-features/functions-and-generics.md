@@ -42,7 +42,9 @@ Source file: `guppy_examples/guppy-features/supported/generics.py`
 :language: python
 ```
 
-The generic array example is still constrained by the same array rules described in [Arrays](arrays.md): it works here because the array manipulation happens from Python under `@guppy.comptime`.
+This example manipulates its generic arrays under `@guppy.comptime`. Fixed-size
+generic arrays may also be used in ordinary `@guppy` functions and follow the
+usual [array rules](arrays.md).
 
 ## Protocols
 
