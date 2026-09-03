@@ -909,7 +909,7 @@ dev = [
 docs = [
     { name = "enum-tools", extras = ["sphinx"], specifier = ">=0.13.0" },
     { name = "myst-nb", specifier = ">=1.2.0" },
-    { name = "quantinuum-sphinx", specifier = "~=0.6" },
+    { name = "quantinuum-sphinx", specifier = ">=0.6,<2.0" },
     { name = "sphinx", specifier = ">=8,<9" },
     { name = "sphinx-autodoc-typehints", specifier = "<3.2" },
     { name = "sphinx-click", specifier = ">=6.2.0" },
@@ -2490,14 +2490,14 @@ wheels = [
 
 [[package]]
 name = "quantinuum-sphinx"
-version = "0.7.0"
+version = "1.11.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "furo" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/b0/462e4868ddc3dca737ffe09d6a3184f8def4b0b416a19d4600f6b1f9500a/quantinuum_sphinx-0.7.0.tar.gz", hash = "sha256:3687b4d46287862d8c5af380150db065dee3716e837bfe776de52ab779afaa8a", size = 186962, upload-time = "2026-04-30T17:54:43.89Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/6a/6cc8e5fd13722376d11e0c9bd66b722c44d5883c10fdbeb780c0f291a905/quantinuum_sphinx-1.11.2.tar.gz", hash = "sha256:035d4f740b2e7cfa4ca4d5c79ed0736ed901ba97467e15c2490e707a4e88a667", size = 204330, upload-time = "2026-07-28T16:14:57.062Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/97/fb87ad8a68962108b2533cce2b6b5c4ae8c10bdb55a9a340e3ebfbd8c17f/quantinuum_sphinx-0.7.0-py3-none-any.whl", hash = "sha256:df1d5427da0d676300e47059400bd9e33c73bedaa9f6e5081a076c19a183a3a4", size = 188982, upload-time = "2026-04-30T17:54:45.184Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/fa/fae43c07c62cf9687a02948c2de72c6feb1ee1a3bf70eb10a22554df89c0/quantinuum_sphinx-1.11.2-py3-none-any.whl", hash = "sha256:72e15bab06c2beb7eb2d30bf37c7502b2ff03046348cc259ebfa3d48ed5125a4", size = 207640, upload-time = "2026-07-28T16:14:55.689Z" },
 ]
 
 [[package]]
