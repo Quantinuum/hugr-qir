@@ -29,7 +29,8 @@ systems with `hugr-qir`.
 | RNG: `__new__`, `discard`, `random_int/_bounded` | ✅ | |
 | Recursive functions or loops within `@guppy.comptime` | ✅ | As long as Guppy compilation succeeds |
 | Recursive functions or loops within `@guppy` | *️⃣ | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations |
-| `Stack`, `Queue`, and `PriorityQueue` | ❌ | Their internal loops cannot be fully unrolled |
+| `Stack` and `Queue` | *️⃣ | Fixed operation sequences are supported when their internal storage and control flow can be fully simplified |
+| `PriorityQueue` | ❌ | Its internal storage cannot currently be removed completely |
 | `exit` and `panic` | ❌ | Early exit is unsupported on H-Series |
 | RNG: `random_advance` | ❌ | Unsupported on H-Series |
 | RNG: `shuffle` | ❌ | Its array accesses cannot be made static |

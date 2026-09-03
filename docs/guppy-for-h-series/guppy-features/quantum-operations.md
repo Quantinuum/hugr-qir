@@ -36,7 +36,7 @@ Source file: `guppy_examples/guppy-features/supported/modifier-control.py`
 :language: python
 ```
 
-Control modifiers are supported for gates whose control qubits can be determined
+Control modifiers are supported when the controlled operation can be resolved
 during compilation.
 
 ## Barrier

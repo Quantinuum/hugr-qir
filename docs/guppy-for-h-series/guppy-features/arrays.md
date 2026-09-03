@@ -114,18 +114,38 @@ Expected error:
 :language: text
 ```
 
-## Unsupported: array-backed collections
+## Array-backed collections
 
-`Stack`, `Queue`, and `PriorityQueue` contain internal loops that cannot be
-fully expanded for H-Series.
+Fixed sequences of `Stack` and `Queue` operations are supported when the
+compiler can completely remove the collection's internal storage and control
+flow.
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-stack.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/collections-stack.py
 :language: python
 ```
 
-```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-queue.py
+```{literalinclude} ../../../guppy_examples/guppy-features/supported/collections-queue.py
 :language: python
 ```
+
+## Unsupported: runtime-dependent collection state
+
+Collection state that depends on runtime values may leave internal storage or
+dynamic addressing in the generated program. These examples cannot be reduced
+to the static operations required by H-Series QIR.
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-stack-runtime-state.py
+:language: python
+```
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-queue-runtime-state.py
+:language: python
+```
+
+## Unsupported: priority queue
+
+`PriorityQueue` currently leaves unsupported internal storage even for a fixed
+sequence of operations.
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-priority-queue.py
 :language: python
@@ -133,6 +153,6 @@ fully expanded for H-Series.
 
 Example error:
 
-```{literalinclude} ../../../python/tests/snapshots/unsupported/collections-stack.error
+```{literalinclude} ../../../python/tests/snapshots/unsupported/collections-priority-queue.error
 :language: text
 ```

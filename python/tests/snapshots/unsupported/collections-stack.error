@@ -1,1 +1,0 @@
-QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: LLVM loop remains in function __hugr__.guppy_example_mod.main.1; all loops must have statically-known trip counts no greater than the configured QIR unroll limit (800)

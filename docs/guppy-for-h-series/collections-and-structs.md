@@ -20,12 +20,19 @@ be decided while the program is compiled.
 
 ## Array-backed collections
 
-`Stack`, `Queue`, and `PriorityQueue` from `guppylang.std.collections` are
-unsupported. Their implementations contain data-dependent loops that cannot be
-fully expanded for H-Series. Calling `discard_empty()` does not remove these
-loops.
+`Stack` and `Queue` from `guppylang.std.collections` can be used when their
+operations can be completely simplified during compilation. Fixed sequences of
+pushes and pops are a typical supported case.
 
-Use direct fixed-size arrays, tuples, structs, or individual variables instead.
+Collection state that depends on runtime values is not generally supported. It
+can leave internal storage, loops, or dynamic qubit addressing in the program,
+which H-Series QIR cannot represent. Compilation fails when that state cannot be
+removed. Calling `discard_empty()` is still required for ownership checking, but
+does not by itself make a collection suitable for QIR.
+
+`PriorityQueue` is currently unsupported, including for simple fixed sequences.
+Use a direct fixed-size array, tuple, struct, or individual variables when a
+collection cannot be simplified.
 
 ## Tuples
 

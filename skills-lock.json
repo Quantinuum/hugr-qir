@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "guppylang": {
+      "source": "Quantinuum/ai-skills",
+      "sourceType": "github",
+      "skillPath": "guppylang/SKILL.md",
+      "computedHash": "1cc477d0d52f10d9f21327a7934bab3049698eb82371df2fc5d248654474e3ea"
+    },
+    "qnexus": {
+      "source": "Quantinuum/ai-skills",
+      "sourceType": "github",
+      "skillPath": "qnexus/SKILL.md",
+      "computedHash": "cf8ff5acaa1970e9d79396a63ca5e72e3bead169ee81452c25815b332f77d84f"
+    }
+  }
+}

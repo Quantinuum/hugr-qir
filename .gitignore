@@ -33,5 +33,8 @@ examples/.ipynb_checkpoints/*
 
 docs/_build
 
-
+# hidden tests
 python/tests/test_guppy_to_dfl.py
+
+# ai
+.agents

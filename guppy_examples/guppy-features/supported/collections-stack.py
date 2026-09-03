@@ -9,7 +9,7 @@ from guppylang.std.collections.stack import empty_stack
 @guppy
 @no_type_check
 def main() -> None:
-    # The stack's data-dependent internal loops cannot be fully unrolled for QIR.
+    # This fixed sequence can be fully simplified during QIR compilation.
     stack = empty_stack[int, 4]()
     stack.push(3)
     stack.push(5)

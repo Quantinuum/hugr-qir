@@ -30,12 +30,14 @@ use tket::passes::{
     PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
+pub mod devirtualize;
 mod llvm_unroll;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
 
 use crate::cli::CliOptimizationLevel;
+use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
@@ -137,6 +139,10 @@ impl CompileArgs {
             if self.validate {
                 hugr.validate()?;
             }
+        }
+        DevirtualizeDirectCallsPass::default().run(hugr)?;
+        if self.validate {
+            hugr.validate()?;
         }
         // Drop unreachable functions before inlining to avoid doing adversarial
         // expansion work in code that will be removed anyway.

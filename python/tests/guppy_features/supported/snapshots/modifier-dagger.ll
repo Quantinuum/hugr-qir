@@ -18,15 +18,15 @@ alloca_block:
   ret void
 }
 
+declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
+
+declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
+
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1
 
 declare i1 @__quantum__rt__read_result(ptr readonly) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, ptr) local_unnamed_addr
-
-declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
-
-declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 
 declare void @__quantum__rt__initialize(ptr) local_unnamed_addr
 

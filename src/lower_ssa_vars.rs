@@ -119,6 +119,11 @@ pub fn ensure_static_qubit_operands(module: &Module) -> Result<()> {
                             "QIR call {func_name} has no pointer-valued qubit argument at position {arg_idx}"
                         );
                     };
+                    if arg.is_undef() {
+                        bail!(
+                            "QIR call {func_name} has an undefined qubit argument at position {arg_idx}; qubit lowering failed to preserve this qubit"
+                        );
+                    }
                     if !arg.is_const() {
                         bail!(
                             "QIR call {func_name} has a dynamic qubit argument at position {arg_idx}; qubit array indexing must be made static before QIR emission: {arg}"
@@ -3463,6 +3468,33 @@ entry:
             .to_string();
         assert!(
             error.contains("__quantum__qis__x__body has a dynamic qubit argument at position 0"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn static_qubit_operand_check_rejects_undefined_resource_pointers() {
+        let context = Context::create();
+        let module = load_module_from_ir(
+            &context,
+            "undefined_qubit_operands",
+            r#"
+declare void @__quantum__qis__x__body(ptr)
+
+define void @main() {
+entry:
+  call void @__quantum__qis__x__body(ptr undef)
+  ret void
+}
+"#,
+        )
+        .unwrap();
+
+        let error = ensure_static_qubit_operands(&module)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("__quantum__qis__x__body has an undefined qubit argument at position 0"),
             "unexpected error: {error}"
         );
     }
