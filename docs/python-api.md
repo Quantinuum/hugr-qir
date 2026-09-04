@@ -47,3 +47,10 @@ The output format enum lives in `python/hugr_qir/output.py`.
 - `OutputFormat.LLVM_IR`
 - `OutputFormat.BITCODE`
 - `OutputFormat.BASE64`
+
+## H-Series Result Helper
+
+```{eval-rst}
+.. automodule:: hugr_qir.h_series_helpers.results
+   :members:
+```

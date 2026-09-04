@@ -21,13 +21,21 @@ copyright = "2026, Quantinuum"  # noqa: A001
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "myst_parser",
     "sphinx_autodoc_typehints",
     "sphinx_click",
 ]
+
+# Include constructor docstrings and retain annotations in generated API docs.
+autoclass_content = "both"
+always_document_param_types = True
+typehints_use_signature = True
+typehints_use_signature_return = True
 
 
 # -- Options for HTML output -------------------------------------------------

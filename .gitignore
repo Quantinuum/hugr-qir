@@ -28,7 +28,8 @@ devenv.local.nix
 .ipynb_checkpoints/*
 examples/.ipynb_checkpoints/*
 
-
 **.dylib*
 
 docs/_build
+
+python/hqs_compiler_tests

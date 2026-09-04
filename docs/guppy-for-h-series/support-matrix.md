@@ -10,6 +10,7 @@ This matrix summarizes the current Guppylang subset that can be lowered through 
 |-------------------------------------------------------|---------|:-----------------------------------------------------------------------|
 | if elif else constructs                               | ✅       |                                                                        |
 | Measurement objects from `measure(q)`                 | ✅       | Read the classical value with `.read()`                                |
+| `output`                                              | *️⃣     | Only available for recording bools and ints; see [Result recording](result_recording.md) |
 | Angle values and arithmetic                           | ✅       | Supported for gate parameters such as `rz`                             |
 | function overloading                                  | ✅       |                                                                        |
 | Generics (`type_var`/`nat_var`)                       | ✅       | `nat_var`s are less useful without runtime array support               |
