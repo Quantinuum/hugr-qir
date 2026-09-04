@@ -2,6 +2,7 @@
 
 import logging
 import tempfile
+from hugr_qir.h_series_helpers.results import qir_to_result_spec
 from importlib.metadata import version
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from hugr_qir.output import OutputFormat, get_write_mode, ir_string_to_output_fo
 logger = logging.getLogger()
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+TEST_QIR_RESULT_SPEC = True
 
 
 @click.command(name="hugr-qir", context_settings=CONTEXT_SETTINGS)
@@ -174,6 +176,9 @@ which is not supported in QIR."
                 raise ValueError(msg) from e
 
     qir_out = ir_string_to_output_format(qir, output_format)
+    if TEST_QIR_RESULT_SPEC:
+        rs = qir_to_result_spec(qir_out, output_format)
+        print(rs)
 
     if outfile:
         llvm_write_mode = get_write_mode(output_format)

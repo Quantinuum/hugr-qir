@@ -1,4 +1,3 @@
-
 def to_int(bits: list[bool]) -> int:
     # Create an integer from the random bits
     integer_value = 0
@@ -7,4 +6,3 @@ def to_int(bits: list[bool]) -> int:
     for b in bits:
         integer_value = (integer_value << 1) | int(b)  # for big-endian
     return integer_value
-

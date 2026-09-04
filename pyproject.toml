@@ -8,6 +8,7 @@ dependencies = [
     "click>=8.3.1,<8.5.0",
     "guppylang>=1.0.1,<2.0.0",
     "hugr>=0.18.3",
+    "pyqir>=0.12.5",
     "pytket>=2.4.0",  # we only use BackendResult, this is the last version where it changed
     "quantinuum-qircheck~=0.8.0",
 ]

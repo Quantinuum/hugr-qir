@@ -1,10 +1,15 @@
+import base64
+
+import re
 from dataclasses import dataclass, field
 from enum import StrEnum
+from hugr_qir.output import OutputFormat
 from typing import TypeAlias
 
 from hugr import ops, tys
 from hugr.package import Package
 from pytket.backends.backendresult import BackendResult
+from pyqir import Module, Context, Opcode
 
 ShotValue: TypeAlias = bool | int | str
 
@@ -97,6 +102,40 @@ def hugr_to_result_spec(hugr: Package) -> ResultSpec:
                 raise ValueError(msg)
             result_representations[tag] = representation
 
+    return ResultSpec(result_representations)
+
+
+def qir_to_result_spec(qir: bytes | str, format: OutputFormat) -> ResultSpec:
+    """Infer result representations from QIR."""
+    operation_representations = {
+        "__quantum__rt__bool_record_output": ResultRep.BOOL,
+        "__quantum__rt__int_record_output": ResultRep.INT,
+    }
+    result_representations: dict[str, ResultRep] = {}
+    ctx = Context()
+    if format == OutputFormat.BITCODE:
+        assert isinstance(qir, bytes)
+        mod = Module.from_bitcode(ctx, qir)
+    if format == OutputFormat.BASE64:
+        assert isinstance(qir, str)
+        qir_bytes = base64.b64decode(qir)
+        mod = Module.from_bitcode(ctx, qir_bytes)
+    if format == OutputFormat.LLVM_IR:
+        assert isinstance(qir, str)
+        mod = Module.from_ir(ctx, qir)
+    for function in mod.functions:
+        for block in function.basic_blocks:
+            for inst in block.instructions:
+                opcode = inst.opcode
+                if opcode == Opcode.CALL:
+                    if inst.callee.name in operation_representations.keys():
+                        global_str = str(inst.args[1])
+                        match = re.search(r'c"([^"\\]+)', global_str)
+                        if match:
+                            variable_name = match.group(1)
+                            result_representations[variable_name] = (
+                                operation_representations.get(inst.callee.name)
+                            )
     return ResultSpec(result_representations)
 
 
