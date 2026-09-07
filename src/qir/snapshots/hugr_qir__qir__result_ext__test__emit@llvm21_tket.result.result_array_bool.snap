@@ -5,7 +5,9 @@ expression: mod_str
 ; ModuleID = 'test_context'
 source_filename = "test_context"
 
-@0 = private unnamed_addr constant [13 x i8] c"foo_arr_bool\00", align 1
+@0 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:0\00", align 1
+@1 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:1\00", align 1
+@2 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:2\00", align 1
 
 define void @_hl.main.1({ ptr, i64 } %0) !dbg !3 {
 alloca_block:
@@ -23,19 +25,13 @@ entry_block:                                      ; preds = %alloca_block
   %7 = add i64 %array_offset, 2, !dbg !11
   %8 = getelementptr inbounds i1, ptr %array_ptr, i64 %7, !dbg !11
   %9 = load i1, ptr %8, align 1, !dbg !11
-  %10 = zext i1 %3 to i64, !dbg !11
-  %11 = or i64 0, %10, !dbg !11
-  %12 = zext i1 %6 to i64, !dbg !11
-  %13 = shl i64 %11, 1, !dbg !11
-  %14 = or i64 %13, %12, !dbg !11
-  %15 = zext i1 %9 to i64, !dbg !11
-  %16 = shl i64 %14, 1, !dbg !11
-  %17 = or i64 %16, %15, !dbg !11
-  call void @__quantum__rt__int_record_output(i64 %17, ptr @0), !dbg !11
+  call void @__quantum__rt__bool_record_output(i1 %3, ptr @0), !dbg !11
+  call void @__quantum__rt__bool_record_output(i1 %6, ptr @1), !dbg !11
+  call void @__quantum__rt__bool_record_output(i1 %9, ptr @2), !dbg !11
   ret void
 }
 
-declare void @__quantum__rt__int_record_output(i64, ptr)
+declare void @__quantum__rt__bool_record_output(i1, ptr)
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}

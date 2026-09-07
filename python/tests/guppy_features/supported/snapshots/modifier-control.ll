@@ -3,12 +3,17 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@0 = private unnamed_addr constant [15 x i8] c"control_target\00", align 1
-@1 = private unnamed_addr constant [12 x i8] c"control_ctl\00", align 1
-@2 = private unnamed_addr constant [17 x i8] c"control_target_2\00", align 1
-@3 = private unnamed_addr constant [13 x i8] c"control_ctl2\00", align 1
-@4 = private unnamed_addr constant [8 x i8] c"targets\00", align 1
-@5 = private unnamed_addr constant [5 x i8] c"ctlm\00", align 1
+@0 = private unnamed_addr constant [22 x i8] c"control_target___BOOL\00", align 1
+@1 = private unnamed_addr constant [19 x i8] c"control_ctl___BOOL\00", align 1
+@2 = private unnamed_addr constant [24 x i8] c"control_target_2___BOOL\00", align 1
+@3 = private unnamed_addr constant [25 x i8] c"control_ctl2___ARRBOOL_0\00", align 1
+@4 = private unnamed_addr constant [25 x i8] c"control_ctl2___ARRBOOL_1\00", align 1
+@5 = private unnamed_addr constant [20 x i8] c"targets___ARRBOOL_0\00", align 1
+@6 = private unnamed_addr constant [20 x i8] c"targets___ARRBOOL_1\00", align 1
+@7 = private unnamed_addr constant [20 x i8] c"targets___ARRBOOL_2\00", align 1
+@8 = private unnamed_addr constant [17 x i8] c"ctlm___ARRBOOL_0\00", align 1
+@9 = private unnamed_addr constant [17 x i8] c"ctlm___ARRBOOL_1\00", align 1
+@10 = private unnamed_addr constant [17 x i8] c"ctlm___ARRBOOL_2\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
@@ -54,10 +59,8 @@ __barray_mask_check_not_borrowed.exit:
   %3 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 3 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 4 to ptr))
   %4 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 4 to ptr))
-  %5 = zext i1 %4 to i64
-  %6 = select i1 %3, i64 2, i64 0
-  %7 = or disjoint i64 %6, %5
-  tail call void @__quantum__rt__int_record_output(i64 %7, ptr nonnull @3)
+  tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @3)
+  tail call void @__quantum__rt__bool_record_output(i1 %4, ptr nonnull @4)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 5 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 5 to ptr))
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 6 to ptr))
@@ -955,31 +958,23 @@ __barray_mask_check_not_borrowed.exit:
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 10 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 10 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 8 to ptr), ptr nonnull inttoptr (i64 5 to ptr))
-  %8 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 5 to ptr))
+  %5 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 5 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 9 to ptr), ptr nonnull inttoptr (i64 6 to ptr))
-  %9 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 6 to ptr))
+  %6 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 6 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 10 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
-  %10 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 7 to ptr))
-  %11 = zext i1 %9 to i64
-  %12 = select i1 %8, i64 2, i64 0
-  %13 = or disjoint i64 %12, %11
-  %14 = zext i1 %10 to i64
-  %15 = shl nuw nsw i64 %13, 1
-  %16 = or disjoint i64 %15, %14
-  tail call void @__quantum__rt__int_record_output(i64 %16, ptr nonnull @4)
+  %7 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 7 to ptr))
+  tail call void @__quantum__rt__bool_record_output(i1 %5, ptr nonnull @5)
+  tail call void @__quantum__rt__bool_record_output(i1 %6, ptr nonnull @6)
+  tail call void @__quantum__rt__bool_record_output(i1 %7, ptr nonnull @7)
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 5 to ptr), ptr nonnull inttoptr (i64 8 to ptr))
-  %17 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
+  %8 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 9 to ptr))
-  %18 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 9 to ptr))
+  %9 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 9 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
-  %19 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
-  %20 = zext i1 %18 to i64
-  %21 = select i1 %17, i64 2, i64 0
-  %22 = or disjoint i64 %21, %20
-  %23 = zext i1 %19 to i64
-  %24 = shl nuw nsw i64 %22, 1
-  %25 = or disjoint i64 %24, %23
-  tail call void @__quantum__rt__int_record_output(i64 %25, ptr nonnull @5)
+  %10 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
+  tail call void @__quantum__rt__bool_record_output(i1 %8, ptr nonnull @8)
+  tail call void @__quantum__rt__bool_record_output(i1 %9, ptr nonnull @9)
+  tail call void @__quantum__rt__bool_record_output(i1 %10, ptr nonnull @10)
   ret void
 }
 
@@ -994,8 +989,6 @@ declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1
 declare i1 @__quantum__rt__read_result(ptr readonly) local_unnamed_addr
 
 declare void @__quantum__rt__bool_record_output(i1, ptr) local_unnamed_addr
-
-declare void @__quantum__rt__int_record_output(i64, ptr) local_unnamed_addr
 
 declare void @__quantum__rt__initialize(ptr) local_unnamed_addr
 

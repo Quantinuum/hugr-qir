@@ -3,11 +3,11 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@0 = private unnamed_addr constant [15 x i8] c"option_is_some\00", align 1
-@1 = private unnamed_addr constant [13 x i8] c"option_value\00", align 1
-@2 = private unnamed_addr constant [13 x i8] c"result_is_ok\00", align 1
-@3 = private unnamed_addr constant [13 x i8] c"result_value\00", align 1
-@4 = private unnamed_addr constant [15 x i8] c"either_is_left\00", align 1
+@0 = private unnamed_addr constant [22 x i8] c"option_is_some___BOOL\00", align 1
+@1 = private unnamed_addr constant [19 x i8] c"option_value___INT\00", align 1
+@2 = private unnamed_addr constant [20 x i8] c"result_is_ok___BOOL\00", align 1
+@3 = private unnamed_addr constant [19 x i8] c"result_value___INT\00", align 1
+@4 = private unnamed_addr constant [22 x i8] c"either_is_left___BOOL\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 

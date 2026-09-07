@@ -14,8 +14,7 @@ use std::num::NonZeroU32;
 use tket_qsystem::extension::result::{ResultArgs, ResultOp, ResultOpDef, SimpleArgs};
 
 use super::array_codegen::load_array_elements;
-
-const MAX_ARR_BOOL_SIZE: u64 = 63;
+use crate::target::CompileTarget;
 
 fn emit_tag<'c, H: HugrView<Node = Node>>(
     context: &mut EmitFuncContext<'c, '_, H>,
@@ -53,6 +52,20 @@ fn bool_value_to_i1<'c>(
 
 use super::QirCodegenExtension;
 impl QirCodegenExtension {
+    fn scalar_result_tag(&self, tag: &str, type_tag: &str) -> String {
+        match self.target {
+            CompileTarget::QuantinuumHardware => format!("{tag}___{type_tag}"),
+            CompileTarget::Native => tag.to_owned(),
+        }
+    }
+
+    fn array_result_tag(&self, tag: &str, type_tag: &str, index: usize) -> String {
+        match self.target {
+            CompileTarget::QuantinuumHardware => format!("{tag}___{type_tag}_{index}"),
+            CompileTarget::Native => format!("{tag}:{index}"),
+        }
+    }
+
     pub fn emit_result_op<'c, H: HugrView<Node = Node>>(
         &self,
         context: &mut EmitFuncContext<'c, '_, H>,
@@ -64,6 +77,11 @@ impl QirCodegenExtension {
         if tag_str.is_empty() {
             bail!("Empty result tag received")
         }
+        if matches!(self.target, CompileTarget::QuantinuumHardware)
+            && matches!(op, ResultOpDef::F64 | ResultOpDef::ArrF64)
+        {
+            bail!("Float output is not supported on H-Series hardware")
+        }
 
         let ptr_ty = context
             .iw_context()
@@ -71,7 +89,7 @@ impl QirCodegenExtension {
             .as_basic_type_enum();
         match op {
             ResultOpDef::Bool => {
-                let tag_ptr = emit_tag(context, tag_str)?;
+                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "BOOL"))?;
                 let [val] = args
                     .inputs
                     .try_into()
@@ -96,7 +114,7 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::Int | ResultOpDef::UInt => {
-                let tag_ptr = emit_tag(context, tag_str)?;
+                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "INT"))?;
                 let [mut val] = args
                     .inputs
                     .try_into()
@@ -128,7 +146,7 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::F64 => {
-                let tag_ptr = emit_tag(context, tag_str)?;
+                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "FLOAT"))?;
                 let [val] = args
                     .inputs
                     .try_into()
@@ -149,41 +167,29 @@ impl QirCodegenExtension {
             }
             ResultOpDef::ArrBool => {
                 let length = array_length(&result_op)?;
-                if length > MAX_ARR_BOOL_SIZE {
-                    bail!(
-                        "ArrBool result only supports arrays up to size {MAX_ARR_BOOL_SIZE}; larger bool arrays should be split up"
-                    )
-                }
                 let [array] = args
                     .inputs
                     .try_into()
                     .map_err(|_| anyhow!("result_arr_bool expects one input"))?;
                 let bool_type = context.llvm_sum_type(HugrSumType::new_unary(2))?;
                 let elements = load_array_elements(context, array, bool_type.value_type(), length)?;
-                let i64_ty = context.iw_context().i64_type();
-                let mut packed = i64_ty.const_zero();
-                for element in elements {
-                    let bit = bool_value_to_i1(context, element, &bool_type)?;
-                    let bit = context.builder().build_int_z_extend(bit, i64_ty, "")?;
-                    packed = context.builder().build_left_shift(
-                        packed,
-                        i64_ty.const_int(1, false),
-                        "",
-                    )?;
-                    packed = context.builder().build_or(packed, bit, "")?;
-                }
+                let i1_ty = context.iw_context().bool_type();
                 let print_fn_ty = context
                     .iw_context()
                     .void_type()
-                    .fn_type(&[i64_ty.into(), ptr_ty.into()], false);
+                    .fn_type(&[i1_ty.into(), ptr_ty.into()], false);
                 let print_fn =
-                    context.get_extern_func("__quantum__rt__int_record_output", print_fn_ty)?;
-                let tag_ptr = emit_tag(context, tag_str)?;
-                context.builder().build_call(
-                    print_fn,
-                    &[packed.into(), tag_ptr.into()],
-                    "print_arr_bool",
-                )?;
+                    context.get_extern_func("__quantum__rt__bool_record_output", print_fn_ty)?;
+                for (index, element) in elements.into_iter().enumerate() {
+                    let bit = bool_value_to_i1(context, element, &bool_type)?;
+                    let tag_ptr =
+                        emit_tag(context, self.array_result_tag(tag_str, "ARRBOOL", index))?;
+                    context.builder().build_call(
+                        print_fn,
+                        &[bit.into(), tag_ptr.into()],
+                        "print_arr_bool",
+                    )?;
+                }
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::ArrInt | ResultOpDef::ArrUInt => {
@@ -216,7 +222,8 @@ impl QirCodegenExtension {
                             context.builder().build_int_z_extend(value, i64_ty, "")
                         }?;
                     }
-                    let tag_ptr = emit_tag(context, format!("{tag_str}:{index}"))?;
+                    let tag_ptr =
+                        emit_tag(context, self.array_result_tag(tag_str, "ARRINT", index))?;
                     context.builder().build_call(
                         print_fn,
                         &[value.into(), tag_ptr.into()],
@@ -241,7 +248,8 @@ impl QirCodegenExtension {
                 let print_fn =
                     context.get_extern_func("__quantum__rt__double_record_output", print_fn_ty)?;
                 for (index, element) in elements.into_iter().enumerate() {
-                    let tag_ptr = emit_tag(context, format!("{tag_str}:{index}"))?;
+                    let tag_ptr =
+                        emit_tag(context, self.array_result_tag(tag_str, "ARRFLOAT", index))?;
                     context.builder().build_call(
                         print_fn,
                         &[element.into(), tag_ptr.into()],
@@ -260,7 +268,9 @@ mod test {
     use hugr::ops::OpType;
     use hugr_llvm::{
         check_emission,
+        emit::test::{Emission, TEST_EMIT_DEBUG},
         test::{TestContext, llvm_ctx},
+        utils::fat::FatExt,
     };
     use rstest::rstest;
 
@@ -286,6 +296,34 @@ mod test {
     }
 
     #[rstest]
+    #[case::native(CompileTarget::Native, "BOOL", "result")]
+    #[case::hardware_bool(CompileTarget::QuantinuumHardware, "BOOL", "result___BOOL")]
+    #[case::hardware_int(CompileTarget::QuantinuumHardware, "INT", "result___INT")]
+    #[case::hardware_float(CompileTarget::QuantinuumHardware, "FLOAT", "result___FLOAT")]
+    fn scalar_tags_depend_on_target(
+        #[case] target: CompileTarget,
+        #[case] type_tag: &str,
+        #[case] expected: &str,
+    ) {
+        let codegen = QirCodegenExtension { target };
+        assert_eq!(codegen.scalar_result_tag("result", type_tag), expected);
+    }
+
+    #[rstest]
+    #[case::native(CompileTarget::Native, "ARRBOOL", "result:2")]
+    #[case::hardware_bool(CompileTarget::QuantinuumHardware, "ARRBOOL", "result___ARRBOOL_2")]
+    #[case::hardware_int(CompileTarget::QuantinuumHardware, "ARRINT", "result___ARRINT_2")]
+    #[case::hardware_float(CompileTarget::QuantinuumHardware, "ARRFLOAT", "result___ARRFLOAT_2")]
+    fn array_tags_depend_on_target(
+        #[case] target: CompileTarget,
+        #[case] type_tag: &str,
+        #[case] expected: &str,
+    ) {
+        let codegen = QirCodegenExtension { target };
+        assert_eq!(codegen.array_result_tag("result", type_tag, 2), expected);
+    }
+
+    #[rstest]
     #[case(ResultOpDef::F64.instantiate(&["foo_f64".into()]).unwrap())]
     #[case(ResultOpDef::UInt.instantiate(&["foo_uint".into(), 3.into()]).unwrap())]
     #[case(ResultOpDef::Int.instantiate(&["foo_int".into(), 4.into()]).unwrap())]
@@ -305,14 +343,56 @@ mod test {
     }
 
     #[rstest]
-    #[should_panic(
-        expected = "ArrBool result only supports arrays up to size 63; larger bool arrays should be split up"
-    )]
-    fn rejects_arr_bool_larger_than_63(ctx: TestContext) {
+    fn supports_arr_bool_larger_than_63(ctx: TestContext) {
         let op = ResultOpDef::ArrBool
             .instantiate(&["too_large".into(), 64.into()])
             .unwrap();
-        let mut hugr = single_op_hugr(op.into());
-        check_emission!(hugr, ctx);
+        let hugr = single_op_hugr(op.into());
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert_eq!(
+            llvm.matches("call void @__quantum__rt__bool_record_output")
+                .count(),
+            64
+        );
+        assert!(llvm.contains("too_large:63"));
+    }
+
+    #[rstest]
+    #[case(ResultOpDef::F64.instantiate(&["foo_f64".into()]).unwrap())]
+    #[case(ResultOpDef::ArrF64.instantiate(&["foo_arr_f64".into(), 3.into()]).unwrap())]
+    fn rejects_float_output_on_quantinuum_hardware(
+        mut llvm_ctx: TestContext,
+        #[case] op: impl Into<OpType>,
+    ) {
+        llvm_ctx.add_extensions(|builder| {
+            builder
+                .add_extension(QirCodegenExtension {
+                    target: CompileTarget::QuantinuumHardware,
+                })
+                .add_prelude_extensions(QirPreludeCodegen)
+                .add_float_extensions()
+                .add_default_array_extensions()
+        });
+        let hugr = single_op_hugr(op.into());
+        let err = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            llvm_ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .err()
+        .unwrap();
+        let err = format!("{err:#}");
+
+        assert!(
+            err.contains("Float output is not supported on H-Series hardware"),
+            "{err}"
+        );
     }
 }
