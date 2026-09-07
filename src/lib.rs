@@ -218,8 +218,6 @@ impl CompileArgs {
         module.set_data_layout(&ctm.get_target_data().get_data_layout());
 
         let opt_str = match self.opt_level {
-            CliOptimizationLevel::None => "default<O0>",
-            CliOptimizationLevel::Less => "default<O1>",
             CliOptimizationLevel::Default => "default<O2>",
             CliOptimizationLevel::Aggressive => "default<O3>",
         };
@@ -229,16 +227,14 @@ impl CompileArgs {
             .run_passes(opt_str, &ctm, default_pass_options)
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
 
-        if !matches!(self.opt_level, CliOptimizationLevel::None) {
-            configure_forced_unrolling();
-            let loop_cleanup = format!(
-                "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={}>,sroa<modify-cfg>,instcombine,simplifycfg)",
-                self.max_loop_unroll
-            );
-            module
-                .run_passes(&loop_cleanup, &ctm, PassBuilderOptions::create())
-                .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
-        }
+        configure_forced_unrolling();
+        let loop_cleanup = format!(
+            "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={}>,sroa<modify-cfg>,instcombine,simplifycfg)",
+            self.max_loop_unroll
+        );
+        module
+            .run_passes(&loop_cleanup, &ctm, PassBuilderOptions::create())
+            .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
         module
             .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
@@ -279,13 +275,8 @@ impl CompileArgs {
         let target = self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
-        // `None` is an explicitly supported diagnostic mode whose output is
-        // allowed to retain non-QIR LLVM constructs. At every optimization
-        // level intended to produce QIR, dynamic qubit operands are illegal.
-        if !matches!(self.opt_level, CliOptimizationLevel::None) {
-            ensure_no_loops(&module, self.max_loop_unroll)?;
-            ensure_static_qubit_operands(&module)?;
-        }
+        ensure_no_loops(&module, self.max_loop_unroll)?;
+        ensure_static_qubit_operands(&module)?;
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());

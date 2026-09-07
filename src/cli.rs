@@ -73,8 +73,6 @@ pub enum OutputFormat {
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
 pub enum CliOptimizationLevel {
-    None,
-    Less,
     Default,
     Aggressive,
 }
@@ -92,8 +90,6 @@ fn parse_positive_usize(value: &str) -> std::result::Result<usize, String> {
 impl From<CliOptimizationLevel> for OptimizationLevel {
     fn from(cli_level: CliOptimizationLevel) -> Self {
         match cli_level {
-            CliOptimizationLevel::None => OptimizationLevel::None,
-            CliOptimizationLevel::Less => OptimizationLevel::Less,
             CliOptimizationLevel::Default => OptimizationLevel::Default,
             CliOptimizationLevel::Aggressive => OptimizationLevel::Aggressive,
         }
@@ -183,5 +179,24 @@ impl Cli {
         } else {
             CliError::Validate(val_err)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::ValueEnum;
+
+    #[test]
+    fn exposes_only_supported_optimization_levels() {
+        let choices = CliOptimizationLevel::value_variants()
+            .iter()
+            .filter_map(|level| level.to_possible_value())
+            .map(|value| value.get_name().to_string())
+            .collect::<Vec<_>>();
+
+        assert_eq!(choices, ["default", "aggressive"]);
+        assert!(CliOptimizationLevel::from_str("none", true).is_err());
+        assert!(CliOptimizationLevel::from_str("less", true).is_err());
     }
 }
