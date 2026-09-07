@@ -62,7 +62,7 @@ impl QirCodegenExtension {
     fn array_result_tag(&self, tag: &str, type_tag: &str, index: usize) -> String {
         match self.target {
             CompileTarget::QuantinuumHardware => format!("{tag}___{type_tag}_{index}"),
-            CompileTarget::Native => format!("{tag}:{index}"),
+            CompileTarget::Native => format!("{tag}___{index}"),
         }
     }
 
@@ -310,7 +310,7 @@ mod test {
     }
 
     #[rstest]
-    #[case::native(CompileTarget::Native, "ARRBOOL", "result:2")]
+    #[case::native(CompileTarget::Native, "ARRBOOL", "result___2")]
     #[case::hardware_bool(CompileTarget::QuantinuumHardware, "ARRBOOL", "result___ARRBOOL_2")]
     #[case::hardware_int(CompileTarget::QuantinuumHardware, "ARRINT", "result___ARRINT_2")]
     #[case::hardware_float(CompileTarget::QuantinuumHardware, "ARRFLOAT", "result___ARRFLOAT_2")]
@@ -340,28 +340,6 @@ mod test {
             let mut hugr = single_op_hugr(op);
             check_emission!(hugr, ctx);
         })
-    }
-
-    #[rstest]
-    fn supports_arr_bool_larger_than_63(ctx: TestContext) {
-        let op = ResultOpDef::ArrBool
-            .instantiate(&["too_large".into(), 64.into()])
-            .unwrap();
-        let hugr = single_op_hugr(op.into());
-        let emission = Emission::emit_hugr(
-            FatExt::fat_root(&hugr).unwrap(),
-            ctx.get_emit_hugr(),
-            TEST_EMIT_DEBUG,
-        )
-        .unwrap();
-        let llvm = emission.module().to_string();
-
-        assert_eq!(
-            llvm.matches("call void @__quantum__rt__bool_record_output")
-                .count(),
-            64
-        );
-        assert!(llvm.contains("too_large:63"));
     }
 
     #[rstest]

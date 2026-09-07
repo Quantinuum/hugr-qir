@@ -5,9 +5,9 @@ expression: mod_str
 ; ModuleID = 'test_context'
 source_filename = "test_context"
 
-@0 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:0\00", align 1
-@1 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:1\00", align 1
-@2 = private unnamed_addr constant [15 x i8] c"foo_arr_bool:2\00", align 1
+@0 = private unnamed_addr constant [17 x i8] c"foo_arr_bool___0\00", align 1
+@1 = private unnamed_addr constant [17 x i8] c"foo_arr_bool___1\00", align 1
+@2 = private unnamed_addr constant [17 x i8] c"foo_arr_bool___2\00", align 1
 
 define void @_hl.main.1({ ptr, i64 } %0) !dbg !3 {
 alloca_block:
