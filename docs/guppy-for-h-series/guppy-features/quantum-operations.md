@@ -47,8 +47,18 @@ Source file: `guppy_examples/guppy-features/supported/barrier.py`
 :language: python
 ```
 
-Barriers accept individual qubits and fixed-size qubit arrays. Non-qubit values
-passed to a barrier are ignored. A barrier containing no qubits has no effect.
+Barriers accept individual qubits and qubit arrays. Passing any non-qubit value will cause QIR
+generation to fail.
+
+```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/non-qubit-barrier.py
+:language: python
+```
+
+Expected error:
+
+```{literalinclude} ../../../python/tests/snapshots/unsupported/non-qubit-barrier.error
+:language: text
+```
 
 ## Memory swap
 

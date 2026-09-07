@@ -89,10 +89,6 @@ demonstrated separately:
 :language: python
 ```
 
-The boolean array passed to `output` is packed into one integer. At most 63
-boolean values can be recorded under one tag; split larger arrays into multiple
-outputs. See [Result recording](../result-recording.md) for the result encoding.
-
 ```{literalinclude} ../../../guppy_examples/guppy-features/supported/discard-array.py
 :language: python
 ```
