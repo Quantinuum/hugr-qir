@@ -11,7 +11,9 @@ use hugr_llvm::{
     emit::{EmitFuncContext, libc::emit_libc_abort},
     extension::collections::{
         array::{ArrayCodegen, decompose_array_fat_pointer},
-        borrow_array::{BorrowArrayCodegen, decompose_barray_fat_pointer},
+        borrow_array::{
+            BorrowArrayCodegen, build_none_borrowed_check, decompose_barray_fat_pointer,
+        },
     },
     inkwell::{
         types::BasicTypeEnum,
@@ -49,7 +51,11 @@ pub(super) fn load_array_elements<'c, H: HugrView<Node = Node>>(
     load_elements_from_pointer(context, array_ptr, array_offset, elem_ty, length)
 }
 
-/// Load every element of a statically sized borrow array, ignoring its borrow mask.
+/// Load every element of a statically sized borrow array.
+///
+/// H-series barriers have a statically encoded arity, so a partially borrowed
+/// array cannot be represented without also including elements that are absent
+/// from the barrier's HUGR inputs. Reject such arrays before loading them.
 pub(super) fn load_borrow_array_elements<'c, H: HugrView<Node = Node>>(
     context: &mut EmitFuncContext<'c, '_, H>,
     array: BasicValueEnum<'c>,
@@ -57,6 +63,13 @@ pub(super) fn load_borrow_array_elements<'c, H: HugrView<Node = Node>>(
     length: u64,
 ) -> Result<Vec<BasicValueEnum<'c>>> {
     let array = decompose_barray_fat_pointer(context.builder(), array)?;
+    build_none_borrowed_check(
+        &QirBorrowArrayCodegen,
+        context,
+        array.mask_ptr,
+        array.offset,
+        length,
+    )?;
     load_elements_from_pointer(context, array.elems_ptr, array.offset, elem_ty, length)
 }
 

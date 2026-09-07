@@ -89,6 +89,8 @@ impl PreludeCodegen for QirPreludeCodegen {
                     qb_llvm_type,
                     length,
                 )?);
+            } else {
+                bail!("H-series barriers cannot contain non-qubit types");
             }
         }
 
@@ -332,9 +334,15 @@ impl CodegenExtension for QirCodegenExtension {
 #[cfg(test)]
 mod test {
     use hugr::{
-        extension::prelude::{Barrier, bool_t, qb_t},
-        std_extensions::collections::{array::array_type, borrow_array::borrow_array_type},
-        types::Type,
+        Hugr,
+        builder::{Dataflow, DataflowSubContainer, HugrBuilder, ModuleBuilder},
+        core::Visibility,
+        extension::prelude::{Barrier, ConstUsize, bool_t, qb_t},
+        std_extensions::collections::{
+            array::array_type,
+            borrow_array::{BArrayOpBuilder, borrow_array_type},
+        },
+        types::{PolyFuncType, Signature, Type},
     };
     use hugr_llvm::{
         emit::test::{Emission, TEST_EMIT_DEBUG},
@@ -366,6 +374,41 @@ mod test {
         llvm_ctx
     }
 
+    fn partially_borrowed_array_barrier_hugr() -> Hugr {
+        const ARRAY_SIZE: u64 = 2;
+
+        let array_ty = borrow_array_type(ARRAY_SIZE, qb_t());
+        let mut module_builder = ModuleBuilder::new();
+        {
+            let mut func_builder = module_builder
+                .define_function_vis(
+                    "main",
+                    PolyFuncType::from(Signature::new_endo([array_ty.clone()])),
+                    Visibility::Public,
+                )
+                .unwrap();
+            let [array] = func_builder.input_wires_arr();
+            let index = func_builder.add_load_value(ConstUsize::new(0));
+            let (array, borrowed_qubit) = func_builder
+                .add_borrow_array_borrow(qb_t(), ARRAY_SIZE, array, index)
+                .unwrap();
+            let barrier = func_builder
+                .add_dataflow_op(Barrier::new(vec![array_ty]), [array])
+                .unwrap();
+            let array = func_builder
+                .add_borrow_array_return(
+                    qb_t(),
+                    ARRAY_SIZE,
+                    barrier.out_wire(0),
+                    index,
+                    borrowed_qubit,
+                )
+                .unwrap();
+            func_builder.finish_with_outputs([array]).unwrap();
+        }
+        module_builder.finish_hugr().unwrap()
+    }
+
     #[rstest]
     fn emits_qis_barrier_for_qubit_barrier(ctx: TestContext) {
         let _guard = LLVM_TEST_LOCK.lock().unwrap();
@@ -382,34 +425,41 @@ mod test {
     }
 
     #[rstest]
-    fn ignores_non_qubit_barrier_inputs(ctx: TestContext) {
+    fn rejects_non_qubit_barrier_inputs(ctx: TestContext) {
         let _guard = LLVM_TEST_LOCK.lock().unwrap();
         let hugr = single_op_hugr(Barrier::new(vec![qb_t(), bool_t()]).into());
-        let emission = Emission::emit_hugr(
+        let err = Emission::emit_hugr(
             FatExt::fat_root(&hugr).unwrap(),
             ctx.get_emit_hugr(),
             TEST_EMIT_DEBUG,
         )
+        .err()
         .unwrap();
-        let llvm = emission.module().to_string();
 
-        assert!(llvm.contains("__quantum__qis__barrier1__body"));
-        assert!(!llvm.contains("__quantum__qis__barrier2__body"));
+        let err = format!("{err:#}");
+        assert!(
+            err.contains("H-series barriers cannot contain non-qubit types"),
+            "{err}"
+        );
     }
 
     #[rstest]
-    fn emits_nothing_for_barrier_without_qubits(ctx: TestContext) {
+    fn rejects_barrier_without_qubits(ctx: TestContext) {
         let _guard = LLVM_TEST_LOCK.lock().unwrap();
         let hugr = single_op_hugr(Barrier::new(vec![bool_t()]).into());
-        let emission = Emission::emit_hugr(
+        let err = Emission::emit_hugr(
             FatExt::fat_root(&hugr).unwrap(),
             ctx.get_emit_hugr(),
             TEST_EMIT_DEBUG,
         )
+        .err()
         .unwrap();
-        let llvm = emission.module().to_string();
+        let err = format!("{err:#}");
 
-        assert!(!llvm.contains("__quantum__qis__barrier"));
+        assert!(
+            err.contains("H-series barriers cannot contain non-qubit types"),
+            "{err}"
+        );
     }
 
     #[rstest]
@@ -426,6 +476,22 @@ mod test {
         .unwrap();
         let llvm = emission.module().to_string();
 
+        assert!(llvm.contains("__quantum__qis__barrier2__body"));
+    }
+
+    #[rstest]
+    fn partially_borrowed_array_barrier_emits_runtime_check(ctx: TestContext) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let hugr = partially_borrowed_array_barrier_hugr();
+        let emission = Emission::emit_hugr(
+            FatExt::fat_root(&hugr).unwrap(),
+            ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .unwrap();
+        let llvm = emission.module().to_string();
+
+        assert!(llvm.contains("call void @__barray_check_none_borrowed"));
         assert!(llvm.contains("__quantum__qis__barrier2__body"));
     }
 }
