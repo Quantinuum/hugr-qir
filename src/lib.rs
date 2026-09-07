@@ -262,6 +262,14 @@ impl CompileArgs {
         let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
         let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
 
+        if let CompileTarget::QuantinuumHardware = self.target
+            && qubit_count > 56
+        {
+            bail!(
+                "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H-Series"
+            )
+        }
+
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
         add_qir_runtime_contracts(&namer, hugr, &module)?;
 
