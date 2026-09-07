@@ -5,7 +5,7 @@
 //! allocations, so use temporary stack storage instead. LLVM's loop unrolling,
 //! SROA, and mem2reg passes can then scalarize statically-addressed arrays.
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use hugr::{HugrView, Node};
 use hugr_llvm::{
     emit::{EmitFuncContext, libc::emit_libc_abort},
@@ -15,9 +15,28 @@ use hugr_llvm::{
     },
     inkwell::{
         types::BasicTypeEnum,
-        values::{BasicValueEnum, IntValue, PointerValue},
+        values::{BasicValue, BasicValueEnum, IntValue, PointerValue},
     },
 };
+
+/// Maximum ABI alignment required by the scalar element types supported in QIR
+/// arrays (pointers, 64-bit integers, and doubles).
+const ARRAY_STORAGE_ALIGNMENT: u32 = 8;
+
+fn allocate_array_storage<'c, H: HugrView<Node = Node>>(
+    ctx: &mut EmitFuncContext<'c, '_, H>,
+    size: IntValue<'c>,
+    name: &str,
+) -> Result<PointerValue<'c>> {
+    let storage = ctx
+        .builder()
+        .build_array_alloca(ctx.iw_context().i8_type(), size, name)?;
+    storage
+        .as_instruction_value()
+        .ok_or_else(|| anyhow!("array storage allocation did not produce an instruction"))?
+        .set_alignment(ARRAY_STORAGE_ALIGNMENT)?;
+    Ok(storage)
+}
 
 /// Load every element of a statically sized array, accounting for its offset.
 pub(super) fn load_array_elements<'c, H: HugrView<Node = Node>>(
@@ -76,11 +95,7 @@ impl ArrayCodegen for QirArrayCodegen {
         ctx: &mut EmitFuncContext<'c, '_, H>,
         size: IntValue<'c>,
     ) -> Result<PointerValue<'c>> {
-        Ok(ctx.builder().build_array_alloca(
-            ctx.iw_context().i8_type(),
-            size,
-            "hugr_array_storage",
-        )?)
+        allocate_array_storage(ctx, size, "hugr_array_storage")
     }
 
     fn emit_free_array<'c, H: HugrView<Node = Node>>(
@@ -115,11 +130,7 @@ impl BorrowArrayCodegen for QirBorrowArrayCodegen {
         ctx: &mut EmitFuncContext<'c, '_, H>,
         size: IntValue<'c>,
     ) -> Result<PointerValue<'c>> {
-        Ok(ctx.builder().build_array_alloca(
-            ctx.iw_context().i8_type(),
-            size,
-            "hugr_borrow_array_storage",
-        )?)
+        allocate_array_storage(ctx, size, "hugr_borrow_array_storage")
     }
 
     fn emit_free_array<'c, H: HugrView<Node = Node>>(

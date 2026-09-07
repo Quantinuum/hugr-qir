@@ -74,48 +74,48 @@ alloca_block:
   %rintb = tail call i32 @___random_int_bounded(i32 2)
   %0 = icmp eq i32 %rintb, 1
   %shot = tail call i64 @___get_current_shot()
-  %Pivot3499 = icmp slt i64 %shot, 4
-  br i1 %Pivot3499, label %NodeBlock, label %NodeBlock3496
+  %Pivot3542 = icmp slt i64 %shot, 4
+  br i1 %Pivot3542, label %NodeBlock, label %NodeBlock3539
 
-NodeBlock3496:                                    ; preds = %alloca_block
-  %Pivot3497 = icmp samesign ult i64 %shot, 6
-  br i1 %Pivot3497, label %LeafBlock3488, label %NodeBlock3494
+NodeBlock3539:                                    ; preds = %alloca_block
+  %Pivot3540 = icmp samesign ult i64 %shot, 6
+  br i1 %Pivot3540, label %LeafBlock3531, label %NodeBlock3537
 
-NodeBlock3494:                                    ; preds = %NodeBlock3496
-  %Pivot3495 = icmp samesign ult i64 %shot, 8
-  br i1 %Pivot3495, label %LeafBlock3490, label %LeafBlock3492
+NodeBlock3537:                                    ; preds = %NodeBlock3539
+  %Pivot3538 = icmp samesign ult i64 %shot, 8
+  br i1 %Pivot3538, label %LeafBlock3533, label %LeafBlock3535
 
-LeafBlock3492:                                    ; preds = %NodeBlock3494
-  %SwitchLeaf3493 = icmp eq i64 %shot, 8
-  br i1 %SwitchLeaf3493, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
+LeafBlock3535:                                    ; preds = %NodeBlock3537
+  %SwitchLeaf3536 = icmp eq i64 %shot, 8
+  br i1 %SwitchLeaf3536, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
-LeafBlock3490:                                    ; preds = %NodeBlock3494
-  %SwitchLeaf3491 = icmp eq i64 %shot, 6
-  br i1 %SwitchLeaf3491, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
+LeafBlock3533:                                    ; preds = %NodeBlock3537
+  %SwitchLeaf3534 = icmp eq i64 %shot, 6
+  br i1 %SwitchLeaf3534, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
-LeafBlock3488:                                    ; preds = %NodeBlock3496
-  %SwitchLeaf3489 = icmp eq i64 %shot, 4
-  br i1 %SwitchLeaf3489, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
+LeafBlock3531:                                    ; preds = %NodeBlock3539
+  %SwitchLeaf3532 = icmp eq i64 %shot, 4
+  br i1 %SwitchLeaf3532, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
 NodeBlock:                                        ; preds = %alloca_block
   %Pivot = icmp slt i64 %shot, 2
-  br i1 %Pivot, label %LeafBlock, label %LeafBlock3486
+  br i1 %Pivot, label %LeafBlock, label %LeafBlock3529
 
-LeafBlock3486:                                    ; preds = %NodeBlock
-  %SwitchLeaf3487 = icmp eq i64 %shot, 2
-  br i1 %SwitchLeaf3487, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
+LeafBlock3529:                                    ; preds = %NodeBlock
+  %SwitchLeaf3530 = icmp eq i64 %shot, 2
+  br i1 %SwitchLeaf3530, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
 LeafBlock:                                        ; preds = %NodeBlock
   %SwitchLeaf = icmp eq i64 %shot, 0
   br i1 %SwitchLeaf, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
-__barray_mask_return.exit2887:                    ; preds = %LeafBlock3492, %LeafBlock3490, %LeafBlock3488, %LeafBlock3486, %LeafBlock, %cond_exit_1807.5
-  %1 = phi i1 [ true, %LeafBlock ], [ false, %cond_exit_1807.5 ], [ true, %LeafBlock3486 ], [ true, %LeafBlock3488 ], [ true, %LeafBlock3490 ], [ true, %LeafBlock3492 ]
+__barray_mask_return.exit2887:                    ; preds = %LeafBlock3535, %LeafBlock3533, %LeafBlock3531, %LeafBlock3529, %LeafBlock, %cond_exit_1807.5
+  %1 = phi i1 [ true, %LeafBlock ], [ false, %cond_exit_1807.5 ], [ true, %LeafBlock3529 ], [ true, %LeafBlock3531 ], [ true, %LeafBlock3533 ], [ true, %LeafBlock3535 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x4025FDBBE9BBA775, ptr nonnull inttoptr (i64 2 to ptr))
   br i1 %0, label %__barray_mask_return.exit2908, label %bb
 
-cond_exit_1807.5:                                 ; preds = %LeafBlock3492, %LeafBlock3490, %LeafBlock3488, %LeafBlock3486, %LeafBlock
+cond_exit_1807.5:                                 ; preds = %LeafBlock3535, %LeafBlock3533, %LeafBlock3531, %LeafBlock3529, %LeafBlock
   br label %__barray_mask_return.exit2887
 
 __barray_mask_return.exit2908:                    ; preds = %__barray_mask_return.exit2887

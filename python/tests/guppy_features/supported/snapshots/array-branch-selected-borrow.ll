@@ -15,9 +15,9 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  br i1 %0, label %alloca_block.dup378, label %alloca_block.dup
+  br i1 %0, label %alloca_block.dup382, label %alloca_block.dup
 
-alloca_block.dup378:                              ; preds = %alloca_block
+alloca_block.dup382:                              ; preds = %alloca_block
   call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 1 to ptr), ptr inttoptr (i64 1 to ptr))
@@ -35,11 +35,11 @@ alloca_block.dup:                                 ; preds = %alloca_block
   %4 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 2 to ptr))
   br label %__prepare_module_record_output_final
 
-__prepare_module_record_output_final:             ; preds = %alloca_block.dup378, %alloca_block.dup
-  %phi.calluser.edge379 = phi i1 [ %4, %alloca_block.dup ], [ %2, %alloca_block.dup378 ]
-  %phi.calluser.edge = phi i1 [ %3, %alloca_block.dup ], [ %1, %alloca_block.dup378 ]
+__prepare_module_record_output_final:             ; preds = %alloca_block.dup382, %alloca_block.dup
+  %phi.calluser.edge383 = phi i1 [ %4, %alloca_block.dup ], [ %2, %alloca_block.dup382 ]
+  %phi.calluser.edge = phi i1 [ %3, %alloca_block.dup ], [ %1, %alloca_block.dup382 ]
   call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge, ptr @0)
-  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge379, ptr @1)
+  call void @__quantum__rt__bool_record_output(i1 %phi.calluser.edge383, ptr @1)
   ret void
 }
 

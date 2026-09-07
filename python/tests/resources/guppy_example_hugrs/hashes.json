@@ -1,5 +1,6 @@
 {
   "array": "bf83e8aa707acfdc86d71bbc6f02b6f2b64a5ce0cd158c12cdf744147da6e75c",
+  "float-array": "cbbe5d6bdbfe0cc3f2f6ef1a6cc3b46614681393d977b090fb5297329a58171d",
   "generates-llvm-switch": "6bff49fb7272233109463b8315436ccccf7ad8218a0fba47442fd699df5ee9da",
   "generates-qubit-selects-1": "d3e56d865d396539cb09985ef7f17fe9f4eb0d7a8ac8581705c1ebca9c9f79d6",
   "generates-qubit-selects-2": "d8a45de21cb02347691070572f930137ef8e216af7b2e18460b9fed673d84ff5",
