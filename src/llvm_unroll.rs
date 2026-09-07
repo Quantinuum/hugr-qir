@@ -59,21 +59,33 @@ fn cfg_successors(blocks: &[crate::inkwell::basic_block::BasicBlock]) -> Result<
 }
 
 fn graph_has_cycle(successors: &[Vec<usize>]) -> bool {
-    fn visit(block: usize, successors: &[Vec<usize>], state: &mut [u8]) -> bool {
-        state[block] = 1;
-        for &successor in &successors[block] {
-            if state[successor] == 1
-                || (state[successor] == 0 && visit(successor, successors, state))
-            {
-                return true;
-            }
-        }
-        state[block] = 2;
-        false
+    if successors.is_empty() {
+        return false;
     }
 
     let mut state = vec![0; successors.len()];
-    !successors.is_empty() && visit(0, successors, &mut state)
+    state[0] = 1;
+    let mut worklist = vec![(0, 0)];
+
+    while let Some((block, next_successor)) = worklist.last_mut() {
+        let Some(&successor) = successors[*block].get(*next_successor) else {
+            state[*block] = 2;
+            worklist.pop();
+            continue;
+        };
+        *next_successor += 1;
+
+        match state[successor] {
+            0 => {
+                state[successor] = 1;
+                worklist.push((successor, 0));
+            }
+            1 => return true,
+            _ => {}
+        }
+    }
+
+    false
 }
 
 #[cfg(test)]
@@ -122,5 +134,16 @@ mod tests {
         builder.build_return(None).unwrap();
 
         ensure_no_loops(&module, 800).unwrap();
+    }
+
+    #[test]
+    fn cycle_check_handles_deep_control_flow_without_recursion() {
+        const BLOCKS: usize = 100_000;
+        let mut successors = (1..BLOCKS).map(|next| vec![next]).collect::<Vec<_>>();
+        successors.push(Vec::new());
+
+        assert!(!graph_has_cycle(&successors));
+        successors[BLOCKS - 1].push(BLOCKS / 2);
+        assert!(graph_has_cycle(&successors));
     }
 }
