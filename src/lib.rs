@@ -259,6 +259,9 @@ impl CompileArgs {
 
         // We optimize before `replace_int_opaque_pointer`ing, because that will fail if there are indirect function  calls, which must be removed in the end qir anyway.
         self.optimize_module_llvm(&module)?;
+
+        check_only_one_non_trivial_function(&module);
+
         let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
         let result_count: u64 = replace_int_opque_pointer(&module, "__QIR__CONV_Qubit_TO_Result")?;
 
@@ -549,6 +552,16 @@ fn function_calls(func: FunctionValue, callee_name: &str) -> Result<bool> {
         }
     }
     Ok(false)
+}
+
+fn check_only_one_non_trivial_function(module: &Module) {
+    assert_eq!(
+        1,
+        module
+            .get_functions()
+            .filter(|f| f.get_first_basic_block().is_some())
+            .count()
+    );
 }
 
 pub fn set_explicit_entrypoint_linkage(
