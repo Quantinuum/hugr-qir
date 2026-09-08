@@ -1,6 +1,6 @@
 ## Changelog
 
-### v0.2.1
+### v0.3.0
 
 - add best-effort support for guppy arrays
 - add support for barrier
