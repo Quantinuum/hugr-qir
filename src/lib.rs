@@ -260,6 +260,9 @@ impl CompileArgs {
         // We optimize before `replace_int_opaque_pointer`ing, because that will fail if there are indirect function  calls, which must be removed in the end qir anyway.
         self.optimize_module_llvm(&module)?;
 
+        // Reject loops before assigning resource IDs: subsequent unrolling
+        // would duplicate those IDs across distinct allocations.
+        ensure_no_loops(&module, self.max_loop_unroll)?;
         check_only_one_non_trivial_function(&module);
 
         let qubit_count: u64 = replace_int_opque_pointer(&module, "__quantum__rt__qubit_allocate")?;
