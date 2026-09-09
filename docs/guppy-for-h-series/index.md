@@ -6,6 +6,7 @@ That workflow is already usable today, but it does not support the full Guppy fe
 
 - Start with the [Nexus submission example](#nexus-submission-example) for a simple overview of the full submission pipeline.
 - See the [Support matrix](support-matrix.md) for a feature support overview.
+- Read [Integers](integers.md) before using signed values or large integers.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.
 - See [Result recording](result_recording.md) for information on result recording and retrieval through H-Series submission workflows.
 - Browse [Guppy feature examples](guppy-features/index.md) for paired supported examples and unsupported counterexamples from the repository.
@@ -14,8 +15,9 @@ That workflow is already usable today, but it does not support the full Guppy fe
 :maxdepth: 1
 
 support-matrix
+integers
 collections-and-structs
-result_recording
+result-recording
 guppy-features/index
 ```
 

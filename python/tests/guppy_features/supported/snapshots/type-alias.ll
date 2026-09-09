@@ -3,8 +3,8 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@0 = private unnamed_addr constant [8 x i8] c"row_sum\00", align 1
-@1 = private unnamed_addr constant [11 x i8] c"pair_first\00", align 1
+@0 = private unnamed_addr constant [14 x i8] c"row_sum___INT\00", align 1
+@1 = private unnamed_addr constant [17 x i8] c"pair_first___INT\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
