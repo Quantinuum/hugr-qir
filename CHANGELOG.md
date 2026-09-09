@@ -1,5 +1,15 @@
 ## Changelog
 
+### v0.3.0
+
+- add best-effort support for guppy arrays
+- add support for barrier
+- add support for output of bool and int arrays
+- add type info to qir result tags
+- update to tket 0.22
+- update to hugr 0.30
+- update to tket-qsystem 0.29
+
 ### v0.2.0
 
 - update to guppylang v1.0.1

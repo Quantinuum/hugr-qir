@@ -3,16 +3,16 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@0 = private unnamed_addr constant [3 x i8] c"c0\00", align 1
-@1 = private unnamed_addr constant [3 x i8] c"c1\00", align 1
-@2 = private unnamed_addr constant [3 x i8] c"q0\00", align 1
-@3 = private unnamed_addr constant [3 x i8] c"q1\00", align 1
-@4 = private unnamed_addr constant [3 x i8] c"q2\00", align 1
-@5 = private unnamed_addr constant [3 x i8] c"q3\00", align 1
-@6 = private unnamed_addr constant [8 x i8] c"c0 + c1\00", align 1
-@7 = private unnamed_addr constant [18 x i8] c"2nd result as int\00", align 1
-@8 = private unnamed_addr constant [3 x i8] c"q4\00", align 1
-@9 = private unnamed_addr constant [3 x i8] c"q5\00", align 1
+@0 = private unnamed_addr constant [10 x i8] c"c0___BOOL\00", align 1
+@1 = private unnamed_addr constant [10 x i8] c"c1___BOOL\00", align 1
+@2 = private unnamed_addr constant [10 x i8] c"q0___BOOL\00", align 1
+@3 = private unnamed_addr constant [10 x i8] c"q1___BOOL\00", align 1
+@4 = private unnamed_addr constant [10 x i8] c"q2___BOOL\00", align 1
+@5 = private unnamed_addr constant [10 x i8] c"q3___BOOL\00", align 1
+@6 = private unnamed_addr constant [14 x i8] c"c0 + c1___INT\00", align 1
+@7 = private unnamed_addr constant [24 x i8] c"2nd result as int___INT\00", align 1
+@8 = private unnamed_addr constant [10 x i8] c"q4___BOOL\00", align 1
+@9 = private unnamed_addr constant [10 x i8] c"q5___BOOL\00", align 1
 @gen_name = private unnamed_addr constant [8 x i8] c"hugr-qir", section ",qir_generator"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
@@ -25,9 +25,9 @@ alloca_block:
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 5 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
   %"55_2.0" = select i1 %1, i64 2, i64 0
-  br i1 %1, label %alloca_block.dup943, label %alloca_block.dup
+  br i1 %1, label %alloca_block.dup949, label %alloca_block.dup
 
-alloca_block.dup943:                              ; preds = %alloca_block
+alloca_block.dup949:                              ; preds = %alloca_block
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr null)
   call void @__quantum__qis__mz__body(ptr inttoptr (i64 3 to ptr), ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__reset__body(ptr inttoptr (i64 3 to ptr))
@@ -61,11 +61,11 @@ alloca_block.dup:                                 ; preds = %alloca_block
   %9 = call i1 @__quantum__rt__read_result(ptr inttoptr (i64 5 to ptr))
   br label %.critedge
 
-.critedge:                                        ; preds = %alloca_block.dup, %alloca_block.dup943
-  %phi.calluser.edge978 = phi i1 [ %5, %alloca_block.dup943 ], [ %9, %alloca_block.dup ]
-  %phi.calluser.edge968 = phi i1 [ %4, %alloca_block.dup943 ], [ %8, %alloca_block.dup ]
-  %phi.calluser.edge958 = phi i1 [ %3, %alloca_block.dup943 ], [ %7, %alloca_block.dup ]
-  %phi.calluser.edge948 = phi i1 [ %2, %alloca_block.dup943 ], [ %6, %alloca_block.dup ]
+.critedge:                                        ; preds = %alloca_block.dup, %alloca_block.dup949
+  %phi.calluser.edge984 = phi i1 [ %5, %alloca_block.dup949 ], [ %9, %alloca_block.dup ]
+  %phi.calluser.edge974 = phi i1 [ %4, %alloca_block.dup949 ], [ %8, %alloca_block.dup ]
+  %phi.calluser.edge964 = phi i1 [ %3, %alloca_block.dup949 ], [ %7, %alloca_block.dup ]
+  %phi.calluser.edge954 = phi i1 [ %2, %alloca_block.dup949 ], [ %6, %alloca_block.dup ]
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 6 to ptr))
   %10 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 6 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
@@ -86,51 +86,51 @@ alloca_block.dup:                                 ; preds = %alloca_block
   br i1 %1, label %NodeBlock, label %LeafBlock
 
 NodeBlock:                                        ; preds = %.critedge
-  %phi.calluser.edge977 = phi i1 [ %phi.calluser.edge978, %.critedge ]
-  %phi.calluser.edge967 = phi i1 [ %phi.calluser.edge968, %.critedge ]
-  %phi.calluser.edge957 = phi i1 [ %phi.calluser.edge958, %.critedge ]
-  %phi.calluser.edge947 = phi i1 [ %phi.calluser.edge948, %.critedge ]
+  %phi.calluser.edge983 = phi i1 [ %phi.calluser.edge984, %.critedge ]
+  %phi.calluser.edge973 = phi i1 [ %phi.calluser.edge974, %.critedge ]
+  %phi.calluser.edge963 = phi i1 [ %phi.calluser.edge964, %.critedge ]
+  %phi.calluser.edge953 = phi i1 [ %phi.calluser.edge954, %.critedge ]
   %Pivot.not = icmp eq i64 %14, 3
   br i1 %Pivot.not, label %bb, label %.sink.split.dup
 
 LeafBlock:                                        ; preds = %.critedge
-  %phi.calluser.edge981 = phi i1 [ %phi.calluser.edge978, %.critedge ]
-  %phi.calluser.edge971 = phi i1 [ %phi.calluser.edge968, %.critedge ]
-  %phi.calluser.edge961 = phi i1 [ %phi.calluser.edge958, %.critedge ]
-  %phi.calluser.edge951 = phi i1 [ %phi.calluser.edge948, %.critedge ]
+  %phi.calluser.edge987 = phi i1 [ %phi.calluser.edge984, %.critedge ]
+  %phi.calluser.edge977 = phi i1 [ %phi.calluser.edge974, %.critedge ]
+  %phi.calluser.edge967 = phi i1 [ %phi.calluser.edge964, %.critedge ]
+  %phi.calluser.edge957 = phi i1 [ %phi.calluser.edge954, %.critedge ]
   %SwitchLeaf = icmp eq i64 %14, 1
-  br i1 %SwitchLeaf, label %.sink.split.dup984, label %.sink.split.dup983
+  br i1 %SwitchLeaf, label %.sink.split.dup990, label %.sink.split.dup989
 
-.sink.split.dup984:                               ; preds = %LeafBlock
-  %phi.calluser.edge982 = phi i1 [ %phi.calluser.edge981, %LeafBlock ]
-  %phi.calluser.edge972 = phi i1 [ %phi.calluser.edge971, %LeafBlock ]
-  %phi.calluser.edge962 = phi i1 [ %phi.calluser.edge961, %LeafBlock ]
-  %phi.calluser.edge952 = phi i1 [ %phi.calluser.edge951, %LeafBlock ]
+.sink.split.dup990:                               ; preds = %LeafBlock
+  %phi.calluser.edge988 = phi i1 [ %phi.calluser.edge987, %LeafBlock ]
+  %phi.calluser.edge978 = phi i1 [ %phi.calluser.edge977, %LeafBlock ]
+  %phi.calluser.edge968 = phi i1 [ %phi.calluser.edge967, %LeafBlock ]
+  %phi.calluser.edge958 = phi i1 [ %phi.calluser.edge957, %LeafBlock ]
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 7 to ptr))
   br label %bb
 
-.sink.split.dup983:                               ; preds = %LeafBlock
-  %phi.calluser.edge980 = phi i1 [ %phi.calluser.edge981, %LeafBlock ]
-  %phi.calluser.edge970 = phi i1 [ %phi.calluser.edge971, %LeafBlock ]
-  %phi.calluser.edge960 = phi i1 [ %phi.calluser.edge961, %LeafBlock ]
-  %phi.calluser.edge950 = phi i1 [ %phi.calluser.edge951, %LeafBlock ]
+.sink.split.dup989:                               ; preds = %LeafBlock
+  %phi.calluser.edge986 = phi i1 [ %phi.calluser.edge987, %LeafBlock ]
+  %phi.calluser.edge976 = phi i1 [ %phi.calluser.edge977, %LeafBlock ]
+  %phi.calluser.edge966 = phi i1 [ %phi.calluser.edge967, %LeafBlock ]
+  %phi.calluser.edge956 = phi i1 [ %phi.calluser.edge957, %LeafBlock ]
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   br label %bb
 
 .sink.split.dup:                                  ; preds = %NodeBlock
-  %phi.calluser.edge976 = phi i1 [ %phi.calluser.edge977, %NodeBlock ]
-  %phi.calluser.edge966 = phi i1 [ %phi.calluser.edge967, %NodeBlock ]
-  %phi.calluser.edge956 = phi i1 [ %phi.calluser.edge957, %NodeBlock ]
-  %phi.calluser.edge946 = phi i1 [ %phi.calluser.edge947, %NodeBlock ]
+  %phi.calluser.edge982 = phi i1 [ %phi.calluser.edge983, %NodeBlock ]
+  %phi.calluser.edge972 = phi i1 [ %phi.calluser.edge973, %NodeBlock ]
+  %phi.calluser.edge962 = phi i1 [ %phi.calluser.edge963, %NodeBlock ]
+  %phi.calluser.edge952 = phi i1 [ %phi.calluser.edge953, %NodeBlock ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 7 to ptr))
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   br label %bb
 
-bb:                                               ; preds = %.sink.split.dup984, %.sink.split.dup983, %.sink.split.dup, %NodeBlock
-  %phi.edge985 = phi i1 [ %phi.calluser.edge976, %.sink.split.dup ], [ %phi.calluser.edge980, %.sink.split.dup983 ], [ %phi.calluser.edge982, %.sink.split.dup984 ], [ %phi.calluser.edge977, %NodeBlock ]
-  %phi.edge986 = phi i1 [ %phi.calluser.edge966, %.sink.split.dup ], [ %phi.calluser.edge970, %.sink.split.dup983 ], [ %phi.calluser.edge972, %.sink.split.dup984 ], [ %phi.calluser.edge967, %NodeBlock ]
-  %phi.edge987 = phi i1 [ %phi.calluser.edge956, %.sink.split.dup ], [ %phi.calluser.edge960, %.sink.split.dup983 ], [ %phi.calluser.edge962, %.sink.split.dup984 ], [ %phi.calluser.edge957, %NodeBlock ]
-  %phi.edge988 = phi i1 [ %phi.calluser.edge946, %.sink.split.dup ], [ %phi.calluser.edge950, %.sink.split.dup983 ], [ %phi.calluser.edge952, %.sink.split.dup984 ], [ %phi.calluser.edge947, %NodeBlock ]
+bb:                                               ; preds = %.sink.split.dup990, %.sink.split.dup989, %.sink.split.dup, %NodeBlock
+  %phi.edge991 = phi i1 [ %phi.calluser.edge982, %.sink.split.dup ], [ %phi.calluser.edge986, %.sink.split.dup989 ], [ %phi.calluser.edge988, %.sink.split.dup990 ], [ %phi.calluser.edge983, %NodeBlock ]
+  %phi.edge992 = phi i1 [ %phi.calluser.edge972, %.sink.split.dup ], [ %phi.calluser.edge976, %.sink.split.dup989 ], [ %phi.calluser.edge978, %.sink.split.dup990 ], [ %phi.calluser.edge973, %NodeBlock ]
+  %phi.edge993 = phi i1 [ %phi.calluser.edge962, %.sink.split.dup ], [ %phi.calluser.edge966, %.sink.split.dup989 ], [ %phi.calluser.edge968, %.sink.split.dup990 ], [ %phi.calluser.edge963, %NodeBlock ]
+  %phi.edge994 = phi i1 [ %phi.calluser.edge952, %.sink.split.dup ], [ %phi.calluser.edge956, %.sink.split.dup989 ], [ %phi.calluser.edge958, %.sink.split.dup990 ], [ %phi.calluser.edge953, %NodeBlock ]
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
   %18 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
@@ -140,10 +140,10 @@ bb:                                               ; preds = %.sink.split.dup984,
 __prepare_module_record_output_final:             ; preds = %bb
   call void @__quantum__rt__bool_record_output(i1 %0, ptr @0)
   call void @__quantum__rt__bool_record_output(i1 %1, ptr @1)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge985, ptr @2)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge986, ptr @3)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge987, ptr @4)
-  call void @__quantum__rt__bool_record_output(i1 %phi.edge988, ptr @5)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge991, ptr @2)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge992, ptr @3)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge993, ptr @4)
+  call void @__quantum__rt__bool_record_output(i1 %phi.edge994, ptr @5)
   call void @__quantum__rt__int_record_output(i64 %"55_2.0", ptr @6)
   call void @__quantum__rt__int_record_output(i64 %17, ptr @7)
   call void @__quantum__rt__bool_record_output(i1 %18, ptr @8)

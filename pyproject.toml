@@ -52,6 +52,9 @@ cache-keys = [
     { file = "Cargo.lock" },
     { file = "src/**/*.rs" },
 ]
+constraint-dependencies = [
+    "llvmlite>=0.46,<0.48; python_version >= '3.14' and (sys_platform != 'darwin' or platform_machine != 'x86_64')",
+]
 
 [tool.ty.analysis]
 replace-imports-with-any = ["qnexus", "qnexus.**"]
