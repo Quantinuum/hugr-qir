@@ -251,6 +251,9 @@ impl CompileArgs {
         module
             .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
+        // The later SSA-lowering cleanup runs standalone `simplifycfg`, where
+        // switch-to-lookup conversion is disabled by default. `lower-switch` above
+        // has also removed the switch instructions that could feed that conversion.
         for function in module
             .get_functions()
             .filter(|function| function.count_basic_blocks() > 0)
