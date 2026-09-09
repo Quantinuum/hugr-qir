@@ -8,13 +8,6 @@ from guppylang.std.platform import output
 from guppylang.std.quantum import h, measure, rz
 
 
-@guppy
-def plus_or_minus(res: bool) -> int:
-    if res:
-        return 1
-    return -1
-
-
 @guppy.comptime
 @no_type_check
 def int_from_reg(
@@ -36,7 +29,7 @@ def int_from_reg(
 @no_type_check
 def main() -> None:
     qs = qubit(), qubit(), qubit(), qubit()
-    my_float = 0.4  # constant float is ok, any arithmetic or round(),
+    my_float = 0.4  # Constant floats may be used as gate parameters.
     rz(qs[0], angle(my_float))
     h(qs[1])
     h(qs[2])
@@ -51,15 +44,6 @@ def main() -> None:
     output("q3", rs[3])
     output("big_endian_res", rs_int)
 
-    random_sum = 0
-    random_sum += plus_or_minus(rs[0])
-    random_sum += plus_or_minus(rs[1])
-    random_sum += plus_or_minus(rs[2])
-    random_sum += plus_or_minus(rs[3])
-    output("random_sum", random_sum)
-
-    rsum2 = random_sum * random_sum
     six = nat(6)
     four = nat(4)
-    example_result = six + four - rsum2
-    output("int_res", example_result)
+    output("nat_sum", six + four)

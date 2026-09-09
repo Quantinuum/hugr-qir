@@ -29,7 +29,7 @@ dev = [
 docs = [
     "enum-tools[sphinx]>=0.13.0",
     "myst-nb>=1.2.0",
-    "quantinuum-sphinx~=0.6",
+    "quantinuum-sphinx>=0.6,<2.0",
     "sphinx>=8,<9",
     "sphinx-autodoc-typehints<3.2",
     "sphinx-copybutton>=0.5.2,<1",
@@ -51,6 +51,9 @@ cache-keys = [
     { file = "Cargo.toml" },
     { file = "Cargo.lock" },
     { file = "src/**/*.rs" },
+]
+constraint-dependencies = [
+    "llvmlite>=0.46,<0.48; python_version >= '3.14' and (sys_platform != 'darwin' or platform_machine != 'x86_64')",
 ]
 
 [tool.ty.analysis]

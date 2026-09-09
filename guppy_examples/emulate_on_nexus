@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+import sys
+from pathlib import Path
+
+import qnexus as qnx  # type: ignore
+
+import datetime
+
+from qnexus.exceptions import AuthenticationError
+
+from hugr_qir.guppy_to_qir import guppy_to_qir_bytes
+from utils import load_py_module_from_path
+
+try:
+    project = qnx.projects.get_or_create(name="QIR-TEST")
+except AuthenticationError:
+    qnx.login()
+    project = qnx.projects.get_or_create(name="QIR-TEST")
+qnx.context.set_active_project(project)
+qir_name = "HUGR-QIR"
+jobname_suffix = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
+
+try:
+    guppy_file = sys.argv[1]
+except IndexError:
+    raise ValueError("Missing guppy file input argument")
+
+if guppy_file:
+    guppy_example = load_py_module_from_path("guppy_example_mod", str(guppy_file))
+
+example_name = Path(guppy_file).stem
+
+# Use hugr-qir to translate the guppy entrypoint directly into qir
+# that is ready to submit to Nexus
+qir_bitcode = guppy_to_qir_bytes(guppy_example.main)
+
+# Upload the program to Nexus
+qir_program_ref = qnx.qir.upload(qir=qir_bitcode, name=qir_name, project=project)
+
+# Run on the H2-1E emulator
+device_name = "H2-1E"
+qnx.context.set_active_project(project)
+config = qnx.QuantinuumConfig(device_name=device_name)
+
+# Instruct Nexus to execute the program and wait for it to finish
+job_name = f"execution-job-qir-{example_name}-{device_name}-{jobname_suffix}"
+ref_execute_job = qnx.start_execute_job(
+    programs=[qir_program_ref],
+    n_shots=[10],
+    backend_config=config,
+    name=job_name,
+)
+qnx.jobs.wait_for(ref_execute_job)
+
+# Print the Job id. You can retrieve the job ref again later using
+# ref_execute_job = qnx.jobs.get(id="<job_id>")
+print("Job id: ", ref_execute_job.id)
+
+# Get the result from Nexus
+execute_job_result_refs = qnx.jobs.results(ref_execute_job)
+result = execute_job_result_refs[0].download_result()
+
+print(result)

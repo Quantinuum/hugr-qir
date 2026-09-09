@@ -9,8 +9,7 @@ from guppylang.std.collections.priority_queue import empty_priority_queue
 @guppy
 @no_type_check
 def main() -> None:
-    # PriorityQueue is backed by a runtime array, which is not supported by QIR
-    # lowering.
+    # The heap's data-dependent internal loops cannot be fully unrolled for QIR.
     queue = empty_priority_queue[int, 4]()
     queue.push(30, 3)
     queue.push(10, 1)
