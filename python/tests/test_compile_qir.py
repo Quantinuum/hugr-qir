@@ -6,7 +6,8 @@ import pytest
 from guppylang import guppy, qubit
 from guppylang.std.builtins import output
 from guppylang.std.quantum import h, measure
-from hugr_qir.guppy_to_qir import guppy_to_qir_str
+from hugr_qir.guppy_to_qir import guppy_to_qir_bytes, guppy_to_qir_str
+from hugr_qir.h_series_helpers.results import ResultRep, ResultSpec
 from hugr_qir.hugr_to_qir import to_qir_str
 from hugr_qir.output import GENERATOR_SECTION
 
@@ -40,8 +41,17 @@ def test_hugr_package_to_qir() -> None:
 
 
 def test_guppy_entrypoint_to_qir() -> None:
-    qir = guppy_to_qir_str(main)
+    qir, result_spec = guppy_to_qir_str(main)
+
     assert len(qir) > 10  # noqa: PLR2004
+    assert result_spec == ResultSpec({"0": ResultRep.BOOL})
+
+
+def test_guppy_entrypoint_to_qir_bytes() -> None:
+    qir, result_spec = guppy_to_qir_bytes(main)
+
+    assert len(qir) > 10  # noqa: PLR2004
+    assert result_spec == ResultSpec({"0": ResultRep.BOOL})
 
 
 def test_generated_qir_uses_qir_1_runtime_contracts(
@@ -49,7 +59,7 @@ def test_generated_qir_uses_qir_1_runtime_contracts(
 ) -> None:
     # remove version override for this test only
     monkeypatch.delenv("HUGR_QIR_VERSION_TEST_OVERRIDE", raising=False)
-    qir = guppy_to_qir_str(main, validate_qir=True)
+    qir, _ = guppy_to_qir_str(main, validate_qir=True)
     package_version = rustify_version(version("hugr-qir"))
 
     assert "__quantum__rt__read_result" in qir
