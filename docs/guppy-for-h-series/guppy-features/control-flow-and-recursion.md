@@ -11,25 +11,6 @@ Source file: `guppy_examples/guppy-features/supported/guppy-if-elif-else.py`
 :language: python
 ```
 
-### Known limitation: runtime branches selecting gate parameters
-
-Some runtime-dependent branches that apply different parameterized gates can
-fail QIR validation. For example, this includes branches on
-`get_current_shot()` where one branch applies `y` and the others apply `x`.
-
-During optimization, LLVM can replace the branch-selected gate parameters with
-a runtime lookup table. H-Series QIR does not support the resulting dynamic
-table access, and conversion fails with an error similar to:
-
-```text
-Encountered Unexpected Instruction %switch.gep = getelementptr ... @switch.table...
-```
-
-Small changes to the program can prevent this LLVM optimization and appear to
-make conversion succeed, but that behavior is not stable and should not be
-relied upon. Disabling QIR validation does not make the generated program
-H-Series compatible.
-
 ## Unsupported: `exit` / `panic`
 
 Source file: `guppy_examples/guppy-features/unsupported/early-exit.py`

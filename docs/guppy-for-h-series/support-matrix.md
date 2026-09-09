@@ -9,7 +9,7 @@ systems with `hugr-qir`.
 
 | Feature | Support | Remarks                                                                                           |
 |---------|---------|---------------------------------------------------------------------------------------------------|
-| `if` / `elif` / `else` | *️⃣ | Runtime branches selecting different gate parameters can produce an unsupported [LLVM lookup table](guppy-features/control-flow-and-recursion.md) |
+| `if` / `elif` / `else` | ✅ |                                                                                                   |
 | Measurement objects from `measure(q)` | ✅ | Read the classical value with `.read()`                                                           |
 | Scalar and array `output` | *️⃣ | Supports booleans and unsigned integers; see [Result recording](result-recording.md)              |
 | Angle values and arithmetic | ✅ | Supported for gate parameters such as `rz`                                                        |
@@ -25,7 +25,7 @@ systems with `hugr-qir`.
 | `mem_swap` | ✅ |                                                                                                   |
 | Dagger modifier | ✅ |                                                                                                   |
 | Control modifier | ✅ |                                                                                                   |
-| `get_current_shot` | *️⃣ | Subject to the limitations of runtime-dependent control flow                                     |
+| `get_current_shot` | ✅ |                                                                                                   |
 | RNG: `__new__`, `discard`, `random_int/_bounded` | ✅ |                                                                                                   |
 | Recursive functions or loops within `@guppy.comptime` | ✅ | As long as Guppy compilation succeeds                                                             |
 | Recursive functions or loops within `@guppy` | *️⃣ | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations    |
