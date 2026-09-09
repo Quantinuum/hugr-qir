@@ -40,11 +40,11 @@ systems with `hugr-qir`.
 
 | Data type | Support | Caveats                                                                             |
 |-----------|---------|-------------------------------------------------------------------------------------|
-| int | *️⃣ | Negative values can silently produce incorrect results; see [Integers](integers.md) |
+| int | *️⃣ | See [Integers](integers.md)                                                       |
 | float | *️⃣ | May be used as a constant gate parameter; calculations and output are unsupported   |
 | array | *️⃣ | Fixed-size arrays are supported when element accesses can be made static            |
 | bool | ✅ |                                                                                     |
-| nat | ✅ |                                                                                     |
+| nat | *️⃣ | See [Integers](integers.md)                                                       |
 | struct | ✅ |                                                                                     |
 | tuple | ✅ |                                                                                     |
 | enum | ✅ |                                                                                     |
