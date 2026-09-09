@@ -72,7 +72,7 @@ jobs:
       - name: Check formatting
         run: cargo fmt -- --check
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Run clippy
@@ -99,7 +99,7 @@ jobs:
         run: rustup override set ${{steps.toolchain.outputs.name}}
 
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Build with no features
@@ -124,7 +124,7 @@ jobs:
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Build with all features
@@ -161,7 +161,7 @@ jobs:
       - name: Configure default rust toolchain
         run: rustup override set ${{steps.toolchain.outputs.name}}
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Build with no features
@@ -188,7 +188,7 @@ jobs:
           toolchain: "nightly"
           components: llvm-tools-preview
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Install cargo-llvm-cov
