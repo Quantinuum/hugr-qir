@@ -217,6 +217,19 @@ impl CompileArgs {
         module.set_triple(&ctm.get_triple());
         module.set_data_layout(&ctm.get_target_data().get_data_layout());
 
+        // Lookup tables introduce runtime memory accesses, which are not supported by
+        // the H-Series QIR profile. In particular, SimplifyCFG can otherwise turn
+        // branch-selected constant gate parameters into a global table and dynamic GEP.
+        let no_jump_tables = module
+            .get_context()
+            .create_string_attribute("no-jump-tables", "true");
+        for function in module
+            .get_functions()
+            .filter(|function| function.count_basic_blocks() > 0)
+        {
+            function.add_attribute(AttributeLoc::Function, no_jump_tables);
+        }
+
         let opt_str = match self.opt_level {
             CliOptimizationLevel::Default => "default<O2>",
             CliOptimizationLevel::Aggressive => "default<O3>",
@@ -238,6 +251,12 @@ impl CompileArgs {
         module
             .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
+        for function in module
+            .get_functions()
+            .filter(|function| function.count_basic_blocks() > 0)
+        {
+            function.remove_string_attribute(AttributeLoc::Function, "no-jump-tables");
+        }
         Ok(ctm)
     }
 
