@@ -11,10 +11,9 @@ use crate::inkwell::values::{
 /// replaces unsigned remainders using
 /// `x % divisor = x - (x / divisor) * divisor`.
 ///
-/// The downstream compiler does not accept LLVM `urem`, but does accept `udiv`
+/// The lower compiler stack for H-Series does not accept LLVM `urem`, but does accept `udiv`
 /// when its divisor is constant. A non-constant divisor is rejected here with a
-/// targeted error instead of emitting LLVM that the downstream compiler cannot
-/// handle.
+/// targeted error.
 pub fn lower_unsigned_division(module: &Module) -> Result<usize> {
     let divisions = module
         .get_functions()
