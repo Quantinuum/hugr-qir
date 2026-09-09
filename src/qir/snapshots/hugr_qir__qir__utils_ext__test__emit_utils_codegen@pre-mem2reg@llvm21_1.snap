@@ -20,7 +20,7 @@ entry_block:                                      ; preds = %alloca_block
   ret i64 %"02"
 }
 
-declare i64 @___get_current_shot()
+declare noundef i64 @___get_current_shot()
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}

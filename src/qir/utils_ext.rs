@@ -5,6 +5,7 @@ use anyhow::Result;
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
+use hugr::llvm::inkwell::attributes::{Attribute, AttributeLoc};
 use tket::hugr::ops::ExtensionOp;
 use tket::hugr::{HugrView, Node};
 use tket_qsystem::extension::utils::UtilsOp;
@@ -40,6 +41,14 @@ fn emit_utils_op<H: HugrView<Node = Node>>(
                     .i64_type()
                     .fn_type(&[], false),
             )?;
+            let kind_id = Attribute::get_named_enum_kind_id("noundef");
+            debug_assert_ne!(kind_id, 0, "LLVM does not recognize the noundef attribute");
+            fn_get_cur_shot.add_attribute(
+                AttributeLoc::Return,
+                ctx.typing_session()
+                    .iw_context()
+                    .create_enum_attribute(kind_id, 0),
+            );
             let result = ctx
                 .builder()
                 .build_call(fn_get_cur_shot, &[], "shot")?

@@ -33,7 +33,7 @@ bb0:                                              ; preds = %alloca_block
 
 declare void @___random_seed(i64) local_unnamed_addr
 
-declare i32 @___random_int() local_unnamed_addr
+declare noundef i32 @___random_int() local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 

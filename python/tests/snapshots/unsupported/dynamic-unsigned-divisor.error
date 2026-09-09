@@ -1,0 +1,1 @@
+QIR generation failed. This may be the result of a bug but can also happen when trying to convert a feature in HUGR/Guppylang which is not supported in QIR. Error details: A division or modulo operation required a non-constant divisor, which is unsupported on hardware.

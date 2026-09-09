@@ -30,7 +30,7 @@ bb0:                                              ; preds = %alloca_block
   br label %bb
 }
 
-declare i64 @___get_current_shot() local_unnamed_addr
+declare noundef i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 

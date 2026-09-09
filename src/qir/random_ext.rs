@@ -6,6 +6,7 @@ use anyhow::{Result, anyhow};
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
+use inkwell::attributes::{Attribute, AttributeLoc};
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::types::{BasicTypeEnum, IntType};
@@ -66,19 +67,28 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
         self.0.builder()
     }
 
+    fn mark_return_noundef(&self, function: FunctionValue<'c>) {
+        let kind_id = Attribute::get_named_enum_kind_id("noundef");
+        debug_assert_ne!(kind_id, 0, "LLVM does not recognize the noundef attribute");
+        function.add_attribute(
+            AttributeLoc::Return,
+            self.iw_context().create_enum_attribute(kind_id, 0),
+        );
+    }
+
     /// Helper function to `emit` an RNG operation.
     fn emit_op(
         &self,
         args: EmitOpArgs<'c, '_, ExtensionOp, H>,
         name: &str,
-        func: Result<FunctionValue<'c>>,
+        func: FunctionValue<'c>,
         input_indices: &[usize],
     ) -> Result<()> {
         let inputs: Vec<_> = input_indices.iter().map(|&i| args.inputs[i]).collect();
         let result = self
             .builder()
             .build_call(
-                func?,
+                func,
                 &inputs.iter().map(|&v| v.into()).collect::<Vec<_>>(),
                 name,
             )?
@@ -94,14 +104,16 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
             RandomOp::RandomInt => {
                 let fn_random_int = self
                     .0
-                    .get_extern_func("___random_int", self.i32_type().fn_type(&[], false));
+                    .get_extern_func("___random_int", self.i32_type().fn_type(&[], false))?;
+                self.mark_return_noundef(fn_random_int);
                 self.emit_op(args, "rint", fn_random_int, &[])
             }
             RandomOp::RandomIntBounded => {
                 let fn_random_int_bounded = self.0.get_extern_func(
                     "___random_int_bounded",
                     self.i32_type().fn_type(&[self.i32_type().into()], false),
-                );
+                )?;
+                self.mark_return_noundef(fn_random_int_bounded);
                 self.emit_op(args, "rintb", fn_random_int_bounded, &[1])
             }
             RandomOp::NewRNGContext => {

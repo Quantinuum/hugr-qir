@@ -355,9 +355,9 @@ declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_a
 
 declare void @__quantum__qis__rzz__body(double, ptr, ptr) local_unnamed_addr
 
-declare i32 @___random_int_bounded(i32) local_unnamed_addr
+declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
 
-declare i64 @___get_current_shot() local_unnamed_addr
+declare noundef i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 
