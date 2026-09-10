@@ -82,6 +82,7 @@ mod tests {
 
     #[test]
     fn lowers_urem_with_constant_divisor() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = context.create_module("constant_urem");
         let int_type = context.i64_type();
@@ -109,6 +110,7 @@ mod tests {
 
     #[test]
     fn rejects_urem_with_dynamic_divisor() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = context.create_module("dynamic_urem");
         let int_type = context.i64_type();
@@ -136,6 +138,7 @@ mod tests {
 
     #[test]
     fn rejects_udiv_with_dynamic_divisor() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = context.create_module("dynamic_udiv");
         let int_type = context.i64_type();
