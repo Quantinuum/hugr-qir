@@ -33,8 +33,8 @@ pub mod cli;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
+pub mod lower_integer_division;
 pub mod lower_ssa_vars;
-pub mod lower_urem;
 pub mod qir;
 pub mod target;
 
@@ -42,11 +42,11 @@ use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
 use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
+use crate::lower_integer_division::lower_integer_division;
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
 };
-use crate::lower_urem::lower_unsigned_division;
 use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
@@ -297,7 +297,7 @@ impl CompileArgs {
         let target = self.optimize_module_llvm(&module)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
-        lower_unsigned_division(&module)?;
+        lower_integer_division(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
         normalize_block_names(&module);

@@ -1,22 +1,8 @@
 # Integers
 
-H-Series supports non-negative integer values. Prefer Guppy's `nat` type to protect against
-negative integers at compile time. Regular signed Guppy `int`s are accepted but care must be
-taken that any integer values are and remain non-negative.
-
-```{warning}
-Negative integers are not supported on H-Series. A program containing them may
-compile and run without an error, but calculations can silently produce
-incorrect results. Avoid negative values anywhere in a calculation, including
-temporary and intermediate values.
-```
-
-Integers use a 64-bit representation on H-Series, with one bit reserved by the
-system. Values must therefore fit within the remaining 63 bits.
-
-A negative integer may also be accepted by `output`, but its sign is not
-preserved in the recorded result. Do not use signed output to recover negative
-values.
+Most integer arithmetic is supported for both Guppy's signed `int` type and
+unsigned `nat` type. There are, however, restrictions on division
+and modulo operations for these types.
 
 ## Division and modulo
 
@@ -24,17 +10,22 @@ Integer division (`//`) and modulo (`%`) require a divisor that the compiler can
 reduce to a constant. Integer literals and compile-time expressions are
 supported, but values that remain dependent on runtime information are not.
 
-For example, division by `3` is supported, while division by a value obtained
-from a measurement, random-number operation, or other runtime computation will
-fail to compile. This remains true even when a runtime divisor is known to be a
-`nat` or can otherwise be proven positive: the divisor itself must be static.
-
-Signed `int` divisors have an additional restriction. If the compiler cannot
-prove that a runtime integer is positive, Guppy may retain a failure path for a
-negative or zero divisor. Failure paths are not currently supported on H-Series, so the
-program will fail to compile. Prefer a positive constant divisor and use `nat`
-for non-negative integer values, but note that converting a runtime value to
-`nat` does not make it static.
+For example, division by `3` or `-3` is supported, while division by a value
+obtained from a measurement, random-number operation, or other runtime
+computation will fail to compile. Zero division or modulo will fail at compile time.
 
 These restrictions also apply to integer arrays and to integers stored inside
 tuples, structs, or other data types.
+
+### Computational overhead
+
+Signed division and both signed and unsigned modulo operations do not have
+direct hardware support. They are lowered to unsigned division in software
+and especially the signed lowerings introduce register and logic overhead.
+These operations should be avoided if possible.
+
+### Integer overflow
+
+Signed integer division can cause overflow when the minimum integer (INT_MIN)
+is divided by `-1`. The result -INT_MIN cannot be represented in the given
+integer set (because -INT_MIN > INT_MAX). In this case, INT_MIN is returned.

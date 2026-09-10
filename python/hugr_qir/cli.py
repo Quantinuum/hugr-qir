@@ -141,12 +141,6 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
     options.extend(["-f", format_setting])
     if wasm_file:
         options.extend(["--wasm-file", str(wasm_file)])
-    if opt_level == "none":
-        logger.warning(
-            "WARNING: Chosen optimization level"
-            " `none` will generally not result"
-            " in valid QIR."
-        )
     if validate_hugr:
         options.append("--validate")
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
