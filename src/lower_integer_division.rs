@@ -18,8 +18,8 @@ use crate::inkwell::values::{
 /// Signed division and remainder are lowered by dividing unsigned magnitudes
 /// and restoring the LLVM result sign. The minimum signed value is handled
 /// separately because its magnitude is not representable as a positive signed
-/// integer in the lower compiler stack. `INT_MIN / -1` deliberately returns the
-/// wrapped `INT_MIN` value.
+/// integer in the lower compiler stack. Signed division overflow (`INT_MIN / -1`)
+/// follows LLVM's undefined behavior: no result or runtime check is guaranteed.
 ///
 /// The lower compiler stack for H-Series accepts `udiv` only when its divisor is
 /// constant. A non-constant divisor is rejected here with a targeted error.
@@ -117,6 +117,13 @@ fn lower_signed_division<'ctx>(
     };
 
     let zero = int_type.const_zero();
+    if division.get_opcode() == InstructionOpcode::SDiv && divisor_bits == mask {
+        // Division by -1 is negation for every defined input. INT_MIN / -1 is
+        // undefined in LLVM, so no special result needs to be preserved. This
+        // subtraction may wrap, but earlier optimizations can already have
+        // exploited the undefined case; wrapping is not a program guarantee.
+        return Ok(builder.build_int_sub(zero, dividend, "sdiv.lowered")?);
+    }
     let min_value = int_type.const_int(sign_bit, false);
     let is_min = builder.build_int_compare(IntPredicate::EQ, dividend, min_value, "sdiv.is_min")?;
 
@@ -375,7 +382,7 @@ mod tests {
     }
 
     #[test]
-    fn wraps_int_min_divided_by_negative_one() {
+    fn lowers_division_by_negative_one_to_negation() {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = signed_division_module(&context, (-1_i64) as u64, false);
@@ -383,7 +390,8 @@ mod tests {
         assert_eq!(lower_integer_division(&module).unwrap(), 1);
         let ir = module.to_string();
         assert!(!ir.contains(" sdiv "));
-        assert!(ir.contains("select i1 %sdiv.is_min, i64 -9223372036854775808, i64 %sdiv.signed"));
+        assert!(!ir.contains(" udiv "));
+        assert!(ir.contains("sub i64 0, %0"));
     }
 
     #[test]
