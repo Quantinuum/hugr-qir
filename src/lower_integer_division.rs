@@ -5,9 +5,7 @@ use anyhow::{Result, anyhow};
 use crate::inkwell::IntPredicate;
 use crate::inkwell::module::Module;
 use crate::inkwell::values::IntValue;
-use crate::inkwell::values::{
-    BasicValue, BasicValueEnum, InstructionOpcode, InstructionValue, Operand,
-};
+use crate::inkwell::values::{BasicValueEnum, InstructionOpcode, InstructionValue, Operand};
 
 /// Validates that all integer division operations have constant divisors and
 /// lowers operations unsupported by the lower compiler stack.
@@ -72,10 +70,10 @@ pub fn lower_integer_division(module: &Module) -> Result<usize> {
             }
             _ => unreachable!(),
         };
-        let replacement_inst = replacement
-            .as_instruction_value()
-            .ok_or_else(|| anyhow!("lowered integer division did not produce an instruction"))?;
-        division.replace_all_uses_with(&replacement_inst);
+        // Fast paths can return an argument or constant, not just an instruction.
+        IntValue::try_from(division)
+            .map_err(|_| anyhow!("integer division did not produce an integer value"))?
+            .replace_all_uses_with(replacement);
         division.erase_from_basic_block();
         lowered += 1;
     }
@@ -117,6 +115,13 @@ fn lower_signed_division<'ctx>(
     };
 
     let zero = int_type.const_zero();
+    if divisor_magnitude == 1 {
+        match division.get_opcode() {
+            InstructionOpcode::SDiv if !divisor_negative => return Ok(dividend),
+            InstructionOpcode::SRem => return Ok(zero),
+            _ => {}
+        }
+    }
     if division.get_opcode() == InstructionOpcode::SDiv && divisor_bits == mask {
         // Division by -1 is negation for every defined input. INT_MIN / -1 is
         // undefined in LLVM, so no special result needs to be preserved. This
@@ -270,6 +275,27 @@ mod tests {
         };
         builder.build_return(Some(&result)).unwrap();
         module
+    }
+
+    #[test]
+    fn unit_signed_divisors_need_no_instructions() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        for (divisor, remainder) in [(1, false), (1, true), (u64::MAX, true)] {
+            let module = signed_division_module(&context, divisor, remainder);
+            assert_eq!(lower_integer_division(&module).unwrap(), 1);
+            let function = module.get_function("operation").unwrap();
+            let block = function.get_first_basic_block().unwrap();
+            assert_eq!(block.get_instructions().count(), 1);
+            let ret = block.get_first_instruction().unwrap();
+            assert_eq!(ret.get_opcode(), InstructionOpcode::Return);
+            let result = int_operand(ret, 0).unwrap();
+            if remainder {
+                assert_eq!(result.get_zero_extended_constant(), Some(0));
+            } else {
+                assert_eq!(result, function.get_first_param().unwrap().into_int_value());
+            }
+        }
     }
 
     #[test]
