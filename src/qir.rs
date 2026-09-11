@@ -356,6 +356,18 @@ mod test {
         test::{LLVM_TEST_LOCK, single_op_hugr},
     };
 
+    #[test]
+    fn enum_attribute_lookup_rejects_unknown_names() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let context = super::Context::create();
+        assert!(super::qir_enum_attribute(&context, "noundef").is_ok());
+        let error = super::qir_enum_attribute(&context, "hugr_qir_unknown_attribute").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "LLVM does not support the hugr_qir_unknown_attribute attribute"
+        );
+    }
+
     #[fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {

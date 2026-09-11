@@ -1,7 +1,7 @@
 //! LLVM codegen for the `tket.qsystem.utils` extension.
 use tket::hugr;
 
-use anyhow::Result;
+use anyhow::{Result, ensure};
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
@@ -48,16 +48,12 @@ fn emit_utils_op<H: HugrView<Node = Node>>(
                     .i64_type()
                     .fn_type(&[], false),
             )?;
-            let kind_id = Attribute::get_named_enum_kind_id("noundef");
-            debug_assert_ne!(kind_id, 0, "LLVM does not recognize the noundef attribute");
             fn_get_cur_shot.add_attribute(
                 AttributeLoc::Return,
-                ctx.typing_session()
-                    .iw_context()
-                    .create_enum_attribute(kind_id, 0),
+                super::qir_enum_attribute(ctx.typing_session().iw_context(), "noundef")?,
             );
             let range_kind = Attribute::get_named_enum_kind_id("range");
-            debug_assert_ne!(range_kind, 0, "LLVM does not recognize the range attribute");
+            ensure!(range_kind != 0, "LLVM does not support the range attribute");
             let lower = 0_u64;
             let upper = 1_u64 << 32;
             // SAFETY: The context is live and both bounds provide the single
