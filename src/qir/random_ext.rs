@@ -99,6 +99,16 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
     }
 
     /// Function to help lower the `tket.qsystem.random` extension.
+    ///
+    /// H2's RandomInt returns all 32 random bits as an unsigned value.
+    /// RandomIntBounded accepts an unsigned bound up to 2^32 - 1 and returns
+    /// a value strictly below it. Neither result is restricted to signed i32;
+    /// widening must use zero extension rather than a nonnegative i32 range hint.
+    ///
+    /// Guppy currently narrows the bound as a signed i32: positive bounds above
+    /// 2^31 - 1 panic, but negative bounds pass and H2 interprets their bit patterns
+    /// as unsigned (e.g. -1 becomes 2^32 - 1). This frontend/runtime discrepancy
+    /// is preserved here; supporting large positive bounds requires a Guppy fix.
     fn emit(&self, args: EmitOpArgs<'c, '_, ExtensionOp, H>, op: RandomOp) -> Result<()> {
         match op {
             RandomOp::RandomInt => {

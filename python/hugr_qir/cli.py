@@ -1,6 +1,5 @@
 """Cli for hugr-qir."""
 
-import logging
 import tempfile
 from importlib.metadata import version
 from pathlib import Path
@@ -18,8 +17,6 @@ from hugr_qir._hugr_qir import (
     opt_level_default,
 )
 from hugr_qir.output import OutputFormat, get_write_mode, ir_string_to_output_format
-
-logger = logging.getLogger()
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 

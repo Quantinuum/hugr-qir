@@ -103,7 +103,7 @@ alloca_block:
   %rintb = tail call i32 @___random_int_bounded(i32 2)
   %0 = icmp eq i32 %rintb, 1
   %shot = tail call i64 @___get_current_shot()
-  %Pivot3546 = icmp slt i64 %shot, 4
+  %Pivot3546 = icmp samesign ult i64 %shot, 4
   br i1 %Pivot3546, label %NodeBlock, label %NodeBlock3543
 
 NodeBlock3543:                                    ; preds = %alloca_block
@@ -127,7 +127,7 @@ LeafBlock3535:                                    ; preds = %NodeBlock3543
   br i1 %SwitchLeaf3536, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
 
 NodeBlock:                                        ; preds = %alloca_block
-  %Pivot = icmp slt i64 %shot, 2
+  %Pivot = icmp samesign ult i64 %shot, 2
   br i1 %Pivot, label %LeafBlock, label %LeafBlock3533
 
 LeafBlock3533:                                    ; preds = %NodeBlock
@@ -357,7 +357,7 @@ declare void @__quantum__qis__rzz__body(double, ptr, ptr) local_unnamed_addr
 
 declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
 
-declare noundef i64 @___get_current_shot() local_unnamed_addr
+declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 

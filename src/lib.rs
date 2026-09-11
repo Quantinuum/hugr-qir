@@ -144,10 +144,6 @@ impl CompileArgs {
                 hugr.validate()?;
             }
         }
-        RemoveKnownNonNegativeChecksPass::default().run(hugr)?;
-        if self.validate {
-            hugr.validate()?;
-        }
         DevirtualizeDirectCallsPass::default().run(hugr)?;
         if self.validate {
             hugr.validate()?;
@@ -158,6 +154,10 @@ impl CompileArgs {
         self.inline_calls(hugr)?;
         self.remove_dead_functions(hugr)?;
         self.normalize_hugr(hugr)?;
+        RemoveKnownNonNegativeChecksPass::default().run(hugr)?;
+        if self.validate {
+            hugr.validate()?;
+        }
         Ok(())
     }
 

@@ -103,7 +103,7 @@ bb4:                                              ; preds = %NodeBlock427
 
 declare void @___random_seed(i64) local_unnamed_addr
 
-declare noundef i64 @___get_current_shot() local_unnamed_addr
+declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
