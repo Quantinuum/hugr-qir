@@ -48,7 +48,7 @@ def test_cli_exposes_max_loop_unroll() -> None:
 
 def test_max_loop_unroll_is_forwarded_to_compiler() -> None:
     hugr = guppy_example_dict["array"].hugr_binary
-    with pytest.raises(ValueError, match=r"configured QIR unroll limit \(1\)"):
+    with pytest.raises(ValueError, match=r"exceeds the limit of 1\."):
         hugr_to_qir(hugr, max_loop_unroll=1)
 
 

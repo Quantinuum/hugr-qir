@@ -22,7 +22,6 @@ use hugr::{
 use hugr::{Node, llvm as hugr_llvm};
 use hugr_llvm::emit::EmitOpArgs;
 use hugr_llvm::emit::RowPromise;
-use hugr_llvm::emit::libc::emit_libc_abort;
 use hugr_llvm::inkwell;
 use hugr_llvm::inkwell::values::BasicValueEnum;
 use inkwell::{
@@ -52,13 +51,7 @@ impl PreludeCodegen for QirPreludeCodegen {
         session.iw_context().ptr_type(Default::default())
     }
 
-    fn emit_panic<H: HugrView<Node = Node>>(
-        &self,
-        ctx: &mut EmitFuncContext<H>,
-        _err: BasicValueEnum,
-    ) -> Result<()> {
-        emit_libc_abort(ctx)
-    }
+    // Retain the default panic emitter's message for post-optimization diagnostics.
 
     fn emit_print<H: HugrView<Node = Node>>(
         &self,
@@ -90,7 +83,10 @@ impl PreludeCodegen for QirPreludeCodegen {
                     length,
                 )?);
             } else {
-                bail!("H-series barriers cannot contain non-qubit types");
+                return Err(crate::compilation_error::CompilationError::new(
+                    "H-series barriers cannot contain non-qubit types",
+                )
+                .into());
             }
         }
 
@@ -359,6 +355,18 @@ mod test {
         target::CompileTarget,
         test::{LLVM_TEST_LOCK, single_op_hugr},
     };
+
+    #[test]
+    fn enum_attribute_lookup_rejects_unknown_names() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let context = super::Context::create();
+        assert!(super::qir_enum_attribute(&context, "noundef").is_ok());
+        let error = super::qir_enum_attribute(&context, "hugr_qir_unknown_attribute").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "LLVM does not support the hugr_qir_unknown_attribute attribute"
+        );
+    }
 
     #[fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {

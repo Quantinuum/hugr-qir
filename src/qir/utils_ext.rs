@@ -1,10 +1,13 @@
 //! LLVM codegen for the `tket.qsystem.utils` extension.
 use tket::hugr;
 
-use anyhow::Result;
+use anyhow::{Result, ensure};
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
+use hugr::llvm::inkwell::attributes::{Attribute, AttributeLoc};
+use hugr::llvm::inkwell::context::AsContextRef;
+use hugr::llvm::inkwell::llvm_sys::core::LLVMCreateConstantRangeAttribute;
 use tket::hugr::ops::ExtensionOp;
 use tket::hugr::{HugrView, Node};
 use tket_qsystem::extension::utils::UtilsOp;
@@ -25,6 +28,11 @@ impl CodegenExtension for UtilsCodegenExtension {
 }
 
 /// Lower the `tket_qsystem` `utils` extension.
+///
+/// H2 returns its unsigned 32-bit shot counter zero-extended to i64. Advertise
+/// [0, 2^32) so LLVM can remove signedness checks even across helper functions.
+/// This is an H2 runtime contract, not a consequence of Guppy's i64 type or the
+/// classical LLVM target. Revisit it when adding other quantum platforms.
 fn emit_utils_op<H: HugrView<Node = Node>>(
     ctx: &EmitFuncContext<'_, '_, H>,
     args: EmitOpArgs<'_, '_, ExtensionOp, H>,
@@ -40,6 +48,27 @@ fn emit_utils_op<H: HugrView<Node = Node>>(
                     .i64_type()
                     .fn_type(&[], false),
             )?;
+            fn_get_cur_shot.add_attribute(
+                AttributeLoc::Return,
+                super::qir_enum_attribute(ctx.typing_session().iw_context(), "noundef")?,
+            );
+            let range_kind = Attribute::get_named_enum_kind_id("range");
+            ensure!(range_kind != 0, "LLVM does not support the range attribute");
+            let lower = 0_u64;
+            let upper = 1_u64 << 32;
+            // SAFETY: The context is live and both bounds provide the single
+            // u64 word required for a 64-bit range. LLVM owns the attribute.
+            // Inkwell does not yet wrap constant-range attribute creation.
+            let range = unsafe {
+                Attribute::new(LLVMCreateConstantRangeAttribute(
+                    ctx.typing_session().iw_context().as_ctx_ref(),
+                    range_kind,
+                    64,
+                    &lower,
+                    &upper,
+                ))
+            };
+            fn_get_cur_shot.add_attribute(AttributeLoc::Return, range);
             let result = ctx
                 .builder()
                 .build_call(fn_get_cur_shot, &[], "shot")?

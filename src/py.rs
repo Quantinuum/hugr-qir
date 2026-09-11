@@ -12,6 +12,26 @@ use pyo3::{
     wrap_pyfunction,
 };
 
+pyo3::create_exception!(
+    _hugr_qir,
+    CompilationError,
+    pyo3::exceptions::PyRuntimeError
+);
+
+fn compilation_error_to_python(error: anyhow::Error) -> pyo3::PyErr {
+    let py_error = if let Some(expected) =
+        error.downcast_ref::<crate::compilation_error::CompilationError>()
+    {
+        CompilationError::new_err(expected.to_string())
+    } else {
+        pyo3::exceptions::PyRuntimeError::new_err(error.to_string())
+    };
+    // Preserve the complete Rust context chain for debugging, without
+    // including it in the concise user-facing diagnostic.
+    pyo3::Python::attach(|py| py_error.set_cause(py, Some(error.into())));
+    py_error
+}
+
 #[pyfunction]
 #[pyo3(signature = (*args))]
 pub fn cli(args: &Bound<PyTuple>) -> PyResult<()> {
@@ -20,7 +40,7 @@ pub fn cli(args: &Bound<PyTuple>) -> PyResult<()> {
         .collect_vec();
     let context = inkwell::context::Context::create();
     let mut cli = Cli::try_parse_from(args).map_err(anyhow::Error::from)?;
-    let module = cli.run(&context)?;
+    let module = cli.run(&context).map_err(compilation_error_to_python)?;
     cli.write_module(&module)?;
     Ok(())
 }
@@ -66,6 +86,7 @@ pub fn compile_target_default() -> String {
 
 #[pymodule]
 pub fn _hugr_qir(m: &Bound<PyModule>) -> PyResult<()> {
+    m.add("CompilationError", m.py().get_type::<CompilationError>())?;
     m.add_function(wrap_pyfunction!(cli, m)?)?;
     m.add_function(wrap_pyfunction!(opt_level_choices, m)?)?;
     m.add_function(wrap_pyfunction!(opt_level_default, m)?)?;
