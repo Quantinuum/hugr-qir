@@ -273,6 +273,157 @@ mod tests {
 
     use super::*;
 
+    /// Execute the actual lowered IR, with a runtime dividend and constant divisor.
+    /// These tests check LLVM semantics, not the downstream hardware compiler.
+    fn check_jit_results(
+        opcode: &str,
+        dividends: &[u64],
+        divisors: &[u64],
+        expected: impl Fn(u64, u64) -> Option<u64>,
+    ) {
+        use std::fmt::Write;
+
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let mut ir = String::new();
+        for (index, divisor) in divisors.iter().enumerate() {
+            writeln!(
+                ir,
+                "define i64 @operation{index}(i64 %x) {{\n\
+                 entry: %result = {opcode} i64 %x, {divisor}\n\
+                 ret i64 %result\n}}"
+            )
+            .unwrap();
+        }
+        let module = context
+            .create_module_from_ir(MemoryBuffer::create_from_memory_range_copy(
+                format!("{ir}\0").as_bytes(),
+                "jit_integer_division",
+            ))
+            .unwrap();
+        module.verify().unwrap();
+        // Run our pass directly, without an optimizer that could hide its bugs.
+        assert_eq!(lower_integer_division(&module).unwrap(), divisors.len());
+        assert!(!module.to_string().contains(&format!(" {opcode} ")));
+        let engine = module
+            .create_jit_execution_engine(crate::inkwell::OptimizationLevel::None)
+            .unwrap();
+        for (index, &divisor) in divisors.iter().enumerate() {
+            // SAFETY: Each generated function has the C ABI signature i64(i64).
+            // u64 carries its input/output bit patterns for signed operations too.
+            // The engine and context remain alive throughout every call.
+            let function = unsafe {
+                engine
+                    .get_function::<unsafe extern "C" fn(u64) -> u64>(&format!("operation{index}"))
+                    .unwrap()
+            };
+            for &dividend in dividends {
+                let Some(expected) = expected(dividend, divisor) else {
+                    // Never execute LLVM's undefined zero-divisor or signed
+                    // overflow cases (INT_MIN with divisor -1, for div and rem).
+                    continue;
+                };
+                // SAFETY: Signature and lifetime are established above; this
+                // input is a defined case according to the independent oracle.
+                let actual = unsafe { function.call(dividend) };
+                assert_eq!(
+                    actual, expected,
+                    "{opcode}: dividend bits {dividend:#018x}, divisor bits {divisor:#018x}"
+                );
+            }
+        }
+    }
+
+    fn check_signed_jit_results(opcode: &str, expected: fn(i64, i64) -> Option<i64>) {
+        let dividends = [
+            i64::MIN,
+            i64::MIN + 1,
+            i64::MIN + 2,
+            -(1_i64 << 32),
+            -17,
+            -8,
+            -7,
+            -6,
+            -3,
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            6,
+            7,
+            8,
+            17,
+            1_i64 << 32,
+            i64::MAX - 1,
+            i64::MAX,
+        ]
+        .map(|value| value as u64);
+        let divisors = [
+            i64::MIN,
+            i64::MIN + 1,
+            -(1_i64 << 62),
+            -(1_i64 << 32),
+            -7,
+            -3,
+            -2,
+            -1,
+            1,
+            2,
+            3,
+            7,
+            1_i64 << 32,
+            i64::MAX,
+        ]
+        .map(|value| value as u64);
+        check_jit_results(opcode, &dividends, &divisors, |left, right| {
+            expected(left as i64, right as i64).map(|value| value as u64)
+        });
+    }
+
+    #[test]
+    fn jit_sdiv_matches_signed_arithmetic() {
+        check_signed_jit_results("sdiv", i64::checked_div);
+    }
+
+    #[test]
+    fn jit_srem_matches_signed_arithmetic() {
+        check_signed_jit_results("srem", i64::checked_rem);
+    }
+
+    #[test]
+    fn jit_urem_matches_unsigned_arithmetic() {
+        let dividends = [
+            0,
+            1,
+            2,
+            3,
+            6,
+            7,
+            8,
+            (1_u64 << 32) - 1,
+            1_u64 << 32,
+            (1_u64 << 63) - 1,
+            1_u64 << 63,
+            (1_u64 << 63) + 1,
+            u64::MAX - 1,
+            u64::MAX,
+        ];
+        let divisors = [
+            1,
+            2,
+            3,
+            7,
+            (1_u64 << 32) - 1,
+            1_u64 << 32,
+            (1_u64 << 63) - 1,
+            1_u64 << 63,
+            u64::MAX,
+        ];
+        check_jit_results("urem", &dividends, &divisors, u64::checked_rem);
+    }
+
     #[test]
     fn early_validation_rejects_zero_but_allows_dynamic_divisors() {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
