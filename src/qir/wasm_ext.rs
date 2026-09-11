@@ -356,7 +356,9 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             outputs,
         } => {
             let Some(func_info) = wasm_module.get(&id) else {
-                bail!("{}", missing_wasm_func_id_message(wasm_file, id))
+                return Err(
+                    CompilationError::new(missing_wasm_func_id_message(wasm_file, id)).into(),
+                );
             };
             let Some(name) = func_info.export_name.as_deref() else {
                 bail!("Wasm module id {id} is defined but not exported");
@@ -378,7 +380,10 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let inputs: TypeRow = inputs.try_into()?;
             let outputs: TypeRow = outputs.try_into()?;
             let Some(func_info) = wasm_func_by_name(wasm_module, &name) else {
-                bail!("{}", missing_wasm_func_name_message(wasm_file, &name))
+                return Err(CompilationError::new(missing_wasm_func_name_message(
+                    wasm_file, &name,
+                ))
+                .into());
             };
             validate_lookup_signature(&name, &inputs, &outputs, func_info)?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
