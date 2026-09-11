@@ -6,18 +6,18 @@ and modulo operations for these types.
 
 ## Division and modulo
 
-Integer division (`//`) and modulo (`%`) currently require a positive divisor
-that the compiler can reduce to a constant. Positive integer literals and
+Integer division (`//`) and modulo (`%`) require a divisor
+that the compiler can reduce to a constant. Integer literals and
 compile-time expressions are supported, but values that remain dependent on
-runtime information are not. Negative dividends are supported.
+runtime information are not.
 
 For example, division by `3` is supported, while division by a value
 obtained from a measurement, random-number operation, or other runtime
 computation will fail to compile. Division or modulo by zero will fail at compile time.
 
 ```{warning}
-Negative divisors can compile but produce incorrect results due to an upstream
-Guppy bug. Avoid negative divisors in both division and modulo operations,
+Currently, negative divisors can compile but produce incorrect results due to an
+upstream Guppy bug. Avoid negative divisors in both division and modulo operations,
 even when they are compile-time constants. This issue is tracked in
 [guppylang#2316](https://github.com/Quantinuum/guppylang/issues/2316).
 ```
