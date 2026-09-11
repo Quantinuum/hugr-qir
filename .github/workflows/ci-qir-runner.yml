@@ -51,7 +51,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Build HUGR-QIR binary
@@ -97,7 +97,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.0.0
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Download the hugr-bin binary
