@@ -1,11 +1,56 @@
 //! LLVM rewrites for integer division operations not accepted by the downstream compiler.
 
+use crate::compilation_error::CompilationError;
 use anyhow::{Result, anyhow};
 
 use crate::inkwell::IntPredicate;
 use crate::inkwell::module::Module;
 use crate::inkwell::values::IntValue;
 use crate::inkwell::values::{BasicValueEnum, InstructionOpcode, InstructionValue, Operand};
+
+/// Reject literal-zero divisors before optimization can fold them to poison.
+/// Nonconstant operands must be allowed here: optimization can make them static.
+pub fn validate_no_zero_divisors(module: &Module) -> Result<()> {
+    for division in integer_divisions(module) {
+        if int_operand(division, 1)?.get_zero_extended_constant() == Some(0) {
+            return Err(CompilationError::new("Detected division by zero.").into());
+        }
+    }
+    Ok(())
+}
+
+fn integer_divisions<'ctx>(module: &Module<'ctx>) -> Vec<InstructionValue<'ctx>> {
+    module
+        .get_functions()
+        .flat_map(|function| function.get_basic_blocks())
+        .flat_map(|block| block.get_instructions())
+        .filter(|inst| {
+            matches!(
+                inst.get_opcode(),
+                InstructionOpcode::UDiv
+                    | InstructionOpcode::URem
+                    | InstructionOpcode::SDiv
+                    | InstructionOpcode::SRem
+            )
+        })
+        .collect()
+}
+
+/// Check final divisor operands after optimization has exposed static values.
+pub fn validate_integer_division(module: &Module) -> Result<()> {
+    validate_no_zero_divisors(module)?;
+    for division in integer_divisions(module) {
+        if int_operand(division, 1)?
+            .get_zero_extended_constant()
+            .is_none()
+        {
+            return Err(CompilationError::new(
+                "A division or modulo operation required a divisor whose value could not be determined at compile time, this is unsupported."
+            ).into());
+        }
+    }
+    Ok(())
+}
 
 /// Validates that all integer division operations have constant divisors and
 /// lowers operations unsupported by the lower compiler stack.
@@ -22,33 +67,9 @@ use crate::inkwell::values::{BasicValueEnum, InstructionOpcode, InstructionValue
 /// The lower compiler stack for H-Series accepts `udiv` only when its divisor is
 /// constant. A non-constant divisor is rejected here with a targeted error.
 pub fn lower_integer_division(module: &Module) -> Result<usize> {
-    let divisions = module
-        .get_functions()
-        .flat_map(|function| function.get_basic_blocks())
-        .flat_map(|block| block.get_instructions())
-        .filter(|inst| {
-            matches!(
-                inst.get_opcode(),
-                InstructionOpcode::UDiv
-                    | InstructionOpcode::URem
-                    | InstructionOpcode::SDiv
-                    | InstructionOpcode::SRem
-            )
-        })
-        .collect::<Vec<_>>();
-
     // Validate before mutating the module so a failure cannot leave it partially lowered.
-    for &division in &divisions {
-        let divisor = int_operand(division, 1)?;
-        let Some(divisor_bits) = divisor.get_zero_extended_constant() else {
-            return Err(anyhow!(
-                "A division or modulo operation required a divisor whose value could not be determined at compile time, this is unsupported."
-            ));
-        };
-        if divisor_bits == 0 {
-            return Err(anyhow!("Detected division by zero."));
-        }
-    }
+    validate_integer_division(module)?;
+    let divisions = integer_divisions(module);
 
     let builder = module.get_context().create_builder();
     let mut lowered = 0;
@@ -248,8 +269,83 @@ fn int_operand(inst: InstructionValue, index: u32) -> Result<IntValue> {
 #[cfg(test)]
 mod tests {
     use crate::inkwell::context::Context;
+    use crate::inkwell::memory_buffer::MemoryBuffer;
 
     use super::*;
+
+    #[test]
+    fn early_validation_rejects_zero_but_allows_dynamic_divisors() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        for opcode in ["udiv", "urem", "sdiv", "srem"] {
+            for divisor in ["0", "%y"] {
+                let ir = format!(
+                    "define i64 @f(i64 %x, i64 %y) {{ entry: %r = {opcode} i64 %x, {divisor}\n ret i64 %r }}"
+                );
+                let module = context
+                    .create_module_from_ir(MemoryBuffer::create_from_memory_range_copy(
+                        format!("{ir}\0").as_bytes(),
+                        "test",
+                    ))
+                    .unwrap();
+                let result = validate_no_zero_divisors(&module);
+                if divisor == "0" {
+                    assert_eq!(
+                        result.unwrap_err().to_string(),
+                        "Detected division by zero."
+                    );
+                } else {
+                    result.unwrap();
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn panic_diagnostic_distinguishes_conditional_execution() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        for conditional in [false, true] {
+            let branch = if conditional {
+                "br i1 %condition, label %panic, label %done\npanic:"
+            } else {
+                ""
+            };
+            let ir = format!(
+                r#"
+                @message = constant [24 x i8] c"Attempted division by 0\00"
+                declare i32 @printf(ptr, ...)
+                declare void @abort()
+                define void @f(i1 %condition) {{
+                entry:
+                    {branch}
+                    %r = call i32 (ptr, ...) @printf(ptr null, i32 2, ptr @message)
+                    call void @abort()
+                    unreachable
+                done:
+                    ret void
+                }}
+            "#
+            );
+            let module = context
+                .create_module_from_ir(MemoryBuffer::create_from_memory_range_copy(
+                    format!("{ir}\0").as_bytes(),
+                    "test",
+                ))
+                .unwrap();
+            let error = crate::validate_panic::validate_no_panic(&module)
+                .unwrap_err()
+                .to_string();
+            if conditional {
+                assert_eq!(
+                    error,
+                    "Program may panic: Attempted division by 0. Runtime panics are unsupported on H-Series."
+                );
+            } else {
+                assert_eq!(error, "Program always panics: Attempted division by 0");
+            }
+        }
+    }
 
     fn signed_division_module(context: &Context, divisor_bits: u64, remainder: bool) -> Module<'_> {
         let module = context.create_module("signed_division");

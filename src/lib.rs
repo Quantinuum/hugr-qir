@@ -30,6 +30,7 @@ use tket::passes::{
     PassScope, RemoveDeadFuncsPass, WithScope, composable::Preserve,
 };
 pub mod cli;
+pub mod compilation_error;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
@@ -37,12 +38,13 @@ pub mod lower_integer_division;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
+pub mod validate_panic;
 
 use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
 use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
-use crate::lower_integer_division::lower_integer_division;
+use crate::lower_integer_division::{lower_integer_division, validate_no_zero_divisors};
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
@@ -212,6 +214,7 @@ impl CompileArgs {
 
     /// Optimize the module using LLVM passes
     fn optimize_module_llvm(&self, module: &Module) -> Result<TargetMachine> {
+        validate_no_zero_divisors(module)?;
         if self.max_loop_unroll == 0 {
             bail!("max_loop_unroll must be greater than zero");
         }
@@ -301,9 +304,9 @@ impl CompileArgs {
         if let CompileTarget::QuantinuumHardware = self.target
             && qubit_count > 56
         {
-            bail!(
+            return Err(compilation_error::CompilationError::new(format!(
                 "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H-Series"
-            )
+            )).into());
         }
 
         add_module_metadata(&namer, hugr, &module, qubit_count, result_count)?;
@@ -320,6 +323,7 @@ impl CompileArgs {
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
+        validate_panic::validate_no_panic(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
         normalize_block_names(&module);

@@ -91,9 +91,8 @@ def test_wide_unsigned_dividend_currently_reaches_udiv() -> None:
 
 
 def test_random_bound_retains_signed_narrowing_check() -> None:
-    qir = guppy_to_qir_str(random_value_as_bound, validate_qir=False)
-    assert re.search(r"icmp sgt i32 %[^,]+, -1", qir)
-    assert "@abort" in qir
+    with pytest.raises(Exception, match="Program may panic"):
+        guppy_to_qir_str(random_value_as_bound, validate_qir=False)
 
 
 def test_range_survives_helper_branch_tuple_and_array() -> None:
@@ -102,11 +101,12 @@ def test_range_survives_helper_branch_tuple_and_array() -> None:
 
 
 def test_potentially_negative_conversion_keeps_panic() -> None:
-    qir = guppy_to_qir_str(potentially_negative_conversion, validate_qir=False)
-    assert "is_to_u called on negative value" in qir
-    assert "@abort" in qir
-    with pytest.raises(Exception):  # noqa: B017, PT011
-        guppy_to_qir_str(potentially_negative_conversion, validate_qir=True)
+    for validate in [False, True]:
+        with pytest.raises(
+            Exception,
+            match=("Program may panic: is_to_u called on negative value"),
+        ):
+            guppy_to_qir_str(potentially_negative_conversion, validate_qir=validate)
 
 
 def test_guard_proves_conversion_is_safe() -> None:

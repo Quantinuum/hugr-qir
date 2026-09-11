@@ -145,7 +145,10 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
                 )
             }
             RandomOp::DeleteRNGContext => args.outputs.finish(self.builder(), []),
-            _ => anyhow::bail!("Unknown op: {op:?}"),
+            _ => Err(crate::compilation_error::CompilationError::new(format!(
+                "Unsupported random operation: {op:?}"
+            ))
+            .into()),
         }
     }
 }
