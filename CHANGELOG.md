@@ -9,6 +9,7 @@
 - update to tket 0.22
 - update to hugr 0.30
 - update to tket-qsystem 0.29
+- update quantinuum-qircheck version requirement to 0.9.0
 
 ### v0.2.0
 
