@@ -1,15 +1,17 @@
 import base64
-
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from hugr_qir.output import OutputFormat
 from typing import TypeAlias
 
 from hugr import ops, tys
 from hugr.package import Package
+from hugr.qsystem.result import QsysResult, QsysShot
+from pyqir import Context, Module, Opcode
+from pytket import Bit
 from pytket.backends.backendresult import BackendResult
-from pyqir import Module, Context, Opcode
+
+from hugr_qir.output import OutputFormat
 
 ShotValue: TypeAlias = bool | int | str
 
@@ -105,7 +107,7 @@ def hugr_to_result_spec(hugr: Package) -> ResultSpec:
     return ResultSpec(result_representations)
 
 
-def qir_to_result_spec(qir: bytes | str, format: OutputFormat) -> ResultSpec:
+def qir_to_result_spec(qir: bytes | str, qir_format: OutputFormat) -> ResultSpec:
     """Infer result representations from QIR."""
     operation_representations = {
         "__quantum__rt__bool_record_output": ResultRep.BOOL,
@@ -113,22 +115,22 @@ def qir_to_result_spec(qir: bytes | str, format: OutputFormat) -> ResultSpec:
     }
     result_representations: dict[str, ResultRep] = {}
     ctx = Context()
-    if format == OutputFormat.BITCODE:
-        assert isinstance(qir, bytes)
+    if qir_format == OutputFormat.BITCODE:
+        assert isinstance(qir, bytes)  # noqa: S101
         mod = Module.from_bitcode(ctx, qir)
-    if format == OutputFormat.BASE64:
-        assert isinstance(qir, str)
+    if qir_format == OutputFormat.BASE64:
+        assert isinstance(qir, str)  # noqa: S101
         qir_bytes = base64.b64decode(qir)
         mod = Module.from_bitcode(ctx, qir_bytes)
-    if format == OutputFormat.LLVM_IR:
-        assert isinstance(qir, str)
+    if qir_format == OutputFormat.LLVM_IR:
+        assert isinstance(qir, str)  # noqa: S101
         mod = Module.from_ir(ctx, qir)
     for function in mod.functions:
         for block in function.basic_blocks:
             for inst in block.instructions:
                 opcode = inst.opcode
-                if opcode == Opcode.CALL:
-                    if inst.callee.name in operation_representations.keys():
+                if opcode == Opcode.CALL:  # noqa: SIM102
+                    if inst.callee.name in operation_representations:
                         global_str = str(inst.args[1])
                         match = re.search(r'c"([^"\\]+)', global_str)
                         if match:
@@ -136,7 +138,110 @@ def qir_to_result_spec(qir: bytes | str, format: OutputFormat) -> ResultSpec:
                             result_representations[variable_name] = (
                                 operation_representations.get(inst.callee.name)
                             )
-    return ResultSpec(result_representations)
+    return result_representations
+
+
+def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912
+    number_of_shots = len(backres.get_shots())
+    clean_creg = {}
+
+    set_cregnames = set()
+    for b in backres.c_bits:
+        set_cregnames.add(b.reg_name)
+
+    for cregname in set_cregnames:
+        split_creg = cregname.split("___")
+
+        clean_creg[cregname] = (split_creg[0], *split_creg[1].split("_"))
+
+        if len(split_creg) != 2:  # noqa: PLR2004
+            raise ValueError(f"unexpected ___ in reg name: {cregname}")  # noqa: TRY003, EM102
+
+        if clean_creg[cregname][1] not in ["BOOL", "INT", "ARRBOOL", "ARRINT"]:
+            raise ValueError(f"unexpected TYPE in reg name: {clean_creg[cregname][1]}")  # noqa: TRY003, EM102
+
+    list_shots = []
+    result_arrays = {}
+    for cregname in set_cregnames:
+        ctype = clean_creg[cregname][1]
+        if ctype in ["ARRBOOL", "ARRINT"]:
+            result_arrays[clean_creg[cregname][0]] = []
+
+    for cregname in set_cregnames:
+        ctype = clean_creg[cregname][1]
+        if ctype in ["ARRBOOL", "ARRINT"]:
+            result_arrays[clean_creg[cregname][0]].extend(0)
+
+    for i in range(number_of_shots):
+        shot_result = []
+        for ra in result_arrays.items():
+            result_arrays[ra] = [0 for x in result_arrays[ra]]
+        for cregname in set_cregnames:
+            ctype = clean_creg[cregname][1]
+            if ctype == "BOOL":  # BOOL
+                bitlist = [Bit(name=cregname, index=0)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                shot_result.extend((f"{clean_creg[cregname][0]}", bool(res)))
+            elif ctype == "INT":  # INT
+                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                shot_result.extend(
+                    (
+                        f"{clean_creg[cregname][0]}",
+                        int(sum([int(res[i]) * (2**i) for i in range(64)])),
+                    )
+                )
+            elif ctype == "ARRBOOL":  # ARRBOOL
+                bitlist = [Bit(name=cregname, index=0)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                result_arrays[clean_creg[cregname][0]][int(clean_creg[cregname][2])] = (
+                    bool(res)
+                )
+            elif ctype == "ARRINT":  # ARRINT
+                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                result_arrays[clean_creg[cregname][0]][int(clean_creg[cregname][2])] = (
+                    int(sum([int(res[i]) * (2**i) for i in range(64)]))
+                )
+            else:
+                raise ValueError("found unexpected type")  # noqa: EM101, TRY003
+
+        for ra in result_arrays.items():
+            shot_result.extend((ra, result_arrays[ra]))
+
+        list_shots.extend(QsysShot(shot_result))
+
+    return QsysResult(list_shots)
+
+
+def backendresult_to_qsysresult_with_qir(
+    backres: BackendResult, qir: bytes | str
+) -> QsysResult:
+    result_representations = qir_to_result_spec(qir, OutputFormat.LLVM_IR)
+    number_of_shots = len(backres.get_shots())
+
+    list_shots = []
+
+    for i in range(number_of_shots):
+        shot_result = []
+        for cregname in result_representations:
+            ctype = result_representations[cregname]
+            if ctype == ResultRep.BOOL:  # BOOL
+                bitlist = [Bit(name=cregname, index=0)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                shot_result.extend((f"{cregname}", bool(res)))
+            elif ctype == ResultRep.INT:  # INT
+                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                res = backres.get_shots(cbits=bitlist)[i]
+                shot_result.extend(
+                    (f"{cregname}", int(sum([int(res[i]) * (2**i) for i in range(64)])))
+                )
+            else:
+                raise ValueError("found unexpected type")  # noqa: EM101, TRY003
+
+        list_shots.extend(QsysShot(shot_result))
+
+    return QsysResult(list_shots)
 
 
 def _handle_results(results: BackendResult) -> list[dict[str, list[int]]]:

@@ -2,7 +2,6 @@ from collections.abc import Callable
 
 from guppylang.defs import GuppyFunctionDefinition
 
-from .h_series_helpers.results import ResultSpec, hugr_to_result_spec
 from ._hugr_qir import max_loop_unroll_default
 from .hugr_to_qir import to_qir_bytes, to_qir_str
 

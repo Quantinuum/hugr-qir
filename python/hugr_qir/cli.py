@@ -2,7 +2,6 @@
 
 import logging
 import tempfile
-from hugr_qir.h_series_helpers.results import qir_to_result_spec
 from importlib.metadata import version
 from pathlib import Path
 
@@ -18,6 +17,7 @@ from hugr_qir._hugr_qir import (
     opt_level_choices,
     opt_level_default,
 )
+from hugr_qir.h_series_helpers.results import qir_to_result_spec
 from hugr_qir.output import OutputFormat, get_write_mode, ir_string_to_output_format
 
 logger = logging.getLogger()
@@ -124,7 +124,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
     )
 
 
-def hugr_qir_impl(  # noqa: PLR0913, PLR0917
+def hugr_qir_impl(  # noqa: PLR0913, PLR0917, C901
     validate_qir: bool,
     validate_hugr: bool,
     target: str,
