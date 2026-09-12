@@ -9,6 +9,7 @@
 - update to tket 0.22
 - update to hugr 0.30
 - update to tket-qsystem 0.29
+- add backendresult_to_qsysresult_with_qir and backendresult_to_qsysresult to qsysresult generation
 
 ### v0.2.0
 
