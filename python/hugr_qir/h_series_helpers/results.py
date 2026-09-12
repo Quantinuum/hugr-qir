@@ -146,7 +146,7 @@ def qir_to_result_spec(qir: bytes | str, qir_format: OutputFormat) -> ResultSpec
                         global_str = str(inst_any.args[1])
                         match = re.search(r'c"([^"\\]+)', global_str)
                         if match:
-                            variable_name = match.group(1)
+                            variable_name = match.group(1).removesuffix("\\00")
                             result_representations[variable_name] = (
                                 operation_representations[inst_any.callee.name]
                             )
