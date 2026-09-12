@@ -2,7 +2,7 @@ import base64
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TypeAlias
+from typing import Any, TypeAlias, cast
 
 from hugr import ops, tys
 from hugr.package import Package
@@ -118,32 +118,33 @@ def qir_to_result_spec(qir: bytes | str, qir_format: OutputFormat) -> ResultSpec
     if qir_format == OutputFormat.BITCODE:
         assert isinstance(qir, bytes)  # noqa: S101
         mod = Module.from_bitcode(ctx, qir)
-    if qir_format == OutputFormat.BASE64:
+    elif qir_format == OutputFormat.BASE64:
         assert isinstance(qir, str)  # noqa: S101
         qir_bytes = base64.b64decode(qir)
         mod = Module.from_bitcode(ctx, qir_bytes)
-    if qir_format == OutputFormat.LLVM_IR:
+    elif qir_format == OutputFormat.LLVM_IR:
         assert isinstance(qir, str)  # noqa: S101
         mod = Module.from_ir(ctx, qir)
     for function in mod.functions:
         for block in function.basic_blocks:
             for inst in block.instructions:
+                inst_any = cast("Any", inst)
                 opcode = inst.opcode
                 if opcode == Opcode.CALL:  # noqa: SIM102
-                    if inst.callee.name in operation_representations:
-                        global_str = str(inst.args[1])
+                    if inst_any.callee.name in operation_representations:
+                        global_str = str(inst_any.args[1])
                         match = re.search(r'c"([^"\\]+)', global_str)
                         if match:
                             variable_name = match.group(1)
                             result_representations[variable_name] = (
-                                operation_representations.get(inst.callee.name)
+                                operation_representations[inst_any.callee.name]
                             )
-    return result_representations
+    return ResultSpec(result_representations)
 
 
-def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912
+def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912, PLR0915
     number_of_shots = len(backres.get_shots())
-    clean_creg = {}
+    clean_creg: dict[str, tuple[str, str, int | None]] = {}
 
     set_cregnames = set()
     for b in backres.c_bits:
@@ -152,64 +153,71 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
     for cregname in set_cregnames:
         split_creg = cregname.split("___")
 
-        clean_creg[cregname] = (split_creg[0], *split_creg[1].split("_"))
-
         if len(split_creg) != 2:  # noqa: PLR2004
             raise ValueError(f"unexpected ___ in reg name: {cregname}")  # noqa: TRY003, EM102
+
+        type_tokens = split_creg[1].split("_")
+        ctype = type_tokens[0]
+        index = int(type_tokens[1]) if len(type_tokens) > 1 else None
+        clean_creg[cregname] = (split_creg[0], ctype, index)
 
         if clean_creg[cregname][1] not in ["BOOL", "INT", "ARRBOOL", "ARRINT"]:
             raise ValueError(f"unexpected TYPE in reg name: {clean_creg[cregname][1]}")  # noqa: TRY003, EM102
 
-    list_shots = []
-    result_arrays = {}
+    list_shots: list[QsysShot] = []
+    result_arrays: dict[str, list[int | bool]] = {}
     for cregname in set_cregnames:
-        ctype = clean_creg[cregname][1]
+        regname, ctype, _ = clean_creg[cregname]
         if ctype in ["ARRBOOL", "ARRINT"]:
-            result_arrays[clean_creg[cregname][0]] = []
+            result_arrays[regname] = []
 
     for cregname in set_cregnames:
-        ctype = clean_creg[cregname][1]
+        regname, ctype, index = clean_creg[cregname]
         if ctype in ["ARRBOOL", "ARRINT"]:
-            result_arrays[clean_creg[cregname][0]].extend(0)
+            assert index is not None  # noqa: S101
+            while len(result_arrays[regname]) <= index:
+                result_arrays[regname].append(0)
 
     for i in range(number_of_shots):
-        shot_result = []
-        for ra in result_arrays.items():
-            result_arrays[ra] = [0 for x in result_arrays[ra]]
+        shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
+        shot_arrays = {k: [0 for _ in v] for k, v in result_arrays.items()}
         for cregname in set_cregnames:
-            ctype = clean_creg[cregname][1]
+            regname, ctype, index = clean_creg[cregname]
             if ctype == "BOOL":  # BOOL
                 bitlist = [Bit(name=cregname, index=0)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                shot_result.extend((f"{clean_creg[cregname][0]}", bool(res)))
+                shot_result.append((regname, bool(res)))
             elif ctype == "INT":  # INT
                 bitlist = [Bit(name=cregname, index=i) for i in range(64)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                shot_result.extend(
+                shot_result.append(
                     (
-                        f"{clean_creg[cregname][0]}",
+                        regname,
                         int(sum([int(res[i]) * (2**i) for i in range(64)])),
                     )
                 )
             elif ctype == "ARRBOOL":  # ARRBOOL
                 bitlist = [Bit(name=cregname, index=0)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                result_arrays[clean_creg[cregname][0]][int(clean_creg[cregname][2])] = (
-                    bool(res)
-                )
+                assert index is not None  # noqa: S101
+                shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":  # ARRINT
                 bitlist = [Bit(name=cregname, index=i) for i in range(64)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                result_arrays[clean_creg[cregname][0]][int(clean_creg[cregname][2])] = (
-                    int(sum([int(res[i]) * (2**i) for i in range(64)]))
+                assert index is not None  # noqa: S101
+                shot_arrays[regname][index] = int(
+                    sum([int(res[i]) * (2**i) for i in range(64)])
                 )
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
-        for ra in result_arrays.items():
-            shot_result.extend((ra, result_arrays[ra]))
+        for regname, values in shot_arrays.items():
+            if all(isinstance(value, bool) for value in values):
+                shot_result.append((regname, cast("list[bool]", values)))
+            else:
+                shot_result.append((regname, [int(value) for value in values]))
 
-        list_shots.extend(QsysShot(shot_result))
+        list_shots.append(QsysShot(cast("Any", shot_result)))
 
     return QsysResult(list_shots)
 
@@ -217,29 +225,31 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
 def backendresult_to_qsysresult_with_qir(
     backres: BackendResult, qir: bytes | str
 ) -> QsysResult:
-    result_representations = qir_to_result_spec(qir, OutputFormat.LLVM_IR)
+    result_representations = qir_to_result_spec(
+        qir, OutputFormat.LLVM_IR
+    ).result_representations
     number_of_shots = len(backres.get_shots())
 
-    list_shots = []
+    list_shots: list[QsysShot] = []
 
     for i in range(number_of_shots):
-        shot_result = []
+        shot_result: list[tuple[str, bool | int]] = []
         for cregname in result_representations:
             ctype = result_representations[cregname]
             if ctype == ResultRep.BOOL:  # BOOL
                 bitlist = [Bit(name=cregname, index=0)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                shot_result.extend((f"{cregname}", bool(res)))
+                shot_result.append((cregname, bool(res)))
             elif ctype == ResultRep.INT:  # INT
                 bitlist = [Bit(name=cregname, index=i) for i in range(64)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                shot_result.extend(
-                    (f"{cregname}", int(sum([int(res[i]) * (2**i) for i in range(64)])))
+                shot_result.append(
+                    (cregname, int(sum([int(res[i]) * (2**i) for i in range(64)])))
                 )
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
-        list_shots.extend(QsysShot(shot_result))
+        list_shots.append(QsysShot(cast("Any", shot_result)))
 
     return QsysResult(list_shots)
 
