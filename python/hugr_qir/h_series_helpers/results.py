@@ -199,7 +199,9 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
                 res = backres.get_shots(cbits=bitlist)[i]
                 shot_result.append((regname, bool(res)))
             elif ctype == "INT":  # INT
-                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                bitlist = [
+                    Bit(name=cregname, index=bit_index) for bit_index in range(64)
+                ]
                 res = backres.get_shots(cbits=bitlist)[i]
                 shot_result.append(
                     (
@@ -213,7 +215,9 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
                 assert index is not None  # noqa: S101
                 shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":  # ARRINT
-                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                bitlist = [
+                    Bit(name=cregname, index=bit_index) for bit_index in range(64)
+                ]
                 res = backres.get_shots(cbits=bitlist)[i]
                 assert index is not None  # noqa: S101
                 shot_arrays[regname][index] = _decode_signed_64_bit_value(res)
@@ -250,7 +254,9 @@ def backendresult_to_qsysresult_with_qir(
                 res = backres.get_shots(cbits=bitlist)[i]
                 shot_result.append((cregname, bool(res)))
             elif ctype == ResultRep.INT:  # INT
-                bitlist = [Bit(name=cregname, index=i) for i in range(64)]
+                bitlist = [
+                    Bit(name=cregname, index=bit_index) for bit_index in range(64)
+                ]
                 res = backres.get_shots(cbits=bitlist)[i]
                 shot_result.append((cregname, _decode_signed_64_bit_value(res)))
             else:
@@ -265,9 +271,7 @@ def _handle_results(results: BackendResult) -> list[dict[str, list[int]]]:
     bitlist = results.get_bitlist()
     shots = results.get_shots()
     n_shots, n_bits = shots.shape
-    shots_res = [
-        [int(x) for x in reversed(results.get_shots()[s])] for s in range(n_shots)
-    ]
+    shots_res = [[int(x) for x in reversed(shots[s])] for s in range(n_shots)]
     hqr_results = []
     for s in range(n_shots):
         pairs = []
