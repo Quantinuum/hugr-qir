@@ -232,7 +232,7 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
 
 
 def backendresult_to_qsysresult_with_qir(
-    backres: BackendResult, qir: bytes | str
+    backres: BackendResult, qir: str
 ) -> QsysResult:
     result_representations = qir_to_result_spec(
         qir, OutputFormat.LLVM_IR
