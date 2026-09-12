@@ -8,7 +8,6 @@ That workflow is already usable today, but it does not support the full Guppy fe
 - See the [Support matrix](support-matrix.md) for a feature support overview.
 - Read [Integers](integers.md) before using signed values or large integers.
 - Use [Collections and structs](collections-and-structs.md) when you need the current rules around arrays, tuples, and structs.
-- See [Result recording](result_recording.md) for information on result recording and retrieval through H-Series submission workflows.
 - Browse [Guppy feature examples](guppy-features/index.md) for paired supported examples and unsupported counterexamples from the repository.
 
 ```{toctree}
