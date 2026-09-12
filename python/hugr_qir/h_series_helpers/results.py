@@ -1,5 +1,6 @@
 import base64
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, TypeAlias, cast
@@ -14,6 +15,13 @@ from pytket.backends.backendresult import BackendResult
 from hugr_qir.output import OutputFormat
 
 ShotValue: TypeAlias = bool | int | str
+
+
+def _decode_signed_64_bit_value(bits: Sequence[bool | int]) -> int:
+    value = sum(int(bits[i]) * (2**i) for i in range(64))
+    if value >= (1 << 63):
+        value -= 1 << 64
+    return value
 
 
 class ResultRep(StrEnum):
@@ -125,6 +133,9 @@ def qir_to_result_spec(qir: bytes | str, qir_format: OutputFormat) -> ResultSpec
     elif qir_format == OutputFormat.LLVM_IR:
         assert isinstance(qir, str)  # noqa: S101
         mod = Module.from_ir(ctx, qir)
+    else:
+        msg = f"Unsupported QIR output format {qir_format!r}"
+        raise ValueError(msg)
     for function in mod.functions:
         for block in function.basic_blocks:
             for inst in block.instructions:
@@ -193,7 +204,7 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
                 shot_result.append(
                     (
                         regname,
-                        int(sum([int(res[i]) * (2**i) for i in range(64)])),
+                        _decode_signed_64_bit_value(res),
                     )
                 )
             elif ctype == "ARRBOOL":  # ARRBOOL
@@ -205,9 +216,7 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:  # noqa: 
                 bitlist = [Bit(name=cregname, index=i) for i in range(64)]
                 res = backres.get_shots(cbits=bitlist)[i]
                 assert index is not None  # noqa: S101
-                shot_arrays[regname][index] = int(
-                    sum([int(res[i]) * (2**i) for i in range(64)])
-                )
+                shot_arrays[regname][index] = _decode_signed_64_bit_value(res)
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
@@ -243,9 +252,7 @@ def backendresult_to_qsysresult_with_qir(
             elif ctype == ResultRep.INT:  # INT
                 bitlist = [Bit(name=cregname, index=i) for i in range(64)]
                 res = backres.get_shots(cbits=bitlist)[i]
-                shot_result.append(
-                    (cregname, int(sum([int(res[i]) * (2**i) for i in range(64)])))
-                )
+                shot_result.append((cregname, _decode_signed_64_bit_value(res)))
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
