@@ -6,8 +6,10 @@
 //! emits [`IntOpDef::is_to_u`], whose LLVM lowering checks for a negative value
 //! and panics. When the result is subsequently consumed in a signed context,
 //! Guppy also emits [`IntOpDef::iu_to_s`], adding an upper-bound check. The
-//! runtime operations actually return unsigned values, so these checks are both
-//! unnecessary and, for random `u32` values with the high bit set, incorrect.
+//! runtime operations actually return unsigned values, so the signed-to-unsigned
+//! check is unnecessary. The reverse check is redundant only when the producer's
+//! entire range fits the signed destination: a random `u32` fits in signed i64,
+//! but not in signed i32.
 //!
 //! HUGR integer types do not encode signedness. This pass consequently rewrites
 //! only conversion paths whose provenance is one of the exact qsystem operations
@@ -71,7 +73,7 @@ where
             else {
                 continue;
             };
-            if !is_known_unsigned_output(hugr, source_node, source_port) {
+            if known_unsigned_output_bits(hugr, source_node, source_port).is_none() {
                 continue;
             }
             hugr.replace_op(
@@ -93,8 +95,8 @@ where
                 continue;
             };
 
-            if is_known_unsigned_value(hugr, input_node, input_port) {
-                replace_conversion_output(hugr, conversion, input_node, input_port);
+            if let Some(value_bits) = known_unsigned_value_bits(hugr, input_node, input_port) {
+                replace_conversion_output(hugr, conversion, input_node, input_port, value_bits);
                 rewritten += 1;
             }
         }
@@ -118,38 +120,37 @@ fn is_int_op<H: HugrView<Node = Node>>(hugr: &H, node: Node, expected: IntOpDef)
     concrete_int_op(hugr, node).is_some_and(|op| op.def == expected)
 }
 
-fn is_known_unsigned_output<H: HugrView<Node = Node>>(
+/// Number of bits needed for the producer's unsigned range. All three H2
+/// operations return values in [0, 2^32), including the i64 shot counter.
+fn known_unsigned_output_bits<H: HugrView<Node = Node>>(
     hugr: &H,
     node: Node,
     port: OutgoingPort,
-) -> bool {
+) -> Option<u32> {
     if port != OutgoingPort::from(0) {
-        return false;
+        return None;
     }
     let op = hugr.get_optype(node);
-    matches!(
+    (matches!(
         RandomOp::from_optype(op),
         Some(RandomOp::RandomInt | RandomOp::RandomIntBounded)
-    ) || matches!(UtilsOp::from_optype(op), Some(UtilsOp::GetCurrentShot))
+    ) || matches!(UtilsOp::from_optype(op), Some(UtilsOp::GetCurrentShot)))
+    .then_some(32)
 }
 
-fn is_known_unsigned_value<H: HugrView<Node = Node>>(
+fn known_unsigned_value_bits<H: HugrView<Node = Node>>(
     hugr: &H,
     mut node: Node,
     mut port: OutgoingPort,
-) -> bool {
+) -> Option<u32> {
     loop {
-        if is_known_unsigned_output(hugr, node, port) {
-            return true;
+        if let Some(bits) = known_unsigned_output_bits(hugr, node, port) {
+            return Some(bits);
         }
         if port != OutgoingPort::from(0) || !is_int_op(hugr, node, IntOpDef::iwiden_u) {
-            return false;
+            return None;
         }
-        let Some((source_node, source_port)) =
-            hugr.single_linked_output(node, IncomingPort::from(0))
-        else {
-            return false;
-        };
+        let (source_node, source_port) = hugr.single_linked_output(node, IncomingPort::from(0))?;
         node = source_node;
         port = source_port;
     }
@@ -160,6 +161,7 @@ fn replace_conversion_output<H>(
     conversion: Node,
     replacement_node: Node,
     replacement_port: OutgoingPort,
+    value_bits: u32,
 ) where
     H: HugrMut<Node = Node>,
 {
@@ -168,10 +170,16 @@ fn replace_conversion_output<H>(
         .collect_vec();
     for (consumer, consumer_port) in consumers {
         // Guppy commonly follows `is_to_u` with `iu_to_s` when a `nat` is
-        // consumed by an operation that currently expects `int`. Bypass the
-        // complete round-trip; otherwise the second operation emits its own
-        // upper-bound check.
-        if consumer_port == IncomingPort::from(0) && is_int_op(hugr, consumer, IntOpDef::iu_to_s) {
+        // consumed by an operation that currently expects `int`. Only bypass
+        // that upper-bound check if every possible value fits the signed width.
+        // In particular, a full-range u32 needs more than 32 signed bits.
+        let fits_signed = concrete_int_op(hugr, consumer).is_some_and(|op| {
+            op.def == IntOpDef::iu_to_s
+                && matches!(op.log_widths.as_slice(), [log_width]
+                    if 1_u32.checked_shl(u32::from(*log_width))
+                        .is_some_and(|width| width > value_bits))
+        });
+        if consumer_port == IncomingPort::from(0) && fits_signed {
             let signed_consumers = hugr
                 .linked_inputs(consumer, OutgoingPort::from(0))
                 .collect_vec();
@@ -284,6 +292,72 @@ mod tests {
         assert_eq!(count_int_op(&hugr, IntOpDef::iwiden_s), 0);
         assert_eq!(count_int_op(&hugr, IntOpDef::iwiden_u), 1);
         hugr.validate().unwrap();
+    }
+
+    #[test]
+    fn rng_round_trip_requires_a_sufficient_signed_width() {
+        for bounded in [false, true] {
+            for log_width in [5_u8, 6] {
+                let random_op = RandomOp::RandomInt.to_extension_op().unwrap();
+                let context_type = random_op.signature().input()[0].clone();
+                let mut builder = FunctionBuilder::new(
+                    "rng_round_trip",
+                    Signature::new(
+                        vec![context_type.clone(), int_type(5)],
+                        vec![
+                            int_type(u64::from(log_width)),
+                            int_type(u64::from(log_width)),
+                            context_type,
+                        ],
+                    ),
+                )
+                .unwrap();
+                let [context, bound] = builder.input_wires_arr();
+                let [random, context] = if bounded {
+                    builder.add_random_int_bounded(context, bound).unwrap()
+                } else {
+                    builder.add_random_int(context).unwrap()
+                };
+                let value = if log_width == 6 {
+                    builder
+                        .add_dataflow_op(IntOpDef::iwiden_s.with_two_log_widths(5, 6), [random])
+                        .unwrap()
+                        .out_wire(0)
+                } else {
+                    random
+                };
+                let converted = builder
+                    .add_dataflow_op(IntOpDef::is_to_u.with_log_width(log_width), [value])
+                    .unwrap()
+                    .out_wire(0);
+                let round_trip = builder
+                    .add_dataflow_op(IntOpDef::iu_to_s.with_log_width(log_width), [converted])
+                    .unwrap()
+                    .out_wire(0);
+                // Exercise both a direct unsigned consumer and the signed path.
+                let mut hugr = builder
+                    .finish_hugr_with_outputs([converted, round_trip, context])
+                    .unwrap();
+                let pass = RemoveKnownNonNegativeChecksPass::default();
+                assert_eq!(
+                    pass.run(&mut hugr).unwrap(),
+                    if log_width == 6 { 2 } else { 1 }
+                );
+                assert_eq!(count_int_op(&hugr, IntOpDef::is_to_u), 0);
+                assert_eq!(
+                    count_int_op(&hugr, IntOpDef::iu_to_s),
+                    usize::from(log_width == 5)
+                );
+                assert_eq!(count_int_op(&hugr, IntOpDef::iwiden_s), 0);
+                assert_eq!(
+                    count_int_op(&hugr, IntOpDef::iwiden_u),
+                    usize::from(log_width == 6)
+                );
+                hugr.validate().unwrap();
+                assert_eq!(pass.run(&mut hugr).unwrap(), 0);
+                hugr.validate().unwrap();
+            }
+        }
     }
 
     #[test]
