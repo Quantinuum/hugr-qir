@@ -191,6 +191,7 @@ mod test {
         #[with(_i)] mut llvm_ctx: TestContext,
         #[case] op: RandomOp,
     ) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         llvm_ctx.add_extensions(|ceb| {
             ceb.add_extension(RandomCodegenExtension)
                 .add_default_int_extensions()
