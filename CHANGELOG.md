@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.4.0
+
+- support for random_advance
+
 ### v0.3.0
 
 - add best-effort support for guppy arrays

@@ -9,7 +9,7 @@ use hugr::llvm::emit::func::EmitFuncContext;
 use inkwell::attributes::AttributeLoc;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
-use inkwell::types::{BasicTypeEnum, IntType};
+use inkwell::types::{BasicTypeEnum, IntType, VoidType};
 use inkwell::values::{BasicValueEnum, FunctionValue};
 use tket::hugr::ops::ExtensionOp;
 use tket::hugr::{HugrView, Node};
@@ -45,6 +45,10 @@ struct RandomEmitter<'c, 'd, 'e, H: HugrView<Node = Node>>(&'d mut EmitFuncConte
 impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
     fn iw_context(&self) -> &'c Context {
         self.0.typing_session().iw_context()
+    }
+
+    fn void_type(&self) -> VoidType<'c> {
+        self.iw_context().void_type()
     }
 
     fn i32_type(&self) -> IntType<'c> {
@@ -125,6 +129,19 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
                 self.mark_return_noundef(fn_random_int_bounded)?;
                 self.emit_op(args, "rintb", fn_random_int_bounded, &[1])
             }
+            RandomOp::RandomAdvance => {
+                let fn_random_advance = self.0.get_extern_func(
+                    "___random_advance",
+                    self.void_type().fn_type(&[self.i64_type().into()], false),
+                )?;
+                let [ctx, delta] = args
+                    .inputs
+                    .try_into()
+                    .map_err(|_| anyhow!("RandomAdvance expects a context and delta argument"))?;
+                self.builder()
+                    .build_call(fn_random_advance, &[delta.into()], "radv")?;
+                args.outputs.finish(self.builder(), [ctx])
+            }
             RandomOp::NewRNGContext => {
                 let fn_random_seed = self.0.get_extern_func(
                     "___random_seed",
@@ -166,6 +183,7 @@ mod test {
     #[rstest]
     #[case::random_int(1, RandomOp::RandomInt)]
     #[case::random_int_bounded(3, RandomOp::RandomIntBounded)]
+    #[case::random_advance(-1, RandomOp::RandomAdvance)]
     #[case::new_rng_context(4, RandomOp::NewRNGContext)]
     #[case::delete_rng_context(5, RandomOp::DeleteRNGContext)]
     fn emit_random_codegen(
