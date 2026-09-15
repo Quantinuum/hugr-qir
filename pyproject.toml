@@ -30,7 +30,7 @@ docs = [
     "enum-tools[sphinx]>=0.13.0",
     "myst-nb>=1.2.0",
     "quantinuum-sphinx>=0.6,<2.0",
-    "sphinx>=8,<9",
+    "sphinx>=8,<10",
     "sphinx-autodoc-typehints<3.2",
     "sphinx-copybutton>=0.5.2,<1",
     "sphinxcontrib-googleanalytics>=0.5",
