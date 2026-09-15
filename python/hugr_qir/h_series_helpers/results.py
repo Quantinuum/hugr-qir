@@ -35,7 +35,7 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
         set_cregnames.add(b.reg_name)
 
     for cregname in set_cregnames:
-        split_creg = cregname.split("___")
+        split_creg = cregname.rsplit("___", maxsplit=1)
 
         if len(split_creg) != 2:  # noqa: PLR2004
             raise ValueError(f"unexpected ___ in reg name: {cregname}")  # noqa: TRY003, EM102
