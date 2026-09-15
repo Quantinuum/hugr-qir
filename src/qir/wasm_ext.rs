@@ -1,3 +1,4 @@
+use crate::compilation_error::CompilationError;
 use crate::inkwell::{
     attributes::AttributeLoc,
     context::Context,
@@ -221,26 +222,27 @@ fn validate_wasm_func_signature(name: &str, params: &[ValType], results: &[ValTy
         .map(|(idx, ty)| format!("input {idx} has type {ty}"))
         .collect_vec();
     if !invalid_inputs.is_empty() {
-        bail!(
+        return Err(CompilationError::new(format!(
             "wasm function {name:?} has unsupported parameter types: {}; only i32 inputs are supported",
             invalid_inputs.join(", ")
-        );
+        )).into());
     }
 
     if results.len() > 1 {
-        bail!(
+        return Err(CompilationError::new(format!(
             "wasm function {name:?} has {} results ({:?}); at most one i32 result is supported",
             results.len(),
             results
-        );
+        ))
+        .into());
     }
 
     if let Some(result) = results.first()
         && *result != ValType::I32
     {
-        bail!(
+        return Err(CompilationError::new(format!(
             "wasm function {name:?} has unsupported result type {result}; only i32 or no result is supported"
-        );
+        )).into());
     }
 
     Ok(())
@@ -257,11 +259,11 @@ fn validate_lookup_row_against_wasm(
     wasm: &[ValType],
 ) -> Result<()> {
     if requested.len() != wasm.len() {
-        bail!(
+        return Err(CompilationError::new(format!(
             "wasm function {func_name:?} {row_kind} signature mismatch: requested {} {row_kind}s, but wasm function has {}",
             requested.len(),
             wasm.len()
-        );
+        )).into());
     }
 
     let mismatches = requested
@@ -278,10 +280,11 @@ fn validate_lookup_row_against_wasm(
         .collect_vec();
 
     if !mismatches.is_empty() {
-        bail!(
+        return Err(CompilationError::new(format!(
             "wasm function {func_name:?} {row_kind} signature mismatch: {}",
             mismatches.join(", ")
-        );
+        ))
+        .into());
     }
 
     Ok(())
@@ -353,7 +356,9 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             outputs,
         } => {
             let Some(func_info) = wasm_module.get(&id) else {
-                bail!("{}", missing_wasm_func_id_message(wasm_file, id))
+                return Err(
+                    CompilationError::new(missing_wasm_func_id_message(wasm_file, id)).into(),
+                );
             };
             let Some(name) = func_info.export_name.as_deref() else {
                 bail!("Wasm module id {id} is defined but not exported");
@@ -375,7 +380,10 @@ fn emit_wasm_op<'c, H: HugrView<Node = Node>>(
             let inputs: TypeRow = inputs.try_into()?;
             let outputs: TypeRow = outputs.try_into()?;
             let Some(func_info) = wasm_func_by_name(wasm_module, &name) else {
-                bail!("{}", missing_wasm_func_name_message(wasm_file, &name))
+                return Err(CompilationError::new(missing_wasm_func_name_message(
+                    wasm_file, &name,
+                ))
+                .into());
             };
             validate_lookup_signature(&name, &inputs, &outputs, func_info)?;
             let llvm_func_ty = ctx.llvm_func_type(&Signature::new(inputs, outputs))?;
