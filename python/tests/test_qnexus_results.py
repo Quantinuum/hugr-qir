@@ -7,7 +7,7 @@ from pytket.backends.backendresult import BackendResult
 from tests.conftest import TEST_DIR
 
 BACKEND_RESULT = TEST_DIR / Path("resources/backend_results/backend_result.json")
-BACKEND_RESULT_array = TEST_DIR / Path(
+BACKEND_RESULT_ARRAY = TEST_DIR / Path(
     "resources/backend_results/backend_result_array.json"
 )
 QSYS_SNAPSHOT_DIR = Path(__file__).parent / "snapshots" / "qsysresult"
@@ -62,7 +62,7 @@ def test_backend() -> None:
 
 
 def test_backend_array() -> None:
-    with BACKEND_RESULT_array.open() as f:
+    with BACKEND_RESULT_ARRAY.open() as f:
         backend_result = BackendResult.from_dict(json.load(f))
 
     qs = backendresult_to_qsysresult(backend_result)
