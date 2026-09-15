@@ -18,16 +18,16 @@ target triple = "aarch64-unknown-linux-gnu"
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
-  tail call void @___random_seed(i64 11)
   %shot = tail call i64 @___get_current_shot()
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr null)
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
+  tail call void @___random_seed(i64 11)
+  %rintb = tail call i32 @___random_int_bounded(i32 10)
+  %rint = tail call i32 @___random_int()
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
   tail call void @__quantum__rt__int_record_output(i64 %shot, ptr nonnull @1)
-  %rintb = tail call i32 @___random_int_bounded(i32 10)
-  %rint = tail call i32 @___random_int()
   %1 = zext i32 %rint to i64
   %2 = zext i32 %rintb to i64
   %urem.quotient = udiv i32 %rintb, 3
@@ -101,13 +101,17 @@ bb4:                                              ; preds = %NodeBlock427
   br label %bb0
 }
 
-declare void @___random_seed(i64) local_unnamed_addr
-
 declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
+
+declare void @___random_seed(i64) local_unnamed_addr
+
+declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
+
+declare noundef i32 @___random_int() local_unnamed_addr
 
 declare void @__quantum__qis__mz__body(ptr, ptr writeonly) local_unnamed_addr #1
 
@@ -116,10 +120,6 @@ declare i1 @__quantum__rt__read_result(ptr readonly) local_unnamed_addr
 declare void @__quantum__rt__bool_record_output(i1, ptr) local_unnamed_addr
 
 declare void @__quantum__rt__int_record_output(i64, ptr) local_unnamed_addr
-
-declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
-
-declare noundef i32 @___random_int() local_unnamed_addr
 
 declare void @__quantum__rt__initialize(ptr) local_unnamed_addr
 
