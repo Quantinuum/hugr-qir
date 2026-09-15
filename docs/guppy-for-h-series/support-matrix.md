@@ -38,19 +38,18 @@ systems with `hugr-qir`.
 
 ## Data types
 
-| Data type | Support | Caveats                                                                             |
-|-----------|---------|-------------------------------------------------------------------------------------|
-| int | *️⃣ | Negative values can silently produce incorrect results; see [Integers](integers.md) |
-| float | *️⃣ | May be used as a constant gate parameter; calculations and output are unsupported   |
-| array | *️⃣ | Fixed-size arrays are supported when element accesses can be made static            |
-| bool | ✅ |                                                                                     |
-| nat | ✅ |                                                                                     |
-| struct | ✅ |                                                                                     |
-| tuple | ✅ |                                                                                     |
-| enum | ✅ |                                                                                     |
-| `Option` | ✅ |                                                                                     |
-| `Result` | ✅ |                                                                                     |
-| `Either` | ✅ |                                                                                     |
+| Data type | Support | Caveats                                                                               |
+|-----------|---------|---------------------------------------------------------------------------------------|
+| int/nat   | *️⃣ | There are restrictions on division and modulo operations, see [Integers](integers.md) |
+| float     | *️⃣ | May be used as a constant gate parameter; calculations and output are unsupported     |
+| array     | *️⃣ | Fixed-size arrays are supported when element accesses can be made static              |
+| bool      | ✅ |                                                                                       |
+| struct    | ✅ |                                                                                       |
+| tuple     | ✅ |                                                                                       |
+| enum      | ✅ |                                                                                       |
+| `Option`  | ✅ |                                                                                       |
+| `Result`  | ✅ |                                                                                       |
+| `Either`  | ✅ |                                                                                       |
 
 See [Integers](integers.md), [Collections and structs](collections-and-structs.md),
 and [Arrays](guppy-features/arrays.md) for the rules behind the partial entries.

@@ -6,6 +6,7 @@ use anyhow::{Result, anyhow};
 use hugr::llvm::custom::CodegenExtension;
 use hugr::llvm::emit::EmitOpArgs;
 use hugr::llvm::emit::func::EmitFuncContext;
+use inkwell::attributes::AttributeLoc;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::types::{BasicTypeEnum, IntType};
@@ -66,19 +67,27 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
         self.0.builder()
     }
 
+    fn mark_return_noundef(&self, function: FunctionValue<'c>) -> Result<()> {
+        function.add_attribute(
+            AttributeLoc::Return,
+            super::qir_enum_attribute(self.iw_context(), "noundef")?,
+        );
+        Ok(())
+    }
+
     /// Helper function to `emit` an RNG operation.
     fn emit_op(
         &self,
         args: EmitOpArgs<'c, '_, ExtensionOp, H>,
         name: &str,
-        func: Result<FunctionValue<'c>>,
+        func: FunctionValue<'c>,
         input_indices: &[usize],
     ) -> Result<()> {
         let inputs: Vec<_> = input_indices.iter().map(|&i| args.inputs[i]).collect();
         let result = self
             .builder()
             .build_call(
-                func?,
+                func,
                 &inputs.iter().map(|&v| v.into()).collect::<Vec<_>>(),
                 name,
             )?
@@ -89,19 +98,31 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
     }
 
     /// Function to help lower the `tket.qsystem.random` extension.
+    ///
+    /// H2's RandomInt returns all 32 random bits as an unsigned value.
+    /// RandomIntBounded accepts an unsigned bound up to 2^32 - 1 and returns
+    /// a value strictly below it. Neither result is restricted to signed i32;
+    /// widening must use zero extension rather than a nonnegative i32 range hint.
+    ///
+    /// Guppy currently narrows the bound as a signed i32: positive bounds above
+    /// 2^31 - 1 panic, but negative bounds pass and H2 interprets their bit patterns
+    /// as unsigned (e.g. -1 becomes 2^32 - 1). This frontend/runtime discrepancy
+    /// is preserved here; supporting large positive bounds requires a Guppy fix.
     fn emit(&self, args: EmitOpArgs<'c, '_, ExtensionOp, H>, op: RandomOp) -> Result<()> {
         match op {
             RandomOp::RandomInt => {
                 let fn_random_int = self
                     .0
-                    .get_extern_func("___random_int", self.i32_type().fn_type(&[], false));
+                    .get_extern_func("___random_int", self.i32_type().fn_type(&[], false))?;
+                self.mark_return_noundef(fn_random_int)?;
                 self.emit_op(args, "rint", fn_random_int, &[])
             }
             RandomOp::RandomIntBounded => {
                 let fn_random_int_bounded = self.0.get_extern_func(
                     "___random_int_bounded",
                     self.i32_type().fn_type(&[self.i32_type().into()], false),
-                );
+                )?;
+                self.mark_return_noundef(fn_random_int_bounded)?;
                 self.emit_op(args, "rintb", fn_random_int_bounded, &[1])
             }
             RandomOp::NewRNGContext => {
@@ -123,7 +144,10 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
                 )
             }
             RandomOp::DeleteRNGContext => args.outputs.finish(self.builder(), []),
-            _ => anyhow::bail!("Unknown op: {op:?}"),
+            _ => Err(crate::compilation_error::CompilationError::new(format!(
+                "Unsupported random operation: {op:?}"
+            ))
+            .into()),
         }
     }
 }

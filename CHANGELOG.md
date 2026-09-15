@@ -10,6 +10,7 @@
 - update to hugr 0.30
 - update to tket-qsystem 0.29
 - add backendresult_to_qsysresult to support qsysresult generation
+- update quantinuum-qircheck version requirement to 0.9.0
 
 ### v0.2.0
 
