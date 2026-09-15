@@ -1,5 +1,6 @@
 pub mod array_codegen;
 pub mod futures_ext;
+pub mod int_ext;
 pub mod measurement_ext;
 pub mod qsystem_ext;
 pub mod random_ext;

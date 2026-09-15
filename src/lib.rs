@@ -43,13 +43,14 @@ pub mod validate_panic;
 use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
-use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
+use crate::llvm_unroll::{ensure_no_loops, unroll_loops_to_fixpoint};
 use crate::lower_integer_division::{lower_integer_division, validate_no_zero_divisors};
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
 };
 use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
+use crate::qir::int_ext::QirIntCodegenExtension;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -109,6 +110,7 @@ impl CompileArgs {
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
             .add_default_int_extensions()
+            .add_extension(QirIntCodegenExtension)
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
@@ -251,14 +253,7 @@ impl CompileArgs {
             .run_passes(opt_str, &ctm, default_pass_options)
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
 
-        configure_forced_unrolling();
-        let loop_cleanup = format!(
-            "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={}>,sroa<modify-cfg>,instcombine,simplifycfg)",
-            self.max_loop_unroll
-        );
-        module
-            .run_passes(&loop_cleanup, &ctm, PassBuilderOptions::create())
-            .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
+        unroll_loops_to_fixpoint(module, &ctm, self.max_loop_unroll)?;
         module
             .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;

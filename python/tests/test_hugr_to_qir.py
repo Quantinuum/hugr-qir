@@ -18,7 +18,7 @@ from .conftest import (
     guppy_examples,
     skip_snapshot_checks,
 )
-from .hugr_generation import GuppyExample
+from .hugr_generation import GuppyExample, guppy_to_hugr_binary
 
 
 @pytest.mark.parametrize(
@@ -50,6 +50,14 @@ def test_max_loop_unroll_is_forwarded_to_compiler() -> None:
     hugr = guppy_example_dict["array"].hugr_binary
     with pytest.raises(ValueError, match=r"exceeds the limit of 1\."):
         hugr_to_qir(hugr, max_loop_unroll=1)
+
+
+def test_nested_static_loops_are_fully_unrolled() -> None:
+    guppy_file = (
+        Path(__file__).parent
+        / "../../guppy_examples/guppylang_docs_examples/canonical-qpe.py"
+    )
+    hugr_to_qir(guppy_to_hugr_binary(guppy_file))
 
 
 @pytest.mark.parametrize(
