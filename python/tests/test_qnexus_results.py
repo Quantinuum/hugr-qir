@@ -16,6 +16,7 @@ EXPECTED_SHOTS = 10
 EXPECTED_VALUES = 10
 EXPECTED_VALUES_ARRAY = 3
 
+
 def test_backend() -> None:
 
     with BACKEND_RESULT.open() as f:
@@ -38,8 +39,8 @@ def test_backend() -> None:
         "qubit0",
         "integer_value",
         "true2",
-        "2pow32"}
-
+        "2pow32",
+    }
 
     assert len(qs) == EXPECTED_SHOTS
     assert len(qs[0]) == EXPECTED_VALUES
