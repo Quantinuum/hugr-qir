@@ -49,6 +49,16 @@ def test_backend() -> None:
 
         for x in qs[i]:
             assert type(x[1]) is int
+            if x[0] == "one":
+                assert x[1] == 1
+            elif x[0] == "ten":
+                assert x[1] == 10  # noqa: PLR2004
+            elif x[0] == "false":
+                assert x[1] == 0
+            elif x[0] == "integer_value":
+                assert x[1] == 3  # noqa: PLR2004
+            elif x[0] == "2pow32":
+                assert x[1] == 4294967296  # noqa: PLR2004
 
 
 def test_backend_array() -> None:
@@ -78,5 +88,6 @@ def test_backend_array() -> None:
                     assert type(y) is bool
             elif x[0] == "ires":
                 assert type(x[1]) is list
+                assert x[1] == list(range(8))
                 for y in x[1]:
                     assert type(y) is int
