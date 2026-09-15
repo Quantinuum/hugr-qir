@@ -8,7 +8,8 @@
 use anyhow::{Result, anyhow};
 use hugr::{HugrView, Node};
 use hugr_llvm::{
-    emit::{EmitFuncContext, libc::emit_libc_abort},
+    emit::EmitFuncContext,
+    extension::PreludeCodegen,
     extension::collections::{
         array::{ArrayCodegen, decompose_array_fat_pointer},
         borrow_array::{
@@ -133,9 +134,9 @@ impl BorrowArrayCodegen for QirBorrowArrayCodegen {
     fn emit_panic<H: HugrView<Node = Node>>(
         &self,
         ctx: &mut EmitFuncContext<H>,
-        _err: BasicValueEnum,
+        err: BasicValueEnum,
     ) -> Result<()> {
-        emit_libc_abort(ctx)
+        super::QirPreludeCodegen.emit_panic(ctx, err)
     }
 
     fn emit_allocate_array<'c, H: HugrView<Node = Node>>(
