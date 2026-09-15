@@ -3,8 +3,9 @@
 use std::collections::HashMap;
 use std::sync::Once;
 
+use crate::compilation_error::CompilationError;
 use crate::inkwell::{llvm_sys::support::LLVMParseCommandLineOptions, module::Module};
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 use crate::lower_ssa_vars::direct_successors;
 
@@ -32,10 +33,9 @@ pub(crate) fn ensure_no_loops(module: &Module, max_loop_unroll: usize) -> Result
         }
         let successors = cfg_successors(&blocks)?;
         if graph_has_cycle(&successors) {
-            bail!(
-                "LLVM loop remains in function {}; all loops must have statically-known trip counts no greater than the configured QIR unroll limit ({max_loop_unroll})",
-                function.get_name().to_string_lossy(),
-            );
+            return Err(CompilationError::new(format!(
+                "Loop cannot be unrolled: its iteration count is not known at compile time or exceeds the limit of {max_loop_unroll}."
+            )).into());
         }
     }
     Ok(())
