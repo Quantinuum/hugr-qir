@@ -16,11 +16,23 @@ fn main_impl(mut args: Cli) -> Result<()> {
 fn main() -> ExitCode {
     let args = Cli::parse();
     let report_err = args.verbosity(Level::Error);
+    let debug = args.debug > 0;
     match main_impl(args) {
         Ok(_) => ExitCode::SUCCESS,
         Err(e) => {
             if report_err {
-                eprintln!("Error: {e}");
+                if let Some(expected) =
+                    e.downcast_ref::<hugr_qir::compilation_error::CompilationError>()
+                {
+                    eprintln!("Compilation failed: {expected}");
+                } else {
+                    eprintln!(
+                        "Compilation failed unexpectedly: {e}\nThis may be a compiler bug. Please report it with a reproducing example."
+                    );
+                }
+                if debug {
+                    eprintln!("Diagnostic details: {e:?}");
+                }
             }
             ExitCode::FAILURE
         }

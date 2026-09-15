@@ -8,6 +8,7 @@ from guppylang.std.quantum import measure
 from guppylang_internals.decorator import wasm, wasm_module
 from guppylang_internals.error import GuppyError
 from guppylang_internals.std._internal.wasm import WasmPlatform
+from hugr_qir._hugr_qir import CompilationError
 from hugr_qir.hugr_to_qir import hugr_to_qir
 
 
@@ -252,6 +253,18 @@ def compile_helios_single_call_hugr(  # noqa: C901, PLR0915
         raise ValueError
 
     return main.compile()
+
+
+@pytest.mark.parametrize("lookup_by_id", [False, True])
+def test_missing_wasm_file_is_a_compilation_error(
+    helios_wasm_file: Path, *, lookup_by_id: bool
+) -> None:
+    hugr = compile_helios_single_call_hugr(helios_wasm_file, "nothing", lookup_by_id)
+    with pytest.raises(ValueError, match="no wasm file was provided") as error:
+        hugr_to_qir(hugr)
+    assert str(error.value).startswith("Compilation failed: Wasm function")
+    assert isinstance(error.value.__cause__, CompilationError)
+    assert "compiler bug" not in str(error.value)
 
 
 def test_loading_but_not_using_helios_wasm_mod_is_not_an_error(

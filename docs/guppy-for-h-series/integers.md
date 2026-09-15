@@ -1,22 +1,41 @@
 # Integers
 
-H-Series supports non-negative integer values. Prefer Guppy's `nat` type to protect against
-negative integers at compile time. Regular signed Guppy `int`s are accepted but care must be
-taken that any integer values are and remain non-negative.
+Most integer arithmetic is supported for both Guppy's signed `int` type and
+unsigned `nat` type. There are, however, restrictions on division
+and modulo operations for these types.
+
+## Division and modulo
+
+Integer division (`//`) and modulo (`%`) require a divisor
+that the compiler can reduce to a constant. Integer literals and
+compile-time expressions are supported, but values that remain dependent on
+runtime information are not.
+
+For example, division by `3` is supported, while division by a value
+obtained from a measurement, random-number operation, or other runtime
+computation will fail to compile. Division or modulo by zero will fail at compile time.
 
 ```{warning}
-Negative integers are not supported on H-Series. A program containing them may
-compile and run without an error, but calculations can silently produce
-incorrect results. Avoid negative values anywhere in a calculation, including
-temporary and intermediate values.
+Currently, negative divisors can compile but produce incorrect results due to an
+upstream Guppy bug. Avoid negative divisors in both division and modulo operations,
+even when they are compile-time constants. This issue is tracked in
+[guppylang#2316](https://github.com/Quantinuum/guppylang/issues/2316).
 ```
-
-Integers use a 64-bit representation on H-Series, with one bit reserved by the
-system. Values must therefore fit within the remaining 63 bits.
-
-A negative integer may also be accepted by `output`, but its sign is not
-preserved in the recorded result. Do not use signed output to recover negative
-values.
 
 These restrictions also apply to integer arrays and to integers stored inside
 tuples, structs, or other data types.
+
+### Computational overhead
+
+Signed division and both signed and unsigned modulo operations do not have
+direct hardware support. They are lowered to unsigned division in software
+and especially the signed lowerings introduce register and logic overhead.
+These operations should be avoided if possible.
+
+### Integer overflow
+
+Signed integer division overflows when the minimum integer (`INT_MIN`) is
+divided by `-1`, because the mathematical result cannot be represented in the
+signed integer type. This case follows LLVM's undefined behavior: programs
+must avoid it. No runtime overflow check is performed and the compiler
+optimizes code assuming that this case never occurs.
