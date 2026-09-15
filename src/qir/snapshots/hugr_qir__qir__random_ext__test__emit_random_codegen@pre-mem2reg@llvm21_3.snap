@@ -34,7 +34,7 @@ entry_block:                                      ; preds = %alloca_block
   ret { i32, {} } %mrv7
 }
 
-declare i32 @___random_int_bounded(i32)
+declare noundef i32 @___random_int_bounded(i32)
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}
