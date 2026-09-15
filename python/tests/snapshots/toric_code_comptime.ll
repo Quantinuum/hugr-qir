@@ -350,19 +350,12 @@ cond_4283_case_1:                                 ; preds = %bb3, %bb4
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   %"03060.0" = select i1 %9, i64 8, i64 -1
-  %"03086.0" = zext i1 %9 to i64
   %"03102.0" = select i1 %8, i64 4, i64 -1
-  %"03128.0" = select i1 %8, i64 2, i64 0
   %"03144.0" = select i1 %7, i64 2, i64 -1
-  %"03170.0" = select i1 %7, i64 4, i64 0
   %"03186.0" = select i1 %6, i64 1, i64 -1
-  %"03212.0" = select i1 %6, i64 8, i64 0
   %10 = add nsw i64 %"03144.0", %"03186.0"
   %11 = add nsw i64 %10, %"03102.0"
   %12 = add nsw i64 %11, %"03060.0"
-  %13 = or disjoint i64 %"03170.0", %"03212.0"
-  %14 = or disjoint i64 %13, %"03128.0"
-  %15 = or disjoint i64 %14, %"03086.0"
   %Pivot6490 = icmp slt i64 %12, 9
   br i1 %Pivot6490, label %NodeBlock6477, label %NodeBlock6487
 
@@ -440,6 +433,13 @@ LeafBlock:                                        ; preds = %NodeBlock6477
   br label %.thread6436
 
 .thread6436:                                      ; preds = %.thread6436.sink.split.dup6504, %.thread6436.sink.split.dup6503, %LeafBlock6483, %.thread6436.sink.split.dup6502, %LeafBlock, %.thread6436.sink.split.dup6501, %.thread6436.sink.split.dup6500, %.thread6436.sink.split.dup6499, %.thread6380.thread.thread6467, %LeafBlock6495, %LeafBlock6492
+  %"03212.0" = select i1 %6, i64 8, i64 0
+  %"03170.0" = select i1 %7, i64 4, i64 0
+  %"03128.0" = select i1 %8, i64 2, i64 0
+  %"03086.0" = zext i1 %9 to i64
+  %13 = or disjoint i64 %"03170.0", %"03212.0"
+  %14 = or disjoint i64 %13, %"03128.0"
+  %15 = or disjoint i64 %14, %"03086.0"
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 8 to ptr))
   %16 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 9 to ptr))
