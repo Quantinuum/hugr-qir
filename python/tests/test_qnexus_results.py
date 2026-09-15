@@ -21,8 +21,6 @@ EXPECTED_SHOTS = 10
 INTEGER_VALUE = 3
 
 
-
-
 def test_backend(snapshot: Snapshot) -> None:
 
     snapshot.snapshot_dir = QSYS_SNAPSHOT_DIR

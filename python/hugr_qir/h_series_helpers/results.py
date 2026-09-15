@@ -62,6 +62,23 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             while len(result_arrays[regname]) <= index:
                 result_arrays[regname].append(0)
 
+    cached_results = {}
+
+    for cregname in set_cregnames:
+        regname, ctype, index = clean_creg[cregname]
+        if ctype == "BOOL":  # BOOL
+            bitlist = [Bit(name=cregname, index=0)]
+            cached_results[cregname] = backres.get_shots(cbits=bitlist)
+        elif ctype == "INT":  # INT
+            bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
+            cached_results[cregname] = backres.get_shots(cbits=bitlist)
+        elif ctype == "ARRBOOL":  # ARRBOOL
+            bitlist = [Bit(name=cregname, index=0)]
+            cached_results[cregname] = backres.get_shots(cbits=bitlist)
+        elif ctype == "ARRINT":  # ARRINT
+            bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
+            cached_results[cregname] = backres.get_shots(cbits=bitlist)
+
     for i in range(number_of_shots):
         shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
         shot_arrays = {k: [0 for _ in v] for k, v in result_arrays.items()}
@@ -69,13 +86,13 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             regname, ctype, index = clean_creg[cregname]
             if ctype == "BOOL":  # BOOL
                 bitlist = [Bit(name=cregname, index=0)]
-                res = backres.get_shots(cbits=bitlist)[i]
+                res = cached_results[cregname][i]
                 shot_result.append((regname, bool(res)))
             elif ctype == "INT":  # INT
                 bitlist = [
                     Bit(name=cregname, index=bit_index) for bit_index in range(64)
                 ]
-                res = backres.get_shots(cbits=bitlist)[i]
+                res = cached_results[cregname][i]
                 shot_result.append(
                     (
                         regname,
@@ -84,14 +101,14 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
                 )
             elif ctype == "ARRBOOL":  # ARRBOOL
                 bitlist = [Bit(name=cregname, index=0)]
-                res = backres.get_shots(cbits=bitlist)[i]
+                res = cached_results[cregname][i]
                 assert index is not None  # noqa: S101
                 shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":  # ARRINT
                 bitlist = [
                     Bit(name=cregname, index=bit_index) for bit_index in range(64)
                 ]
-                res = backres.get_shots(cbits=bitlist)[i]
+                res = cached_results[cregname][i]
                 assert index is not None  # noqa: S101
                 shot_arrays[regname][index] = _decode_signed_64_bit_value(res)
             else:
