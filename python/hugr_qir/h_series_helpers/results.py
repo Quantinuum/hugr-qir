@@ -30,32 +30,28 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
         return _to_qsysresult_fallback(backres)
 
 
-def _check_backres(backres: BackendResult, set_cregnames: set) -> None:
+def _check_backres(backres: BackendResult, creg_names: list) -> None:
     """check if all cregs are of size 64"""
-    for x in set_cregnames:
+    for x in creg_names:
         for i in range(64):
             if Bit(name=x, index=i) not in backres.c_bits:
                 msg = f"creg {x} is missing Bit {i}, they all must be of length 64"
                 raise ValueError(msg)
 
 
-def _get_creg_names(backres: BackendResult) -> set:
-    """set up a set of all creg names"""
-    set_cregnames = set()
-    for b in backres.c_bits:
-        set_cregnames.add(b.reg_name)
-
-    return set_cregnames
+def _get_creg_names(backres: BackendResult) -> list:
+    """list of all creg names"""
+    return [b.reg_name for b in backres.c_bits if b.index == [0]]
 
 
-def _get_creg_shape(set_cregnames: set) -> dict[str, tuple[str, str, int | None]]:
+def _get_creg_shape(creg_names: list) -> dict[str, tuple[str, str, int | None]]:
     """generate a dict mapping:
     original creg name with type information
     to a tuple of creg name, type, and index in array"""
 
     creg_shape: dict[str, tuple[str, str, int | None]] = {}
 
-    for cregname in set_cregnames:
+    for cregname in creg_names:
         split_creg = cregname.rsplit("___", maxsplit=1)
 
         if len(split_creg) != 2:  # noqa: PLR2004
@@ -81,11 +77,11 @@ def _get_creg_shape(set_cregnames: set) -> dict[str, tuple[str, str, int | None]
 def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912, PLR0915
     """returns a qsys result based on the type information in the name of the creg"""
 
-    set_cregnames = _get_creg_names(backres)
+    creg_names = _get_creg_names(backres)
 
-    _check_backres(backres, set_cregnames)
+    _check_backres(backres, creg_names)
 
-    creg_shape = _get_creg_shape(set_cregnames)
+    creg_shape = _get_creg_shape(creg_names)
 
     list_shots: list[QsysShot] = []
 
@@ -93,7 +89,7 @@ def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noq
 
     cached_results = {}
 
-    for cregname in set_cregnames:
+    for cregname in creg_names:
         regname, ctype, index = creg_shape[cregname]
 
         # set up the result array
@@ -125,7 +121,7 @@ def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noq
         shot_arrays: dict[str, list[bool | int | None]] = {
             k: [None for _ in v] for k, v in result_arrays.items()
         }
-        for cregname in set_cregnames:
+        for cregname in creg_names:
             regname, ctype, index = creg_shape[cregname]
 
             if ctype == "BOOL":
@@ -182,21 +178,21 @@ def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noq
 def _to_qsysresult_fallback(backres: BackendResult) -> QsysResult:
     """convert to qsysresult, assuming that all cregs are signed i64"""
 
-    set_cregnames = _get_creg_names(backres)
+    creg_names = _get_creg_names(backres)
 
-    _check_backres(backres, set_cregnames)
+    _check_backres(backres, creg_names)
 
     list_shots: list[QsysShot] = []
 
     cached_results = {}
 
-    for cregname in set_cregnames:
+    for cregname in creg_names:
         bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
         cached_results[cregname] = backres.get_shots(cbits=bitlist)
 
     for i in range(len(backres.get_shots())):
         shot_result: list[tuple[str, bool | int]] = []
-        for cregname in set_cregnames:
+        for cregname in creg_names:
             res = cached_results[cregname][i]
             shot_result.append((cregname, _decode_signed_i64_bit_value(res)))
 
