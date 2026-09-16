@@ -70,9 +70,7 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
         regname, ctype, index = clean_creg[cregname]
         if ctype in ["ARRBOOL", "ARRINT", "ARRUINT"]:
             if index is None:
-                raise ValueError(
-                    f"missing array index in reg name: {cregname}"
-                )  # noqa: TRY003, EM102
+                raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
             while len(result_arrays[regname]) <= index:
                 result_arrays[regname].append(0)
 
@@ -122,32 +120,24 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             elif ctype == "ARRBOOL":
                 res = cached_results[cregname][i]
                 if index is None:
-                    raise ValueError(
-                        f"missing array index in reg name: {cregname}"
-                    )  # noqa: TRY003, EM102
+                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
                 shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":
                 res = cached_results[cregname][i]
                 if index is None:
-                    raise ValueError(
-                        f"missing array index in reg name: {cregname}"
-                    )  # noqa: TRY003, EM102
+                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
                 shot_arrays[regname][index] = _decode_signed_i64_bit_value(res)
             elif ctype == "ARRUINT":
                 res = cached_results[cregname][i]
                 if index is None:
-                    raise ValueError(
-                        f"missing array index in reg name: {cregname}"
-                    )  # noqa: TRY003, EM102
+                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
                 shot_arrays[regname][index] = _decode_unsigned_u64_bit_value(res)
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
         for regname, values in shot_arrays.items():
             if any(value is None for value in values):
-                raise ValueError(
-                    f"incomplete array result for reg name: {regname}"
-                )  # noqa: TRY003, EM102
+                raise ValueError(f"incomplete array result for reg name: {regname}")  # noqa: TRY003, EM102
             if all(isinstance(value, bool) for value in values):
                 shot_result.append((regname, cast("list[bool]", values)))
             else:
