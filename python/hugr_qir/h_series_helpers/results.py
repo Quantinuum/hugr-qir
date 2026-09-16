@@ -15,7 +15,7 @@ def _decode_signed_i64_bit_value(bits: Sequence[bool | int]) -> int:
     return value
 
 
-def _decode_signed_u64_bit_value(bits: Sequence[bool | int]) -> int:
+def _decode_unsigned_u64_bit_value(bits: Sequence[bool | int]) -> int:
     return sum(int(bits[i]) * (2**i) for i in range(64))
 
 
@@ -92,7 +92,7 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
 
     for i in range(number_of_shots):
         shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
-        shot_arrays = {k: [0 for _ in v] for k, v in result_arrays.items()}
+        shot_arrays = {k: [None for _ in v] for k, v in result_arrays.items()}
         for cregname in set_cregnames:
             regname, ctype, index = clean_creg[cregname]
             if ctype == "BOOL":
@@ -111,7 +111,7 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
                 shot_result.append(
                     (
                         regname,
-                        _decode_signed_u64_bit_value(res),
+                        _decode_unsigned_u64_bit_value(res),
                     )
                 )
             elif ctype == "ARRBOOL":
@@ -125,7 +125,7 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             elif ctype == "ARRUINT":
                 res = cached_results[cregname][i]
                 assert index is not None  # noqa: S101
-                shot_arrays[regname][index] = _decode_signed_u64_bit_value(res)
+                shot_arrays[regname][index] = _decode_unsigned_u64_bit_value(res)
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
