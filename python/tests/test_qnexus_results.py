@@ -13,7 +13,6 @@ BACKEND_RESULT_ARRAY = TEST_DIR / Path(
 BACKEND_RESULT_UARRAY = TEST_DIR / Path(
     "resources/backend_results/backend_result_uarray.json"
 )
-QSYS_SNAPSHOT_DIR = Path(__file__).parent / "snapshots" / "qsysresult"
 
 EXPECTED_SHOTS = 10
 EXPECTED_VALUES = 10

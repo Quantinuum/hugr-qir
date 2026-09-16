@@ -25,31 +25,48 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
     """
 
     try:
-        return _backendresult_to_qsysresult_new(backres)
+        return _to_qsysresult_using_type_tags(backres)
     except ValueError:
-        return _backendresult_to_qsysresult_old(backres)
+        return _to_qsysresult_fallback(backres)
 
 
-def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912, PLR0915
-    number_of_shots = len(backres.get_shots())
-    clean_creg: dict[str, tuple[str, str, int | None]] = {}
+def _check_backres(backres: BackendResult, set_cregnames: set) -> None:
+    """check if all cregs are of size 64"""
+    for x in set_cregnames:
+        for i in range(64):
+            if Bit(name=x, index=i) not in backres.c_bits:
+                msg = f"creg {x} is missing Bit {i}, they all must be of length 64"
+                raise ValueError(msg)
 
+
+def _get_creg_names(backres: BackendResult) -> set:
+    """set up a set of all creg names"""
     set_cregnames = set()
     for b in backres.c_bits:
         set_cregnames.add(b.reg_name)
+
+    return set_cregnames
+
+
+def _get_creg_shape(set_cregnames: set) -> dict[str, tuple[str, str, int | None]]:
+    """generate a dict mapping:
+    original creg name with type information
+    to a tuple of creg name, type, and index in array"""
+
+    creg_shape: dict[str, tuple[str, str, int | None]] = {}
 
     for cregname in set_cregnames:
         split_creg = cregname.rsplit("___", maxsplit=1)
 
         if len(split_creg) != 2:  # noqa: PLR2004
-            raise ValueError(f"unexpected ___ in reg name: {cregname}")  # noqa: TRY003, EM102
+            raise ValueError(f"No type information found in reg name: {cregname}")  # noqa: TRY003, EM102
 
         type_tokens = split_creg[1].split("_")
         ctype = type_tokens[0]
         index = int(type_tokens[1]) if len(type_tokens) > 1 else None
-        clean_creg[cregname] = (split_creg[0], ctype, index)
+        creg_shape[cregname] = (split_creg[0], ctype, index)
 
-        if clean_creg[cregname][1] not in [
+        if creg_shape[cregname][1] not in [
             "BOOL",
             "INT",
             "UINT",
@@ -57,27 +74,38 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             "ARRINT",
             "ARRUINT",
         ]:
-            raise ValueError(f"unexpected TYPE in reg name: {clean_creg[cregname][1]}")  # noqa: TRY003, EM102
+            raise ValueError(f"unexpected TYPE in reg name: {creg_shape[cregname][1]}")  # noqa: TRY003, EM102
+    return creg_shape
+
+
+def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912, PLR0915
+    """returns a qsys result based on the type information in the name of the creg"""
+
+    set_cregnames = _get_creg_names(backres)
+
+    _check_backres(backres, set_cregnames)
+
+    creg_shape = _get_creg_shape(set_cregnames)
 
     list_shots: list[QsysShot] = []
-    result_arrays: dict[str, list[int | bool]] = {}
-    for cregname in set_cregnames:
-        regname, ctype, _ = clean_creg[cregname]
-        if ctype in ["ARRBOOL", "ARRINT", "ARRUINT"]:
-            result_arrays[regname] = []
 
-    for cregname in set_cregnames:
-        regname, ctype, index = clean_creg[cregname]
-        if ctype in ["ARRBOOL", "ARRINT", "ARRUINT"]:
-            if index is None:
-                raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
-            while len(result_arrays[regname]) <= index:
-                result_arrays[regname].append(0)
+    result_arrays: dict[str, list[int | bool]] = {}
 
     cached_results = {}
 
     for cregname in set_cregnames:
-        regname, ctype, index = clean_creg[cregname]
+        regname, ctype, index = creg_shape[cregname]
+
+        # set up the result array
+        if ctype in {"ARRBOOL", "ARRINT", "ARRUINT"}:
+            if index is None:
+                raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+            if regname not in result_arrays:
+                result_arrays[regname] = []
+            while len(result_arrays[regname]) <= index:
+                result_arrays[regname].append(0)
+
+        # cache the result based on the register groups
         if ctype == "BOOL":
             bitlist = [Bit(name=cregname, index=0)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
@@ -91,13 +119,15 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
             bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
 
-    for i in range(number_of_shots):
+    # set up a qsys shot for each shot in the backend result:
+    for i in range(len(backres.get_shots())):
         shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
         shot_arrays: dict[str, list[bool | int | None]] = {
             k: [None for _ in v] for k, v in result_arrays.items()
         }
         for cregname in set_cregnames:
-            regname, ctype, index = clean_creg[cregname]
+            regname, ctype, index = creg_shape[cregname]
+
             if ctype == "BOOL":
                 res = cached_results[cregname][i]
                 shot_result.append((regname, bool(res)))
@@ -118,23 +148,24 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
                     )
                 )
             elif ctype == "ARRBOOL":
-                res = cached_results[cregname][i]
                 if index is None:
                     raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                res = cached_results[cregname][i]
                 shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":
-                res = cached_results[cregname][i]
                 if index is None:
                     raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                res = cached_results[cregname][i]
                 shot_arrays[regname][index] = _decode_signed_i64_bit_value(res)
             elif ctype == "ARRUINT":
-                res = cached_results[cregname][i]
                 if index is None:
                     raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                res = cached_results[cregname][i]
                 shot_arrays[regname][index] = _decode_unsigned_u64_bit_value(res)
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
+        # check and cast the type for each of the arrays:
         for regname, values in shot_arrays.items():
             if any(value is None for value in values):
                 raise ValueError(f"incomplete array result for reg name: {regname}")  # noqa: TRY003, EM102
@@ -148,12 +179,12 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
     return QsysResult(list_shots)
 
 
-def _backendresult_to_qsysresult_old(backres: BackendResult) -> QsysResult:
-    set_cregnames = set()
-    for b in backres.c_bits:
-        set_cregnames.add(b.reg_name)
+def _to_qsysresult_fallback(backres: BackendResult) -> QsysResult:
+    """convert to qsysresult, assuming that all cregs are signed i64"""
 
-    number_of_shots = len(backres.get_shots())
+    set_cregnames = _get_creg_names(backres)
+
+    _check_backres(backres, set_cregnames)
 
     list_shots: list[QsysShot] = []
 
@@ -163,7 +194,7 @@ def _backendresult_to_qsysresult_old(backres: BackendResult) -> QsysResult:
         bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
         cached_results[cregname] = backres.get_shots(cbits=bitlist)
 
-    for i in range(number_of_shots):
+    for i in range(len(backres.get_shots())):
         shot_result: list[tuple[str, bool | int]] = []
         for cregname in set_cregnames:
             res = cached_results[cregname][i]
