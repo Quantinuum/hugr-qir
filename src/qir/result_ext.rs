@@ -114,7 +114,8 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::Int | ResultOpDef::UInt => {
-                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "INT"))?;
+                let type_tag  = if op == ResultOpDef::Int {"INT"} else {"UINT"};
+                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, type_tag))?;
                 let [mut val] = args
                     .inputs
                     .try_into()
@@ -193,6 +194,7 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::ArrInt | ResultOpDef::ArrUInt => {
+                let type_tag  = if op == ResultOpDef::ArrInt {"ARRINT"} else {"ARRUINT"};
                 let length = array_length(&result_op)?;
                 let width = array_int_width(&result_op)?;
                 let bit_width = 1u32 << width;
@@ -223,7 +225,7 @@ impl QirCodegenExtension {
                         }?;
                     }
                     let tag_ptr =
-                        emit_tag(context, self.array_result_tag(tag_str, "ARRINT", index))?;
+                        emit_tag(context, self.array_result_tag(tag_str, type_tag, index))?;
                     context.builder().build_call(
                         print_fn,
                         &[value.into(), tag_ptr.into()],

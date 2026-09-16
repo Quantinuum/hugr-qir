@@ -10,11 +10,15 @@ BACKEND_RESULT = TEST_DIR / Path("resources/backend_results/backend_result.json"
 BACKEND_RESULT_ARRAY = TEST_DIR / Path(
     "resources/backend_results/backend_result_array.json"
 )
+BACKEND_RESULT_UARRAY = TEST_DIR / Path(
+    "resources/backend_results/backend_result_uarray.json"
+)
 QSYS_SNAPSHOT_DIR = Path(__file__).parent / "snapshots" / "qsysresult"
 
 EXPECTED_SHOTS = 10
 EXPECTED_VALUES = 10
 EXPECTED_VALUES_ARRAY = 3
+U64MAX = 18446744073709551615
 
 
 def test_backend() -> None:
@@ -89,5 +93,34 @@ def test_backend_array() -> None:
             elif x[0] == "ires":
                 assert type(x[1]) is list
                 assert x[1] == list(range(8))
+                for y in x[1]:
+                    assert type(y) is int
+
+
+def test_backend_uarray() -> None:
+    with BACKEND_RESULT_UARRAY.open() as f:
+        backend_result = BackendResult.from_dict(json.load(f))
+
+    qs = backendresult_to_qsysresult(backend_result)
+
+    assert len(qs) == 1
+
+    for i in range(1):
+        assert len(qs[i]) == 2  # noqa: PLR2004
+
+        set_reg = set()
+
+        for x in qs[i]:  # check if reg names are in new qsys result
+            set_reg.add(x[0])
+
+        assert set_reg == {"000", "qbs"}
+
+        for x in qs[i]:
+            if x[0] == "000":
+                assert type(x[1]) is int
+                assert x[1] == U64MAX
+            elif x[0] == "qbs":
+                assert type(x[1]) is list
+                assert x[1] == [U64MAX, U64MAX]
                 for y in x[1]:
                     assert type(y) is int

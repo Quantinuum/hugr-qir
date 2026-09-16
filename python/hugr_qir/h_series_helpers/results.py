@@ -8,11 +8,15 @@ from pytket.backends.backendresult import BackendResult
 ShotValue: TypeAlias = bool | int | str
 
 
-def _decode_signed_64_bit_value(bits: Sequence[bool | int]) -> int:
+def _decode_signed_i64_bit_value(bits: Sequence[bool | int]) -> int:
     value = sum(int(bits[i]) * (2**i) for i in range(64))
     if value >= (1 << 63):
         value -= 1 << 64
     return value
+
+
+def _decode_signed_u64_bit_value(bits: Sequence[bool | int]) -> int:
+    return sum(int(bits[i]) * (2**i) for i in range(64))
 
 
 def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
@@ -45,19 +49,26 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
         index = int(type_tokens[1]) if len(type_tokens) > 1 else None
         clean_creg[cregname] = (split_creg[0], ctype, index)
 
-        if clean_creg[cregname][1] not in ["BOOL", "INT", "ARRBOOL", "ARRINT"]:
+        if clean_creg[cregname][1] not in [
+            "BOOL",
+            "INT",
+            "UINT",
+            "ARRBOOL",
+            "ARRINT",
+            "ARRUINT",
+        ]:
             raise ValueError(f"unexpected TYPE in reg name: {clean_creg[cregname][1]}")  # noqa: TRY003, EM102
 
     list_shots: list[QsysShot] = []
     result_arrays: dict[str, list[int | bool]] = {}
     for cregname in set_cregnames:
         regname, ctype, _ = clean_creg[cregname]
-        if ctype in ["ARRBOOL", "ARRINT"]:
+        if ctype in ["ARRBOOL", "ARRINT", "ARRUINT"]:
             result_arrays[regname] = []
 
     for cregname in set_cregnames:
         regname, ctype, index = clean_creg[cregname]
-        if ctype in ["ARRBOOL", "ARRINT"]:
+        if ctype in ["ARRBOOL", "ARRINT", "ARRUINT"]:
             assert index is not None  # noqa: S101
             while len(result_arrays[regname]) <= index:
                 result_arrays[regname].append(0)
@@ -66,16 +77,16 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
 
     for cregname in set_cregnames:
         regname, ctype, index = clean_creg[cregname]
-        if ctype == "BOOL":  # BOOL
+        if ctype == "BOOL":
             bitlist = [Bit(name=cregname, index=0)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype == "INT":  # INT
+        elif ctype in {"INT", "UINT"}:
             bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype == "ARRBOOL":  # ARRBOOL
+        elif ctype == "ARRBOOL":
             bitlist = [Bit(name=cregname, index=0)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype == "ARRINT":  # ARRINT
+        elif ctype in {"ARRINT", "ARRUINT"}:
             bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
             cached_results[cregname] = backres.get_shots(cbits=bitlist)
 
@@ -84,25 +95,37 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
         shot_arrays = {k: [0 for _ in v] for k, v in result_arrays.items()}
         for cregname in set_cregnames:
             regname, ctype, index = clean_creg[cregname]
-            if ctype == "BOOL":  # BOOL
+            if ctype == "BOOL":
                 res = cached_results[cregname][i]
                 shot_result.append((regname, bool(res)))
-            elif ctype == "INT":  # INT
+            elif ctype == "INT":
                 res = cached_results[cregname][i]
                 shot_result.append(
                     (
                         regname,
-                        _decode_signed_64_bit_value(res),
+                        _decode_signed_i64_bit_value(res),
                     )
                 )
-            elif ctype == "ARRBOOL":  # ARRBOOL
+            elif ctype == "UINT":
+                res = cached_results[cregname][i]
+                shot_result.append(
+                    (
+                        regname,
+                        _decode_signed_u64_bit_value(res),
+                    )
+                )
+            elif ctype == "ARRBOOL":
                 res = cached_results[cregname][i]
                 assert index is not None  # noqa: S101
                 shot_arrays[regname][index] = bool(res)
-            elif ctype == "ARRINT":  # ARRINT
+            elif ctype == "ARRINT":
                 res = cached_results[cregname][i]
                 assert index is not None  # noqa: S101
-                shot_arrays[regname][index] = _decode_signed_64_bit_value(res)
+                shot_arrays[regname][index] = _decode_signed_i64_bit_value(res)
+            elif ctype == "ARRUINT":
+                res = cached_results[cregname][i]
+                assert index is not None  # noqa: S101
+                shot_arrays[regname][index] = _decode_signed_u64_bit_value(res)
             else:
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
@@ -136,7 +159,7 @@ def _backendresult_to_qsysresult_old(backres: BackendResult) -> QsysResult:
         shot_result: list[tuple[str, bool | int]] = []
         for cregname in set_cregnames:
             res = cached_results[cregname][i]
-            shot_result.append((cregname, _decode_signed_64_bit_value(res)))
+            shot_result.append((cregname, _decode_signed_i64_bit_value(res)))
 
         list_shots.append(QsysShot(cast("Any", shot_result)))
 
