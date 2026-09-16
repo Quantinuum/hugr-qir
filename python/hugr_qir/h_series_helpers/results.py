@@ -92,7 +92,9 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
 
     for i in range(number_of_shots):
         shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
-        shot_arrays = {k: [None for _ in v] for k, v in result_arrays.items()}
+        shot_arrays: dict[str, list[bool | int | None]] = {
+            k: [None for _ in v] for k, v in result_arrays.items()
+        }
         for cregname in set_cregnames:
             regname, ctype, index = clean_creg[cregname]
             if ctype == "BOOL":
@@ -130,10 +132,11 @@ def _backendresult_to_qsysresult_new(backres: BackendResult) -> QsysResult:  # n
                 raise ValueError("found unexpected type")  # noqa: EM101, TRY003
 
         for regname, values in shot_arrays.items():
+            assert all(value is not None for value in values)  # noqa: S101
             if all(isinstance(value, bool) for value in values):
                 shot_result.append((regname, cast("list[bool]", values)))
             else:
-                shot_result.append((regname, [int(value) for value in values]))
+                shot_result.append((regname, cast("list[int]", values)))
 
         list_shots.append(QsysShot(cast("Any", shot_result)))
 
