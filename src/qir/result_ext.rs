@@ -315,6 +315,7 @@ mod test {
     #[case::native(CompileTarget::Native, "ARRBOOL", "result___2")]
     #[case::hardware_bool(CompileTarget::QuantinuumHardware, "ARRBOOL", "result___ARRBOOL_2")]
     #[case::hardware_int(CompileTarget::QuantinuumHardware, "ARRINT", "result___ARRINT_2")]
+    #[case::hardware_uint(CompileTarget::QuantinuumHardware, "ARRUINT", "result___ARRUINT_2")]
     #[case::hardware_float(CompileTarget::QuantinuumHardware, "ARRFLOAT", "result___ARRFLOAT_2")]
     fn array_tags_depend_on_target(
         #[case] target: CompileTarget,
