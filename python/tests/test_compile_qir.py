@@ -6,7 +6,7 @@ import pytest
 from guppylang import guppy, qubit
 from guppylang.std.builtins import output
 from guppylang.std.quantum import h, measure
-from hugr_qir.guppy_to_qir import guppy_to_qir_str
+from hugr_qir.guppy_to_qir import guppy_to_qir_bytes, guppy_to_qir_str
 from hugr_qir.hugr_to_qir import to_qir_str
 from hugr_qir.output import GENERATOR_SECTION
 
@@ -41,6 +41,13 @@ def test_hugr_package_to_qir() -> None:
 
 def test_guppy_entrypoint_to_qir() -> None:
     qir = guppy_to_qir_str(main)
+
+    assert len(qir) > 10  # noqa: PLR2004
+
+
+def test_guppy_entrypoint_to_qir_bytes() -> None:
+    qir = guppy_to_qir_bytes(main)
+
     assert len(qir) > 10  # noqa: PLR2004
 
 

@@ -28,13 +28,13 @@ devenv.local.nix
 .ipynb_checkpoints/*
 examples/.ipynb_checkpoints/*
 
-
 **.dylib*
 
 docs/_build
 
 # hidden tests
 python/tests/test_guppy_to_dfl.py
+python/hqs_compiler_tests
 
 # ai
 .agents

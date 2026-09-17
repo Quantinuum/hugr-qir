@@ -41,6 +41,14 @@ Key parameters:
 .. autofunction:: to_qir_bytes
 ```
 
+### Result conversion
+
+```{eval-rst}
+.. currentmodule:: hugr_qir.h_series_helpers.results
+.. autofunction:: backendresult_to_qsysresult
+```
+
+
 ## Output formats
 
 The output format enum lives in `python/hugr_qir/output.py`.
