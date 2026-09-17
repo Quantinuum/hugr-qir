@@ -114,7 +114,12 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::Int | ResultOpDef::UInt => {
-                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "INT"))?;
+                let type_tag = if op == ResultOpDef::Int {
+                    "INT"
+                } else {
+                    "UINT"
+                };
+                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, type_tag))?;
                 let [mut val] = args
                     .inputs
                     .try_into()
@@ -193,6 +198,11 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::ArrInt | ResultOpDef::ArrUInt => {
+                let type_tag = if op == ResultOpDef::ArrInt {
+                    "ARRINT"
+                } else {
+                    "ARRUINT"
+                };
                 let length = array_length(&result_op)?;
                 let width = array_int_width(&result_op)?;
                 let bit_width = 1u32 << width;
@@ -223,7 +233,7 @@ impl QirCodegenExtension {
                         }?;
                     }
                     let tag_ptr =
-                        emit_tag(context, self.array_result_tag(tag_str, "ARRINT", index))?;
+                        emit_tag(context, self.array_result_tag(tag_str, type_tag, index))?;
                     context.builder().build_call(
                         print_fn,
                         &[value.into(), tag_ptr.into()],
@@ -313,6 +323,7 @@ mod test {
     #[case::native(CompileTarget::Native, "ARRBOOL", "result___2")]
     #[case::hardware_bool(CompileTarget::QuantinuumHardware, "ARRBOOL", "result___ARRBOOL_2")]
     #[case::hardware_int(CompileTarget::QuantinuumHardware, "ARRINT", "result___ARRINT_2")]
+    #[case::hardware_uint(CompileTarget::QuantinuumHardware, "ARRUINT", "result___ARRUINT_2")]
     #[case::hardware_float(CompileTarget::QuantinuumHardware, "ARRFLOAT", "result___ARRFLOAT_2")]
     fn array_tags_depend_on_target(
         #[case] target: CompileTarget,

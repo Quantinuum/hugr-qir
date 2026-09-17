@@ -955,6 +955,8 @@ dependencies = [
     { name = "click" },
     { name = "guppylang" },
     { name = "hugr" },
+    { name = "pyqir" },
+    { name = "pytket" },
     { name = "quantinuum-qircheck" },
 ]
 
@@ -990,6 +992,8 @@ requires-dist = [
     { name = "click", specifier = ">=8.3.1,<8.5.0" },
     { name = "guppylang", specifier = ">=1.0.1,<2.0.0" },
     { name = "hugr", specifier = ">=0.18.3" },
+    { name = "pyqir", specifier = ">=0.12.5" },
+    { name = "pytket", specifier = ">=2.4.0" },
     { name = "quantinuum-qircheck", specifier = "~=0.9.0" },
 ]
 
