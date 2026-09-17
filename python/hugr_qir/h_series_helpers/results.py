@@ -19,6 +19,15 @@ def _decode_unsigned_u64_bit_value(bits: Sequence[bool | int]) -> int:
     return sum(int(bits[i]) * (2**i) for i in range(64))
 
 
+class ResultConversionError(Exception):
+    """Exception raised issues in the converson if the
+    reg names are not as expected"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
     """
     This function can generate a qsys result from a given pytket result.
@@ -35,7 +44,7 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
 
     try:
         return _to_qsysresult_using_type_tags(backres)
-    except ValueError:
+    except ResultConversionError:
         return _to_qsysresult_fallback(backres)
 
 
@@ -64,7 +73,8 @@ def _get_creg_shape(creg_names: list) -> dict[str, tuple[str, str, int | None]]:
         split_creg = cregname.rsplit("___", maxsplit=1)
 
         if len(split_creg) != 2:  # noqa: PLR2004
-            raise ValueError(f"No type information found in reg name: {cregname}")  # noqa: TRY003, EM102
+            msg = f"No type information found in reg name: {cregname}"
+            raise ResultConversionError(msg)
 
         type_tokens = split_creg[1].split("_")
         ctype = type_tokens[0]
@@ -104,7 +114,8 @@ def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noq
         # set up the result array
         if ctype in {"ARRBOOL", "ARRINT", "ARRUINT"}:
             if index is None:
-                raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                msg = f"missing array index in reg name: {cregname}"
+                raise ResultConversionError(msg)
             if regname not in result_arrays:
                 result_arrays[regname] = []
             while len(result_arrays[regname]) <= index:
@@ -154,21 +165,24 @@ def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noq
                 )
             elif ctype == "ARRBOOL":
                 if index is None:
-                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                    msg = f"missing array index in reg name: {cregname}"
+                    raise ResultConversionError(msg)
                 res = cached_results[cregname][i]
                 shot_arrays[regname][index] = bool(res)
             elif ctype == "ARRINT":
                 if index is None:
-                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                    msg = f"missing array index in reg name: {cregname}"
+                    raise ResultConversionError(msg)
                 res = cached_results[cregname][i]
                 shot_arrays[regname][index] = _decode_signed_i64_bit_value(res)
             elif ctype == "ARRUINT":
                 if index is None:
-                    raise ValueError(f"missing array index in reg name: {cregname}")  # noqa: TRY003, EM102
+                    msg = f"missing array index in reg name: {cregname}"
+                    raise ResultConversionError(msg)
                 res = cached_results[cregname][i]
                 shot_arrays[regname][index] = _decode_unsigned_u64_bit_value(res)
             else:
-                raise ValueError("found unexpected type")  # noqa: EM101, TRY003
+                raise ResultConversionError("found unexpected type")  # noqa: EM101, TRY003
 
         # check and cast the type for each of the arrays:
         for regname, values in shot_arrays.items():
