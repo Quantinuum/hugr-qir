@@ -22,6 +22,7 @@ from hugr_qir.output import OutputFormat
 import qnexus as qnx
 
 
+# define guppy program
 @guppy
 @no_type_check
 def main() -> None:
@@ -41,13 +42,6 @@ def main() -> None:
 # Generate QIR
 hugr_package = main.compile()
 qir_bitcode = hugr_to_qir(hugr_package, validate_qir=True, output_format=OutputFormat.BITCODE)
-
-
-# Submit to device
-qnx.login()
-
-
-import datetime
 
 qir_name = "HUGR-QIR"
 jobname_suffix = datetime.datetime.now().strftime("%Y_%m_%d-%H-%M-%S")
