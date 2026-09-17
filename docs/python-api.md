@@ -39,7 +39,6 @@ Key parameters:
 .. currentmodule:: hugr_qir.hugr_to_qir
 .. autofunction:: to_qir_str
 .. autofunction:: to_qir_bytes
-.. autofunction:: backendresult_to_qsysresult
 ```
 
 ### Result conversion
