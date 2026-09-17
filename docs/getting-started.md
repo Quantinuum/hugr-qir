@@ -12,10 +12,11 @@ pip install hugr-qir
 
 The main Python entrypoint is `hugr_to_qir`.
 
-
-.. literalinclude:: ../examples/qnexus-test.py.py
-:language: python
-:linenos:
+```{literalinclude} ../examples/qnexus-test.py
+    :language: python
+    :linenos:
+    :caption: Example with conversion and submission
+```
 
 
 This example shows the full flow:
