@@ -21,7 +21,16 @@ def _decode_unsigned_u64_bit_value(bits: Sequence[bool | int]) -> int:
 
 def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
     """
-    converts a given pytket BackendResult result into a QsysResult
+    This function can generate a qsys result from a given pytket result.
+    When hugr-qir >= 0.3.0 was used for the generation of the submitted
+    qir the register names in the pytket BackendResult contain the
+    type of the value recorded. This information is used to map each
+    guppy output tag to the appropriate type in the QsysResult data
+    If this type information is missing in the register name or is
+    incomplete, each register will be interpreted as a 64 bit signed
+    integer. If any registers are not 64 bits, the results are either
+    not from a hugr-qir converted program or corrupted, and
+    conversion will fail
     """
 
     try:
