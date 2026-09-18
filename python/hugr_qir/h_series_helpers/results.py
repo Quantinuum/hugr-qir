@@ -1,4 +1,5 @@
-from collections.abc import Sequence
+from dataclasses import dataclass
+from enum import Enum
 from typing import Any, TypeAlias, cast
 
 from hugr.qsystem.result import QsysResult, QsysShot
@@ -7,15 +8,80 @@ from pytket.backends.backendresult import BackendResult
 
 ShotValue: TypeAlias = bool | int | str
 
+class SupportedResultType(Enum):
+    BOOL = "BOOL"
+    INT = "INT"
+    UINT = "UINT"
+    ARRBOOL = "ARRBOOL"
+    ARRINT = "ARRINT"
+    ARRUINT = "ARRUINT"
+    MISSING = "MISSING"
+    UNRECOGNIZED = "UNRECOGNIZED"
 
-def _decode_signed_i64_bit_value(bits: Sequence[bool | int]) -> int:
+
+
+@dataclass
+class CregResult:
+    reg_name: str
+    reg_size: int
+    shots: list[list[int]]
+
+@dataclass
+class TagResult:
+    user_tag: str
+    shots: list[int]
+    result_type: SupportedResultType | None = None
+    array_index: int | None = None
+
+
+def _get_creg_results(br: BackendResult) -> list[CregResult]:
+    """list of all creg names"""
+    reg_names = [b.reg_name for b in br.c_bits if b.index == [0]]
+    bits = [[cast(Bit, b) for b in br.c_bits if b.reg_name == name] for name in reg_names]
+    bit_results = [[int(i) for i in shot] for shot in br.get_shots(cbits=bits)]
+    return [CregResult(reg_names[i], len(bits[i]), bit_results[i]) for i in range(len(reg_names))]
+
+def _tag_result_from_creg_result(creg_result: CregResult) -> TagResult:
+    split_creg_name = creg_result.reg_name.rsplit(sep="___", maxsplit=1)
+    user_tag = split_creg_name[0]
+    hugr_qir_type_tag = split_creg_name[1] if len(split_creg_name) > 1 else None
+    if hugr_qir_type_tag:
+        type_tokens = hugr_qir_type_tag.split("_")
+        result_type_str = type_tokens[0]
+        result_index = int(type_tokens[1]) if len(type_tokens) > 1 else None
+    else:
+        result_type_str = "MISSING"
+        result_index = None
+
+    try:
+        result_type = SupportedResultType(result_type_str)
+    except ValueError:
+
+    return TagResult(
+        user_tag=user_tag,
+        shots=creg_result.shots,
+        result_type=SupportedResultType(result_type_str),
+    )
+
+def register_result_from_creg_name(creg_name: str) -> TagResult:
+
+
+    )
+
+
+
+def register_results_from_backend_result(br: BackendResult) ->  list[TagResult]:
+    pass
+
+
+def _decode_signed_i64_bit_value(bits: list[bool | int]) -> int:
     value = sum(int(bits[i]) * (2**i) for i in range(64))
     if value >= (1 << 63):
         value -= 1 << 64
     return value
 
 
-def _decode_unsigned_u64_bit_value(bits: Sequence[bool | int]) -> int:
+def _decode_unsigned_u64_bit_value(bits: list[bool | int]) -> int:
     return sum(int(bits[i]) * (2**i) for i in range(64))
 
 
@@ -42,6 +108,18 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
     conversion will fail
     """
 
+    creg_results = _get_creg_results(backres)
+
+    if not all([creg.reg_size == 64 for creg in creg_results]):
+        raise ResultConversionError("Not all BackendResult registers are 64 bits")
+
+
+
+
+
+
+
+
     try:
         return _to_qsysresult_using_type_tags(backres)
     except ResultConversionError:
@@ -57,10 +135,36 @@ def _check_backres(backres: BackendResult, creg_names: list) -> None:
                 raise ValueError(msg)
 
 
-def _get_creg_names(backres: BackendResult) -> list:
-    """list of all creg names"""
-    return [b.reg_name for b in backres.c_bits if b.index == [0]]
 
+def _get_creg_shape(creg_names: list) -> dict[str, tuple[str, str, int | None]]:
+    """generate a dict mapping:
+    original creg name with type information
+    to a tuple of creg name, type, and index in array"""
+
+    creg_shape: dict[str, tuple[str, str, int | None]] = {}
+
+    for cregname in creg_names:
+        split_creg = cregname.rsplit("___", maxsplit=1)
+
+        if len(split_creg) != 2:  # noqa: PLR2004
+            msg = f"No type information found in reg name: {cregname}"
+            raise ResultConversionError(msg)
+
+        type_tokens = split_creg[1].split("_")
+        ctype = type_tokens[0]
+        index = int(type_tokens[1]) if len(type_tokens) > 1 else None
+        creg_shape[cregname] = (split_creg[0], ctype, index)
+
+        if creg_shape[cregname][1] not in [
+            "BOOL",
+            "INT",
+            "UINT",
+            "ARRBOOL",
+            "ARRINT",
+            "ARRUINT",
+        ]:
+            raise ValueError(f"unexpected TYPE in reg name: {creg_shape[cregname][1]}")  # noqa: TRY003, EM102
+    return creg_shape
 
 def _get_creg_shape(creg_names: list) -> dict[str, tuple[str, str, int | None]]:
     """generate a dict mapping:
