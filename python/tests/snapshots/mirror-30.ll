@@ -3,7 +3,6 @@ source_filename = "hugr-qir"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128-Fn32"
 target triple = "aarch64-unknown-linux-gnu"
 
-@"sa.static_pyarray.%tmp2215.20da56df.0" = local_unnamed_addr constant { i64, [5 x i64] } { i64 5, [5 x i64] [i64 0, i64 2, i64 4, i64 6, i64 8] }
 @0 = private unnamed_addr constant [19 x i8] c"mirror___ARRBOOL_0\00", align 1
 @1 = private unnamed_addr constant [19 x i8] c"mirror___ARRBOOL_1\00", align 1
 @2 = private unnamed_addr constant [19 x i8] c"mirror___ARRBOOL_2\00", align 1
@@ -38,9 +37,11 @@ target triple = "aarch64-unknown-linux-gnu"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
 define void @__hugr__.main.1() local_unnamed_addr #0 {
-alloca_block:
+__barray_mask_return.exit:
   tail call void @__quantum__rt__initialize(ptr null)
-  tail call void @___random_seed(i64 2026)
+  %shot = tail call i64 @___get_current_shot()
+  %remainder = and i64 %shot, 1
+  %0 = icmp eq i64 %remainder, 0
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0.000000e+00, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr null, ptr nonnull inttoptr (i64 1 to ptr))
@@ -100,54 +101,14 @@ alloca_block:
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 28 to ptr), ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 27 to ptr), ptr nonnull inttoptr (i64 28 to ptr))
+  tail call void @___random_seed(i64 2026)
   %rintb = tail call i32 @___random_int_bounded(i32 2)
-  %0 = icmp eq i32 %rintb, 1
-  %shot = tail call i64 @___get_current_shot()
-  %Pivot3546 = icmp samesign ult i64 %shot, 4
-  br i1 %Pivot3546, label %NodeBlock, label %NodeBlock3543
-
-NodeBlock3543:                                    ; preds = %alloca_block
-  %Pivot3544 = icmp samesign ult i64 %shot, 6
-  br i1 %Pivot3544, label %LeafBlock3535, label %NodeBlock3541
-
-NodeBlock3541:                                    ; preds = %NodeBlock3543
-  %Pivot3542 = icmp samesign ult i64 %shot, 8
-  br i1 %Pivot3542, label %LeafBlock3537, label %LeafBlock3539
-
-LeafBlock3539:                                    ; preds = %NodeBlock3541
-  %SwitchLeaf3540 = icmp eq i64 %shot, 8
-  br i1 %SwitchLeaf3540, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
-
-LeafBlock3537:                                    ; preds = %NodeBlock3541
-  %SwitchLeaf3538 = icmp eq i64 %shot, 6
-  br i1 %SwitchLeaf3538, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
-
-LeafBlock3535:                                    ; preds = %NodeBlock3543
-  %SwitchLeaf3536 = icmp eq i64 %shot, 4
-  br i1 %SwitchLeaf3536, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
-
-NodeBlock:                                        ; preds = %alloca_block
-  %Pivot = icmp samesign ult i64 %shot, 2
-  br i1 %Pivot, label %LeafBlock, label %LeafBlock3533
-
-LeafBlock3533:                                    ; preds = %NodeBlock
-  %SwitchLeaf3534 = icmp eq i64 %shot, 2
-  br i1 %SwitchLeaf3534, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
-
-LeafBlock:                                        ; preds = %NodeBlock
-  %SwitchLeaf = icmp eq i64 %shot, 0
-  br i1 %SwitchLeaf, label %__barray_mask_return.exit2887, label %cond_exit_1807.5
-
-__barray_mask_return.exit2887:                    ; preds = %LeafBlock3539, %LeafBlock3537, %LeafBlock3535, %LeafBlock3533, %LeafBlock, %cond_exit_1807.5
-  %1 = phi i1 [ true, %LeafBlock ], [ false, %cond_exit_1807.5 ], [ true, %LeafBlock3533 ], [ true, %LeafBlock3535 ], [ true, %LeafBlock3537 ], [ true, %LeafBlock3539 ]
+  %1 = icmp eq i32 %rintb, 1
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x4025FDBBE9BBA775, ptr nonnull inttoptr (i64 2 to ptr))
-  br i1 %0, label %__barray_mask_return.exit2908, label %bb
+  br i1 %1, label %__barray_mask_return.exit2398, label %bb
 
-cond_exit_1807.5:                                 ; preds = %LeafBlock3539, %LeafBlock3537, %LeafBlock3535, %LeafBlock3533, %LeafBlock
-  br label %__barray_mask_return.exit2887
-
-__barray_mask_return.exit2908:                    ; preds = %__barray_mask_return.exit2887
+__barray_mask_return.exit2398:                    ; preds = %__barray_mask_return.exit
   tail call void @__quantum__qis__rz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 7 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 13 to ptr))
@@ -155,15 +116,15 @@ __barray_mask_return.exit2908:                    ; preds = %__barray_mask_retur
   tail call void @__quantum__qis__rz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 25 to ptr))
   br label %bb
 
-bb:                                               ; preds = %__barray_mask_return.exit2887, %__barray_mask_return.exit2908
-  br i1 %1, label %__barray_mask_return.exit2916, label %__barray_mask_check_not_borrowed.exit3104
+bb:                                               ; preds = %__barray_mask_return.exit, %__barray_mask_return.exit2398
+  br i1 %0, label %__barray_mask_return.exit2406, label %__barray_mask_check_not_borrowed.exit2593
 
-__barray_mask_return.exit2916:                    ; preds = %bb
+__barray_mask_return.exit2406:                    ; preds = %bb
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 4 to ptr))
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 21 to ptr))
-  br label %__barray_mask_check_not_borrowed.exit3104
+  br label %__barray_mask_check_not_borrowed.exit2593
 
-__barray_mask_check_not_borrowed.exit3104:        ; preds = %__barray_mask_return.exit2916, %bb
+__barray_mask_check_not_borrowed.exit2593:        ; preds = %__barray_mask_return.exit2406, %bb
   tail call void @__quantum__qis__phasedx__body(double 0xBFF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr null, ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr null)
@@ -175,25 +136,25 @@ __barray_mask_check_not_borrowed.exit3104:        ; preds = %__barray_mask_retur
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x400921FB54442D18, ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 29 to ptr))
-  br i1 %1, label %__barray_mask_return.exit3112, label %bb0
+  br i1 %0, label %__barray_mask_return.exit2601, label %bb0
 
-__barray_mask_return.exit3112:                    ; preds = %__barray_mask_check_not_borrowed.exit3104
+__barray_mask_return.exit2601:                    ; preds = %__barray_mask_check_not_borrowed.exit2593
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 21 to ptr))
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 4 to ptr))
   br label %bb0
 
-bb0:                                              ; preds = %__barray_mask_check_not_borrowed.exit3104, %__barray_mask_return.exit3112
-  br i1 %0, label %__barray_mask_borrow.exit3130, label %__barray_mask_check_not_borrowed.exit3258
+bb0:                                              ; preds = %__barray_mask_check_not_borrowed.exit2593, %__barray_mask_return.exit2601
+  br i1 %1, label %__barray_mask_borrow.exit2619, label %__barray_mask_check_not_borrowed.exit2747
 
-__barray_mask_borrow.exit3130:                    ; preds = %bb0
+__barray_mask_borrow.exit2619:                    ; preds = %bb0
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 25 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 19 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 13 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 7 to ptr))
   tail call void @__quantum__qis__rz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  br label %__barray_mask_check_not_borrowed.exit3258
+  br label %__barray_mask_check_not_borrowed.exit2747
 
-__barray_mask_check_not_borrowed.exit3258:        ; preds = %bb0, %__barray_mask_borrow.exit3130
+__barray_mask_check_not_borrowed.exit2747:        ; preds = %bb0, %__barray_mask_borrow.exit2619
   tail call void @__quantum__qis__rz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 2 to ptr))
@@ -349,15 +310,15 @@ __barray_mask_check_not_borrowed.exit3258:        ; preds = %bb0, %__barray_mask
   ret void
 }
 
-declare void @___random_seed(i64) local_unnamed_addr
+declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
 
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__rzz__body(double, ptr, ptr) local_unnamed_addr
 
-declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
+declare void @___random_seed(i64) local_unnamed_addr
 
-declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
+declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
 
 declare void @__quantum__qis__rz__body(double, ptr) local_unnamed_addr
 
