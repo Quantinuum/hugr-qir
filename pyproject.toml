@@ -33,14 +33,14 @@ docs = [
     "myst-nb>=1.2.0",
     "quantinuum-sphinx>=0.6,<2.0",
     "sphinx>=8,<10",
-    "sphinx-autodoc-typehints<3.2",
+    "sphinx-autodoc-typehints<3.14",
     "sphinx-copybutton>=0.5.2,<1",
     "sphinxcontrib-googleanalytics>=0.5",
     "sphinx-click>=6.2.0"
 ]
 examples = [
     "jupyterlab>=4.5.3",
-    "qnexus~=0.48.0",
+    "qnexus>=0.48,<0.50",
 ]
 
 [build-system]
