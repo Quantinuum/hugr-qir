@@ -1,8 +1,8 @@
 ## Changelog
 
-### v0.4.0
+### v0.3.1
 
-- support for random_advance
+- add support for random_advance
 
 ### v0.3.0
 
