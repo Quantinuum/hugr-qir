@@ -37,16 +37,18 @@ The documentation site is powered by Sphinx using the shared `pytket-docs-themin
 Build locally:
 
 ```bash
-uv run --group docs sphinx-build -M html docs docs/_build
+just docs
 ```
 
-The rendered site will be written under `docs/_build/html`.
+The recipe uses an isolated environment so that the Sphinx dependencies do not
+interfere with Guppy compilation in the test environment. The rendered site will
+be written under `docs/_build/html`.
 
 Clean and rebuild:
 
 ```bash
-uv run --group docs sphinx-build -M clean docs docs/_build
-uv run --group docs sphinx-build -M html docs docs/_build
+just docs-clean
+just docs
 ```
 
 ## Useful source locations
