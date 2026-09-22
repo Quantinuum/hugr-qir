@@ -51,7 +51,7 @@ class TagResult:
     def update_qsysresult_values(self) -> None:
         match self.result_type:
             case ResultType.BOOL | ResultType.ARRBOOL:
-                self.shots_qsys = [bool(shot[-1]) for shot in self.shots]
+                self.shots_qsys = [bool(shot[0]) for shot in self.shots]
             case ResultType.INT | ResultType.ARRINT:
                 self.shots_qsys = [
                     _decode_signed_i64_bit_value(shot) for shot in self.shots
@@ -157,21 +157,24 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
         _tag_result_from_creg_result(creg_result) for creg_result in creg_results
     ]
 
-    if all(
-        tagres.result_type in [ResultType.MISSING, ResultType.UNRECOGNIZED]
-        for tagres in tag_results
-    ):
-        logger.warning(
-            "Missing or unrecognized type information in BackendResult register names."
-            " Treating all results as signed 64 bit integers."
-        )
-        for tagres in tag_results:
-            tagres.result_type = ResultType.INT
+    _handle_all_type_tags_missing(tag_results)
 
     for tagres in tag_results:
         tagres.update_qsysresult_values()
 
-    tag_shots_dict = {}
+    tag_shots_dict = extract_shots_info(tag_results)
+
+    qsys_shots = [
+        QsysShot([(tag, shot[i]) for tag, shot in tag_shots_dict.items()])
+        for i in range(n_shots)
+    ]
+    return QsysResult(qsys_shots)
+
+
+def extract_shots_info(
+    tag_results: list[TagResult],
+) -> dict[str, list[list[ShotValue]] | list[ShotValue]]:
+    tag_shots_dict: dict[str, list[list[ShotValue]] | list[ShotValue]] = {}
     arrtag_dict = {}
     for tagres in tag_results:
         if tagres.is_array_type():
@@ -198,9 +201,17 @@ def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
                 list(column) for column in zip(*shots_per_index, strict=True)
             ]
             tag_shots_dict[arrtag] = indices_per_shot
+    return tag_shots_dict
 
-    qsys_shots = [
-        QsysShot([(tag, shot[i]) for tag, shot in tag_shots_dict.items()])
-        for i in range(n_shots)
-    ]
-    return QsysResult(qsys_shots)
+
+def _handle_all_type_tags_missing(tag_results: list[TagResult]) -> None:
+    if all(
+        tagres.result_type in [ResultType.MISSING, ResultType.UNRECOGNIZED]
+        for tagres in tag_results
+    ):
+        logger.warning(
+            "Missing or unrecognized type information in BackendResult register names."
+            " Treating all results as signed 64 bit integers."
+        )
+        for tagres in tag_results:
+            tagres.result_type = ResultType.INT
