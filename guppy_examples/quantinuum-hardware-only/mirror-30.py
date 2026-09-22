@@ -116,20 +116,10 @@ def record_result(qbs: array[qubit, N_QUBITS] @ owned) -> None:
     output("mirror", collect_measurements(measure_array(qbs)))
 
 
-# hqscompiler doesn't like llvm `srem` which would arise
-# from get_current_shot() % 2 == 0
-# so choosing like this for now
-even_numbers_less_than_10 = [0, 2, 4, 6, 8]
-
-
 @guppy
 @no_type_check
 def get_shot_choice() -> bool:
-    cshot = get_current_shot()
-    for even in array(i for i in even_numbers_less_than_10):  # noqa: SIM110
-        if cshot == even:
-            return True
-    return False
+    return get_current_shot() % 2 == 0
 
 
 @guppy.comptime
