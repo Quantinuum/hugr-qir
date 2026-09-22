@@ -47,7 +47,7 @@ config = qnx.QuantinuumConfig(device_name=device_name)
 job_name = f"execution-job-qir-{example_name}-{device_name}-{jobname_suffix}"
 ref_execute_job = qnx.start_execute_job(
     programs=[qir_program_ref],
-    n_shots=[1],
+    n_shots=[10],
     backend_config=config,
     name=job_name,
 )
