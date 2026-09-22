@@ -16,7 +16,7 @@ env:
   HUGR_QIR_BIN_DIR: ${{ github.workspace }}/target/debug
   HUGR_QIR_BIN: ${{ github.workspace }}/target/debug/hugr-qir
   # Pinned version for the uv package manager
-  UV_VERSION: "0.6.11"
+  UV_VERSION: "0.12.17"
   UV_FROZEN: 1
 
 jobs:
@@ -41,6 +41,8 @@ jobs:
   check:
     needs: changes
     if: ${{ needs.changes.outputs.python == 'true' }}
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
 
     name: check python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -63,7 +65,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Setup dependencies.
-        run: uv sync --python ${{ matrix.python-version }}
+        run: uv sync
 
       - name: Type check with ty
         run: uv run ty check
@@ -103,6 +105,8 @@ jobs:
   test:
     needs: [changes, build_binary]
     if: ${{ needs.changes.outputs.python == 'true' }}
+    env:
+      UV_PYTHON: ${{ matrix.python-version.py }}
     name: test python ${{ matrix.python-version.py }}
     runs-on: ubuntu-latest
 
@@ -130,7 +134,7 @@ jobs:
           path: ${{env.HUGR_QIR_BIN_DIR}}
 
       - name: Setup dependencies
-        run: uv sync --python ${{ matrix.python-version.py }}
+        run: uv sync
 
       - name: Run tests
         if: github.event_name == 'merge_group' || !matrix.python-version.coverage

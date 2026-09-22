@@ -1,6 +1,7 @@
 # Devenv
 .devenv*
 devenv.local.nix
+.venv-docs
 
 # direnv
 .direnv

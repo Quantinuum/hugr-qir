@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::num::NonZero;
 use std::rc::Rc;
 
@@ -6,6 +7,7 @@ use anyhow::{Result, bail};
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
 use hugr::core::Visibility;
+use hugr::extension::simple_op::MakeExtensionOp;
 use hugr::llvm::CodegenExtsBuilder;
 use hugr::llvm::custom::CodegenExtsMap;
 use hugr::llvm::emit::{EmitHugr, Namer};
@@ -56,6 +58,7 @@ use crate::qir::wasm_ext::WasmCodegen;
 use itertools::Itertools;
 use tket::passes::inline_funcs::inline_acyclic_scoped;
 use tket_qsystem::QSystemPlatform;
+use tket_qsystem::extension::result::ResultOp;
 
 #[cfg(feature = "py")]
 mod py;
@@ -286,6 +289,8 @@ impl CompileArgs {
             .finish()
             .0;
 
+        validate_unique_result_tags(hugr)?;
+
         // This is a workaround to an issue in hugr-llvm: https://github.com/Quantinuum/hugr/issues/2615
         // Can be removed when that issue is resolved
         set_explicit_entrypoint_linkage(&namer, hugr, &module)?;
@@ -331,6 +336,27 @@ impl CompileArgs {
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
         Ok(module)
     }
+}
+
+/// Reject programs containing more than one logical result with the same user tag.
+fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> {
+    let mut tags = HashSet::new();
+    for node in hugr.nodes() {
+        let Some(extension_op) = hugr.get_optype(node).as_extension_op() else {
+            continue;
+        };
+        let Ok(result_op) = ResultOp::from_extension_op(extension_op) else {
+            continue;
+        };
+        if !tags.insert(result_op.tag.clone()) {
+            return Err(compilation_error::CompilationError::new(format!(
+                "Duplicate result tag {:?}; every output tag must be unique",
+                result_op.tag
+            ))
+            .into());
+        }
+    }
+    Ok(())
 }
 
 /// Allow overriding the version to a static string for snapshot test purposes

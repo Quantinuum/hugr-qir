@@ -1,224 +1,248 @@
-from collections.abc import Sequence
-from typing import Any, TypeAlias, cast
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from logging import getLogger
+from typing import TYPE_CHECKING
 
 from hugr.qsystem.result import QsysResult, QsysShot
-from pytket import Bit
-from pytket.backends.backendresult import BackendResult
 
-ShotValue: TypeAlias = bool | int | str
+if TYPE_CHECKING:
+    from pytket import Bit
+    from pytket.backends.backendresult import BackendResult
+
+logger = getLogger(__name__)
+
+ShotValue = bool | int
+Shots = list[ShotValue]
+ShotsByTag = dict[str, Shots | list[Shots]]
+
+EXPECTED_REGISTER_SIZE = 64
+EXPECTED_REGISTER_INDICES = set(range(EXPECTED_REGISTER_SIZE))
 
 
-def _decode_signed_i64_bit_value(bits: Sequence[bool | int]) -> int:
-    value = sum(int(bits[i]) * (2**i) for i in range(64))
-    if value >= (1 << 63):
-        value -= 1 << 64
-    return value
+class ResultType(Enum):
+    BOOL = "BOOL"
+    INT = "INT"
+    UINT = "UINT"
+    ARRBOOL = "ARRBOOL"
+    ARRINT = "ARRINT"
+    ARRUINT = "ARRUINT"
+    MISSING = "MISSING"
+    UNRECOGNIZED = "UNRECOGNIZED"
+
+    @property
+    def is_array(self) -> bool:
+        return self in {self.ARRBOOL, self.ARRINT, self.ARRUINT}
 
 
-def _decode_unsigned_u64_bit_value(bits: Sequence[bool | int]) -> int:
-    return sum(int(bits[i]) * (2**i) for i in range(64))
+@dataclass(frozen=True)
+class CregResult:
+    reg_name: str
+    shots: list[list[int]]
+
+
+@dataclass(frozen=True)
+class TagResult:
+    user_tag: str
+    shots: list[list[int]]
+    result_type: ResultType
+    array_index: int | None = None
+
+    @property
+    def is_array(self) -> bool:
+        return self.result_type.is_array
+
+    def decode(self) -> Shots:
+        match self.result_type:
+            case ResultType.BOOL | ResultType.ARRBOOL:
+                return [bool(shot[0]) for shot in self.shots]
+            case ResultType.INT | ResultType.ARRINT:
+                return [_decode_i64(shot) for shot in self.shots]
+            case ResultType.UINT | ResultType.ARRUINT:
+                return [_decode_i64(shot, as_unsigned=True) for shot in self.shots]
+            case ResultType.UNRECOGNIZED | ResultType.MISSING:
+                return [_decode_i64(shot) for shot in self.shots]
 
 
 class ResultConversionError(Exception):
-    """Exception raised issues in the converson if the
-    reg names are not as expected"""
-
-    def __init__(self, message: str) -> None:
-        self.message = message
-        super().__init__(self.message)
+    """Raised when a BackendResult cannot be converted to a QsysResult."""
 
 
-def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
+def backendresult_to_qsysresult(backend_result: BackendResult) -> QsysResult:
+    """Convert a pytket BackendResult into a QsysResult.
+
+    Register names produced by hugr-qir >= 0.3.0 contain the Guppy output
+    type. Missing or malformed type information is interpreted as a signed
+    64-bit integer. Every register must contain exactly bits 0 through 63.
+
+    Raises:
+        ResultConversionError: If a register does not contain exactly bits 0
+            through 63, distinct registers normalize to the same user tag, or
+            an array result contains duplicate or incomplete indices.
     """
-    This function can generate a qsys result from a given pytket result.
-    When hugr-qir >= 0.3.0 was used for the generation of the submitted
-    qir the register names in the pytket BackendResult contain the
-    type of the value recorded. This information is used to map each
-    guppy output tag to the appropriate type in the QsysResult data
-    If this type information is missing in the register name or is
-    incomplete, each register will be interpreted as a 64 bit signed
-    integer. If any registers are not 64 bits, the results are either
-    not from a hugr-qir converted program or corrupted, and
-    conversion will fail
-    """
+    n_shots = len(backend_result.get_shots())
+    tag_results = [
+        _tag_result_from_creg_result(creg_result)
+        for creg_result in _get_creg_results(backend_result)
+    ]
+    _warn_about_missing_types(tag_results)
+    _validate_unique_tags(tag_results)
+    shots_by_tag = _group_shots_by_tag(tag_results)
 
-    try:
-        return _to_qsysresult_using_type_tags(backres)
-    except ResultConversionError:
-        return _to_qsysresult_fallback(backres)
-
-
-def _check_backres(backres: BackendResult, creg_names: list) -> None:
-    """check if all cregs are of size 64"""
-    for x in creg_names:
-        for i in range(64):
-            if Bit(name=x, index=i) not in backres.c_bits:
-                msg = f"creg {x} is missing Bit {i}, they all must be of length 64"
-                raise ValueError(msg)
+    return QsysResult(
+        [
+            QsysShot([(tag, shots[shot_index]) for tag, shots in shots_by_tag.items()])
+            for shot_index in range(n_shots)
+        ]
+    )
 
 
-def _get_creg_names(backres: BackendResult) -> list:
-    """list of all creg names"""
-    return [b.reg_name for b in backres.c_bits if b.index == [0]]
+def _get_creg_results(backres: BackendResult) -> list[CregResult]:
+    """Extract and validate the classical registers from a backend result."""
+    bits_by_register: dict[str, list[Bit]] = {}
+    for bit in backres.c_bits:
+        bits_by_register.setdefault(bit.reg_name, []).append(bit)
 
-
-def _get_creg_shape(creg_names: list) -> dict[str, tuple[str, str, int | None]]:
-    """generate a dict mapping:
-    original creg name with type information
-    to a tuple of creg name, type, and index in array"""
-
-    creg_shape: dict[str, tuple[str, str, int | None]] = {}
-
-    for cregname in creg_names:
-        split_creg = cregname.rsplit("___", maxsplit=1)
-
-        if len(split_creg) != 2:  # noqa: PLR2004
-            msg = f"No type information found in reg name: {cregname}"
+    creg_results = []
+    for reg_name, bits in bits_by_register.items():
+        indices = {bit.index[0] for bit in bits if len(bit.index) == 1}
+        if len(indices) != len(bits) or indices != EXPECTED_REGISTER_INDICES:
+            msg = (
+                f"BackendResult register {reg_name!r} must contain exactly "
+                f"bits 0 through {EXPECTED_REGISTER_SIZE - 1}"
+            )
             raise ResultConversionError(msg)
 
-        type_tokens = split_creg[1].split("_")
-        ctype = type_tokens[0]
-        index = int(type_tokens[1]) if len(type_tokens) > 1 else None
-        creg_shape[cregname] = (split_creg[0], ctype, index)
+        # BackendResult stores register readouts most-significant bit first.
+        ordered_bits = sorted(bits, key=lambda bit: bit.index, reverse=True)
+        shots = [
+            [int(value) for value in reversed(shot)]
+            for shot in backres.get_shots(cbits=ordered_bits)
+        ]
+        creg_results.append(CregResult(reg_name, shots))
 
-        if creg_shape[cregname][1] not in [
-            "BOOL",
-            "INT",
-            "UINT",
-            "ARRBOOL",
-            "ARRINT",
-            "ARRUINT",
-        ]:
-            raise ValueError(f"unexpected TYPE in reg name: {creg_shape[cregname][1]}")  # noqa: TRY003, EM102
-    return creg_shape
+    return creg_results
 
 
-def _to_qsysresult_using_type_tags(backres: BackendResult) -> QsysResult:  # noqa: C901, PLR0912, PLR0915
-    """returns a qsys result based on the type information in the name of the creg"""
+def _tag_result_from_creg_result(creg_result: CregResult) -> TagResult:
+    user_tag, separator, type_tag = creg_result.reg_name.rpartition("___")
+    if not separator:
+        return TagResult(
+            user_tag=creg_result.reg_name,
+            shots=creg_result.shots,
+            result_type=ResultType.MISSING,
+        )
 
-    creg_names = _get_creg_names(backres)
+    result_type_name, index_separator, index_text = type_tag.partition("_")
+    try:
+        result_type = ResultType(result_type_name)
+    except ValueError:
+        result_type = ResultType.UNRECOGNIZED
 
-    _check_backres(backres, creg_names)
+    array_index = None
+    if result_type.is_array:
+        if index_separator and index_text.isdecimal():
+            array_index = int(index_text)
+        else:
+            result_type = ResultType.UNRECOGNIZED
+    elif index_separator:
+        result_type = ResultType.UNRECOGNIZED
 
-    creg_shape = _get_creg_shape(creg_names)
+    return TagResult(
+        user_tag=user_tag,
+        shots=creg_result.shots,
+        result_type=result_type,
+        array_index=array_index,
+    )
 
-    list_shots: list[QsysShot] = []
 
-    result_arrays: dict[str, list[int | bool]] = {}
+def _decode_i64(bits: list[int], as_unsigned: bool = False) -> int:
+    value = sum(bit << index for index, bit in enumerate(bits))
+    if as_unsigned:
+        return value
+    return value - (1 << 64) if value >= (1 << 63) else value
 
-    cached_results = {}
 
-    for cregname in creg_names:
-        regname, ctype, index = creg_shape[cregname]
+def _group_shots_by_tag(tag_results: list[TagResult]) -> ShotsByTag:
+    shots_by_tag: ShotsByTag = {}
+    arrays_by_tag: dict[str, list[tuple[int, Shots]]] = {}
 
-        # set up the result array
-        if ctype in {"ARRBOOL", "ARRINT", "ARRUINT"}:
-            if index is None:
-                msg = f"missing array index in reg name: {cregname}"
+    for tag_result in tag_results:
+        shots = tag_result.decode()
+        if tag_result.is_array:
+            if tag_result.array_index is None:
+                msg = f"Array result {tag_result.user_tag!r} has no index"
                 raise ResultConversionError(msg)
-            if regname not in result_arrays:
-                result_arrays[regname] = []
-            while len(result_arrays[regname]) <= index:
-                result_arrays[regname].append(0)
+            arrays_by_tag.setdefault(tag_result.user_tag, []).append(
+                (tag_result.array_index, shots)
+            )
+        else:
+            shots_by_tag[tag_result.user_tag] = shots
 
-        # cache the result based on the register groups
-        if ctype == "BOOL":
-            bitlist = [Bit(name=cregname, index=0)]
-            cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype in {"INT", "UINT"}:
-            bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
-            cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype == "ARRBOOL":
-            bitlist = [Bit(name=cregname, index=0)]
-            cached_results[cregname] = backres.get_shots(cbits=bitlist)
-        elif ctype in {"ARRINT", "ARRUINT"}:
-            bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
-            cached_results[cregname] = backres.get_shots(cbits=bitlist)
+    for array_tag, indexed_shots in arrays_by_tag.items():
+        _store_array_shots(shots_by_tag, array_tag, indexed_shots)
 
-    # set up a qsys shot for each shot in the backend result:
-    for i in range(len(backres.get_shots())):
-        shot_result: list[tuple[str, bool | int | list[int] | list[bool]]] = []
-        shot_arrays: dict[str, list[bool | int | None]] = {
-            k: [None for _ in v] for k, v in result_arrays.items()
-        }
-        for cregname in creg_names:
-            regname, ctype, index = creg_shape[cregname]
-
-            if ctype == "BOOL":
-                res = cached_results[cregname][i]
-                shot_result.append((regname, bool(res)))
-            elif ctype == "INT":
-                res = cached_results[cregname][i]
-                shot_result.append(
-                    (
-                        regname,
-                        _decode_signed_i64_bit_value(res),
-                    )
-                )
-            elif ctype == "UINT":
-                res = cached_results[cregname][i]
-                shot_result.append(
-                    (
-                        regname,
-                        _decode_unsigned_u64_bit_value(res),
-                    )
-                )
-            elif ctype == "ARRBOOL":
-                if index is None:
-                    msg = f"missing array index in reg name: {cregname}"
-                    raise ResultConversionError(msg)
-                res = cached_results[cregname][i]
-                shot_arrays[regname][index] = bool(res)
-            elif ctype == "ARRINT":
-                if index is None:
-                    msg = f"missing array index in reg name: {cregname}"
-                    raise ResultConversionError(msg)
-                res = cached_results[cregname][i]
-                shot_arrays[regname][index] = _decode_signed_i64_bit_value(res)
-            elif ctype == "ARRUINT":
-                if index is None:
-                    msg = f"missing array index in reg name: {cregname}"
-                    raise ResultConversionError(msg)
-                res = cached_results[cregname][i]
-                shot_arrays[regname][index] = _decode_unsigned_u64_bit_value(res)
-            else:
-                raise ResultConversionError("found unexpected type")  # noqa: EM101, TRY003
-
-        # check and cast the type for each of the arrays:
-        for regname, values in shot_arrays.items():
-            if any(value is None for value in values):
-                raise ValueError(f"incomplete array result for reg name: {regname}")  # noqa: TRY003, EM102
-            if all(isinstance(value, bool) for value in values):
-                shot_result.append((regname, cast("list[bool]", values)))
-            else:
-                shot_result.append((regname, cast("list[int]", values)))
-
-        list_shots.append(QsysShot(cast("Any", shot_result)))
-
-    return QsysResult(list_shots)
+    return shots_by_tag
 
 
-def _to_qsysresult_fallback(backres: BackendResult) -> QsysResult:
-    """convert to qsysresult, assuming that all cregs are signed i64"""
+def _validate_unique_tags(tag_results: list[TagResult]) -> None:
+    result_types_by_tag: dict[str, ResultType] = {}
+    for tag_result in tag_results:
+        previous_type = result_types_by_tag.get(tag_result.user_tag)
+        if previous_type is None:
+            result_types_by_tag[tag_result.user_tag] = tag_result.result_type
+            continue
+        if not tag_result.is_array or previous_type != tag_result.result_type:
+            msg = (
+                f"BackendResult contains multiple"
+                f" results with tag {tag_result.user_tag!r}"
+            )
+            raise ResultConversionError(msg)
 
-    creg_names = _get_creg_names(backres)
 
-    _check_backres(backres, creg_names)
+def _store_array_shots(
+    shots_by_tag: ShotsByTag,
+    array_tag: str,
+    indexed_shots: list[tuple[int, Shots]],
+) -> None:
+    indexed_shots.sort(key=lambda item: item[0])
+    indices = [index for index, _ in indexed_shots]
+    if len(indices) != len(set(indices)):
+        msg = f"Array result {array_tag!r} contains duplicate indices"
+        raise ResultConversionError(msg)
+    if indices != list(range(len(indexed_shots))):
+        msg = (
+            f"Array result {array_tag!r} has incomplete indices; "
+            f"expected indices 0 through {len(indexed_shots) - 1}, found {indices}"
+        )
+        raise ResultConversionError(msg)
 
-    list_shots: list[QsysShot] = []
+    shots_per_index = [shots for _, shots in indexed_shots]
+    shots_by_tag[array_tag] = [
+        list(values) for values in zip(*shots_per_index, strict=True)
+    ]
 
-    cached_results = {}
 
-    for cregname in creg_names:
-        bitlist = [Bit(name=cregname, index=bit_index) for bit_index in range(64)]
-        cached_results[cregname] = backres.get_shots(cbits=bitlist)
+def _warn_about_missing_types(tag_results: list[TagResult]) -> None:
+    missing_types = [
+        tag_result
+        for tag_result in tag_results
+        if tag_result.result_type in {ResultType.MISSING, ResultType.UNRECOGNIZED}
+    ]
+    if not missing_types:
+        return
 
-    for i in range(len(backres.get_shots())):
-        shot_result: list[tuple[str, bool | int]] = []
-        for cregname in creg_names:
-            res = cached_results[cregname][i]
-            shot_result.append((cregname, _decode_signed_i64_bit_value(res)))
+    if len(missing_types) == len(tag_results):
+        logger.warning(
+            "Missing or unrecognized type information in BackendResult register names."
+            " Treating all results as signed 64 bit integers."
+        )
+        return
 
-        list_shots.append(QsysShot(cast("Any", shot_result)))
-
-    return QsysResult(list_shots)
+    for tag_result in missing_types:
+        logger.warning(
+            "Unrecognized or missing type information for result tag %s."
+            " Treating as signed 64 bit integer.",
+            tag_result.user_tag,
+        )

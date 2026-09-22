@@ -14,6 +14,7 @@ in {
   };
   config = lib.mkMerge [{
     packages = [
+      pkgs.just
       pkgs.pre-commit
       # These are required for hugr-llvm to be able to link to llvm.
       pkgs.libcxx
@@ -24,6 +25,7 @@ in {
     ];
 
     enterShell = ''
+      eval "$(just --completions bash)"
       export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.zlib ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     '';
 

@@ -23,10 +23,12 @@ Project documentation lives in [docs/](docs/) and can be viewed online [here](ht
 To build the documentation locally:
 
 ```bash
-uv run --group docs sphinx-build -M html docs docs/_build
+just docs
 ```
 
-Then open `docs/_build/html/index.html` in a browser.
+This builds the documentation in an isolated environment so that Sphinx is not
+installed into the test environment. Then open
+`docs/_build/html/index.html` in a browser.
 
 
 ## Installation
