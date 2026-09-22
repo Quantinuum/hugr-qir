@@ -58,15 +58,44 @@ class TagResult:
             case ResultType.BOOL | ResultType.ARRBOOL:
                 return [bool(shot[0]) for shot in self.shots]
             case ResultType.INT | ResultType.ARRINT:
-                return [_decode_signed_i64_bit_value(shot) for shot in self.shots]
+                return [_decode_i64(shot) for shot in self.shots]
             case ResultType.UINT | ResultType.ARRUINT:
-                return [_decode_unsigned_u64_bit_value(shot) for shot in self.shots]
+                return [_decode_i64(shot, as_unsigned=True) for shot in self.shots]
             case ResultType.UNRECOGNIZED | ResultType.MISSING:
-                return [_decode_signed_i64_bit_value(shot) for shot in self.shots]
+                return [_decode_i64(shot) for shot in self.shots]
 
 
 class ResultConversionError(Exception):
     """Raised when a BackendResult cannot be converted to a QsysResult."""
+
+
+def backendresult_to_qsysresult(backend_result: BackendResult) -> QsysResult:
+    """Convert a pytket BackendResult into a QsysResult.
+
+    Register names produced by hugr-qir >= 0.3.0 contain the Guppy output
+    type. Missing or malformed type information is interpreted as a signed
+    64-bit integer. Every register must contain exactly bits 0 through 63.
+
+    Raises:
+        ResultConversionError: If a register does not contain exactly bits 0
+            through 63, distinct registers normalize to the same user tag, or
+            an array result contains duplicate or incomplete indices.
+    """
+    n_shots = len(backend_result.get_shots())
+    tag_results = [
+        _tag_result_from_creg_result(creg_result)
+        for creg_result in _get_creg_results(backend_result)
+    ]
+    _warn_about_missing_types(tag_results)
+    _validate_unique_tags(tag_results)
+    shots_by_tag = _group_shots_by_tag(tag_results)
+
+    return QsysResult(
+        [
+            QsysShot([(tag, shots[shot_index]) for tag, shots in shots_by_tag.items()])
+            for shot_index in range(n_shots)
+        ]
+    )
 
 
 def _get_creg_results(backres: BackendResult) -> list[CregResult]:
@@ -128,37 +157,11 @@ def _tag_result_from_creg_result(creg_result: CregResult) -> TagResult:
     )
 
 
-def _decode_signed_i64_bit_value(bits: list[int]) -> int:
+def _decode_i64(bits: list[int], as_unsigned: bool = False) -> int:
     value = sum(bit << index for index, bit in enumerate(bits))
+    if as_unsigned:
+        return value
     return value - (1 << 64) if value >= (1 << 63) else value
-
-
-def _decode_unsigned_u64_bit_value(bits: list[int]) -> int:
-    return sum(bit << index for index, bit in enumerate(bits))
-
-
-def backendresult_to_qsysresult(backres: BackendResult) -> QsysResult:
-    """Convert a pytket BackendResult into a QsysResult.
-
-    Register names produced by hugr-qir >= 0.3.0 contain the Guppy output
-    type. Missing or malformed type information is interpreted as a signed
-    64-bit integer. Every register must contain exactly bits 0 through 63.
-    """
-    n_shots = len(backres.get_shots())
-    tag_results = [
-        _tag_result_from_creg_result(creg_result)
-        for creg_result in _get_creg_results(backres)
-    ]
-
-    _warn_about_missing_types(tag_results)
-    shots_by_tag = _group_shots_by_tag(tag_results)
-
-    return QsysResult(
-        [
-            QsysShot([(tag, shots[shot_index]) for tag, shots in shots_by_tag.items()])
-            for shot_index in range(n_shots)
-        ]
-    )
 
 
 def _group_shots_by_tag(tag_results: list[TagResult]) -> ShotsByTag:
@@ -178,27 +181,47 @@ def _group_shots_by_tag(tag_results: list[TagResult]) -> ShotsByTag:
             shots_by_tag[tag_result.user_tag] = shots
 
     for array_tag, indexed_shots in arrays_by_tag.items():
-        indexed_shots.sort(key=lambda item: item[0])
-        indices = [index for index, _ in indexed_shots]
-        if len(indices) != len(set(indices)):
-            msg = f"Array result {array_tag!r} contains duplicate indices"
-            raise ResultConversionError(msg)
-        if indices != list(range(len(indexed_shots))):
-            logger.warning(
-                "Array type result %s is missing indices,"
-                " treating each index individually",
-                array_tag,
-            )
-            for index, shots in indexed_shots:
-                shots_by_tag[f"{array_tag}_{index}"] = shots
-            continue
-
-        shots_per_index = [shots for _, shots in indexed_shots]
-        shots_by_tag[array_tag] = [
-            list(values) for values in zip(*shots_per_index, strict=True)
-        ]
+        _store_array_shots(shots_by_tag, array_tag, indexed_shots)
 
     return shots_by_tag
+
+
+def _validate_unique_tags(tag_results: list[TagResult]) -> None:
+    result_types_by_tag: dict[str, ResultType] = {}
+    for tag_result in tag_results:
+        previous_type = result_types_by_tag.get(tag_result.user_tag)
+        if previous_type is None:
+            result_types_by_tag[tag_result.user_tag] = tag_result.result_type
+            continue
+        if not tag_result.is_array or previous_type != tag_result.result_type:
+            msg = (
+                f"BackendResult contains multiple"
+                f" results with tag {tag_result.user_tag!r}"
+            )
+            raise ResultConversionError(msg)
+
+
+def _store_array_shots(
+    shots_by_tag: ShotsByTag,
+    array_tag: str,
+    indexed_shots: list[tuple[int, Shots]],
+) -> None:
+    indexed_shots.sort(key=lambda item: item[0])
+    indices = [index for index, _ in indexed_shots]
+    if len(indices) != len(set(indices)):
+        msg = f"Array result {array_tag!r} contains duplicate indices"
+        raise ResultConversionError(msg)
+    if indices != list(range(len(indexed_shots))):
+        msg = (
+            f"Array result {array_tag!r} has incomplete indices; "
+            f"expected indices 0 through {len(indexed_shots) - 1}, found {indices}"
+        )
+        raise ResultConversionError(msg)
+
+    shots_per_index = [shots for _, shots in indexed_shots]
+    shots_by_tag[array_tag] = [
+        list(values) for values in zip(*shots_per_index, strict=True)
+    ]
 
 
 def _warn_about_missing_types(tag_results: list[TagResult]) -> None:

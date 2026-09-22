@@ -264,9 +264,7 @@ def test_mixed_typed_and_untyped_registers(
     assert "result tag legacy" in caplog.text
 
 
-def test_incomplete_array_indices_are_returned_individually(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+def test_incomplete_array_indices_are_rejected() -> None:
     backend_result = _make_backend_result(
         {
             "items___ARRINT_0": list(range(EXPECTED_REGISTER_SIZE)),
@@ -274,14 +272,25 @@ def test_incomplete_array_indices_are_returned_individually(
         }
     )
 
-    with caplog.at_level(logging.WARNING):
-        result = backendresult_to_qsysresult(backend_result)
-
-    assert list(result[0]) == [("items_0", 0), ("items_2", 0)]
-    assert "missing indices" in caplog.text
+    with pytest.raises(ResultConversionError, match="incomplete indices"):
+        backendresult_to_qsysresult(backend_result)
 
 
-def test_duplicate_array_indices_are_rejected() -> None:
+def test_duplicate_scalar_tags_are_rejected() -> None:
+    backend_result = _make_backend_result(
+        {
+            "value___INT": list(range(EXPECTED_REGISTER_SIZE)),
+            "value___UINT": list(range(EXPECTED_REGISTER_SIZE)),
+        }
+    )
+
+    with pytest.raises(
+        ResultConversionError, match="multiple results with tag 'value'"
+    ):
+        backendresult_to_qsysresult(backend_result)
+
+
+def test_duplicate_array_tags_are_rejected() -> None:
     backend_result = _make_backend_result(
         {
             "items___ARRINT_0": list(range(EXPECTED_REGISTER_SIZE)),
@@ -289,7 +298,23 @@ def test_duplicate_array_indices_are_rejected() -> None:
         }
     )
 
-    with pytest.raises(ResultConversionError, match="duplicate indices"):
+    with pytest.raises(
+        ResultConversionError, match="multiple results with tag 'items'"
+    ):
+        backendresult_to_qsysresult(backend_result)
+
+
+def test_scalar_and_array_tag_collision_is_rejected() -> None:
+    backend_result = _make_backend_result(
+        {
+            "value___INT": list(range(EXPECTED_REGISTER_SIZE)),
+            "value___ARRINT_0": list(range(EXPECTED_REGISTER_SIZE)),
+        }
+    )
+
+    with pytest.raises(
+        ResultConversionError, match="multiple results with tag 'value'"
+    ):
         backendresult_to_qsysresult(backend_result)
 
 
