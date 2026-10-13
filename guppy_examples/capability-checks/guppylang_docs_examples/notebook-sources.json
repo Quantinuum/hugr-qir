@@ -1,0 +1,98 @@
+[
+  {
+    "name": "adaptive-qpe",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/adaptive-qpe.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/f4ed911d9c22577717e647f9cdde039a/adaptive-qpe.ipynb",
+    "sha256": "d52eb3d77a88bb41511bc96f2df7becadff756f2e67520a8536675d94777320a",
+    "scripts": [
+      "adaptive-qpe.py"
+    ]
+  },
+  {
+    "name": "canonical-qpe",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/canonical-qpe.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/6ee65218d0380c03ac1e93fb33e2b9f1/canonical-qpe.ipynb",
+    "sha256": "ee0d249228130824285870abeb8faecaa269ad5dbcec78e8dc2094ad910aff31",
+    "scripts": [
+      "canonical-qpe.py"
+    ]
+  },
+  {
+    "name": "ghz_and_graph",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/ghz_and_graph.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/4944715cbe6bc65e3f14e3cd5d5343cc/ghz_and_graph.ipynb",
+    "sha256": "a556b477fa5ee39c3efc024c7459063629eacfc43de3f8fe95cadec4fb715af8",
+    "scripts": [
+      "ghz_state.py",
+      "graph_state.py"
+    ]
+  },
+  {
+    "name": "postselect",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/postselect.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/b5677b47cb1cb033026c8ab09b0ff336/postselect.ipynb",
+    "sha256": "ac89df80f5b8640e38ddf85ce788d8917a254550def80191a940d1d34eb2d866",
+    "scripts": [
+      "postselection_exit.py",
+      "postselection_panic.py"
+    ]
+  },
+  {
+    "name": "qaoa_maxcut_example",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/qaoa_maxcut_example.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/8cd74d4a3387f04017834a077b26209e/qaoa_maxcut_example.ipynb",
+    "sha256": "c3f4bc16a73768d52e4d408471af26813a81eb8a20ffcee150d69ce529be72a1",
+    "scripts": [
+      "qaoa_maxcut.py"
+    ]
+  },
+  {
+    "name": "random_numbers",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/random_numbers.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/3ab24d2d7d74260715dac0759181b935/random_numbers.ipynb",
+    "sha256": "ad78c1e1a536fc6231384727fdf7c55b3256f1d9b05140e274815201f2864663",
+    "scripts": [
+      "random_precomputed.py",
+      "random_runtime_rng.py"
+    ]
+  },
+  {
+    "name": "repeat-until-success",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/repeat-until-success.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/30d0e42eb48c4c907668f9bee38f30de/repeat-until-success.ipynb",
+    "sha256": "32d0320a9a0ffb55f5234cdac07ac738f28a1b9b74f99303d08b41cdfbe62bd4",
+    "scripts": [
+      "repeat-until-success.py"
+    ]
+  },
+  {
+    "name": "state_results",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/state_results.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/3c803f4ffccf99bd6355366e3731e1f9/state_results.ipynb",
+    "sha256": "27f44c028d6b6b2dde8cb54d06759b959a8c4146624143bde475f7bca690ec02",
+    "scripts": [
+      "state_output_branch.py",
+      "state_output_full.py",
+      "state_output_partial.py"
+    ]
+  },
+  {
+    "name": "swap_test",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/swap_test.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/f3aed3374810cbd5be46ceb68594e429/swap_test.ipynb",
+    "sha256": "0b357e1656fb37dad9a621fea4c1a1b4ed79dcef03634d9e6c37623a68b21b53",
+    "scripts": [
+      "the_swap_test_and_loading_pytket_circuits.py"
+    ]
+  },
+  {
+    "name": "t_factory",
+    "page": "https://docs.quantinuum.com/guppy/guppylang/examples/t_factory.html",
+    "notebook": "https://docs.quantinuum.com/guppy/_downloads/a27643da68ff409a315ec337af493ee9/t_factory.ipynb",
+    "sha256": "3fa385dfa2fa98b89647adb4111090cbe368273f0fe1e6605d7b8114033dd4f6",
+    "scripts": [
+      "optional_measurements.py",
+      "t_state_distillation.py"
+    ]
+  }
+]

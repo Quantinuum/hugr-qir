@@ -1,0 +1,358 @@
+{
+  "checked_on": "2026-10-13",
+  "python": "3.13.13 (main, Apr  7 2026, 18:19:01) [Clang 21.1.8 ]",
+  "versions": {
+    "guppyalgos": "0.1.0",
+    "guppylang": "1.0.5",
+    "hugr-qir": "0.3.1",
+    "selene-sim": "0.3.2",
+    "numpy": "2.5.3"
+  },
+  "compiler": {
+    "target": "quantinuum-hardware",
+    "optimization": "aggressive",
+    "max_loop_unroll": 800,
+    "validate_hugr": true,
+    "validate_qir": true
+  },
+  "helper_sha256": {
+    "_references.py": "673c75f64276c6fbde4cc260d2f2666dcc18043486ddf3163c7e3d281bddd4d1",
+    "../_checks.py": "b3700304c4bf4e4403dd90d19669e95ca2ac8c6d8cc31a6a6af8c33dc41d0e08",
+    "../check_examples.py": "625c2638b5fc8a82224f4e1eaf89d5f852ea3ae4ecbcf672cea6d1e530911ba7"
+  },
+  "summary": {
+    "notebooks": 10,
+    "examples": 16,
+    "hugr_pass": 16,
+    "qir_pass": 8,
+    "local_check_pass": 16,
+    "max_simulation_qubits": 8,
+    "max_emitted_qir_qubits": 7
+  },
+  "examples": [
+    {
+      "file": "adaptive-qpe.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "c6f7a2c81f79523448b8975eec213b57466bf50ea8e350087fa3b8db27592cd3",
+      "import": "pass",
+      "component": "Adaptive QPE with measurement-dependent floating-point updates",
+      "qubit_budget": 2,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/adaptive-qpe.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Float output is not supported on H-Series hardware",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "canonical-qpe.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "11f45a7e667ffa1c467530feffb83a942b1ef54cb03369968bfc62b7de587bc8",
+      "import": "pass",
+      "component": "Canonical QPE with a comptime inverse Fourier transform",
+      "qubit_budget": 6,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/canonical-qpe.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 6,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "ghz_state.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "0085693bc0b50bbe3edf5114c74eb61f1fd6c1dab7aa17bfa342d643b5ee6134",
+      "import": "pass",
+      "component": "Six-qubit GHZ preparation",
+      "qubit_budget": 6,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/ghz_and_graph.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 6,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "graph_state.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "6e0edefe4efc1fafc105da853119a99cb90864d49681b068bcce63cc285a84f8",
+      "import": "pass",
+      "component": "Complete three-node graph state",
+      "qubit_budget": 3,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/ghz_and_graph.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 3,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "optional_measurements.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "f20fe80984cee8ab7baa3fb3cda4f81e50f222160957b3feb492c3f96c33776b",
+      "import": "pass",
+      "component": "Masked measurements of Option[qubit] with Option[Measurement] results",
+      "qubit_budget": 3,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/t_factory.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 3,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "postselection_exit.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "983290904c27a846326dc0b610aabbfee8e65e3089e807911f06f195e3720720",
+      "import": "pass",
+      "component": "Steane preparation with postselection exit",
+      "qubit_budget": 8,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/postselect.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Compilation failed: Program may panic: Postselected: FT prep failed. Runtime panics are unsupported on H-Series.",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "postselection_panic.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "3f48ec9456ca6dfd9b88c65c28667156f19ce6cbbccd64aad59f99ef05b4c627",
+      "import": "pass",
+      "component": "Deliberate invalid-index panic",
+      "qubit_budget": 8,
+      "requested_shots": 1,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/postselect.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Compilation failed: Program always panics: Invalid data index in physical_h; Postselected: FT prep failed",
+      "simulation": {
+        "requested_shots": 1,
+        "expected_emulator_error": "Invalid data index in physical_h",
+        "shots": 0,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "qaoa_maxcut.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "203748e63fa97127fd91668b8b4969c49d97c6cf4528d6800e45f1fe7b1922e9",
+      "import": "pass",
+      "component": "Fixed-parameter Max-Cut QAOA kernel",
+      "qubit_budget": 7,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/qaoa_maxcut_example.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 7,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "random_precomputed.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "bc73ae19c6fbb79224dc24ede8757fe9171be3efe790eb6bae2f0be0344e3fcc",
+      "import": "pass",
+      "component": "Precomputed random table indexed by shot",
+      "qubit_budget": 1,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/random_numbers.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 1,
+      "qir": "fail",
+      "error": "Generated QIR failed validation: Encountered Unexpected Instruction   %0 = getelementptr inbounds nuw { i64, [0 x i64] }, ptr @\"sa.static_pyarray.%tmp2.c4771794.0\", i64 0, i32 1, i64 %remainder.zext",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "random_runtime_rng.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "be6bec55fd9f6d61d51fd9aae28fc155c374e8c6d096c4f4a5f02e6d4ded37ef",
+      "import": "pass",
+      "component": "Runtime seeded RNG",
+      "qubit_budget": 1,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/random_numbers.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 1,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "repeat-until-success.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "bae29b437f36720d6126b75431e87b05b654b260e62678a05e99e492a84bc84e",
+      "import": "pass",
+      "component": "Measurement-driven RUS with a twenty-attempt limit",
+      "qubit_budget": 3,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/repeat-until-success.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 3,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "state_output_branch.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "a2c2f977fd47677a404e4caf71605ffe29f1f448d3f5a0044e4bdb97aa3008b2",
+      "import": "pass",
+      "component": "state_output selected by measurement-dependent control flow",
+      "qubit_budget": 3,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/state_results.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Compilation failed unexpectedly: Failed to emit LLVM for function guppylang_docs_examples_state_output_branch.main at node Node(1)",
+      "simulation": {
+        "requested_shots": 256,
+        "validation_details": {
+          "validated_snapshots": 256
+        },
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "state_output_full.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "e9cae7d0e60988ff99647ad7eed8899c226a68b67bc64521483514619c79187a",
+      "import": "pass",
+      "component": "Full state_output snapshots from equivalent GHZ circuits",
+      "qubit_budget": 3,
+      "requested_shots": 8,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/state_results.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Compilation failed unexpectedly: Failed to emit LLVM for function guppylang_docs_examples_state_output_full.main at node Node(1)",
+      "simulation": {
+        "requested_shots": 8,
+        "validation_details": {
+          "validated_snapshots": 16
+        },
+        "shots": 8,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "state_output_partial.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "e8709d777ee9dee410f9d1aeac56ded39e9ed5f311a9ec5c3819f817181e1e41",
+      "import": "pass",
+      "component": "Mixed-state subset snapshots of an entangled GHZ register",
+      "qubit_budget": 3,
+      "requested_shots": 8,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/state_results.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "Compilation failed unexpectedly: Failed to emit LLVM for function guppylang_docs_examples_state_output_partial.main at node Node(1)",
+      "simulation": {
+        "requested_shots": 8,
+        "validation_details": {
+          "validated_snapshots": 24
+        },
+        "shots": 8,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "t_state_distillation.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "2d47c7864d090781b60204770474de9bee0a9137d92604fef7be700aacbc52bc",
+      "import": "pass",
+      "component": "Five-to-one T-state distillation with recursive retries and Option ownership",
+      "qubit_budget": 5,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/t_factory.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir": "fail",
+      "error": "assertion `left == right` failed: left: 1, right: 2 (two functions remain)",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    },
+    {
+      "file": "the_swap_test_and_loading_pytket_circuits.py",
+      "suite": "guppylang_docs_examples",
+      "source_sha256": "4d34be18eeb7932928dc591d4a00bf3c446ea9691731e508be158cebe4c9c07b",
+      "import": "pass",
+      "component": "SWAP test of loaded W and S state-preparation circuits",
+      "qubit_budget": 7,
+      "requested_shots": 256,
+      "source_url": "https://docs.quantinuum.com/guppy/guppylang/examples/swap_test.html",
+      "check": "pass",
+      "compile": "pass",
+      "qir_emitted": true,
+      "qir_qubits": 7,
+      "qir": "pass",
+      "simulation": {
+        "requested_shots": 256,
+        "shots": 256,
+        "emulate": "pass"
+      }
+    }
+  ]
+}
