@@ -18,6 +18,7 @@ hugr-qir = "hugr_qir.cli:hugr_qir"
 
 [dependency-groups]
 dev = [
+    "guppyalgos>=0.1.0,<0.2.0",
     "guppylang-internals>=1.0.1,<2.0.0",
     "maturin>=1.11.5,<2.0",
     "pytest-cov>=7.0.0,<8",
@@ -57,6 +58,14 @@ cache-keys = [
 constraint-dependencies = [
     "llvmlite>=0.46,<0.48; python_version >= '3.14' and (sys_platform != 'darwin' or platform_machine != 'x86_64')",
 ]
+
+[tool.uv.sources]
+guppyalgos = { index = "public-pypi" }
+
+[[tool.uv.index]]
+name = "public-pypi"
+url = "https://pypi.org/simple"
+explicit = true
 
 [tool.ty.analysis]
 replace-imports-with-any = ["qnexus", "qnexus.**"]
