@@ -19,7 +19,7 @@ hugr-core = "0.30.2"
 hugr-llvm = { version = "0.30.2", features = ["test-utils"] }
 itertools = "0.15.0"
 lazy_static = "1.5.0"
-pyo3 = { version = "0.29", features = [
+pyo3 = { version = "0.30", features = [
     "abi3-py310",
     "anyhow",
 ], optional = true }
