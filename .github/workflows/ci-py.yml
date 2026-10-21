@@ -56,7 +56,7 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.11
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.1
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Set up uv
@@ -92,7 +92,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.1
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Build HUGR-QIR binary
@@ -124,7 +124,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - name: Install LLVM from hugrverse-env
-        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.1
+        uses: quantinuum/hugrverse-env/install-hugrenv-action@v1.1.0
         with:
           packages: "llvm"
       - name: Download the hugr-bin binary
