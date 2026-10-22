@@ -132,5 +132,5 @@ jobs:
         run: |
           uv run --no-sync python guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
           "${HUGR_QIR_BIN}" ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
-          cargo install --git https://github.com/Quantinuum/qir-runner runner
+          cargo install --git https://github.com/Quantinuum/qir-runner runner --features inkwell/llvm20-1-force-dynamic
           qir-runner --file ${{ matrix.guppy-file }}.ll
