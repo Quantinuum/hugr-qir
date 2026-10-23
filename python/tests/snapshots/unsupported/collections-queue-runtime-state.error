@@ -1,1 +1,1 @@
-Compilation failed: Program may panic: Option.unwrap: value is `Some`. Runtime panics are unsupported on H-Series.
+Compilation failed: Detected conditional output tag "queue_len". Each tag must be output exactly once on every run. Move the output outside conditional branches and loops.

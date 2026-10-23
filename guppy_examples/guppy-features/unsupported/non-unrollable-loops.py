@@ -1,6 +1,7 @@
 import sys
 
 from guppylang import guppy
+from guppylang.std.platform import output
 from guppylang.std.quantum import h, measure, qubit
 
 
@@ -11,6 +12,7 @@ def main() -> None:
         h(q1)
         if not measure(q1).read():
             break
+    output("completed", 1)
 
 
 if __name__ == "__main__":
