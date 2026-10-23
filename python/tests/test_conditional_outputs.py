@@ -1,4 +1,5 @@
 """Outputs must have one call site and execute on every returning path."""
+from typing import no_type_check
 
 import pytest
 from guppylang import array, guppy, qubit
@@ -10,6 +11,7 @@ from hugr_qir.output import OutputFormat
 
 
 @guppy
+@no_type_check
 def conditional_outputs() -> None:
     q = qubit()
     h(q)
@@ -25,6 +27,7 @@ def conditional_outputs() -> None:
 
 
 @guppy
+@no_type_check
 def conditional_array_output() -> None:
     q = qubit()
     h(q)
@@ -33,6 +36,7 @@ def conditional_array_output() -> None:
 
 
 @guppy
+@no_type_check
 def conditional_suffix_tag_output() -> None:
     q = qubit()
     h(q)
@@ -41,6 +45,7 @@ def conditional_suffix_tag_output() -> None:
 
 
 @guppy
+@no_type_check
 def branch_local_output() -> None:
     q = qubit()
     h(q)
@@ -54,6 +59,7 @@ def branch_local_output() -> None:
 
 
 @guppy
+@no_type_check
 def unconditional_output() -> None:
     q = qubit()
     h(q)
@@ -65,6 +71,7 @@ def unconditional_output() -> None:
 
 
 @guppy
+@no_type_check
 def constant_branch_output() -> None:
     if True:
         output("constant", 1)
@@ -72,6 +79,7 @@ def constant_branch_output() -> None:
 
 
 @guppy
+@no_type_check
 def no_outputs() -> None:
     q = qubit()
     h(q)
@@ -79,6 +87,7 @@ def no_outputs() -> None:
 
 
 @guppy
+@no_type_check
 def repeated_output() -> None:
     for i in range(3):
         output("repeated", i)
