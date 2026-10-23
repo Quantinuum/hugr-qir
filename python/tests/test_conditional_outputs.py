@@ -1,4 +1,5 @@
 """Outputs must have one call site and execute on every returning path."""
+
 from typing import no_type_check
 
 import pytest
