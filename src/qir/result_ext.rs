@@ -50,22 +50,16 @@ fn bool_value_to_i1<'c>(
         .build_int_truncate(tag, context.iw_context().bool_type(), "")?)
 }
 
+fn scalar_result_tag(tag: &str, type_tag: &str) -> String {
+    format!("{tag}___{type_tag}")
+}
+
+fn array_result_tag(tag: &str, type_tag: &str, index: usize) -> String {
+    format!("{tag}___{type_tag}_{index}")
+}
+
 use super::QirCodegenExtension;
 impl QirCodegenExtension {
-    fn scalar_result_tag(&self, tag: &str, type_tag: &str) -> String {
-        match self.target {
-            CompileTarget::QuantinuumHardware => format!("{tag}___{type_tag}"),
-            CompileTarget::Native => tag.to_owned(),
-        }
-    }
-
-    fn array_result_tag(&self, tag: &str, type_tag: &str, index: usize) -> String {
-        match self.target {
-            CompileTarget::QuantinuumHardware => format!("{tag}___{type_tag}_{index}"),
-            CompileTarget::Native => format!("{tag}___{index}"),
-        }
-    }
-
     pub fn emit_result_op<'c, H: HugrView<Node = Node>>(
         &self,
         context: &mut EmitFuncContext<'c, '_, H>,
@@ -89,7 +83,7 @@ impl QirCodegenExtension {
             .as_basic_type_enum();
         match op {
             ResultOpDef::Bool => {
-                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "BOOL"))?;
+                let tag_ptr = emit_tag(context, scalar_result_tag(tag_str, "BOOL"))?;
                 let [val] = args
                     .inputs
                     .try_into()
@@ -119,7 +113,7 @@ impl QirCodegenExtension {
                 } else {
                     "UINT"
                 };
-                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, type_tag))?;
+                let tag_ptr = emit_tag(context, scalar_result_tag(tag_str, type_tag))?;
                 let [mut val] = args
                     .inputs
                     .try_into()
@@ -151,7 +145,7 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::F64 => {
-                let tag_ptr = emit_tag(context, self.scalar_result_tag(tag_str, "FLOAT"))?;
+                let tag_ptr = emit_tag(context, scalar_result_tag(tag_str, "FLOAT"))?;
                 let [val] = args
                     .inputs
                     .try_into()
@@ -187,8 +181,7 @@ impl QirCodegenExtension {
                     context.get_extern_func("__quantum__rt__bool_record_output", print_fn_ty)?;
                 for (index, element) in elements.into_iter().enumerate() {
                     let bit = bool_value_to_i1(context, element, &bool_type)?;
-                    let tag_ptr =
-                        emit_tag(context, self.array_result_tag(tag_str, "ARRBOOL", index))?;
+                    let tag_ptr = emit_tag(context, array_result_tag(tag_str, "ARRBOOL", index))?;
                     context.builder().build_call(
                         print_fn,
                         &[bit.into(), tag_ptr.into()],
@@ -232,8 +225,7 @@ impl QirCodegenExtension {
                             context.builder().build_int_z_extend(value, i64_ty, "")
                         }?;
                     }
-                    let tag_ptr =
-                        emit_tag(context, self.array_result_tag(tag_str, type_tag, index))?;
+                    let tag_ptr = emit_tag(context, array_result_tag(tag_str, type_tag, index))?;
                     context.builder().build_call(
                         print_fn,
                         &[value.into(), tag_ptr.into()],
@@ -258,8 +250,7 @@ impl QirCodegenExtension {
                 let print_fn =
                     context.get_extern_func("__quantum__rt__double_record_output", print_fn_ty)?;
                 for (index, element) in elements.into_iter().enumerate() {
-                    let tag_ptr =
-                        emit_tag(context, self.array_result_tag(tag_str, "ARRFLOAT", index))?;
+                    let tag_ptr = emit_tag(context, array_result_tag(tag_str, "ARRFLOAT", index))?;
                     context.builder().build_call(
                         print_fn,
                         &[element.into(), tag_ptr.into()],
@@ -303,35 +294,6 @@ mod test {
                 .add_default_array_extensions()
         });
         llvm_ctx
-    }
-
-    #[rstest]
-    #[case::native(CompileTarget::Native, "BOOL", "result")]
-    #[case::hardware_bool(CompileTarget::QuantinuumHardware, "BOOL", "result___BOOL")]
-    #[case::hardware_int(CompileTarget::QuantinuumHardware, "INT", "result___INT")]
-    #[case::hardware_float(CompileTarget::QuantinuumHardware, "FLOAT", "result___FLOAT")]
-    fn scalar_tags_depend_on_target(
-        #[case] target: CompileTarget,
-        #[case] type_tag: &str,
-        #[case] expected: &str,
-    ) {
-        let codegen = QirCodegenExtension { target };
-        assert_eq!(codegen.scalar_result_tag("result", type_tag), expected);
-    }
-
-    #[rstest]
-    #[case::native(CompileTarget::Native, "ARRBOOL", "result___2")]
-    #[case::hardware_bool(CompileTarget::QuantinuumHardware, "ARRBOOL", "result___ARRBOOL_2")]
-    #[case::hardware_int(CompileTarget::QuantinuumHardware, "ARRINT", "result___ARRINT_2")]
-    #[case::hardware_uint(CompileTarget::QuantinuumHardware, "ARRUINT", "result___ARRUINT_2")]
-    #[case::hardware_float(CompileTarget::QuantinuumHardware, "ARRFLOAT", "result___ARRFLOAT_2")]
-    fn array_tags_depend_on_target(
-        #[case] target: CompileTarget,
-        #[case] type_tag: &str,
-        #[case] expected: &str,
-    ) {
-        let codegen = QirCodegenExtension { target };
-        assert_eq!(codegen.array_result_tag("result", type_tag, 2), expected);
     }
 
     #[rstest]

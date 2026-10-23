@@ -33,6 +33,7 @@ use tket::passes::{
 };
 pub mod cli;
 pub mod compilation_error;
+mod control_flow;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
@@ -40,6 +41,7 @@ pub mod lower_integer_division;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
+pub mod validate_outputs;
 pub mod validate_panic;
 
 use crate::cli::CliOptimizationLevel;
@@ -325,6 +327,7 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
+        validate_outputs::validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
@@ -338,7 +341,7 @@ impl CompileArgs {
     }
 }
 
-/// Reject programs containing more than one logical result with the same user tag.
+/// Require at least one logical result and a unique user tag for each result.
 fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> {
     let mut tags = HashSet::new();
     for node in hugr.nodes() {
@@ -355,6 +358,12 @@ fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> 
             ))
             .into());
         }
+    }
+    if tags.is_empty() {
+        return Err(compilation_error::CompilationError::new(
+            "Program has no outputs. Add an output call to record a result.",
+        )
+        .into());
     }
     Ok(())
 }
