@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -15,4 +16,5 @@ def assert_unsupported_example(guppy_file: Path, snapshot: Snapshot) -> None:
         to_qir_str(hugr_bin)
 
     snapshot.snapshot_dir = UNSUPPORTED_SNAPSHOT_DIR
-    snapshot.assert_match(str(error.value) + "\n", guppy_file.stem + ".error")
+    error_message = re.sub(r"\bcond_exit_\d+\b", "cond_exit_<id>", str(error.value))
+    snapshot.assert_match(error_message + "\n", guppy_file.stem + ".error")
