@@ -11,6 +11,30 @@ use crate::inkwell::{
 };
 use crate::llvm_unroll::ensure_no_loops;
 
+pub(crate) struct ProgramOperations {
+    has_output: bool,
+    has_measurement: bool,
+}
+
+impl ProgramOperations {
+    /// Require recorded values and a quantum measurement in the optimized program.
+    pub fn validate_required(self) -> Result<()> {
+        if !self.has_output {
+            return Err(CompilationError::new(
+                "Program records no output values. Add an output call with a scalar or a nonempty array.",
+            )
+            .into());
+        }
+        if !self.has_measurement {
+            return Err(CompilationError::new(
+                "Program has no quantum measurements. Add a quantum measurement; programs containing only classical computations are unsupported.",
+            )
+            .into());
+        }
+        Ok(())
+    }
+}
+
 /// Decode one compiler-added suffix, retaining an array element's index.
 fn output_tag(tag: &str) -> (&str, Option<u64>) {
     let Some((name, suffix)) = tag.rsplit_once("___") else {
@@ -37,7 +61,10 @@ fn output_tag(tag: &str) -> (&str, Option<u64>) {
 /// Require a single call site per scalar output or array element, executed on
 /// every returning path. A user tag cannot be shared by scalar and array outputs.
 /// Reject reachable loops. This must run before output-call sinking.
-pub fn validate_outputs(module: &Module, max_loop_unroll: usize) -> Result<()> {
+pub(crate) fn validate_outputs(
+    module: &Module,
+    max_loop_unroll: usize,
+) -> Result<ProgramOperations> {
     let graphs = ensure_no_loops(module, max_loop_unroll)?;
     let strings = module
         .get_globals()
@@ -54,6 +81,8 @@ pub fn validate_outputs(module: &Module, max_loop_unroll: usize) -> Result<()> {
         })
         .collect::<HashMap<_, _>>();
 
+    let mut has_output = false;
+    let mut has_measurement = false;
     for graph in graphs {
         let required = graph.required_on_return_paths();
         let mut tags = HashMap::<&str, HashSet<Option<u64>>>::new();
@@ -69,9 +98,11 @@ pub fn validate_outputs(module: &Module, max_loop_unroll: usize) -> Result<()> {
                     continue;
                 };
                 let name = callee.get_name().to_bytes();
+                has_measurement |= name == b"__quantum__qis__mz__body";
                 if !name.starts_with(b"__quantum__rt__") || !name.ends_with(b"_record_output") {
                     continue;
                 }
+                has_output = true;
                 let tag = match inst.get_operand(1) {
                     Some(Operand::Value(BasicValueEnum::PointerValue(ptr))) => strings.get(&ptr),
                     _ => None,
@@ -93,7 +124,10 @@ pub fn validate_outputs(module: &Module, max_loop_unroll: usize) -> Result<()> {
             }
         }
     }
-    Ok(())
+    Ok(ProgramOperations {
+        has_output,
+        has_measurement,
+    })
 }
 
 #[cfg(test)]
@@ -124,6 +158,15 @@ mod tests {
     }
 
     fn validate(body: &str) -> Result<()> {
+        let body = body.replacen(
+            "entry:",
+            "entry: call void @__quantum__qis__mz__body(ptr null, ptr null)",
+            1,
+        );
+        validate_ir(&body)
+    }
+
+    fn validate_ir(body: &str) -> Result<()> {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let ir = format!(
@@ -136,6 +179,7 @@ mod tests {
             @bool_element0 = private constant [16 x i8] c"out___ARRBOOL_0\00"
             declare void @__quantum__rt__int_record_output(i64, ptr)
             declare void @__quantum__rt__bool_record_output(i1, ptr)
+            declare void @__quantum__qis__mz__body(ptr, ptr)
             define void @main(i1 %condition) {{ {body} }}
         "#
         );
@@ -146,7 +190,7 @@ mod tests {
             ))
             .unwrap();
         module.verify().unwrap();
-        validate_outputs(&module, crate::DEFAULT_MAX_LOOP_UNROLL)
+        validate_outputs(&module, crate::DEFAULT_MAX_LOOP_UNROLL)?.validate_required()
     }
 
     #[test]
@@ -292,13 +336,48 @@ mod tests {
     }
 
     #[test]
-    fn dead_outputs_are_ignored() {
-        validate(
+    fn dead_outputs_do_not_satisfy_output_requirement() {
+        let error = validate(
             "entry: ret void
             dead: call void @__quantum__rt__int_record_output(i64 1, ptr @tag)
             ret void",
         )
-        .unwrap();
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Program records no output values")
+        );
+    }
+
+    #[test]
+    fn measurement_without_recording_is_rejected() {
+        let error = validate("entry: ret void").unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Program records no output values")
+        );
+    }
+
+    #[test]
+    fn measurement_declaration_or_dead_call_is_insufficient() {
+        for dead in [
+            "",
+            "dead: call void @__quantum__qis__mz__body(ptr null, ptr null) ret void",
+        ] {
+            let error = validate_ir(&format!(
+                "entry: call void @__quantum__rt__int_record_output(i64 1, ptr @tag)
+                 ret void
+                 {dead}"
+            ))
+            .unwrap_err();
+            assert!(
+                error
+                    .to_string()
+                    .contains("Program has no quantum measurements")
+            );
+        }
     }
 
     #[test]

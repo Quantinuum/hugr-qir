@@ -89,6 +89,36 @@ def no_outputs() -> None:
 
 @guppy
 @no_type_check
+def empty_array_output() -> None:
+    measure(qubit()).read()
+    values: array[int, 0] = array()
+    output("empty", values)
+
+
+@guppy
+@no_type_check
+def empty_array_and_scalar_output() -> None:
+    values: array[int, 0] = array()
+    output("empty", values)
+    output("q", measure(qubit()).read())
+
+
+@guppy
+@no_type_check
+def no_measurements() -> None:
+    output("constant", 1)
+
+
+@guppy
+@no_type_check
+def optimized_away_measurement() -> None:
+    if False:
+        measure(qubit()).read()
+    output("constant", 1)
+
+
+@guppy
+@no_type_check
 def repeated_output() -> None:
     for i in range(3):
         output("repeated", i)
@@ -135,7 +165,11 @@ def test_diagnostics_use_original_array_and_scalar_tags(target: str) -> None:
 
 @pytest.mark.parametrize("target", ["native", "quantinuum-hardware"])
 def test_unconditional_and_constant_outputs_are_allowed(target: str) -> None:
-    for program in [unconditional_output, constant_branch_output]:
+    for program in [
+        unconditional_output,
+        constant_branch_output,
+        empty_array_and_scalar_output,
+    ]:
         hugr_to_qir(
             program.compile(), target=target, output_format=OutputFormat.LLVM_IR
         )
@@ -147,6 +181,25 @@ def test_programs_without_outputs_are_rejected(target: str) -> None:
         hugr_to_qir(
             no_outputs.compile(), target=target, output_format=OutputFormat.LLVM_IR
         )
+
+
+@pytest.mark.parametrize("target", ["native", "quantinuum-hardware"])
+def test_empty_array_does_not_record_a_result(target: str) -> None:
+    with pytest.raises(ValueError, match="Program records no output values"):
+        hugr_to_qir(
+            empty_array_output.compile(),
+            target=target,
+            output_format=OutputFormat.LLVM_IR,
+        )
+
+
+@pytest.mark.parametrize("target", ["native", "quantinuum-hardware"])
+def test_programs_without_measurements_are_rejected(target: str) -> None:
+    for program in [no_measurements, optimized_away_measurement]:
+        with pytest.raises(ValueError, match="Program has no quantum measurements"):
+            hugr_to_qir(
+                program.compile(), target=target, output_format=OutputFormat.LLVM_IR
+            )
 
 
 @pytest.mark.parametrize("target", ["native", "quantinuum-hardware"])

@@ -1,8 +1,9 @@
 import sys
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import Function
 from guppylang.std.platform import output
+from guppylang.std.quantum import measure
 
 
 @guppy
@@ -13,6 +14,7 @@ def my_function(f: Function[[int], bool]) -> Function[[int], bool]:
 
 @guppy
 def main() -> None:
+    output("q", measure(qubit()).read())
     def is_even(n: int) -> bool:
         return n % 2 == 0
 

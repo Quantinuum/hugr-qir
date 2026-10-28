@@ -7,7 +7,10 @@ values and arithmetic.
 
 ## Output rules
 
-- A program must contain at least one `output` call.
+- A program must record at least one scalar value or array element. Outputting
+  only empty arrays does not record any values.
+- A program must contain at least one quantum measurement in the optimized QIR.
+  Programs containing only classical computations are unsupported.
 - Tags must be nonempty, compile-time strings. Each tag must be unique across the
   program, including calls in helper functions and outputs with different types.
 - Each tag must be output exactly once on every run (shot). Output calls that can be
@@ -101,8 +104,9 @@ tag for each value, or collect the values into a fixed-size array and output it
 once. This example demonstrates both approaches:
 
 ```python
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import array, output
+from guppylang.std.quantum import measure
 
 @guppy.comptime
 def comptime_output_loop() -> None:
@@ -111,6 +115,7 @@ def comptime_output_loop() -> None:
 
 @guppy
 def main() -> None:
+    output("q", measure(qubit()).read())
     array_output = array(i for i in range(3))
     comptime_output_loop() # okay, because comptime tags include index
     output("value", array_output) # okay, unrepeated array output

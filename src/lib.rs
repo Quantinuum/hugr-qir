@@ -327,13 +327,14 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
-        validate_outputs::validate_outputs(&module, self.max_loop_unroll)?;
+        let operations = validate_outputs::validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
         validate_panic::validate_no_panic(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
+        operations.validate_required()?;
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());

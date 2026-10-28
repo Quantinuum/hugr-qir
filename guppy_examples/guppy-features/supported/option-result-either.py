@@ -1,10 +1,11 @@
 from typing import no_type_check
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import output
 from guppylang.std.either import Either, left, right
 from guppylang.std.err import Result, ok
 from guppylang.std.option import Option, some
+from guppylang.std.quantum import measure
 
 
 @guppy
@@ -30,6 +31,7 @@ def choose(flag: bool) -> Either[int, bool]:
 @guppy
 @no_type_check
 def main() -> None:
+    output("q", measure(qubit()).read())
     opt = option_value(5)
     res = result_value(9)
     either = choose(True)

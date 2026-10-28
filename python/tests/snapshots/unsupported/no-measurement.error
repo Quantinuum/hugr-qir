@@ -1,0 +1,1 @@
+Compilation failed: Program has no quantum measurements. Add a quantum measurement; programs containing only classical computations are unsupported.
