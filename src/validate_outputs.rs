@@ -60,6 +60,7 @@ fn output_tag(tag: &str) -> (&str, Option<u64>) {
 
 /// Require a single call site per scalar output or array element, executed on
 /// every returning path. A user tag cannot be shared by scalar and array outputs.
+/// Remove unreachable recording calls so output sinking cannot make them live.
 /// Reject reachable loops. This must run before output-call sinking.
 pub(crate) fn validate_outputs(
     module: &Module,
@@ -83,13 +84,11 @@ pub(crate) fn validate_outputs(
 
     let mut has_output = false;
     let mut has_measurement = false;
+    let mut unreachable_outputs = Vec::new();
     for graph in graphs {
         let required = graph.required_on_return_paths();
         let mut tags = HashMap::<&str, HashSet<Option<u64>>>::new();
         for (i, block) in graph.blocks.iter().enumerate() {
-            if !graph.reachable[i] {
-                continue;
-            }
             for inst in block.get_instructions() {
                 let Ok(call) = CallSiteValue::try_from(inst) else {
                     continue;
@@ -98,8 +97,16 @@ pub(crate) fn validate_outputs(
                     continue;
                 };
                 let name = callee.get_name().to_bytes();
+                let is_output =
+                    name.starts_with(b"__quantum__rt__") && name.ends_with(b"_record_output");
+                if !graph.reachable[i] {
+                    if is_output {
+                        unreachable_outputs.push(inst);
+                    }
+                    continue;
+                }
                 has_measurement |= name == b"__quantum__qis__mz__body";
-                if !name.starts_with(b"__quantum__rt__") || !name.ends_with(b"_record_output") {
+                if !is_output {
                     continue;
                 }
                 has_output = true;
@@ -123,6 +130,9 @@ pub(crate) fn validate_outputs(
                 }
             }
         }
+    }
+    for inst in unreachable_outputs {
+        inst.erase_from_basic_block();
     }
     Ok(ProgramOperations {
         has_output,

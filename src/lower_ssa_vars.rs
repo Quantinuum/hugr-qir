@@ -3617,6 +3617,84 @@ declare void @__quantum__qis__reset__body(%Qubit*)
         assert!(error.contains(&expected), "unexpected error: {error}");
     }
 
+    #[rstest]
+    #[case::qubit_select(true, false)]
+    #[case::qubit_phi(true, true)]
+    #[case::float_select(false, false)]
+    #[case::float_phi(false, true)]
+    fn validated_dead_outputs_stay_dead_after_lowering(#[case] qubit: bool, #[case] phi: bool) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let target = default_target_machine();
+        let (ty, left, right, gate) = if qubit {
+            (
+                "ptr",
+                "null",
+                "inttoptr (i64 1 to ptr)",
+                "call void @__quantum__qis__h__body(ptr %selected)",
+            )
+        } else {
+            (
+                "double",
+                "0.3",
+                "0.7",
+                "call void @__quantum__qis__rz__body(double %selected, ptr null)",
+            )
+        };
+        let selection = if phi {
+            format!(
+                "br i1 %condition, label %left, label %right
+                 left: br label %merge
+                 right: br label %merge
+                 merge: %selected = phi {ty} [{left}, %left], [{right}, %right]"
+            )
+        } else {
+            format!("%selected = select i1 %condition, {ty} {left}, {ty} {right}")
+        };
+        let ir = format!(
+            r#"
+@tag = private constant [4 x i8] c"out\00"
+@dead_tag = private constant [5 x i8] c"dead\00"
+declare void @__quantum__rt__int_record_output(i64, ptr)
+declare void @__quantum__qis__mz__body(ptr, ptr)
+declare void @__quantum__qis__h__body(ptr)
+declare void @__quantum__qis__rz__body(double, ptr)
+define void @main(i1 %condition) {{
+entry:
+  call void @__quantum__qis__mz__body(ptr null, ptr null)
+  {selection}
+  {gate}
+  call void @__quantum__rt__int_record_output(i64 1, ptr @tag)
+  ret void
+dead:
+  call void @__quantum__rt__int_record_output(i64 99, ptr @tag)
+  call void @__quantum__rt__int_record_output(i64 100, ptr @dead_tag)
+  ret void
+}}
+"#
+        );
+        let module = load_module_from_ir(&context, "dead_outputs", &ir).unwrap();
+        verify_module(&module).unwrap();
+        assert_eq!(count_record_output_calls(&module), 3);
+        crate::validate_outputs::validate_outputs(&module, crate::DEFAULT_MAX_LOOP_UNROLL)
+            .unwrap()
+            .validate_required()
+            .unwrap();
+        verify_module(&module).unwrap();
+        assert_eq!(count_record_output_calls(&module), 1);
+
+        let changed = if qubit {
+            lower_qubit_selects_and_phis(&module, &target)
+        } else {
+            lower_float_selects_and_phis(&module, &target)
+        };
+        assert!(changed.unwrap());
+        verify_module(&module).unwrap();
+        assert_eq!(count_record_output_calls(&module), 1);
+        assert!(!module.to_string().contains("record_output(i64 99"));
+        assert!(!module.to_string().contains("record_output(i64 100"));
+    }
+
     #[test]
     fn prepare_module_moves_record_output_calls_to_final_block_and_is_idempotent() {
         let context = Context::create();
