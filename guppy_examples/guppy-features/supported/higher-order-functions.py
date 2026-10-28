@@ -15,6 +15,7 @@ def my_function(f: Function[[int], bool]) -> Function[[int], bool]:
 @guppy
 def main() -> None:
     output("q", measure(qubit()).read())
+
     def is_even(n: int) -> bool:
         return n % 2 == 0
 
