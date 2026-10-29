@@ -10,6 +10,7 @@ from .conftest import (
     cli_on_hugr,
     guppy_example_dict,
     guppy_examples,
+    normalize_qir_snapshot,
     skip_snapshot_checks,
 )
 from .hugr_generation import GuppyExample
@@ -51,7 +52,7 @@ def test_guppy_file_snapshots(
         *options,
     )
     with Path.open(out_file) as f:
-        qir = f.read()
+        qir = normalize_qir_snapshot(f.read())
     if not skip_snapshot_checks:
         snapshot.assert_match(
             qir,
