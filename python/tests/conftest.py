@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,10 @@ SNAPSHOT_DIR = TEST_DIR / "snapshots"
 # different, so verbatim snapshot tests do not pass. So we just test
 # that generation works for the wheel builds
 skip_snapshot_checks = os.getenv("CIBUILDWHEEL") == "1"
+
+
+def normalize_qir_snapshot(qir: str) -> str:
+    return re.sub(r"%tmp\d+\.[0-9a-f]{8}", "%tmp", qir)
 
 
 def pytest_configure(config: pytest.Config) -> None:

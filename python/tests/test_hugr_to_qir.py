@@ -16,6 +16,7 @@ from .conftest import (
     SNAPSHOT_DIR,
     guppy_example_dict,
     guppy_examples,
+    normalize_qir_snapshot,
     skip_snapshot_checks,
 )
 from .hugr_generation import GuppyExample
@@ -70,6 +71,7 @@ def test_guppy_file_snapshots(guppy_example: GuppyExample, snapshot: Snapshot) -
         output_format=OutputFormat.LLVM_IR,
         wasm_file=wasm_binary_filepath,
     )
+    qir = normalize_qir_snapshot(qir)
     if not skip_snapshot_checks:
         snapshot.assert_match(
             qir,
