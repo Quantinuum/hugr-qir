@@ -18,7 +18,11 @@ hugr-qir = "hugr_qir.cli:hugr_qir"
 
 [dependency-groups]
 dev = [
-    "guppylang-internals>=1.0.1,<2.0.0",
+    # Snapshot tests need the same Guppy compiler in uv and cibuildwheel.
+    # Wheel test-groups are resolved independently of uv.lock; newer compilers
+    # can change HUGR node IDs and therefore LLVM labels in error snapshots.
+    "guppylang==1.1.4",
+    "guppylang-internals==1.1.4",
     "maturin>=1.11.5,<2.0",
     "pytest-cov>=7.0.0,<8",
     "pytest-mock>=3.15.1",
