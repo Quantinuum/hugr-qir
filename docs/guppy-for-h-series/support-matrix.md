@@ -11,7 +11,7 @@ systems with `hugr-qir`.
 |--------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------------------|
 | `if` / `elif` / `else`                                             | ✅      |                                                                                                              |
 | Measurement objects from `measure(q)`                              | ✅      | Read the classical value with `.read()`                                                                      |
-| Scalar and array `output`                                          | *️⃣       | Supports booleans, signed and unsigned integers; see [Result recording](result-recording.md)                 |
+| Scalar and array `output`                                          | *️⃣       | Supports unconditional, unrepeated output of booleans, signed and unsigned integers, and arrays of these types; see [Result recording](result-recording.md)                 |
 | Angle values and arithmetic                                        | ✅      | Supported for gate parameters such as `rz`                                                                   |
 | `measure_array` and `discard_array`                                | ✅      |                                                                                                              |
 | `barrier`                                                          | ✅      | Accepts only individual qubits and qubit arrays                                                              |

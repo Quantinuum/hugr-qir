@@ -33,6 +33,7 @@ use tket::passes::{
 };
 pub mod cli;
 pub mod compilation_error;
+mod control_flow;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
@@ -40,6 +41,7 @@ pub mod lower_integer_division;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
+pub mod validate_outputs;
 pub mod validate_panic;
 
 use crate::cli::CliOptimizationLevel;
@@ -55,6 +57,8 @@ use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
+use crate::validate_outputs::validate_outputs;
+use crate::validate_panic::validate_no_panic;
 use itertools::Itertools;
 use tket::passes::inline_funcs::inline_acyclic_scoped;
 use tket_qsystem::QSystemPlatform;
@@ -325,12 +329,14 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
+        validate_no_panic(&module)?;
+        let operations = validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
-        validate_panic::validate_no_panic(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
+        operations.validate_required()?;
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
@@ -338,7 +344,7 @@ impl CompileArgs {
     }
 }
 
-/// Reject programs containing more than one logical result with the same user tag.
+/// Require at least one logical result and a unique user tag for each result.
 fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> {
     let mut tags = HashSet::new();
     for node in hugr.nodes() {
@@ -355,6 +361,12 @@ fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> 
             ))
             .into());
         }
+    }
+    if tags.is_empty() {
+        return Err(compilation_error::CompilationError::new(
+            "Program has no outputs. Add an output call to record a result.",
+        )
+        .into());
     }
     Ok(())
 }

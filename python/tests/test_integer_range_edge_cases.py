@@ -76,8 +76,10 @@ def potentially_negative_conversion() -> None:
 @no_type_check
 def guarded_nonnegative_conversion() -> None:
     shot = get_current_shot()
+    value = nat(1)
     if shot >= 5:  # noqa: PLR2004
-        output("value", nat(shot - 5))
+        value = nat(shot - 5)
+    output("value", value)
     q = qubit()
     output("q", measure(q).read())
 

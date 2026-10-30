@@ -1,13 +1,10 @@
 //! QIR-specific control of LLVM's full-loop unroller.
 
-use std::collections::HashMap;
 use std::sync::Once;
 
-use crate::compilation_error::CompilationError;
+use crate::control_flow::CycleFreeControlFlowGraph;
 use crate::inkwell::{llvm_sys::support::LLVMParseCommandLineOptions, module::Module};
 use anyhow::Result;
-
-use crate::lower_ssa_vars::direct_successors;
 
 /// Remove LLVM's profitability ceiling for the dedicated QIR unroll pass.
 ///
@@ -25,67 +22,15 @@ pub(crate) fn configure_forced_unrolling() {
 }
 
 /// Reject any reachable cyclic control flow that survived LLVM unrolling.
-pub(crate) fn ensure_no_loops(module: &Module, max_loop_unroll: usize) -> Result<()> {
-    for function in module.get_functions() {
-        let blocks = function.get_basic_blocks();
-        if blocks.is_empty() {
-            continue;
-        }
-        let successors = cfg_successors(&blocks)?;
-        if graph_has_cycle(&successors) {
-            return Err(CompilationError::new(format!(
-                "Loop cannot be unrolled: its iteration count is not known at compile time or exceeds the limit of {max_loop_unroll}."
-            )).into());
-        }
-    }
-    Ok(())
-}
-
-fn cfg_successors(blocks: &[crate::inkwell::basic_block::BasicBlock]) -> Result<Vec<Vec<usize>>> {
-    let indices: HashMap<_, _> = blocks
-        .iter()
-        .enumerate()
-        .map(|(index, block)| (block.as_mut_ptr() as usize, index))
-        .collect();
-    let mut successors = vec![Vec::new(); blocks.len()];
-    for (from, block) in blocks.iter().enumerate() {
-        for successor in direct_successors(*block)? {
-            if let Some(&to) = indices.get(&(successor.as_mut_ptr() as usize)) {
-                successors[from].push(to);
-            }
-        }
-    }
-    Ok(successors)
-}
-
-fn graph_has_cycle(successors: &[Vec<usize>]) -> bool {
-    if successors.is_empty() {
-        return false;
-    }
-
-    let mut state = vec![0; successors.len()];
-    state[0] = 1;
-    let mut worklist = vec![(0, 0)];
-
-    while let Some((block, next_successor)) = worklist.last_mut() {
-        let Some(&successor) = successors[*block].get(*next_successor) else {
-            state[*block] = 2;
-            worklist.pop();
-            continue;
-        };
-        *next_successor += 1;
-
-        match state[successor] {
-            0 => {
-                state[successor] = 1;
-                worklist.push((successor, 0));
-            }
-            1 => return true,
-            _ => {}
-        }
-    }
-
-    false
+pub(crate) fn ensure_no_loops<'ctx>(
+    module: &Module<'ctx>,
+    max_loop_unroll: usize,
+) -> Result<Vec<CycleFreeControlFlowGraph<'ctx>>> {
+    module
+        .get_functions()
+        .filter(|function| function.get_first_basic_block().is_some())
+        .map(|function| CycleFreeControlFlowGraph::new(function, max_loop_unroll))
+        .collect()
 }
 
 #[cfg(test)]
@@ -134,16 +79,5 @@ mod tests {
         builder.build_return(None).unwrap();
 
         ensure_no_loops(&module, 800).unwrap();
-    }
-
-    #[test]
-    fn cycle_check_handles_deep_control_flow_without_recursion() {
-        const BLOCKS: usize = 100_000;
-        let mut successors = (1..BLOCKS).map(|next| vec![next]).collect::<Vec<_>>();
-        successors.push(Vec::new());
-
-        assert!(!graph_has_cycle(&successors));
-        successors[BLOCKS - 1].push(BLOCKS / 2);
-        assert!(graph_has_cycle(&successors));
     }
 }

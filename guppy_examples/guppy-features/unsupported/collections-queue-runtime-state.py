@@ -1,15 +1,17 @@
 import sys
 from typing import no_type_check
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import output
 from guppylang.std.collections.queue import empty_queue
 from guppylang.std.qsystem.utils import get_current_shot
+from guppylang.std.quantum import measure
 
 
 @guppy
 @no_type_check
 def main() -> None:
+    output("q", measure(qubit()).read())
     # The queue's size depends on a runtime value, so its backing storage cannot
     # be fully removed during QIR compilation.
     queue = empty_queue[int, 4]()
