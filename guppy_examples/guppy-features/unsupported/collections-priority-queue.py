@@ -1,14 +1,16 @@
 import sys
 from typing import no_type_check
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import output
 from guppylang.std.collections.priority_queue import empty_priority_queue
+from guppylang.std.quantum import measure
 
 
 @guppy
 @no_type_check
 def main() -> None:
+    output("q", measure(qubit()).read())
     # The heap's data-dependent internal loops cannot be fully unrolled for QIR.
     queue = empty_priority_queue[int, 4]()
     queue.push(30, 3)
