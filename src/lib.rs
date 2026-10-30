@@ -57,6 +57,8 @@ use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
+use crate::validate_outputs::validate_outputs;
+use crate::validate_panic::validate_no_panic;
 use itertools::Itertools;
 use tket::passes::inline_funcs::inline_acyclic_scoped;
 use tket_qsystem::QSystemPlatform;
@@ -327,11 +329,11 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
-        let operations = validate_outputs::validate_outputs(&module, self.max_loop_unroll)?;
+        validate_no_panic(&module)?;
+        let operations = validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
-        validate_panic::validate_no_panic(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
         operations.validate_required()?;

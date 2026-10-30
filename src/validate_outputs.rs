@@ -11,12 +11,12 @@ use crate::inkwell::{
 };
 use crate::llvm_unroll::ensure_no_loops;
 
-pub(crate) struct ProgramOperations {
+pub(crate) struct RequiredOperationsCheck {
     has_output: bool,
     has_measurement: bool,
 }
 
-impl ProgramOperations {
+impl RequiredOperationsCheck {
     /// Require recorded values and a quantum measurement in the optimized program.
     pub fn validate_required(self) -> Result<()> {
         if !self.has_output {
@@ -65,7 +65,7 @@ fn output_tag(tag: &str) -> (&str, Option<u64>) {
 pub(crate) fn validate_outputs(
     module: &Module,
     max_loop_unroll: usize,
-) -> Result<ProgramOperations> {
+) -> Result<RequiredOperationsCheck> {
     let graphs = ensure_no_loops(module, max_loop_unroll)?;
     let strings = module
         .get_globals()
@@ -134,7 +134,7 @@ pub(crate) fn validate_outputs(
     for inst in unreachable_outputs {
         inst.erase_from_basic_block();
     }
-    Ok(ProgramOperations {
+    Ok(RequiredOperationsCheck {
         has_output,
         has_measurement,
     })
