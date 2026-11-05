@@ -1,3 +1,5 @@
+"""Advancing an RNG stream is unsupported."""
+
 from typing import no_type_check
 
 from guppylang import guppy, qubit

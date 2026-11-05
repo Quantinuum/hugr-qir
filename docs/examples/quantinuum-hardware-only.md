@@ -49,10 +49,13 @@ Source file: `guppy_examples/guppy-features/supported/native-pcg-random.py`
 :language: python
 ```
 
-## `random_advance`
+## Unsupported: `random_advance`
 
-Source file: `guppy_examples/guppy-features/supported/rng-random-advance.py`
+`RNG.random_advance` is unsupported. Compiling this example reports
+`Unsupported random operation: RandomAdvance`.
 
-```{literalinclude} ../../guppy_examples/guppy-features/supported/rng-random-advance.py
+Source file: `guppy_examples/guppy-features/unsupported/rng-random-advance.py`
+
+```{literalinclude} ../../guppy_examples/guppy-features/unsupported/rng-random-advance.py
 :language: python
 ```

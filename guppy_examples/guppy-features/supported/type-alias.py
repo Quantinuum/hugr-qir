@@ -1,7 +1,8 @@
 from typing import no_type_check
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import output
+from guppylang.std.quantum import measure
 
 Row = guppy.type_alias("Row", "tuple[int, int, int, int]")
 
@@ -24,5 +25,6 @@ def pair_first(pair: Pair[int]) -> int:
 @guppy.comptime
 @no_type_check
 def main() -> None:
+    output("q", measure(qubit()).read())
     output("row_sum", row_sum((1, 2, 3, 4)))
     output("pair_first", pair_first((8, 13)))

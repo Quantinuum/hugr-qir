@@ -1,9 +1,7 @@
 use super::QirCodegenExtension;
 use crate::qir::{
-    emit_qis_gate_finish, emit_qis_measure_to_result, emit_qis_qalloc, emit_qis_qfree,
-    emit_qis_read_result,
+    emit_qis_gate_finish, emit_qis_measure_to_result, emit_qis_qalloc, emit_qis_read_result,
 };
-use crate::target::CompileTarget;
 use anyhow::{Result, bail};
 use hugr::{HugrView, Node, ops::ExtensionOp};
 use hugr_llvm::emit::{EmitFuncContext, EmitOpArgs};
@@ -135,7 +133,6 @@ impl QirCodegenExtension {
                 let qb = args.inputs[0];
                 // i.e. Result*
                 let result = emit_qis_measure_to_result(context, qb)?;
-                emit_qis_qfree(context, qb)?;
                 let result_i1 = emit_qis_read_result(context, result)?;
                 args.outputs.finish(context.builder(), [result_i1])
             }
@@ -143,10 +140,7 @@ impl QirCodegenExtension {
                 let qb = emit_qis_qalloc(context)?;
                 args.outputs.finish(context.builder(), [qb])
             }
-            QFree => match self.target {
-                CompileTarget::Native => emit_qis_qfree(context, args.inputs[0]),
-                CompileTarget::QuantinuumHardware => Ok(()),
-            },
+            QFree => args.outputs.finish(context.builder(), []),
             _ => bail!("Unknown op: {op:?}"),
         }
     }
@@ -162,7 +156,6 @@ mod test {
     use rstest::rstest;
     use tket::TketOp;
 
-    use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
     use crate::{
         qir::{QirCodegenExtension, QirPreludeCodegen},
@@ -173,9 +166,7 @@ mod test {
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension {
-                    target: CompileTarget::Native,
-                })
+                .add_extension(QirCodegenExtension)
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
         });
