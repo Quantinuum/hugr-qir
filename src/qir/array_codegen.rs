@@ -54,7 +54,7 @@ pub(super) fn load_array_elements<'c, H: HugrView<Node = Node>>(
 
 /// Load every element of a statically sized borrow array.
 ///
-/// H-series barriers have a statically encoded arity, so a partially borrowed
+/// H2 barriers have a statically encoded arity, so a partially borrowed
 /// array cannot be represented without also including elements that are absent
 /// from the barrier's HUGR inputs. Reject such arrays before loading them.
 pub(super) fn load_borrow_array_elements<'c, H: HugrView<Node = Node>>(

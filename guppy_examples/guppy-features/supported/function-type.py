@@ -1,7 +1,8 @@
 from typing import no_type_check
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.builtins import Function, output
+from guppylang.std.quantum import measure
 
 
 @guppy
@@ -19,4 +20,5 @@ def apply_twice(f: Function[[int], int], value: int) -> int:
 @guppy
 @no_type_check
 def main() -> None:
+    output("q", measure(qubit()).read())
     output("function_type", apply_twice(increment, 3))

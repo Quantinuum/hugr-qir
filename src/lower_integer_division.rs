@@ -64,7 +64,7 @@ pub fn validate_integer_division(module: &Module) -> Result<()> {
 /// integer in the lower compiler stack. Signed division overflow (`INT_MIN / -1`)
 /// follows LLVM's undefined behavior: no result or runtime check is guaranteed.
 ///
-/// The lower compiler stack for H-Series accepts `udiv` only when its divisor is
+/// The lower compiler stack for H2 accepts `udiv` only when its divisor is
 /// constant. A non-constant divisor is rejected here with a targeted error.
 pub fn lower_integer_division(module: &Module) -> Result<usize> {
     // Validate before mutating the module so a failure cannot leave it partially lowered.
@@ -490,7 +490,7 @@ mod tests {
             if conditional {
                 assert_eq!(
                     error,
-                    "Program may panic: Attempted division by 0. Runtime panics are unsupported on H-Series."
+                    "Program may panic: Attempted division by 0. Runtime panics are unsupported on H2."
                 );
             } else {
                 assert_eq!(error, "Program always panics: Attempted division by 0");

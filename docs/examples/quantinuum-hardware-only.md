@@ -2,12 +2,12 @@
 
 These examples exercise Guppy features that are specifically aimed at Quantinuum hardware-oriented workflows.
 
-The RNG and shot-dependent functions used here are only available on Quantinuum hardware targets, so these examples are not intended as portable Guppy programs for arbitrary QIR backends. Note that not all RNG methods are currently supported; see [Support matrix](../guppy-for-h-series/support-matrix.md).
+The RNG and shot-dependent functions used here are only available on Quantinuum hardware targets, so these examples are not intended as portable Guppy programs for arbitrary QIR backends. Note that not all RNG methods are currently supported; see [Support matrix](../guppy-for-h2/support-matrix.md).
 
 ## 30-qubit mirror circuit
 
 This deterministic mirror circuit combines fixed-size qubit arrays, native
-H-Series gates, control and dagger modifiers, barriers, hardware RNG,
+H2 gates, control and dagger modifiers, barriers, hardware RNG,
 shot-dependent control, and array measurement. The second half reverses the
 first half, so every qubit is measured as zero regardless of the runtime choices.
 
@@ -49,10 +49,13 @@ Source file: `guppy_examples/guppy-features/supported/native-pcg-random.py`
 :language: python
 ```
 
-## `random_advance`
+## Unsupported: `random_advance`
 
-Source file: `guppy_examples/guppy-features/supported/rng-random-advance.py`
+`RNG.random_advance` is unsupported. Compiling this example reports
+`Unsupported random operation: RandomAdvance`.
 
-```{literalinclude} ../../guppy_examples/guppy-features/supported/rng-random-advance.py
+Source file: `guppy_examples/guppy-features/unsupported/rng-random-advance.py`
+
+```{literalinclude} ../../guppy_examples/guppy-features/unsupported/rng-random-advance.py
 :language: python
 ```

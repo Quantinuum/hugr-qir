@@ -13,11 +13,8 @@ alloca_block:
 entry_block:                                      ; preds = %alloca_block
   store ptr %0, ptr %"2_0", align 8
   %"2_01" = load ptr, ptr %"2_0", align 8
-  call void @__quantum__rt__qubit_release(ptr %"2_01"), !dbg !8
   ret void
 }
-
-declare void @__quantum__rt__qubit_release(ptr)
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}
@@ -30,4 +27,3 @@ declare void @__quantum__rt__qubit_release(ptr)
 !5 = !DISubroutineType(types: !6)
 !6 = !{null, !7}
 !7 = !DIBasicType(name: "ptr", size: 64, encoding: DW_ATE_address)
-!8 = !DILocation(line: 27062, column: 402, scope: !3)

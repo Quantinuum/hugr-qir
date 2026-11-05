@@ -1,8 +1,8 @@
-# Guppy for H-Series
+# Guppy for System Model H2
 
-The current focus of `hugr-qir` is to let Guppy programs target Quantinuum's H-Series systems.
+The current focus of `hugr-qir` is to let Guppy programs target Quantinuum's System Model H2.
 
-Due to hardware restrictions, not all Guppy code can be run on H-Series, but support for most features is available. This section summarizes the current limitations to keep in mind when writing programs for H-Series targets.
+Due to hardware restrictions, not all Guppy code can be run on H2, but support for most features is available. This section summarizes the current limitations to keep in mind when writing programs for H2 targets.
 
 - Start with the [Support matrix](support-matrix.md) for a quick feature-level overview.
 - Read [Integers](integers.md) before using signed values or large integers.

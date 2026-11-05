@@ -3,13 +3,15 @@
 This is a Guppy conversion check, even though H2 accepts larger unsigned bounds.
 """
 
-from guppylang import guppy
+from guppylang import guppy, qubit
 from guppylang.std.platform import output
 from guppylang.std.qsystem.random import RNG
+from guppylang.std.quantum import measure
 
 
 @guppy
 def main() -> None:
+    output("q", measure(qubit()).read())
     rng = RNG(4)
     value = rng.random_int_bounded(2**31)
     rng.discard()

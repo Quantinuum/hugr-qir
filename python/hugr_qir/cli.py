@@ -181,14 +181,10 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
             error_message = (
                 e.error_message if isinstance(e, ValidationError) else str(e)
             )
-            if "__quantum__rt__qubit_release" in error_message and target == "native":
-                pass
-            else:
-                msg = (
-                    "Compilation failed: Generated QIR failed validation: "
-                    f"{error_message}"
-                )
-                raise ValueError(msg) from e
+            msg = (
+                f"Compilation failed: Generated QIR failed validation: {error_message}"
+            )
+            raise ValueError(msg) from e
 
     qir_out = ir_string_to_output_format(qir, output_format)
 

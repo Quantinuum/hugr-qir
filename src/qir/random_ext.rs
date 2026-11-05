@@ -15,6 +15,8 @@ use tket::hugr::ops::ExtensionOp;
 use tket::hugr::{HugrView, Node};
 use tket_qsystem::extension::random::{self, CONTEXT_TYPE_NAME, RandomOp};
 
+use crate::compilation_error::CompilationError;
+
 /// Codegen extension for `tket.qsystem.random` extension.
 pub struct RandomCodegenExtension;
 
@@ -31,7 +33,16 @@ impl CodegenExtension for RandomCodegenExtension {
                 (random::EXTENSION_ID, CONTEXT_TYPE_NAME.to_owned()),
                 |session, _| Ok(rng_context_type(session.iw_context())),
             )
-            .simple_extension_op(|context, args, op| RandomEmitter(context).emit(args, op))
+            .simple_extension_op(|context, args, op| {
+                // TODO: Remove this and update the examples/docs once RandomAdvance is supported on hardware
+                if matches!(op, RandomOp::RandomAdvance) {
+                    return Err(CompilationError::new(
+                        "Unsupported random operation: RandomAdvance",
+                    )
+                    .into());
+                }
+                RandomEmitter(context).emit(args, op)
+            })
     }
 }
 
@@ -161,10 +172,7 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
                 )
             }
             RandomOp::DeleteRNGContext => args.outputs.finish(self.builder(), []),
-            _ => Err(crate::compilation_error::CompilationError::new(format!(
-                "Unsupported random operation: {op:?}"
-            ))
-            .into()),
+            _ => Err(CompilationError::new(format!("Unsupported random operation: {op:?}")).into()),
         }
     }
 }
@@ -173,9 +181,11 @@ impl<'c, H: HugrView<Node = Node>> RandomEmitter<'c, '_, '_, H> {
 mod test {
     use hugr::extension::simple_op::MakeRegisteredOp;
     use hugr::llvm::check_emission;
+    use hugr::llvm::emit::test::{Emission, TEST_EMIT_DEBUG};
     use hugr::llvm::test::TestContext;
     use hugr::llvm::test::llvm_ctx;
     use hugr::llvm::test::single_op_hugr;
+    use hugr::llvm::utils::fat::FatExt;
     use rstest::rstest;
 
     use super::*;
@@ -183,7 +193,6 @@ mod test {
     #[rstest]
     #[case::random_int(1, RandomOp::RandomInt)]
     #[case::random_int_bounded(3, RandomOp::RandomIntBounded)]
-    #[case::random_advance(-1, RandomOp::RandomAdvance)]
     #[case::new_rng_context(4, RandomOp::NewRNGContext)]
     #[case::delete_rng_context(5, RandomOp::DeleteRNGContext)]
     fn emit_random_codegen(
@@ -201,5 +210,31 @@ mod test {
         let ext_op = op.to_extension_op().unwrap().into();
         let mut hugr = single_op_hugr(ext_op);
         check_emission!(hugr, llvm_ctx);
+    }
+
+    #[rstest]
+    fn rejects_random_advance(mut llvm_ctx: TestContext) {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        llvm_ctx.add_extensions(|ceb| {
+            ceb.add_extension(RandomCodegenExtension)
+                .add_default_int_extensions()
+                .add_float_extensions()
+                .add_logic_extensions()
+        });
+        let hugr = single_op_hugr(RandomOp::RandomAdvance.to_extension_op().unwrap().into());
+        let error = Emission::emit_hugr(
+            hugr.fat_root().unwrap(),
+            llvm_ctx.get_emit_hugr(),
+            TEST_EMIT_DEBUG,
+        )
+        .err()
+        .unwrap();
+        assert_eq!(
+            error
+                .downcast_ref::<CompilationError>()
+                .unwrap()
+                .to_string(),
+            "Unsupported random operation: RandomAdvance"
+        );
     }
 }

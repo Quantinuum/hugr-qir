@@ -35,7 +35,6 @@ use tket::passes::utils::unpack_container::type_unpack::is_array_of;
 use tket_qsystem;
 
 use crate::qir::array_codegen::{load_array_elements, load_borrow_array_elements};
-use crate::target::CompileTarget;
 use hugr_llvm::{
     emit::{EmitFuncContext, emit_value},
     types::TypingSession,
@@ -84,7 +83,7 @@ impl PreludeCodegen for QirPreludeCodegen {
                 )?);
             } else {
                 return Err(crate::compilation_error::CompilationError::new(
-                    "H-series barriers cannot contain non-qubit types",
+                    "H2 barriers cannot contain non-qubit types",
                 )
                 .into());
             }
@@ -230,6 +229,7 @@ fn emit_qis_read_result<'c, H: HugrView<Node = Node>>(
 }
 
 /// A helper to emit a qir __quantum__rt__qubit_release call.
+#[expect(dead_code)]
 fn emit_qis_qfree<'c, H: HugrView<Node = Node>>(
     context: &mut EmitFuncContext<'c, '_, H>,
     qb: BasicValueEnum<'c>,
@@ -261,9 +261,7 @@ fn emit_qis_qalloc<'c, H: HugrView<Node = Node>>(
 }
 
 #[derive(Clone, Debug)]
-pub struct QirCodegenExtension {
-    pub target: CompileTarget,
-}
+pub struct QirCodegenExtension;
 
 impl CodegenExtension for QirCodegenExtension {
     fn add_extension<'a, H: HugrView<Node = Node> + 'a>(
@@ -352,7 +350,6 @@ mod test {
             QirCodegenExtension, QirPreludeCodegen,
             array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen},
         },
-        target::CompileTarget,
         test::{LLVM_TEST_LOCK, single_op_hugr},
     };
 
@@ -372,9 +369,7 @@ mod test {
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension {
-                    target: CompileTarget::Native,
-                })
+                .add_extension(QirCodegenExtension)
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_array_extensions(QirArrayCodegen)
                 .add_borrow_array_extensions(QirBorrowArrayCodegen)
@@ -446,7 +441,7 @@ mod test {
 
         let err = format!("{err:#}");
         assert!(
-            err.contains("H-series barriers cannot contain non-qubit types"),
+            err.contains("H2 barriers cannot contain non-qubit types"),
             "{err}"
         );
     }
@@ -465,7 +460,7 @@ mod test {
         let err = format!("{err:#}");
 
         assert!(
-            err.contains("H-series barriers cannot contain non-qubit types"),
+            err.contains("H2 barriers cannot contain non-qubit types"),
             "{err}"
         );
     }

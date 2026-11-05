@@ -33,6 +33,7 @@ use tket::passes::{
 };
 pub mod cli;
 pub mod compilation_error;
+mod control_flow;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
@@ -40,13 +41,16 @@ pub mod lower_integer_division;
 pub mod lower_ssa_vars;
 pub mod qir;
 pub mod target;
+pub mod validate_outputs;
 pub mod validate_panic;
 
 use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
 use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
-use crate::lower_integer_division::{lower_integer_division, validate_no_zero_divisors};
+use crate::lower_integer_division::{
+    lower_integer_division, validate_integer_division, validate_no_zero_divisors,
+};
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
@@ -55,6 +59,8 @@ use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
+use crate::validate_outputs::validate_outputs;
+use crate::validate_panic::validate_no_panic;
 use itertools::Itertools;
 use tket::passes::inline_funcs::inline_acyclic_scoped;
 use tket_qsystem::QSystemPlatform;
@@ -70,7 +76,7 @@ const VERSION_TEST_OVERRIDE_ENV_VAR: &str = "HUGR_QIR_VERSION_TEST_OVERRIDE";
 const VERSION_TEST_OVERRIDE_VALUE: &str = "X.Y.Z";
 pub const DEFAULT_MAX_LOOP_UNROLL: usize = 800;
 
-// TODO this was copy pasted, ideally it would live in tket2-hseries
+// TODO this was copy pasted, ideally it would live in tket-qsystem
 pub mod rotation;
 
 #[non_exhaustive]
@@ -119,9 +125,7 @@ impl CompileArgs {
             .add_array_extensions(QirArrayCodegen)
             .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
-            .add_extension(QirCodegenExtension {
-                target: self.target,
-            })
+            .add_extension(QirCodegenExtension)
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
             .add_extension(wasm_cg)
@@ -232,7 +236,7 @@ impl CompileArgs {
         module.set_data_layout(&ctm.get_target_data().get_data_layout());
 
         // Lookup tables introduce runtime memory accesses, which are not supported by
-        // the H-Series QIR profile. In particular, SimplifyCFG can otherwise turn
+        // the H2 QIR profile. In particular, SimplifyCFG can otherwise turn
         // branch-selected constant gate parameters into a global table and dynamic GEP.
         let no_jump_tables = module
             .get_context()
@@ -310,7 +314,7 @@ impl CompileArgs {
             && qubit_count > 56
         {
             return Err(compilation_error::CompilationError::new(format!(
-                "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H-Series"
+                "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H2"
             )).into());
         }
 
@@ -325,12 +329,15 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
+        validate_integer_division(&module)?;
+        validate_no_panic(&module)?;
+        let operations = validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;
         lower_float_selects_and_phis(&module, &target)?;
         lower_integer_division(&module)?;
-        validate_panic::validate_no_panic(&module)?;
         ensure_no_loops(&module, self.max_loop_unroll)?;
         ensure_static_qubit_operands(&module)?;
+        operations.validate_required()?;
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
@@ -338,7 +345,7 @@ impl CompileArgs {
     }
 }
 
-/// Reject programs containing more than one logical result with the same user tag.
+/// Require at least one logical result and a unique user tag for each result.
 fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> {
     let mut tags = HashSet::new();
     for node in hugr.nodes() {
@@ -355,6 +362,12 @@ fn validate_unique_result_tags(hugr: &impl HugrView<Node = Node>) -> Result<()> 
             ))
             .into());
         }
+    }
+    if tags.is_empty() {
+        return Err(compilation_error::CompilationError::new(
+            "Program has no outputs. Add an output call to record a result.",
+        )
+        .into());
     }
     Ok(())
 }

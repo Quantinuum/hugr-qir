@@ -1,8 +1,16 @@
 ## Changelog
 
-### v0.3.1
+### v0.4.0
 
-- add support for random_advance
+- Replace "H-series" naming with "System Model H2" or "H2".
+  - Rename `hugr_qir.h_series_helpers` to `hugr_qir.h2_helpers`; the old import
+    path remains available and emits a `DeprecationWarning`.
+  - Redirect published `guppy-for-h-series/` documentation URLs to `guppy-for-h2/`.
+  - Compilation error messages now use "H2"; update any matching on the old text.
+- BREAKING: align allowed output use with what H2 can support
+  - No conditional output or output-free programs
+- BREAKING: don't allow measurement-free programs (fails lower compilation)
+
 
 ### v0.3.0
 

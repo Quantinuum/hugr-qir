@@ -122,7 +122,7 @@ pub fn validate_no_panic(module: &Module) -> Result<()> {
             return Err(CompilationError::new(format!("Program always panics: {message}")).into());
         }
         return Err(CompilationError::new(format!(
-            "Program may panic: {message}. Runtime panics are unsupported on H-Series."
+            "Program may panic: {message}. Runtime panics are unsupported on H2."
         ))
         .into());
     }
@@ -241,7 +241,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             error.to_string(),
-            "Program may panic: bad integer. Runtime panics are unsupported on H-Series."
+            "Program may panic: bad integer. Runtime panics are unsupported on H2."
         );
     }
 }

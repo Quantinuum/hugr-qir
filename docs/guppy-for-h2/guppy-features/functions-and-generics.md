@@ -1,6 +1,6 @@
 # Functions and Generics
 
-These examples cover higher-level function features that are already usable in the H-Series subset.
+These examples cover higher-level function features that are already usable in the H2 subset.
 
 ## Function overloading
 

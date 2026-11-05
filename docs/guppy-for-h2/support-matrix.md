@@ -1,6 +1,6 @@
 # Support Matrix
 
-This matrix summarizes the Guppy features supported when targeting H-Series
+This matrix summarizes the Guppy features supported when targeting H2
 systems with `hugr-qir`.
 
 ✅ = full support, *️⃣ = partial support, ❌ = unsupported
@@ -11,7 +11,7 @@ systems with `hugr-qir`.
 |--------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------------------|
 | `if` / `elif` / `else`                                             | ✅      |                                                                                                              |
 | Measurement objects from `measure(q)`                              | ✅      | Read the classical value with `.read()`                                                                      |
-| Scalar and array `output`                                          | *️⃣       | Supports booleans, signed and unsigned integers; see [Result recording](result-recording.md)                 |
+| Scalar and array `output`                                          | *️⃣       | Supports unconditional, unrepeated output of booleans, signed and unsigned integers, and arrays of these types; see [Result recording](result-recording.md)                 |
 | Angle values and arithmetic                                        | ✅      | Supported for gate parameters such as `rz`                                                                   |
 | `measure_array` and `discard_array`                                | ✅      |                                                                                                              |
 | `barrier`                                                          | ✅      | Accepts only individual qubits and qubit arrays                                                              |
@@ -26,14 +26,15 @@ systems with `hugr-qir`.
 | Dagger modifier                                                    | ✅      |                                                                                                              |
 | Control modifier                                                   | ✅      |                                                                                                              |
 | `get_current_shot`                                                 | ✅      |                                                                                                              |
-| RNG: `__new__`, `discard`, `random_int/_bounded`, `random_advance` | ✅      |                                                                                                              |
+| RNG: `__new__`, `discard`, `random_int/_bounded`                  | ✅      |                                                                                                              |
+| RNG: `random_advance`                                             | ❌      |                                                                                                              |
 | Recursive functions or loops within `@guppy.comptime`              | ✅      | As long as Guppy compilation succeeds                                                                        |
 | Recursive functions or loops within `@guppy`                       | *️⃣       | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations               |
 | `Stack` and `Queue`                                                | *️⃣       | Fixed operation sequences are supported when their internal storage and control flow can be fully simplified |
 | `PriorityQueue`                                                    | ❌      | Its internal storage cannot currently be removed completely                                                  |
-| `exit` and `panic`                                                 | ❌      | Early exit is unsupported on H-Series                                                                        |
+| `exit` and `panic`                                                 | ❌      | Early exit is unsupported on H2                                                                              |
 | RNG: `shuffle`                                                     | ❌      | Its array accesses cannot be made static                                                                     |
-| RNG: `random(_clifford)_angle`, `random_float`                     | ❌      | Dynamic floating-point values are unsupported on H-Series                                                    |
+| RNG: `random(_clifford)_angle`, `random_float`                     | ❌      | Dynamic floating-point values are unsupported on H2                                                          |
 
 ## Data types
 
