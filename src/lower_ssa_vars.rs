@@ -1,7 +1,7 @@
 //! Lowers `select` and `phi` instructions on qubit-pointer and floating-point
 //! types into equivalent explicit control flow.
 //!
-//! Quantinuum H-Series ("OG") targets require qubit and float arguments to `__quantum__qis__*` functions to
+//! Quantinuum H2 ("OG") targets require qubit and float arguments to `__quantum__qis__*` functions to
 //! be constant within a branch — they cannot be chosen at runtime via SSA data
 //! flow, but they can be chosen via control flow. This pass converts `phi` and `select`
 //! instructions to equivalent control flow. We assume `switch` instructions have

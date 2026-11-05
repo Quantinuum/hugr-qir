@@ -6,7 +6,7 @@ Fixed-size Guppy arrays are supported, including arrays created in ordinary
 `@guppy` functions, passed to other Guppy functions, or created from Python
 lists.
 
-H-Series requires the qubit used by each quantum operation to be known during
+H2 requires the qubit used by each quantum operation to be known during
 compilation. `hugr-qir` tries to make array indexing static by expanding loops
 and simplifying indices. Compilation fails if it cannot determine the qubit
 used by an operation.
@@ -26,7 +26,7 @@ pushes and pops are a typical supported case.
 
 Collection state that depends on runtime values is not generally supported. It
 can leave internal storage, loops, or dynamic qubit addressing in the program,
-which H-Series QIR cannot represent. Compilation fails when that state cannot be
+which H2 QIR cannot represent. Compilation fails when that state cannot be
 removed. Calling `discard_empty()` is still required for ownership checking, but
 does not by itself make a collection suitable for QIR.
 

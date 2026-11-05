@@ -1,7 +1,7 @@
 # Result Recording
 
 Guppy's `output` function supports booleans, signed and unsigned integers (`int`
-and `nat`), and fixed-size arrays of these values on H-Series. Floating-point
+and `nat`), and fixed-size arrays of these values on H2. Floating-point
 output is unsupported. See [Integers](integers.md) for restrictions on integer
 values and arithmetic.
 
@@ -16,7 +16,7 @@ values and arithmetic.
 - Each tag must be output exactly once on every run (shot). Output calls that can be
   skipped by a branch or repeated by a loop are unsupported.
 
-H-Series reports a fixed set of result registers for every shot. Skipping an
+H2 reports a fixed set of result registers for every shot. Skipping an
 output call would leave its register at the default zero value, rather than
 omit the tag from the results. `hugr-qir` rejects conditional outputs to avoid
 this ambiguity.

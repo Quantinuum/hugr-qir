@@ -139,7 +139,7 @@ impl QirCodegenExtension {
                 args.outputs.finish(context.builder(), [])
             }
             ResultOpDef::F64 | ResultOpDef::ArrF64 => {
-                bail!("Float output is not supported on H-Series hardware")
+                bail!("Float output is not supported on H2 hardware")
             }
             ResultOpDef::ArrBool => {
                 let length = array_length(&result_op)?;
@@ -277,7 +277,7 @@ mod test {
         let err = format!("{err:#}");
 
         assert!(
-            err.contains("Float output is not supported on H-Series hardware"),
+            err.contains("Float output is not supported on H2 hardware"),
             "{err}"
         );
     }

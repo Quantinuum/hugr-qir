@@ -3,7 +3,7 @@
 Fixed-size arrays are supported in both `@guppy` and `@guppy.comptime` code.
 This includes arrays created from Python lists.
 
-H-Series requires the exact qubit used by every quantum operation to be known
+H2 requires the exact qubit used by every quantum operation to be known
 when the program is compiled. `hugr-qir` makes a best effort to simplify array
 indices and fully expand loops. Compilation fails if a qubit index cannot be
 made static or if a loop cannot be fully expanded.
@@ -128,7 +128,7 @@ flow.
 
 Collection state that depends on runtime values may leave internal storage or
 dynamic addressing in the generated program. These examples cannot be reduced
-to the static operations required by H-Series QIR.
+to the static operations required by H2 QIR.
 
 ```{literalinclude} ../../../guppy_examples/guppy-features/unsupported/collections-stack-runtime-state.py
 :language: python

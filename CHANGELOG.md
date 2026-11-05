@@ -2,9 +2,11 @@
 
 ### v0.4.0
 
-- align allowed output use with what H2 can support
+- BREAKING: remove "h-series" naming
+  - hugr_qir.h_series_helpers -> hugr_qir.h2_helpers
+- BREAKING: align allowed output use with what H2 can support
   - No conditional output or output-free programs
-- don't allow measurement-free programs (fails lower compilation)
+- BREAKING: don't allow measurement-free programs (fails lower compilation)
 
 
 ### v0.3.0

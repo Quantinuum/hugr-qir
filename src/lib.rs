@@ -76,7 +76,7 @@ const VERSION_TEST_OVERRIDE_ENV_VAR: &str = "HUGR_QIR_VERSION_TEST_OVERRIDE";
 const VERSION_TEST_OVERRIDE_VALUE: &str = "X.Y.Z";
 pub const DEFAULT_MAX_LOOP_UNROLL: usize = 800;
 
-// TODO this was copy pasted, ideally it would live in tket2-hseries
+// TODO this was copy pasted, ideally it would live in tket-qsystem
 pub mod rotation;
 
 #[non_exhaustive]
@@ -236,7 +236,7 @@ impl CompileArgs {
         module.set_data_layout(&ctm.get_target_data().get_data_layout());
 
         // Lookup tables introduce runtime memory accesses, which are not supported by
-        // the H-Series QIR profile. In particular, SimplifyCFG can otherwise turn
+        // the H2 QIR profile. In particular, SimplifyCFG can otherwise turn
         // branch-selected constant gate parameters into a global table and dynamic GEP.
         let no_jump_tables = module
             .get_context()
@@ -314,7 +314,7 @@ impl CompileArgs {
             && qubit_count > 56
         {
             return Err(compilation_error::CompilationError::new(format!(
-                "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H-Series"
+                "Program requires more than 56 qubits ({qubit_count}) and therefore cannot be run on H2"
             )).into());
         }
 
