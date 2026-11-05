@@ -44,7 +44,7 @@ Key parameters:
 ### Result conversion
 
 ```{eval-rst}
-.. currentmodule:: hugr_qir.h_series_helpers.results
+.. currentmodule:: hugr_qir.h2_helpers.results
 .. autofunction:: backendresult_to_qsysresult
 ```
 

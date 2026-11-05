@@ -1,6 +1,6 @@
 # Data Types and Structs
 
-These examples show the data-shape patterns that are currently practical for H-Series targets.
+These examples show the data-shape patterns that are currently practical for H2 targets.
 
 ## Numeric types
 
@@ -11,11 +11,11 @@ Source file: `guppy_examples/guppy-features/supported/num-types.py`
 ```
 
 Non-negative integers are supported. Negative values can silently produce
-incorrect results on H-Series, even when they occur only during a calculation.
+incorrect results on H2, even when they occur only during a calculation.
 See [Integers](../integers.md) for details.
 
 Floating-point values may be used as constant gate parameters. Floating-point
-calculations and output are unsupported on H-Series.
+calculations and output are unsupported on H2.
 
 ## Tuples
 

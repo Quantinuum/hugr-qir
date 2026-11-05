@@ -83,7 +83,7 @@ impl PreludeCodegen for QirPreludeCodegen {
                 )?);
             } else {
                 return Err(crate::compilation_error::CompilationError::new(
-                    "H-series barriers cannot contain non-qubit types",
+                    "H2 barriers cannot contain non-qubit types",
                 )
                 .into());
             }
@@ -441,7 +441,7 @@ mod test {
 
         let err = format!("{err:#}");
         assert!(
-            err.contains("H-series barriers cannot contain non-qubit types"),
+            err.contains("H2 barriers cannot contain non-qubit types"),
             "{err}"
         );
     }
@@ -460,7 +460,7 @@ mod test {
         let err = format!("{err:#}");
 
         assert!(
-            err.contains("H-series barriers cannot contain non-qubit types"),
+            err.contains("H2 barriers cannot contain non-qubit types"),
             "{err}"
         );
     }

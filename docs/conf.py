@@ -29,7 +29,37 @@ extensions = [
     "myst_parser",
     "sphinx_autodoc_typehints",
     "sphinx_click",
+    "sphinx_reredirects",
 ]
+
+# Keep published URLs working when pages move.
+redirects = {
+    "guppy-for-h-series/index": "../guppy-for-h2/index.html",
+    "guppy-for-h-series/support-matrix": "../guppy-for-h2/support-matrix.html",
+    "guppy-for-h-series/integers": "../guppy-for-h2/integers.html",
+    "guppy-for-h-series/collections-and-structs": (
+        "../guppy-for-h2/collections-and-structs.html"
+    ),
+    "guppy-for-h-series/result-recording": "../guppy-for-h2/result-recording.html",
+    "guppy-for-h-series/guppy-features/index": (
+        "../../guppy-for-h2/guppy-features/index.html"
+    ),
+    "guppy-for-h-series/guppy-features/arrays": (
+        "../../guppy-for-h2/guppy-features/arrays.html"
+    ),
+    "guppy-for-h-series/guppy-features/control-flow-and-recursion": (
+        "../../guppy-for-h2/guppy-features/control-flow-and-recursion.html"
+    ),
+    "guppy-for-h-series/guppy-features/data-types-and-structs": (
+        "../../guppy-for-h2/guppy-features/data-types-and-structs.html"
+    ),
+    "guppy-for-h-series/guppy-features/functions-and-generics": (
+        "../../guppy-for-h2/guppy-features/functions-and-generics.html"
+    ),
+    "guppy-for-h-series/guppy-features/quantum-operations": (
+        "../../guppy-for-h2/guppy-features/quantum-operations.html"
+    ),
+}
 
 # Include constructor docstrings and retain annotations in generated API docs.
 autoclass_content = "both"

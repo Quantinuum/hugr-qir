@@ -1,6 +1,6 @@
 # Guppy Feature Examples
 
-This subsection documents some smaller Guppy examples under `guppy_examples/guppy-features` that highlight some supported features of Guppy for targeting H-series compatible QIR along with counterexamples.
+This subsection documents some smaller Guppy examples under `guppy_examples/guppy-features` that highlight some supported features of Guppy for targeting H2 compatible QIR along with counterexamples.
 
 Where possible, each page pairs a supported example with one or more nearby
 counterexamples that fail during compilation. For unsupported cases, the

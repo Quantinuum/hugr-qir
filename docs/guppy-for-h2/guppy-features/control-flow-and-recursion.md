@@ -1,6 +1,6 @@
 # Control Flow and Recursion
 
-H-Series programs cannot contain loops. Loops and recursion are supported when
+H2 programs cannot contain loops. Loops and recursion are supported when
 `hugr-qir` can fully expand them during compilation.
 
 ## Supported: `if` / `elif` / `else`
@@ -25,7 +25,7 @@ Source file: `guppy_examples/guppy-features/unsupported/panic.py`
 :language: python
 ```
 
-Early exit using either `exit` or `panic` is unsupported on H-Series.
+Early exit using either `exit` or `panic` is unsupported on H2.
 
 Expected error (for both examples):
 

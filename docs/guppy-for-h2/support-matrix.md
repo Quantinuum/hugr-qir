@@ -1,6 +1,6 @@
 # Support Matrix
 
-This matrix summarizes the Guppy features supported when targeting H-Series
+This matrix summarizes the Guppy features supported when targeting H2
 systems with `hugr-qir`.
 
 ✅ = full support, *️⃣ = partial support, ❌ = unsupported
@@ -32,9 +32,9 @@ systems with `hugr-qir`.
 | Recursive functions or loops within `@guppy`                       | *️⃣       | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations               |
 | `Stack` and `Queue`                                                | *️⃣       | Fixed operation sequences are supported when their internal storage and control flow can be fully simplified |
 | `PriorityQueue`                                                    | ❌      | Its internal storage cannot currently be removed completely                                                  |
-| `exit` and `panic`                                                 | ❌      | Early exit is unsupported on H-Series                                                                        |
+| `exit` and `panic`                                                 | ❌      | Early exit is unsupported on H2                                                                              |
 | RNG: `shuffle`                                                     | ❌      | Its array accesses cannot be made static                                                                     |
-| RNG: `random(_clifford)_angle`, `random_float`                     | ❌      | Dynamic floating-point values are unsupported on H-Series                                                    |
+| RNG: `random(_clifford)_angle`, `random_float`                     | ❌      | Dynamic floating-point values are unsupported on H2                                                          |
 
 ## Data types
 

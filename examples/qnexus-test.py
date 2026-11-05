@@ -7,7 +7,7 @@ from guppylang.std.builtins import output
 from guppylang.std.quantum import measure, x
 from hugr_qir.hugr_to_qir import hugr_to_qir
 from hugr_qir.output import OutputFormat
-from hugr_qir.h_series_helpers.results import backendresult_to_qsysresult
+from hugr_qir.h2_helpers.results import backendresult_to_qsysresult
 
 
 # Define Guppy program

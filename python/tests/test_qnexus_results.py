@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from hugr.qsystem.result import QsysResult
-from hugr_qir.h_series_helpers.results import (
+from hugr_qir.h2_helpers.results import (
     EXPECTED_REGISTER_SIZE,
     ResultConversionError,
     backendresult_to_qsysresult,
