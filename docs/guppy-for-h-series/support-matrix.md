@@ -26,7 +26,8 @@ systems with `hugr-qir`.
 | Dagger modifier                                                    | ✅      |                                                                                                              |
 | Control modifier                                                   | ✅      |                                                                                                              |
 | `get_current_shot`                                                 | ✅      |                                                                                                              |
-| RNG: `__new__`, `discard`, `random_int/_bounded`, `random_advance` | ✅      |                                                                                                              |
+| RNG: `__new__`, `discard`, `random_int/_bounded`                  | ✅      |                                                                                                              |
+| RNG: `random_advance`                                             | ❌      |                                                                                                              |
 | Recursive functions or loops within `@guppy.comptime`              | ✅      | As long as Guppy compilation succeeds                                                                        |
 | Recursive functions or loops within `@guppy`                       | *️⃣       | Loops must have a fixed upper bound and be fully unrolled; the default limit is 800 iterations               |
 | `Stack` and `Queue`                                                | *️⃣       | Fixed operation sequences are supported when their internal storage and control flow can be fully simplified |

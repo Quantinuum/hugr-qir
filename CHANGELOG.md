@@ -1,8 +1,11 @@
 ## Changelog
 
-### v0.3.1
+### v0.4.0
 
-- add support for random_advance
+- align allowed output use with what H2 can support
+  - No conditional output or output-free programs
+- don't allow measurement-free programs (fails lower compilation)
+
 
 ### v0.3.0
 
