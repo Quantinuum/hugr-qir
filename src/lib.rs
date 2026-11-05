@@ -123,9 +123,7 @@ impl CompileArgs {
             .add_array_extensions(QirArrayCodegen)
             .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
-            .add_extension(QirCodegenExtension {
-                target: self.target,
-            })
+            .add_extension(QirCodegenExtension)
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
             .add_extension(wasm_cg)

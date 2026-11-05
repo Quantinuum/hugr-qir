@@ -14,7 +14,6 @@ use std::num::NonZeroU32;
 use tket_qsystem::extension::result::{ResultArgs, ResultOp, ResultOpDef, SimpleArgs};
 
 use super::array_codegen::load_array_elements;
-use crate::target::CompileTarget;
 
 fn emit_tag<'c, H: HugrView<Node = Node>>(
     context: &mut EmitFuncContext<'c, '_, H>,
@@ -70,11 +69,6 @@ impl QirCodegenExtension {
         let tag_str = &result_op.tag;
         if tag_str.is_empty() {
             bail!("Empty result tag received")
-        }
-        if matches!(self.target, CompileTarget::QuantinuumHardware)
-            && matches!(op, ResultOpDef::F64 | ResultOpDef::ArrF64)
-        {
-            bail!("Float output is not supported on H-Series hardware")
         }
 
         let ptr_ty = context
@@ -144,25 +138,8 @@ impl QirCodegenExtension {
                 )?;
                 args.outputs.finish(context.builder(), [])
             }
-            ResultOpDef::F64 => {
-                let tag_ptr = emit_tag(context, scalar_result_tag(tag_str, "FLOAT"))?;
-                let [val] = args
-                    .inputs
-                    .try_into()
-                    .map_err(|_| anyhow!("result_f64 expects one input"))?;
-                let f64_ty = context.iw_context().f64_type();
-                let print_fn_ty = context
-                    .iw_context()
-                    .void_type()
-                    .fn_type(&[f64_ty.into(), ptr_ty.into()], false);
-                let print_fn =
-                    context.get_extern_func("__quantum__rt__double_record_output", print_fn_ty)?;
-                context.builder().build_call(
-                    print_fn,
-                    &[val.into(), tag_ptr.into()],
-                    "print_bool",
-                )?;
-                args.outputs.finish(context.builder(), [])
+            ResultOpDef::F64 | ResultOpDef::ArrF64 => {
+                bail!("Float output is not supported on H-Series hardware")
             }
             ResultOpDef::ArrBool => {
                 let length = array_length(&result_op)?;
@@ -234,31 +211,6 @@ impl QirCodegenExtension {
                 }
                 args.outputs.finish(context.builder(), [])
             }
-            ResultOpDef::ArrF64 => {
-                let length = array_length(&result_op)?;
-                let f64_ty = context.iw_context().f64_type();
-                let [array] = args
-                    .inputs
-                    .try_into()
-                    .map_err(|_| anyhow!("result_arr_f64 expects one input"))?;
-                let elements =
-                    load_array_elements(context, array, f64_ty.as_basic_type_enum(), length)?;
-                let print_fn_ty = context
-                    .iw_context()
-                    .void_type()
-                    .fn_type(&[f64_ty.into(), ptr_ty.into()], false);
-                let print_fn =
-                    context.get_extern_func("__quantum__rt__double_record_output", print_fn_ty)?;
-                for (index, element) in elements.into_iter().enumerate() {
-                    let tag_ptr = emit_tag(context, array_result_tag(tag_str, "ARRFLOAT", index))?;
-                    context.builder().build_call(
-                        print_fn,
-                        &[element.into(), tag_ptr.into()],
-                        "print_arr_f64",
-                    )?;
-                }
-                args.outputs.finish(context.builder(), [])
-            }
             _ => bail!("Unknown op: {op:?}"),
         }
     }
@@ -278,16 +230,13 @@ mod test {
     use tket_qsystem::extension::result::ResultOpDef;
 
     use crate::qir::{QirCodegenExtension, QirPreludeCodegen};
-    use crate::target::CompileTarget;
     use crate::test::single_op_hugr;
 
     #[rstest::fixture]
     fn ctx(mut llvm_ctx: TestContext) -> TestContext {
         llvm_ctx.add_extensions(|builder| {
             builder
-                .add_extension(QirCodegenExtension {
-                    target: CompileTarget::Native,
-                })
+                .add_extension(QirCodegenExtension)
                 .add_prelude_extensions(QirPreludeCodegen)
                 .add_default_int_extensions()
                 .add_float_extensions()
@@ -297,14 +246,12 @@ mod test {
     }
 
     #[rstest]
-    #[case(ResultOpDef::F64.instantiate(&["foo_f64".into()]).unwrap())]
     #[case(ResultOpDef::UInt.instantiate(&["foo_uint".into(), 3.into()]).unwrap())]
     #[case(ResultOpDef::Int.instantiate(&["foo_int".into(), 4.into()]).unwrap())]
     #[case(ResultOpDef::Bool.instantiate(&["bool_int".into()]).unwrap())]
     #[case(ResultOpDef::ArrBool.instantiate(&["foo_arr_bool".into(), 3.into()]).unwrap())]
     #[case(ResultOpDef::ArrInt.instantiate(&["foo_arr_int".into(), 3.into(), 4.into()]).unwrap())]
     #[case(ResultOpDef::ArrUInt.instantiate(&["foo_arr_uint".into(), 3.into(), 4.into()]).unwrap())]
-    #[case(ResultOpDef::ArrF64.instantiate(&["foo_arr_f64".into(), 3.into()]).unwrap())]
     fn emit(ctx: TestContext, #[case] op: impl Into<OpType>) {
         let op = op.into();
         let mut insta = insta::Settings::clone_current();
@@ -318,23 +265,11 @@ mod test {
     #[rstest]
     #[case(ResultOpDef::F64.instantiate(&["foo_f64".into()]).unwrap())]
     #[case(ResultOpDef::ArrF64.instantiate(&["foo_arr_f64".into(), 3.into()]).unwrap())]
-    fn rejects_float_output_on_quantinuum_hardware(
-        mut llvm_ctx: TestContext,
-        #[case] op: impl Into<OpType>,
-    ) {
-        llvm_ctx.add_extensions(|builder| {
-            builder
-                .add_extension(QirCodegenExtension {
-                    target: CompileTarget::QuantinuumHardware,
-                })
-                .add_prelude_extensions(QirPreludeCodegen)
-                .add_float_extensions()
-                .add_default_array_extensions()
-        });
+    fn rejects_float_output(ctx: TestContext, #[case] op: impl Into<OpType>) {
         let hugr = single_op_hugr(op.into());
         let err = Emission::emit_hugr(
             FatExt::fat_root(&hugr).unwrap(),
-            llvm_ctx.get_emit_hugr(),
+            ctx.get_emit_hugr(),
             TEST_EMIT_DEBUG,
         )
         .err()
