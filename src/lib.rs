@@ -48,7 +48,9 @@ use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
 use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
-use crate::lower_integer_division::{lower_integer_division, validate_no_zero_divisors};
+use crate::lower_integer_division::{
+    lower_integer_division, validate_integer_division, validate_no_zero_divisors,
+};
 use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
@@ -327,6 +329,7 @@ impl CompileArgs {
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;
+        validate_integer_division(&module)?;
         validate_no_panic(&module)?;
         let operations = validate_outputs(&module, self.max_loop_unroll)?;
         lower_qubit_selects_and_phis(&module, &target)?;

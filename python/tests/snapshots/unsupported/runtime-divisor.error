@@ -1,1 +1,1 @@
-Compilation failed: Program may panic: Attempted division by 0. Runtime panics are unsupported on H-Series.
+Compilation failed: A division or modulo operation required a divisor whose value could not be determined at compile time, this is unsupported.
