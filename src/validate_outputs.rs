@@ -7,7 +7,7 @@ use anyhow::Result;
 use crate::compilation_error::CompilationError;
 use crate::inkwell::{
     module::Module,
-    values::{BasicValueEnum, CallSiteValue, Operand},
+    values::{BasicValueEnum, CallSiteValue, InstructionOpcode, Operand, PointerValue},
 };
 use crate::llvm_unroll::ensure_no_loops;
 
@@ -56,6 +56,55 @@ fn output_tag(tag: &str) -> (&str, Option<u64>) {
         return (name, Some(index));
     }
     (tag, None)
+}
+
+fn conditionally_selected_tag_error<'ctx>(
+    pointer: Option<PointerValue<'ctx>>,
+    strings: &HashMap<PointerValue<'ctx>, String>,
+) -> CompilationError {
+    let mut pending = pointer.into_iter().collect::<Vec<_>>();
+    let mut visited = HashSet::new();
+    let mut tags = Vec::new();
+    while let Some(pointer) = pending.pop() {
+        if !visited.insert(pointer) {
+            continue;
+        }
+        if let Some(tag) = strings.get(&pointer) {
+            tags.push(output_tag(tag).0);
+            continue;
+        }
+        let Some(inst) = pointer.as_instruction() else {
+            continue;
+        };
+        let start = match inst.get_opcode() {
+            InstructionOpcode::Select => 1,
+            InstructionOpcode::Phi => 0,
+            _ => continue,
+        };
+        for index in start..inst.get_num_operands() {
+            if let Some(Operand::Value(BasicValueEnum::PointerValue(pointer))) =
+                inst.get_operand(index)
+            {
+                pending.push(pointer);
+            }
+        }
+    }
+    tags.sort_unstable();
+    tags.dedup();
+    let description = if tags.is_empty() {
+        "a conditionally selected output tag".to_owned()
+    } else {
+        let names = tags
+            .iter()
+            .map(|name| format!("{name:?}"))
+            .collect::<Vec<_>>()
+            .join(" / ");
+        let plural = if tags.len() == 1 { "" } else { "s" };
+        format!("conditional output tag{plural} {names}")
+    };
+    CompilationError::new(format!(
+        "Detected {description}. Each tag must be output exactly once on every run. Move the output outside conditional branches and loops."
+    ))
 }
 
 /// Require a single call site per scalar output or array element, executed on
@@ -110,13 +159,13 @@ pub(crate) fn validate_outputs(
                     continue;
                 }
                 has_output = true;
-                let tag = match inst.get_operand(1) {
-                    Some(Operand::Value(BasicValueEnum::PointerValue(ptr))) => strings.get(&ptr),
+                let tag_pointer = match inst.get_operand(1) {
+                    Some(Operand::Value(BasicValueEnum::PointerValue(ptr))) => Some(ptr),
                     _ => None,
-                }
-                .ok_or_else(|| {
-                    CompilationError::new("Detected a conditionally selected output tag. Each tag must be output exactly once on every run. Move the output outside conditional branches and loops.")
-                })?;
+                };
+                let tag = tag_pointer
+                    .and_then(|pointer| strings.get(&pointer))
+                    .ok_or_else(|| conditionally_selected_tag_error(tag_pointer, &strings))?;
                 let (user_tag, array_index) = output_tag(tag);
                 let indices = tags.entry(user_tag).or_default();
                 let duplicate = indices.contains(&None)
@@ -187,6 +236,9 @@ mod tests {
             @element0 = private constant [15 x i8] c"out___ARRINT_0\00"
             @element1 = private constant [15 x i8] c"out___ARRINT_1\00"
             @bool_element0 = private constant [16 x i8] c"out___ARRBOOL_0\00"
+            @left_tag = private constant [5 x i8] c"left\00"
+            @right_tag = private constant [6 x i8] c"right\00"
+            @literal_suffix = private constant [21 x i8] c"literal___INT___BOOL\00"
             declare void @__quantum__rt__int_record_output(i64, ptr)
             declare void @__quantum__rt__bool_record_output(i1, ptr)
             declare void @__quantum__qis__mz__body(ptr, ptr)
@@ -299,6 +351,76 @@ mod tests {
         let error = validate(
             "entry:
              %tag = select i1 %condition, ptr @int_tag, ptr @tag
+             call void @__quantum__rt__int_record_output(i64 1, ptr %tag)
+             ret void",
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "Detected conditional output tag \"out\". Each tag must be output exactly once on every run. Move the output outside conditional branches and loops."
+        );
+    }
+
+    #[test]
+    fn conditional_tags_follow_phi_incomings() {
+        let error = validate(
+            "entry: br i1 %condition, label %left, label %right
+             left: br label %merge
+             right: br label %merge
+             merge: %tag = phi ptr [@right_tag, %left], [@left_tag, %right]
+             call void @__quantum__rt__int_record_output(i64 1, ptr %tag)
+             ret void",
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Detected conditional output tags \"left\" / \"right\".")
+        );
+    }
+
+    #[test]
+    fn nested_conditional_tags_strip_suffixes_and_deduplicate_names() {
+        let error = validate(
+            "entry:
+             %selected = select i1 %condition, ptr @literal_suffix, ptr @element0
+             %other = select i1 %condition, ptr %selected, ptr @element1
+             br i1 %condition, label %left, label %right
+             left: br label %merge
+             right: br label %merge
+             merge: %tag = phi ptr [%other, %left], [@right_tag, %right]
+             call void @__quantum__rt__int_record_output(i64 1, ptr %tag)
+             ret void",
+        )
+        .unwrap_err();
+        assert!(
+            error.to_string().contains(
+                "Detected conditional output tags \"literal___INT\" / \"out\" / \"right\"."
+            )
+        );
+    }
+
+    #[test]
+    fn unknown_tag_arms_do_not_hide_known_tags() {
+        let error = validate(
+            "entry:
+             %tag = select i1 %condition, ptr @left_tag, ptr null
+             call void @__quantum__rt__int_record_output(i64 1, ptr %tag)
+             ret void",
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("Detected conditional output tag \"left\".")
+        );
+    }
+
+    #[test]
+    fn conditional_tags_without_resolved_names_keep_the_generic_diagnostic() {
+        let error = validate(
+            "entry:
+             %tag = select i1 %condition, ptr null, ptr inttoptr (i64 1 to ptr)
              call void @__quantum__rt__int_record_output(i64 1, ptr %tag)
              ret void",
         )
