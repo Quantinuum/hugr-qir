@@ -1,6 +1,6 @@
 {
   "array": "bf83e8aa707acfdc86d71bbc6f02b6f2b64a5ce0cd158c12cdf744147da6e75c",
-  "canonical-qpe": "5aa10f838eb0fee5936a48cd0b0c57dcd7414baf11030963ba72e8e757676d77",
+  "canonical-qpe": "5636eb53f289ba486083beef7d8f60d69a95042cc14ff6355c150c0c478521df",
   "float-array": "cbbe5d6bdbfe0cc3f2f6ef1a6cc3b46614681393d977b090fb5297329a58171d",
   "generates-llvm-switch": "6bff49fb7272233109463b8315436ccccf7ad8218a0fba47442fd699df5ee9da",
   "generates-qubit-selects-1": "d3e56d865d396539cb09985ef7f17fe9f4eb0d7a8ac8581705c1ebca9c9f79d6",
@@ -10,7 +10,7 @@
   "hugr_generation_module": "6e8543537797e9eef773daa340b76b85b7bf6ecdd46b00a7484aa8f725bc93ef",
   "mirror-10": "dcf3aae833e4f5155f678d780c05f1148451fb6b8c39092b50b7688c6e2af6b5",
   "mirror-30": "c8f087636837cfebd95ad7c571bcbbd58eb2a91ce505f5b332ebdd417e5616de",
-  "nested-loops": "f599e0112e9cb51fe9f49178e6542acf9816e549fd26ad1afa71d8950ac13c5d",
+  "nested-loops": "0eb08359aced1cb7965780977943dc6a31898bc79ec2087a4c94a7aa29f8d62a",
   "planqc-1": "1ad2c049ea3ef472d76b57d8c6f605b8603be2a3c127c515f0396a6ba9ca4ba7",
   "quantum-classical-1": "0cd9a3c2ed9504a6265f60dd8ef266a8cf1f8902271512851805e2a5b533fe63",
   "quantum-complex-1": "c8e2bd2708299540cb8e834737fff4ebbebf11c07b67994fc54d9ccf9837fca9",

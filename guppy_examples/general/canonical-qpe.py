@@ -90,9 +90,3 @@ def main() -> None:
 COMPONENT = "Canonical QPE with a comptime inverse Fourier transform"
 QUBIT_BUDGET = 6
 SOURCE_URL = "https://docs.quantinuum.com/guppy/guppylang/examples/canonical-qpe.html"
-
-
-def expected_probabilities() -> dict:
-    from _references import canonical_probabilities  # noqa: PLC0415
-
-    return {"c": canonical_probabilities()}
