@@ -107,6 +107,7 @@ mod tests {
 
     #[test]
     fn integer_powers_match_wrapping_arithmetic() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         CompileTarget::Native.initialise();
         for width in [1, 2, 4, 8, 16, 32, 64] {
             let context = Context::create();
