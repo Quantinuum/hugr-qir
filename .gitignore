@@ -18,8 +18,9 @@ devenv.local.nix
 # qir snapshots
 *.snap.new
 
-# jetbrains ide
+# ides
 .idea
+.zed
 
 # macOS
 .DS_Store
