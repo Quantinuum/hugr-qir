@@ -22,6 +22,7 @@ def hugr_to_qir(  # noqa: PLR0913
     max_loop_unroll: int = max_loop_unroll_default(),
     output_format: OutputFormat = OutputFormat.BASE64,
     wasm_file: Path | None = None,
+    dump_hugr: Path | None = None,
 ) -> str | bytes:
     """A function for converting hugr to qir (llvm bitcode)
 
@@ -38,6 +39,8 @@ def hugr_to_qir(  # noqa: PLR0913
     :param output_format: Output format, see OutputFormat enum
      for available options
     :param wasm_file: Optional path to WASM binary file
+    :param dump_hugr: Optional path for a binary HUGR dump after all HUGR passes,
+     written before LLVM generation even if later compilation fails
     :returns: QIR corresponding to the HUGR input in format given
      by `output_format`
     """
@@ -65,6 +68,7 @@ def hugr_to_qir(  # noqa: PLR0913
             tmp_infile_path,
             tmp_outfile_path,
             wasm_file,
+            dump_hugr,
         )
 
         read_mode = "rb" if output_format == OutputFormat.BITCODE else "r"

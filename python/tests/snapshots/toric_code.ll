@@ -356,57 +356,57 @@ __barray_mask_check_not_borrowed.exit8975:        ; preds = %bb2, %__barray_mask
   %"04987.0" = select i1 %9, i64 2, i64 0
   %"05009.0" = zext i1 %10 to i64
   %11 = or disjoint i64 %"04965.0", %"04943.0"
-  %12 = or disjoint i64 %"04987.0", %"05009.0"
-  %13 = or disjoint i64 %12, %11
+  %12 = or disjoint i64 %11, %"04987.0"
+  %13 = or disjoint i64 %12, %"05009.0"
   %Pivot9363 = icmp samesign ult i64 %13, 9
   br i1 %Pivot9363, label %NodeBlock9350, label %NodeBlock9360
 
 NodeBlock9360:                                    ; preds = %__barray_mask_check_not_borrowed.exit8975
-  %Pivot9361.not = and i1 %8, %7
-  br i1 %Pivot9361.not, label %NodeBlock9367, label %NodeBlock9370
+  %Pivot9361.not = and i1 %7, %8
+  br i1 %Pivot9361.not, label %NodeBlock, label %NodeBlock9381
 
-NodeBlock9367:                                    ; preds = %NodeBlock9360
+NodeBlock:                                        ; preds = %NodeBlock9360
   %Pivot = icmp slt i64 %13, 15
-  br i1 %Pivot, label %LeafBlock9365, label %__barray_mask_borrow.exit8989
+  br i1 %Pivot, label %LeafBlock9377, label %__barray_mask_borrow.exit8989
 
-LeafBlock9365:                                    ; preds = %NodeBlock9367
-  %SwitchLeaf9366 = icmp eq i64 %13, 12
-  br i1 %SwitchLeaf9366, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9376, label %__barray_mask_check_not_borrowed.exit9031
+LeafBlock9377:                                    ; preds = %NodeBlock
+  %SwitchLeaf9378 = icmp eq i64 %13, 12
+  br i1 %SwitchLeaf9378, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9387, label %__barray_mask_check_not_borrowed.exit9031
 
-__barray_mask_check_not_borrowed.exit9031.sink.split.dup9376: ; preds = %LeafBlock9365
+__barray_mask_check_not_borrowed.exit9031.sink.split.dup9387: ; preds = %LeafBlock9377
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 6 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 7 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-NodeBlock9370:                                    ; preds = %NodeBlock9360
-  %Pivot9371 = icmp slt i64 %13, 10
-  br i1 %Pivot9371, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9377, label %LeafBlock9368
+NodeBlock9381:                                    ; preds = %NodeBlock9360
+  %Pivot9382 = icmp slt i64 %13, 10
+  br i1 %Pivot9382, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9388, label %LeafBlock9379
 
-__barray_mask_check_not_borrowed.exit9031.sink.split.dup9377: ; preds = %NodeBlock9370
+__barray_mask_check_not_borrowed.exit9031.sink.split.dup9388: ; preds = %NodeBlock9381
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 2 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 15 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-LeafBlock9368:                                    ; preds = %NodeBlock9370
-  %SwitchLeaf9369 = icmp eq i64 %13, 10
-  br i1 %SwitchLeaf9369, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9380, label %__barray_mask_check_not_borrowed.exit9031
+LeafBlock9379:                                    ; preds = %NodeBlock9381
+  %SwitchLeaf9380 = icmp eq i64 %13, 10
+  br i1 %SwitchLeaf9380, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9391, label %__barray_mask_check_not_borrowed.exit9031
 
 NodeBlock9350:                                    ; preds = %__barray_mask_check_not_borrowed.exit8975
   %Pivot9351 = icmp samesign ult i64 %13, 5
-  br i1 %Pivot9351, label %LeafBlock, label %NodeBlock9374
+  br i1 %Pivot9351, label %LeafBlock, label %NodeBlock9385
 
-NodeBlock9374:                                    ; preds = %NodeBlock9350
-  %Pivot9375 = icmp slt i64 %13, 6
-  br i1 %Pivot9375, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9378, label %LeafBlock9372
+NodeBlock9385:                                    ; preds = %NodeBlock9350
+  %Pivot9386 = icmp slt i64 %13, 6
+  br i1 %Pivot9386, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9389, label %LeafBlock9383
 
-__barray_mask_check_not_borrowed.exit9031.sink.split.dup9378: ; preds = %NodeBlock9374
+__barray_mask_check_not_borrowed.exit9031.sink.split.dup9389: ; preds = %NodeBlock9385
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 4 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 8 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-LeafBlock9372:                                    ; preds = %NodeBlock9374
-  %SwitchLeaf9373 = icmp eq i64 %13, 6
-  br i1 %SwitchLeaf9373, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9381, label %__barray_mask_check_not_borrowed.exit9031
+LeafBlock9383:                                    ; preds = %NodeBlock9385
+  %SwitchLeaf9384 = icmp eq i64 %13, 6
+  br i1 %SwitchLeaf9384, label %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9392, label %__barray_mask_check_not_borrowed.exit9031
 
 LeafBlock:                                        ; preds = %NodeBlock9350
   %SwitchLeaf = icmp eq i64 %13, 3
@@ -417,24 +417,24 @@ __barray_mask_check_not_borrowed.exit9031.sink.split.dup: ; preds = %LeafBlock
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 11 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-__barray_mask_borrow.exit8989:                    ; preds = %NodeBlock9367
+__barray_mask_borrow.exit8989:                    ; preds = %NodeBlock
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 2 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 14 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 15 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-__barray_mask_check_not_borrowed.exit9031.sink.split.dup9380: ; preds = %LeafBlock9368
+__barray_mask_check_not_borrowed.exit9031.sink.split.dup9391: ; preds = %LeafBlock9379
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 5 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 9 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-__barray_mask_check_not_borrowed.exit9031.sink.split.dup9381: ; preds = %LeafBlock9372
+__barray_mask_check_not_borrowed.exit9031.sink.split.dup9392: ; preds = %LeafBlock9383
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
   br label %__barray_mask_check_not_borrowed.exit9031
 
-__barray_mask_check_not_borrowed.exit9031:        ; preds = %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9381, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9380, %__barray_mask_borrow.exit8989, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9378, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9377, %LeafBlock9365, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9376, %LeafBlock, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup, %LeafBlock9372, %LeafBlock9368
+__barray_mask_check_not_borrowed.exit9031:        ; preds = %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9392, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9391, %__barray_mask_borrow.exit8989, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9389, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9388, %LeafBlock9377, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup9387, %LeafBlock, %__barray_mask_check_not_borrowed.exit9031.sink.split.dup, %LeafBlock9383, %LeafBlock9379
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 8 to ptr))
   %14 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 9 to ptr))

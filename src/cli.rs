@@ -1,4 +1,7 @@
-use std::{io::Write, path::Path};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 use clap::Parser;
@@ -63,6 +66,13 @@ pub struct Cli {
 
     #[arg(long, help = "Optional path to WASM binary file")]
     pub wasm_file: Option<String>,
+
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "Write binary HUGR after all HUGR passes, before LLVM generation"
+    )]
+    pub dump_hugr: Option<PathBuf>,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
@@ -166,6 +176,7 @@ impl Cli {
             opt_level: self.optimization_level.unwrap_or(default_args.opt_level),
             max_loop_unroll: self.max_loop_unroll,
             wasm_file: self.wasm_file.clone(),
+            dump_hugr: self.dump_hugr.clone(),
         }
     }
 

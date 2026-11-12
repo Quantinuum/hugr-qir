@@ -10,6 +10,7 @@ python: &python
   - *rust
   - "python/**"
   - "guppy_examples/**"
+  - "ruff.toml"
   - "pyproject.toml"
   - "uv.lock"
 

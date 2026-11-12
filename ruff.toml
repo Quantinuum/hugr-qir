@@ -65,6 +65,9 @@ lint.select = [
   "YTT",  # flake8-2020
 ]
 
+[per-file-target-version]
+"guppy_examples/capability-checks/**" = "py312"
+
 [lint.pydocstyle]
 convention = "google"
 
@@ -73,4 +76,5 @@ convention = "google"
 "guppy_examples/*/*" = ["FBT001", "FBT002", "FBT003", "PLR2004", "C901"]
 "guppy_examples/general/generates-llvm-*" = ["E501"]
 "python/tests/*" = ["PGH003", "S101"]
+"guppy_examples/capability-checks/test_*.py" = ["S101"]
 "python/hugr_qir/*" = ["FBT001", "FBT002"]

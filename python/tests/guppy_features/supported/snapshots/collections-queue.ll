@@ -10,7 +10,7 @@ target triple = "aarch64-unknown-linux-gnu"
 @gen_version = private unnamed_addr constant [5 x i8] c"X.Y.Z", section ",qir_generator"
 
 define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
-cond_exit_931:
+cond_exit_801:
   tail call void @__quantum__rt__initialize(ptr null)
   tail call void @__quantum__rt__int_record_output(i64 2, ptr nonnull @0)
   tail call void @__quantum__rt__int_record_output(i64 3, ptr nonnull @1)

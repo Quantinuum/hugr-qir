@@ -1,11 +1,13 @@
 use std::num::NonZero;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use anyhow::anyhow;
-use anyhow::{Result, bail};
+use anyhow::{Context as _, Result, bail};
 use clap_verbosity_flag::log::Level;
 use hugr::HugrView;
 use hugr::core::Visibility;
+use hugr::envelope::EnvelopeConfig;
 use hugr::llvm::CodegenExtsBuilder;
 use hugr::llvm::custom::CodegenExtsMap;
 use hugr::llvm::emit::{EmitHugr, Namer};
@@ -84,6 +86,8 @@ pub struct CompileArgs {
     /// unroll pass. All loops must be eliminated before QIR emission.
     pub max_loop_unroll: usize,
     pub wasm_file: Option<String>,
+    /// Optional binary HUGR output after all HUGR passes and before LLVM emission.
+    pub dump_hugr: Option<PathBuf>,
 }
 
 impl Default for CompileArgs {
@@ -97,6 +101,7 @@ impl Default for CompileArgs {
             opt_level: CliOptimizationLevel::Aggressive,
             max_loop_unroll: DEFAULT_MAX_LOOP_UNROLL,
             wasm_file: None,
+            dump_hugr: None,
         }
     }
 }
@@ -146,16 +151,22 @@ impl CompileArgs {
                 hugr.validate()?;
             }
         }
-        DevirtualizeDirectCallsPass::default().run(hugr)?;
-        if self.validate {
-            hugr.validate()?;
-        }
-        // Drop unreachable functions before inlining to avoid doing adversarial
-        // expansion work in code that will be removed anyway.
+        // Inline direct wrappers first, then resolve indirect callees on the exposed graph.
         self.remove_dead_functions(hugr)?;
         self.inline_calls(hugr)?;
-        self.remove_dead_functions(hugr)?;
         self.normalize_hugr(hugr)?;
+        loop {
+            let changed = DevirtualizeDirectCallsPass::default()
+                .with_scope(PassScope::Global(Preserve::Entrypoint))
+                .run(hugr)?;
+            if changed == 0 {
+                break;
+            }
+            self.inline_calls(hugr)?;
+            self.remove_dead_functions(hugr)?;
+            self.normalize_hugr(hugr)?;
+        }
+        self.remove_dead_functions(hugr)?;
         RemoveKnownNonNegativeChecksPass::default().run(hugr)?;
         if self.validate {
             hugr.validate()?;
@@ -292,6 +303,7 @@ impl CompileArgs {
 
         // We optimize before `replace_int_opaque_pointer`ing, because that will fail if there are indirect function  calls, which must be removed in the end qir anyway.
         self.optimize_module_llvm(&module)?;
+        self.optimize_module_llvm(&module)?;
 
         // Reject loops before assigning resource IDs: subsequent unrolling
         // would duplicate those IDs across distinct allocations.
@@ -317,6 +329,12 @@ impl CompileArgs {
 
     pub fn compile<'c>(&self, hugr: &mut Hugr, context: &'c Context) -> Result<Module<'c>> {
         self.hugr_to_hugr(hugr)?;
+        if let Some(path) = &self.dump_hugr {
+            let file = std::fs::File::create(path)
+                .with_context(|| format!("Failed to create HUGR dump {}", path.display()))?;
+            hugr.store_with_exts(file, EnvelopeConfig::binary(), hugr.extensions())
+                .with_context(|| format!("Failed to write HUGR dump {}", path.display()))?;
+        }
         let module = self.hugr_to_llvm(hugr, context)?;
 
         let target = self.optimize_module_llvm(&module)?;

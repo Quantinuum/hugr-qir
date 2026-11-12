@@ -42,6 +42,7 @@ __barray_mask_return.exit:
   %shot = tail call i64 @___get_current_shot()
   %remainder = and i64 %shot, 1
   %0 = icmp eq i64 %remainder, 0
+  tail call void @___random_seed(i64 2026)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0.000000e+00, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr null, ptr nonnull inttoptr (i64 1 to ptr))
@@ -101,7 +102,6 @@ __barray_mask_return.exit:
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 28 to ptr), ptr nonnull inttoptr (i64 29 to ptr))
   tail call void @__quantum__qis__rzz__body(double 0x3FF921FB54442D18, ptr nonnull inttoptr (i64 27 to ptr), ptr nonnull inttoptr (i64 28 to ptr))
-  tail call void @___random_seed(i64 2026)
   %rintb = tail call i32 @___random_int_bounded(i32 2)
   %1 = icmp eq i32 %rintb, 1
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 2 to ptr))
@@ -312,11 +312,11 @@ __barray_mask_check_not_borrowed.exit2747:        ; preds = %bb0, %__barray_mask
 
 declare noundef range(i64 0, 4294967296) i64 @___get_current_shot() local_unnamed_addr
 
+declare void @___random_seed(i64) local_unnamed_addr
+
 declare void @__quantum__qis__phasedx__body(double, double, ptr) local_unnamed_addr
 
 declare void @__quantum__qis__rzz__body(double, ptr, ptr) local_unnamed_addr
-
-declare void @___random_seed(i64) local_unnamed_addr
 
 declare noundef i32 @___random_int_bounded(i32) local_unnamed_addr
 

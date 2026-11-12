@@ -350,18 +350,25 @@ cond_4283_case_1:                                 ; preds = %bb3, %bb4
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   %"03060.0" = select i1 %9, i64 8, i64 -1
+  %"03086.0" = zext i1 %9 to i64
   %"03102.0" = select i1 %8, i64 4, i64 -1
+  %"03128.0" = select i1 %8, i64 2, i64 0
   %"03144.0" = select i1 %7, i64 2, i64 -1
+  %"03170.0" = select i1 %7, i64 4, i64 0
   %"03186.0" = select i1 %6, i64 1, i64 -1
+  %"03212.0" = select i1 %6, i64 8, i64 0
   %10 = add nsw i64 %"03144.0", %"03186.0"
   %11 = add nsw i64 %10, %"03102.0"
   %12 = add nsw i64 %11, %"03060.0"
+  %13 = or disjoint i64 %"03170.0", %"03212.0"
+  %14 = or disjoint i64 %13, %"03128.0"
+  %15 = or disjoint i64 %14, %"03086.0"
   %Pivot6490 = icmp slt i64 %12, 9
   br i1 %Pivot6490, label %NodeBlock6477, label %NodeBlock6487
 
 NodeBlock6487:                                    ; preds = %cond_4283_case_1
   %Pivot6488 = icmp samesign ult i64 %12, 12
-  br i1 %Pivot6488, label %NodeBlock6494, label %NodeBlock6485
+  br i1 %Pivot6488, label %NodeBlock, label %NodeBlock6485
 
 NodeBlock6485:                                    ; preds = %NodeBlock6487
   %Pivot6486 = icmp samesign ult i64 %12, 15
@@ -369,48 +376,48 @@ NodeBlock6485:                                    ; preds = %NodeBlock6487
 
 LeafBlock6483:                                    ; preds = %NodeBlock6485
   %SwitchLeaf6484 = icmp eq i64 %12, 12
-  br i1 %SwitchLeaf6484, label %.thread6436.sink.split.dup6502, label %.thread6436
+  br i1 %SwitchLeaf6484, label %.thread6436.sink.split.dup6509, label %.thread6436
 
-.thread6436.sink.split.dup6502:                   ; preds = %LeafBlock6483
+.thread6436.sink.split.dup6509:                   ; preds = %LeafBlock6483
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 11 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 10 to ptr))
   br label %.thread6436
 
-NodeBlock6494:                                    ; preds = %NodeBlock6487
+NodeBlock:                                        ; preds = %NodeBlock6487
   %Pivot = icmp slt i64 %12, 10
-  br i1 %Pivot, label %.thread6436.sink.split.dup6503, label %LeafBlock6492
+  br i1 %Pivot, label %.thread6436.sink.split.dup6510, label %LeafBlock6500
 
-.thread6436.sink.split.dup6503:                   ; preds = %NodeBlock6494
+.thread6436.sink.split.dup6510:                   ; preds = %NodeBlock
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 15 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 2 to ptr))
   br label %.thread6436
 
-LeafBlock6492:                                    ; preds = %NodeBlock6494
-  %SwitchLeaf6493 = icmp eq i64 %12, 10
-  br i1 %SwitchLeaf6493, label %.thread6436.sink.split.dup6499, label %.thread6436
+LeafBlock6500:                                    ; preds = %NodeBlock
+  %SwitchLeaf6501 = icmp eq i64 %12, 10
+  br i1 %SwitchLeaf6501, label %.thread6436.sink.split.dup6506, label %.thread6436
 
 NodeBlock6477:                                    ; preds = %cond_4283_case_1
   %Pivot6478 = icmp slt i64 %12, 5
-  br i1 %Pivot6478, label %LeafBlock, label %NodeBlock6497
+  br i1 %Pivot6478, label %LeafBlock, label %NodeBlock6504
 
-NodeBlock6497:                                    ; preds = %NodeBlock6477
-  %Pivot6498 = icmp slt i64 %12, 6
-  br i1 %Pivot6498, label %.thread6436.sink.split.dup6504, label %LeafBlock6495
+NodeBlock6504:                                    ; preds = %NodeBlock6477
+  %Pivot6505 = icmp slt i64 %12, 6
+  br i1 %Pivot6505, label %.thread6436.sink.split.dup6511, label %LeafBlock6502
 
-.thread6436.sink.split.dup6504:                   ; preds = %NodeBlock6497
+.thread6436.sink.split.dup6511:                   ; preds = %NodeBlock6504
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 9 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 5 to ptr))
   br label %.thread6436
 
-LeafBlock6495:                                    ; preds = %NodeBlock6497
-  %SwitchLeaf6496 = icmp eq i64 %12, 6
-  br i1 %SwitchLeaf6496, label %.thread6436.sink.split.dup6500, label %.thread6436
+LeafBlock6502:                                    ; preds = %NodeBlock6504
+  %SwitchLeaf6503 = icmp eq i64 %12, 6
+  br i1 %SwitchLeaf6503, label %.thread6436.sink.split.dup6507, label %.thread6436
 
 LeafBlock:                                        ; preds = %NodeBlock6477
   %SwitchLeaf = icmp eq i64 %12, 3
-  br i1 %SwitchLeaf, label %.thread6436.sink.split.dup6501, label %.thread6436
+  br i1 %SwitchLeaf, label %.thread6436.sink.split.dup6508, label %.thread6436
 
-.thread6436.sink.split.dup6501:                   ; preds = %LeafBlock
+.thread6436.sink.split.dup6508:                   ; preds = %LeafBlock
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 7 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 6 to ptr))
   br label %.thread6436
@@ -422,24 +429,17 @@ LeafBlock:                                        ; preds = %NodeBlock6477
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 2 to ptr))
   br label %.thread6436
 
-.thread6436.sink.split.dup6499:                   ; preds = %LeafBlock6492
+.thread6436.sink.split.dup6506:                   ; preds = %LeafBlock6500
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 8 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 4 to ptr))
   br label %.thread6436
 
-.thread6436.sink.split.dup6500:                   ; preds = %LeafBlock6495
+.thread6436.sink.split.dup6507:                   ; preds = %LeafBlock6502
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr inttoptr (i64 13 to ptr))
   call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   br label %.thread6436
 
-.thread6436:                                      ; preds = %.thread6436.sink.split.dup6504, %.thread6436.sink.split.dup6503, %LeafBlock6483, %.thread6436.sink.split.dup6502, %LeafBlock, %.thread6436.sink.split.dup6501, %.thread6436.sink.split.dup6500, %.thread6436.sink.split.dup6499, %.thread6380.thread.thread6467, %LeafBlock6495, %LeafBlock6492
-  %"03212.0" = select i1 %6, i64 8, i64 0
-  %"03170.0" = select i1 %7, i64 4, i64 0
-  %"03128.0" = select i1 %8, i64 2, i64 0
-  %"03086.0" = zext i1 %9 to i64
-  %13 = or disjoint i64 %"03170.0", %"03212.0"
-  %14 = or disjoint i64 %13, %"03128.0"
-  %15 = or disjoint i64 %14, %"03086.0"
+.thread6436:                                      ; preds = %.thread6436.sink.split.dup6511, %.thread6436.sink.split.dup6510, %LeafBlock6483, %.thread6436.sink.split.dup6509, %LeafBlock, %.thread6436.sink.split.dup6508, %.thread6436.sink.split.dup6507, %.thread6436.sink.split.dup6506, %.thread6380.thread.thread6467, %LeafBlock6502, %LeafBlock6500
   tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 8 to ptr))
   %16 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 9 to ptr))

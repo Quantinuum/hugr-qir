@@ -90,6 +90,12 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Name of wasm binary file to link against (optional)",
 )
 @click.version_option(version=version("hugr_qir"))
+@click.option(
+    "--dump-hugr",
+    is_flag=True,
+    default=False,
+    help="Write binary HUGR after all HUGR passes to INPUT.post-passes.hugr",
+)
 def hugr_qir(  # noqa: PLR0913, PLR0917
     validate_qir: bool,
     validate_hugr: bool,
@@ -100,6 +106,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
     hugr_file: Path,
     outfile: Path | None,
     wasm_file: Path | None,
+    dump_hugr: bool,
 ) -> None:
     """Convert a HUGR file to QIR.
 
@@ -107,6 +114,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
     Per default, QIR is emitted to stdout, but can
     be written to a file using the `-o` option.
     """
+    dump_path = hugr_file.with_suffix(".post-passes.hugr") if dump_hugr else None
     try:
         hugr_qir_impl(
             validate_qir,
@@ -118,6 +126,7 @@ def hugr_qir(  # noqa: PLR0913, PLR0917
             hugr_file,
             outfile,
             wasm_file,
+            dump_path,
         )
     except ValueError as e:
         raise click.ClickException(str(e)) from e
@@ -153,6 +162,7 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
     hugr_file: Path,
     outfile: Path | None,
     wasm_file: Path | None,
+    dump_hugr: Path | None = None,
 ) -> None:
     options = ["-q"]
     options.extend(["-t", target])
@@ -164,6 +174,8 @@ def hugr_qir_impl(  # noqa: PLR0913, PLR0917
         options.extend(["--wasm-file", str(wasm_file)])
     if validate_hugr:
         options.append("--validate")
+    if dump_hugr is not None:
+        options.extend(["--dump-hugr", str(dump_hugr)])
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
         tmp_outfile_name = f"{tmp_dir}/tmp.ll"  # noqa: S108
         tmp_outfile_path = Path(tmp_outfile_name)

@@ -1,32 +1,24 @@
-//! Devirtualization of statically-known indirect function calls.
+//! Resolve indirect callees using conservative dataflow analysis.
 //!
-//! Some HUGR producers represent an ordinary, statically-known function call as
-//! a [`LoadFunction`](hugr::ops::LoadFunction) immediately consumed by a
-//! [`CallIndirect`](hugr::ops::CallIndirect). Although this representation is
-//! semantically valid, it hides the callee from passes that operate on direct
-//! [`Call`] nodes. In particular, it can prevent function inlining and leave
-//! indirect calls in the generated LLVM IR.
+//! Function identities are propagated through tuples, sums, fixed-size arrays,
+//! control flow, and direct function calls. A singleton target becomes a direct
+//! call. A proven finite array or conditional choice becomes conditional direct
+//! dispatch, preserving the original lookup and its checks. Unknown targets and
+//! selections whose control value is not available in the call's region remain
+//! indirect. No function-pointer identity test is introduced at runtime.
 //!
-//! [`DevirtualizeDirectCallsPass`] recognizes this local pattern and replaces
-//! the indirect call with an equivalent direct call connected to the loaded
-//! function's static edge. Function values that flow through parameters,
-//! conditionals, data structures, or any other operation are left unchanged
-//! because their target is not proven by this pattern.
-//!
-//! Exposing these calls before inlining is important for QIR generation. It
-//! allows fixed-size array and collection operations to be simplified in HUGR
-//! and LLVM, and prevents caller-local array storage from escaping through a
-//! helper function. Calls that still require dynamic dispatch remain indirect
-//! and are rejected later because the targeted QIR profile cannot represent
-//! them.
+//! Exposing direct calls before LLVM lowering allows HUGR inlining to eliminate
+//! helper-local array storage before it can escape through a function return.
 
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 use hugr::extension::SignatureError;
 use hugr::hugr::hugrmut::HugrMut;
-use hugr::ops::Call;
-use hugr::{HugrView, IncomingPort, Node};
+use hugr::{HugrView, IncomingPort, Node, Wire};
+
+mod analysis;
+mod rewrite;
 use hugr_core::hugr::internal::HugrMutInternals;
 use itertools::Itertools;
 use tket::passes::{ComposablePass, PassScope, WithScope};
@@ -81,21 +73,12 @@ impl From<SignatureError> for DevirtualizeDirectCallsError {
     }
 }
 
-/// Converts indirect calls with an immediately-known target into direct calls.
+/// Converts proven indirect callees into direct calls or finite conditional dispatch.
 ///
-/// The pass only rewrites this pattern:
-///
-/// ```text
-/// FuncDefn/FuncDecl --static--> LoadFunction --value--> CallIndirect
-/// ```
-///
-/// The replacement [`Call`] keeps the original value arguments, outputs, and
-/// order edge, and connects its static function port directly to the function
-/// definition or declaration. An unused `LoadFunction` node is removed.
-///
-/// This transformation is semantics-preserving and idempotent. It does not try
-/// to infer targets for arbitrary first-class function values. The returned
-/// count is the number of calls rewritten.
+/// Each call is analyzed independently of the operation immediately producing its
+/// function value. The returned count includes both direct-call replacements and
+/// finite-dispatch replacements. Existing value dependencies and order edges are
+/// preserved; unresolved callees are left unchanged.
 #[derive(Clone, Debug, Default)]
 pub struct DevirtualizeDirectCallsPass {
     scope: PassScope,
@@ -116,53 +99,29 @@ where
             .descendants(root)
             .filter(|&node| hugr.get_optype(node).is_call_indirect())
             .collect_vec();
+        if calls.is_empty() {
+            return Ok(0);
+        }
+        let facts = analysis::analyze(hugr, root, &self.scope);
         let mut rewritten = 0;
 
         for call_node in calls {
-            let Some((load_node, _)) = hugr.single_linked_output(call_node, IncomingPort::from(0))
+            let Some((load_node, load_port)) =
+                hugr.single_linked_output(call_node, IncomingPort::from(0))
             else {
                 continue;
             };
-            let Some(load) = hugr.get_optype(load_node).as_load_function().cloned() else {
+            let Some(callees) = facts.values.get(&Wire::new(load_node, load_port)) else {
                 continue;
             };
-            let Some(function_node) = hugr.static_source(load_node) else {
-                continue;
-            };
-
-            let call = Call::try_new(load.func_sig, load.type_args)?;
-            let argument_count = call.instantiation.input_count();
-            let argument_sources = (0..argument_count)
-                .map(|index| {
-                    hugr.single_linked_output(call_node, IncomingPort::from(index + 1))
-                        .ok_or(DevirtualizeDirectCallsError::MissingArgument {
-                            call: call_node,
-                            index,
-                        })
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            // CallIndirect has the function value before its value arguments;
-            // Call has only the value arguments plus a static function port.
-            for index in 0..=argument_count {
-                hugr.disconnect(call_node, IncomingPort::from(index));
+            if rewrite::rewrite(hugr, call_node, &facts, callees)? {
+                if hugr.get_optype(load_node).is_load_function()
+                    && hugr.linked_inputs(load_node, 0).next().is_none()
+                {
+                    hugr.remove_node(load_node);
+                }
+                rewritten += 1;
             }
-            let function_port = call.called_function_port();
-            hugr.replace_op(call_node, call);
-            for (index, (source_node, source_port)) in argument_sources.into_iter().enumerate() {
-                hugr.connect(source_node, source_port, call_node, index);
-            }
-            let function_output = hugr.get_optype(function_node).static_output_port().ok_or(
-                DevirtualizeDirectCallsError::MissingStaticOutput {
-                    function: function_node,
-                },
-            )?;
-            hugr.connect(function_node, function_output, call_node, function_port);
-
-            if hugr.linked_inputs(load_node, 0).next().is_none() {
-                hugr.remove_node(load_node);
-            }
-            rewritten += 1;
         }
 
         Ok(rewritten)
@@ -238,5 +197,193 @@ mod tests {
             0
         );
         hugr.validate().unwrap();
+    }
+
+    #[test]
+    fn follows_tuple_values() {
+        use hugr::extension::prelude::UnpackTuple;
+        use hugr::types::Type;
+        let signature = Signature::new_endo([usize_t()]);
+        let mut module = ModuleBuilder::new();
+        let identity = {
+            let b = module
+                .define_function("identity", signature.clone())
+                .unwrap();
+            let [v] = b.input_wires_arr();
+            b.finish_with_outputs([v]).unwrap()
+        };
+        let mut main = module.define_function("main", signature.clone()).unwrap();
+        let [v] = main.input_wires_arr();
+        let f = main.load_func(identity.handle(), &[]).unwrap();
+        let tuple = main.make_tuple([f, v]).unwrap();
+        let [f, v] = main
+            .add_dataflow_op(
+                UnpackTuple::new(vec![Type::new_function(signature.clone()), usize_t()].into()),
+                [tuple],
+            )
+            .unwrap()
+            .outputs_arr();
+        let result = main
+            .add_dataflow_op(CallIndirect { signature }, [f, v])
+            .unwrap()
+            .out_wire(0);
+        main.finish_with_outputs([result]).unwrap();
+        let mut h = module.finish_hugr().unwrap();
+        assert_eq!(
+            DevirtualizeDirectCallsPass::default().run(&mut h).unwrap(),
+            1
+        );
+        h.validate().unwrap();
+    }
+
+    #[test]
+    fn leaves_unknown_function_arguments_indirect() {
+        use hugr::ops::handle::NodeHandle;
+        use hugr::types::Type;
+        use tket::passes::composable::Preserve;
+        let signature = Signature::new_endo([usize_t()]);
+        let mut module = ModuleBuilder::new();
+        let mut main = module
+            .define_function(
+                "main",
+                Signature::new(
+                    [Type::new_function(signature.clone()), usize_t()],
+                    [usize_t()],
+                ),
+            )
+            .unwrap();
+        let [f, v] = main.input_wires_arr();
+        let result = main
+            .add_dataflow_op(CallIndirect { signature }, [f, v])
+            .unwrap()
+            .out_wire(0);
+        let main = main.finish_with_outputs([result]).unwrap();
+        let mut h = module.finish_hugr().unwrap();
+        h.set_entrypoint(main.handle().node());
+        assert_eq!(
+            DevirtualizeDirectCallsPass::default()
+                .with_scope(PassScope::Global(Preserve::Entrypoint))
+                .run(&mut h)
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            h.nodes()
+                .filter(|n| h.get_optype(*n).is_call_indirect())
+                .count(),
+            1
+        );
+        h.validate().unwrap();
+    }
+
+    #[test]
+    fn propagates_callees_through_private_function_parameters() {
+        use hugr::ops::handle::NodeHandle;
+        use hugr::types::Type;
+        use tket::passes::composable::Preserve;
+        let signature = Signature::new_endo([usize_t()]);
+        let mut module = ModuleBuilder::new();
+        let identity = {
+            let b = module
+                .define_function("identity", signature.clone())
+                .unwrap();
+            let [v] = b.input_wires_arr();
+            b.finish_with_outputs([v]).unwrap()
+        };
+        let wrapper = {
+            let mut b = module
+                .define_function(
+                    "wrapper",
+                    Signature::new(
+                        [Type::new_function(signature.clone()), usize_t()],
+                        [usize_t()],
+                    ),
+                )
+                .unwrap();
+            let [f, v] = b.input_wires_arr();
+            let out = b
+                .add_dataflow_op(
+                    CallIndirect {
+                        signature: signature.clone(),
+                    },
+                    [f, v],
+                )
+                .unwrap()
+                .out_wire(0);
+            b.finish_with_outputs([out]).unwrap()
+        };
+        let mut main = module.define_function("main", signature).unwrap();
+        let [v] = main.input_wires_arr();
+        let f = main.load_func(identity.handle(), &[]).unwrap();
+        let out = main
+            .call(wrapper.handle(), &[], [f, v])
+            .unwrap()
+            .out_wire(0);
+        let main = main.finish_with_outputs([out]).unwrap();
+        let mut h = module.finish_hugr().unwrap();
+        h.set_entrypoint(main.handle().node());
+        assert_eq!(
+            DevirtualizeDirectCallsPass::default()
+                .with_scope(PassScope::Global(Preserve::Entrypoint))
+                .run(&mut h)
+                .unwrap(),
+            1
+        );
+        h.validate().unwrap();
+    }
+
+    #[test]
+    fn lowers_a_runtime_conditional_between_known_functions() {
+        use hugr::builder::SubContainer;
+        use hugr::extension::prelude::{ConstUsize, bool_t};
+        use hugr::ops::handle::NodeHandle;
+        use hugr::types::{Type, TypeRow};
+        let signature = Signature::new_endo([usize_t()]);
+        let fn_ty = Type::new_function(signature.clone());
+        let mut module = ModuleBuilder::new();
+        let identity = {
+            let b = module
+                .define_function("identity", signature.clone())
+                .unwrap();
+            let [v] = b.input_wires_arr();
+            b.finish_with_outputs([v]).unwrap()
+        };
+        let one = {
+            let mut b = module.define_function("one", signature.clone()).unwrap();
+            let one = b.add_load_value(ConstUsize::new(1));
+            b.finish_with_outputs([one]).unwrap()
+        };
+        let mut main = module
+            .define_function("main", Signature::new([bool_t(), usize_t()], [usize_t()]))
+            .unwrap();
+        let [choose, value] = main.input_wires_arr();
+        let mut conditional = main
+            .conditional_builder((vec![TypeRow::default(); 2], choose), [], [fn_ty].into())
+            .unwrap();
+        for (i, target) in [identity.handle(), one.handle()].into_iter().enumerate() {
+            let mut case = conditional.case_builder(i).unwrap();
+            let f = case.load_func(target, &[]).unwrap();
+            case.finish_with_outputs([f]).unwrap();
+        }
+        let f = conditional.finish_sub_container().unwrap().out_wire(0);
+        let result = main
+            .add_dataflow_op(CallIndirect { signature }, [f, value])
+            .unwrap()
+            .out_wire(0);
+        let main = main.finish_with_outputs([result]).unwrap();
+        let mut h = module.finish_hugr().unwrap();
+        h.set_entrypoint(main.handle().node());
+        assert_eq!(
+            DevirtualizeDirectCallsPass::default().run(&mut h).unwrap(),
+            1
+        );
+        assert_eq!(
+            h.nodes()
+                .filter(|n| h.get_optype(*n).is_call_indirect())
+                .count(),
+            0
+        );
+        assert_eq!(h.nodes().filter(|n| h.get_optype(*n).is_call()).count(), 2);
+        h.validate().unwrap();
     }
 }

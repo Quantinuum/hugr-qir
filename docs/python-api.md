@@ -31,6 +31,8 @@ Key parameters:
 - `max_loop_unroll`: maximum static loop trip count to fully unroll (default: `800`)
 - `output_format`: `LLVM_IR`, `BITCODE`, or `BASE64`
 - `wasm_file`: optional path to a Wasm module used by the Wasm extension
+- `dump_hugr`: optional `Path` for a binary HUGR dump after all HUGR passes,
+  written before LLVM generation even if later compilation fails
 
 
 ### Convenience helpers

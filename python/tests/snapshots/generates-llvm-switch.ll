@@ -28,13 +28,13 @@ alloca_block:
   %"56_3.0" = select i1 %1, i64 %3, i64 %"40_3.0"
   %4 = zext i1 %2 to i64
   %"72_3.0" = add nuw nsw i64 %"56_3.0", %4
-  br label %NodeBlock577
+  br label %NodeBlock579
 
-NodeBlock577:                                     ; preds = %alloca_block
-  %Pivot578 = icmp slt i64 %"72_3.0", 1
-  br i1 %Pivot578, label %bb0, label %NodeBlock
+NodeBlock579:                                     ; preds = %alloca_block
+  %Pivot580 = icmp slt i64 %"72_3.0", 1
+  br i1 %Pivot580, label %bb0, label %NodeBlock
 
-NodeBlock:                                        ; preds = %NodeBlock577
+NodeBlock:                                        ; preds = %NodeBlock579
   %Pivot = icmp slt i64 %"72_3.0", 2
   br i1 %Pivot, label %bb1, label %LeafBlock
 
@@ -51,7 +51,7 @@ bb:                                               ; preds = %bb1, %bb2, %bb3, %b
   tail call void @__quantum__rt__bool_record_output(i1 %5, ptr nonnull @3)
   ret void
 
-bb0:                                              ; preds = %NodeBlock577
+bb0:                                              ; preds = %NodeBlock579
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 3 to ptr))
   br label %bb

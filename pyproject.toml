@@ -98,6 +98,9 @@ python-source = "python/"
 python-packages = ["hugr_qir"]
 bindings = "pyo3"
 
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+
 [tool.cibuildwheel]
 build = "cp312-*"
 build-frontend = "build[uv]"
