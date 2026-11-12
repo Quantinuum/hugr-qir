@@ -60,7 +60,7 @@ def phase_estimation[n: nat](
     # Add 2^n - 1 controlled unitaries sequentially
     for n_index in range(n):
         control_index: int = n - n_index - 1
-        #for _ in range(1 << n_index):
+        # for _ in range(1 << n_index):
         for _ in range(2**n_index):
             with control(estimation_qubits[control_index]):
                 u(state_qubits[0], state_qubits[1])
