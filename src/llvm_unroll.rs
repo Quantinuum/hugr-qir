@@ -3,15 +3,46 @@
 use std::sync::Once;
 
 use crate::control_flow::CycleFreeControlFlowGraph;
-use crate::inkwell::{llvm_sys::support::LLVMParseCommandLineOptions, module::Module};
-use anyhow::Result;
+use crate::inkwell::{
+    llvm_sys::support::LLVMParseCommandLineOptions, module::Module, passes::PassBuilderOptions,
+    targets::TargetMachine,
+};
+use anyhow::{Result, anyhow};
+
+const MAX_LOOP_UNROLL_ROUNDS: usize = 16;
+
+/// Unroll static loops until none remain, cleanup stops changing the IR, or the
+/// round limit is reached. Remaining loops must be checked with `ensure_no_loops`.
+pub(crate) fn unroll_static_loops(
+    module: &Module<'_>,
+    target: &TargetMachine,
+    max_loop_unroll: usize,
+) -> Result<()> {
+    configure_forced_unrolling();
+    let loop_cleanup = format!(
+        "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={max_loop_unroll}>,sroa<modify-cfg>,instcombine<max-iterations=2>,simplifycfg)"
+    );
+    // Unrolling an outer loop can make an inner loop's trip count constant.
+    // Repeat cleanup until all loops disappear or the pipeline stops changing
+    // the IR, with a bound for modules that keep changing without converging.
+    for _ in 0..MAX_LOOP_UNROLL_ROUNDS {
+        let before = module.print_to_string();
+        module
+            .run_passes(&loop_cleanup, target, PassBuilderOptions::create())
+            .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
+        if ensure_no_loops(module, max_loop_unroll).is_ok() || module.print_to_string() == before {
+            break;
+        }
+    }
+    Ok(())
+}
 
 /// Remove LLVM's profitability ceiling for the dedicated QIR unroll pass.
 ///
 /// The pass-local `full-unroll-max` setting remains the hard trip-count limit.
 /// This process-wide LLVM option only prevents code-size heuristics from
 /// rejecting a loop whose statically-known trip count is within that limit.
-pub(crate) fn configure_forced_unrolling() {
+fn configure_forced_unrolling() {
     static CONFIGURE: Once = Once::new();
     CONFIGURE.call_once(|| unsafe {
         let program = c"hugr-qir";
