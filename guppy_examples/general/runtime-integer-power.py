@@ -1,4 +1,4 @@
-"""Integer power with a shot-dependent exponent that cannot be unrolled."""
+"""Integer power with a shot-dependent runtime exponent."""
 
 from guppylang import guppy, qubit
 from guppylang.std.builtins import nat, output

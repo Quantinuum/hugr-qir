@@ -28,6 +28,7 @@
   "rng-quantum-jobid-1": "8816b476a27a6fbbb93e712d48600c974a19a03eea83168fe2897ad961afdfbc",
   "rng-quantum-rng-1": "789f911a490b1ce284ae35f9fe43a724f2a8ff6641130cfc365b1e51b93f74cb",
   "rng-quantum-rng-2": "7c126900d5319e50644ef29ae470b59aa6b19306ec0f167cfe3bd00bec763f4c",
+  "runtime-integer-power": "edd3fdd5c79b3edbe93f1dc1ea3dc14e6d606a713ef734acb8b6051b93537621",
   "toric_code": "7c2049b0459c1f436edb1c80390215503412c6ddfed9283e3e34e73c529e393b",
   "toric_code_comptime": "0529c3fc64b911043752a45022d8d86e7bed0fe0171208732028d666a1139ed3",
   "uses-discard": "093296d732fab345565cee6770a49a4d1d8a36fb429f4df52ef1e2e27415e7dc",
