@@ -54,7 +54,17 @@ fn unroll_static_loops_with_round_limit(
         module
             .run_passes(&loop_cleanup, target, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
-        lower_constant_int_powers(module)?;
+        if lower_constant_int_powers(module)? > 0 {
+            // Remove branches made constant by specialization before resource
+            // IDs are assigned, even when there are no loops left to unroll.
+            module
+                .run_passes(
+                    "function(instcombine<max-iterations=2>,simplifycfg)",
+                    target,
+                    PassBuilderOptions::create(),
+                )
+                .map_err(|e| anyhow!("Failed to simplify specialized integer powers: {e}"))?;
+        }
         if ensure_no_loops(module, max_loop_unroll).is_ok() {
             return Ok(());
         }

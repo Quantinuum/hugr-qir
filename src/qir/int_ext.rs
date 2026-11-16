@@ -391,6 +391,52 @@ mod tests {
     }
 
     #[test]
+    fn simplifies_branches_after_exponent_becomes_constant() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let ir = c"
+            declare i64 @__hugr_qir_ipow_i64(i64, i64) \"hugr-qir.ipow\"=\"\"
+            declare void @unreachable_effect()
+            define void @main() {
+            entry:
+                %exponent = add i64 1, 1
+                %power = call i64 @__hugr_qir_ipow_i64(i64 2, i64 %exponent)
+                %wrong = icmp ne i64 %power, 4
+                br i1 %wrong, label %bad, label %exit
+            bad:
+                call void @unreachable_effect()
+                br label %exit
+            exit:
+                ret void
+            }
+        ";
+        let module = context
+            .create_module_from_ir(
+                crate::inkwell::memory_buffer::MemoryBuffer::create_from_memory_range_copy(
+                    ir.to_bytes_with_nul(),
+                    "constant_power_branch",
+                ),
+            )
+            .unwrap();
+        CompileTarget::Native.initialise();
+        let target = CompileTarget::Native.machine(OptimizationLevel::Default);
+
+        crate::llvm_unroll::unroll_static_loops(&module, &target, 1).unwrap();
+
+        let function = module.get_function("main").unwrap();
+        assert_eq!(function.count_basic_blocks(), 1);
+        assert_eq!(
+            function
+                .get_first_basic_block()
+                .unwrap()
+                .get_instructions()
+                .count(),
+            1
+        );
+        module.verify().unwrap();
+    }
+
+    #[test]
     fn runtime_power_bounds_still_require_static_loop_counts() {
         let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
