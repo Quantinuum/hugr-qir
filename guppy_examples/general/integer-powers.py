@@ -4,8 +4,8 @@ from guppylang import array, guppy, qubit
 from guppylang.std.builtins import output, panic
 from guppylang.std.quantum import measure
 
-combos = [(i, j) for i in range(11) for j in range(i, 11)]
-combos.extend([(-i, j) for i in range(1, 11) for j in range(i, 11)])
+combos = [(i, j) for i in range(11) for j in range(11)]
+combos.extend([(-i, j) for i in range(1, 11) for j in range(11)])
 test_ints = [int(i**j) for i, j in combos]
 
 
