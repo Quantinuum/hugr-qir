@@ -25,14 +25,19 @@ pub(crate) fn unroll_static_loops(
     // Unrolling an outer loop can make an inner loop's trip count constant.
     // Repeat cleanup until all loops disappear or the pipeline stops changing
     // the IR, with a bound for modules that keep changing without converging.
+    let mut previous_ir = None;
     for _ in 0..MAX_LOOP_UNROLL_ROUNDS {
-        let before = module.print_to_string();
         module
             .run_passes(&loop_cleanup, target, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
-        if ensure_no_loops(module, max_loop_unroll).is_ok() || module.print_to_string() == before {
+        if ensure_no_loops(module, max_loop_unroll).is_ok() {
             break;
         }
+        let current_ir = module.print_to_string();
+        if previous_ir.as_ref() == Some(&current_ir) {
+            break;
+        }
+        previous_ir = Some(current_ir);
     }
     Ok(())
 }
