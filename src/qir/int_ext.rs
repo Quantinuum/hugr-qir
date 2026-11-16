@@ -1,6 +1,6 @@
 //! LLVM lowering for integer arithmetic operations.
 
-use anyhow::Result;
+use anyhow::{Result, ensure};
 use hugr::{HugrView, Node, ops::ExtensionOp, std_extensions::arithmetic::int_ops};
 use hugr_llvm::{
     CodegenExtension, CodegenExtsBuilder,
@@ -65,6 +65,12 @@ fn build_int_pow<'c>(
     exponent: IntValue<'c>,
 ) -> Result<IntValue<'c>> {
     let ty = base.get_type();
+    ensure!(
+        ty == exponent.get_type(),
+        "Integer power operands must have matching widths (base: {}, exponent: {})",
+        ty.get_bit_width(),
+        exponent.get_type().get_bit_width()
+    );
     let one = ty.const_int(1, false);
     let zero = ty.const_zero();
     let entry = builder.get_insert_block().unwrap();
@@ -104,6 +110,33 @@ mod tests {
         inkwell::{OptimizationLevel, context::Context},
         target::CompileTarget,
     };
+
+    #[test]
+    fn rejects_mismatched_operand_widths_before_modifying_ir() {
+        let _guard = crate::test::LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let module = context.create_module("mismatched_integer_power");
+        let builder = context.create_builder();
+        let function = module.add_function("power", context.void_type().fn_type(&[], false), None);
+        let entry = context.append_basic_block(function, "entry");
+        builder.position_at_end(entry);
+
+        let error = build_int_pow(
+            &builder,
+            context.i64_type().const_int(2, false),
+            context.i32_type().const_int(3, false),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "Integer power operands must have matching widths (base: 64, exponent: 32)"
+        );
+        assert_eq!(function.count_basic_blocks(), 1);
+        assert_eq!(entry.get_instructions().count(), 0);
+        builder.build_return(None).unwrap();
+        module.verify().unwrap();
+    }
 
     #[test]
     fn integer_powers_match_wrapping_arithmetic() {

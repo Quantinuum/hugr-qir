@@ -119,6 +119,8 @@ impl CompileArgs {
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
             .add_default_int_extensions()
+            // Override ipow after registering the default integer handlers.
+            .add_extension(IntOpOverrideCodegenExtension)
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
@@ -127,7 +129,6 @@ impl CompileArgs {
             .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
             .add_extension(QirCodegenExtension)
-            .add_extension(IntOpOverrideCodegenExtension)
             .add_extension(RandomCodegenExtension)
             .add_extension(UtilsCodegenExtension)
             .add_extension(wasm_cg)
