@@ -8,6 +8,7 @@ use crate::inkwell::{
     llvm_sys::support::LLVMParseCommandLineOptions, module::Module, passes::PassBuilderOptions,
     targets::TargetMachine,
 };
+use crate::qir::int_ext::{lower_constant_int_powers, lower_remaining_int_powers};
 use anyhow::{Result, anyhow};
 
 const MAX_LOOP_UNROLL_ROUNDS: usize = 16;
@@ -20,7 +21,18 @@ pub(crate) fn unroll_static_loops(
     target: &TargetMachine,
     max_loop_unroll: usize,
 ) -> Result<()> {
-    unroll_static_loops_with_round_limit(module, target, max_loop_unroll, MAX_LOOP_UNROLL_ROUNDS)
+    unroll_static_loops_with_round_limit(module, target, max_loop_unroll, MAX_LOOP_UNROLL_ROUNDS)?;
+    if lower_remaining_int_powers(module)? > 0 {
+        // Expansion can reveal constant bounds even for a runtime exponent,
+        // for example when the base is one. Clean up before rejecting loops.
+        unroll_static_loops_with_round_limit(
+            module,
+            target,
+            max_loop_unroll,
+            MAX_LOOP_UNROLL_ROUNDS,
+        )?;
+    }
+    Ok(())
 }
 
 fn unroll_static_loops_with_round_limit(
@@ -37,10 +49,12 @@ fn unroll_static_loops_with_round_limit(
     // Repeat cleanup until all loops disappear or the pipeline stops changing
     // the IR, with a bound for modules that keep changing without converging.
     let mut previous_ir = None;
+    lower_constant_int_powers(module)?;
     for _ in 0..max_rounds {
         module
             .run_passes(&loop_cleanup, target, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
+        lower_constant_int_powers(module)?;
         if ensure_no_loops(module, max_loop_unroll).is_ok() {
             return Ok(());
         }
