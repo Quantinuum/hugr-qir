@@ -341,8 +341,19 @@ impl CompileArgs {
         normalize_block_names(&module);
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
+        cleanup_module_llvm(&module, &target)?;
         Ok(module)
     }
+}
+
+fn cleanup_module_llvm(module: &Module, target: &TargetMachine) -> Result<()> {
+    module
+        .run_passes(
+            "function(dce),strip-dead-prototypes",
+            target,
+            PassBuilderOptions::create(),
+        )
+        .map_err(|e| anyhow!("Failed to run final LLVM cleanup: {e}"))
 }
 
 /// Require at least one logical result and a unique user tag for each result.
