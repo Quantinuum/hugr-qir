@@ -3164,6 +3164,7 @@ mod test {
     use super::*;
     use crate::inkwell::context::Context;
     use crate::inkwell::memory_buffer::MemoryBuffer;
+    use crate::test::load_module_from_ir;
     use insta::assert_snapshot;
     use rstest::rstest;
     use std::path::PathBuf;
@@ -3182,22 +3183,6 @@ mod test {
         context
             .create_module_from_ir(buffer)
             .map_err(|err| anyhow!("Failed to parse fixture {name}: {}", err.to_string()))
-    }
-
-    fn load_module_from_ir<'ctx>(
-        context: &'ctx Context,
-        name: &str,
-        ir: &str,
-    ) -> Result<Module<'ctx>> {
-        // Inkwell requires the buffer to be nul-terminated.
-        let mut ir_bytes = ir.as_bytes().to_vec();
-        if ir_bytes.last() != Some(&0) {
-            ir_bytes.push(0);
-        }
-        let buffer = MemoryBuffer::create_from_memory_range_copy(&ir_bytes, name);
-        context
-            .create_module_from_ir(buffer)
-            .map_err(|err| anyhow!("Failed to parse inline IR {name}: {}", err.to_string()))
     }
 
     #[derive(Clone, Copy)]

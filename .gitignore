@@ -40,3 +40,7 @@ python/hqs_compiler_tests
 
 # ai
 .agents
+
+# local benchmarks and helpers
+/.benchmarks
+/.helpers
