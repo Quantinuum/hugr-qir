@@ -24,9 +24,9 @@ alloca_block:
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 5 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 5 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
-  %"39_2.0" = zext i1 %0 to i64
+  %"41_2.0" = zext i1 %0 to i64
   %2 = select i1 %0, i64 2, i64 1
-  %"55_2.0" = select i1 %1, i64 %2, i64 %"39_2.0"
+  %"57_2.0" = select i1 %1, i64 %2, i64 %"41_2.0"
   br i1 %1, label %alloca_block.dup1006, label %alloca_block.dup1008
 
 alloca_block.dup1006:                             ; preds = %alloca_block
@@ -112,7 +112,7 @@ bb0:                                              ; preds = %alloca_block.dup102
   %phi.edge1027 = phi i1 [ %phi.edge1031, %bb ], [ %5, %alloca_block.dup1024 ], [ %13, %alloca_block.dup1025 ]
   %phi.edge1028 = phi i1 [ %phi.edge1032, %bb ], [ %4, %alloca_block.dup1024 ], [ %12, %alloca_block.dup1025 ]
   %phi.edge1029 = phi i1 [ %phi.edge1033, %bb ], [ %3, %alloca_block.dup1024 ], [ %11, %alloca_block.dup1025 ]
-  br i1 %1, label %bb1, label %cond_exit_163
+  br i1 %1, label %bb1, label %cond_exit_165
 
 bb1:                                              ; preds = %bb0
   %phi.calluser.edge996 = phi i1 [ %phi.edge, %bb0 ]
@@ -120,42 +120,42 @@ bb1:                                              ; preds = %bb0
   %phi.calluser.edge972 = phi i1 [ %phi.edge1028, %bb0 ]
   %phi.calluser.edge960 = phi i1 [ %phi.edge1029, %bb0 ]
   tail call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr nonnull inttoptr (i64 1 to ptr))
-  br label %cond_exit_163
+  br label %cond_exit_165
 
-cond_exit_163:                                    ; preds = %bb0, %bb1
+cond_exit_165:                                    ; preds = %bb0, %bb1
   %phi.calluser.edge993 = phi i1 [ %phi.edge, %bb0 ], [ %phi.calluser.edge996, %bb1 ]
   %phi.calluser.edge981 = phi i1 [ %phi.edge1027, %bb0 ], [ %phi.calluser.edge984, %bb1 ]
   %phi.calluser.edge969 = phi i1 [ %phi.edge1028, %bb0 ], [ %phi.calluser.edge972, %bb1 ]
   %phi.calluser.edge957 = phi i1 [ %phi.edge1029, %bb0 ], [ %phi.calluser.edge960, %bb1 ]
-  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 6 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 6 to ptr))
   %19 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 6 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 7 to ptr))
   %20 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 7 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 8 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 8 to ptr))
   %21 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 8 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 9 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 9 to ptr))
   %22 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 9 to ptr))
-  %. = zext i1 %22 to i64
-  %"0617.0" = select i1 %21, i64 2, i64 0
-  %"0631.0" = zext i1 %21 to i64
-  %23 = add nuw nsw i64 %"55_2.0", %"0631.0"
-  %"0661.0" = select i1 %20, i64 4, i64 0
-  %"0676.0" = select i1 %19, i64 8, i64 0
-  %24 = or disjoint i64 %"0661.0", %"0676.0"
-  %25 = or disjoint i64 %24, %"0617.0"
-  %26 = or disjoint i64 %25, %.
+  %. = zext i1 %19 to i64
+  %"0617.0" = select i1 %20, i64 2, i64 0
+  %"0631.0" = zext i1 %20 to i64
+  %23 = add nuw nsw i64 %"57_2.0", %"0631.0"
+  %"0661.0" = select i1 %21, i64 4, i64 0
+  %"0676.0" = select i1 %22, i64 8, i64 0
+  %24 = or disjoint i64 %"0617.0", %.
+  %25 = or disjoint i64 %24, %"0661.0"
+  %26 = or disjoint i64 %25, %"0676.0"
   %Pivot949 = icmp slt i64 %23, 1
   br i1 %Pivot949, label %.sink.split.dup1035, label %NodeBlock
 
-.sink.split.dup1035:                              ; preds = %cond_exit_163
+.sink.split.dup1035:                              ; preds = %cond_exit_165
   call void @__quantum__qis__phasedx__body(double 0x400921FB54442D18, double 0.000000e+00, ptr inttoptr (i64 6 to ptr))
   br label %bb2
 
-NodeBlock:                                        ; preds = %cond_exit_163
-  %phi.calluser.edge991 = phi i1 [ %phi.calluser.edge993, %cond_exit_163 ]
-  %phi.calluser.edge979 = phi i1 [ %phi.calluser.edge981, %cond_exit_163 ]
-  %phi.calluser.edge967 = phi i1 [ %phi.calluser.edge969, %cond_exit_163 ]
-  %phi.calluser.edge955 = phi i1 [ %phi.calluser.edge957, %cond_exit_163 ]
+NodeBlock:                                        ; preds = %cond_exit_165
+  %phi.calluser.edge991 = phi i1 [ %phi.calluser.edge993, %cond_exit_165 ]
+  %phi.calluser.edge979 = phi i1 [ %phi.calluser.edge981, %cond_exit_165 ]
+  %phi.calluser.edge967 = phi i1 [ %phi.calluser.edge969, %cond_exit_165 ]
+  %phi.calluser.edge955 = phi i1 [ %phi.calluser.edge957, %cond_exit_165 ]
   %Pivot = icmp slt i64 %23, 2
   br i1 %Pivot, label %.sink.split.dup1034, label %LeafBlock
 
@@ -189,9 +189,9 @@ bb2:                                              ; preds = %.sink.split.dup1035
   %phi.edge1037 = phi i1 [ %phi.calluser.edge977, %.sink.split.dup ], [ %phi.calluser.edge985, %.sink.split.dup1034 ], [ %phi.calluser.edge981, %.sink.split.dup1035 ], [ %phi.calluser.edge978, %LeafBlock ]
   %phi.edge1038 = phi i1 [ %phi.calluser.edge965, %.sink.split.dup ], [ %phi.calluser.edge973, %.sink.split.dup1034 ], [ %phi.calluser.edge969, %.sink.split.dup1035 ], [ %phi.calluser.edge966, %LeafBlock ]
   %phi.edge1039 = phi i1 [ %phi.calluser.edge953, %.sink.split.dup ], [ %phi.calluser.edge961, %.sink.split.dup1034 ], [ %phi.calluser.edge957, %.sink.split.dup1035 ], [ %phi.calluser.edge954, %LeafBlock ]
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
   %27 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 7 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 6 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
   %28 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 11 to ptr))
   br label %__prepare_module_record_output_final
 
@@ -202,10 +202,10 @@ __prepare_module_record_output_final:             ; preds = %bb2
   call void @__quantum__rt__bool_record_output(i1 %phi.edge1037, ptr @3)
   call void @__quantum__rt__bool_record_output(i1 %phi.edge1038, ptr @4)
   call void @__quantum__rt__bool_record_output(i1 %phi.edge1039, ptr @5)
-  call void @__quantum__rt__int_record_output(i64 %"55_2.0", ptr @6)
+  call void @__quantum__rt__int_record_output(i64 %"57_2.0", ptr @6)
   call void @__quantum__rt__int_record_output(i64 %26, ptr @7)
-  call void @__quantum__rt__bool_record_output(i1 %27, ptr @8)
-  call void @__quantum__rt__bool_record_output(i1 %28, ptr @9)
+  call void @__quantum__rt__bool_record_output(i1 %28, ptr @8)
+  call void @__quantum__rt__bool_record_output(i1 %27, ptr @9)
   ret void
 }
 

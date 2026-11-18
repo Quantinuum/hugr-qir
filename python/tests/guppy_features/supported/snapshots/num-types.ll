@@ -16,25 +16,25 @@ define void @__hugr__.guppy_example_mod.main.1() local_unnamed_addr #0 {
 alloca_block:
   tail call void @__quantum__rt__initialize(ptr null)
   tail call void @__quantum__qis__rz__body(double 0x3FF41B2F769CF0E0, ptr null)
-  tail call void @__quantum__qis__mz__body(ptr null, ptr null)
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 2 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 2 to ptr))
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 2 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 3 to ptr), ptr nonnull inttoptr (i64 3 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 3 to ptr))
   %3 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 3 to ptr))
-  %"053.0" = zext i1 %3 to i64
-  %"068.0" = select i1 %2, i64 2, i64 0
-  %"083.0" = select i1 %1, i64 4, i64 0
-  %"098.0" = select i1 %0, i64 8, i64 0
-  %4 = or disjoint i64 %"083.0", %"098.0"
-  %5 = or disjoint i64 %4, %"068.0"
-  %6 = or disjoint i64 %5, %"053.0"
-  tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
-  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
-  tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @2)
-  tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @3)
+  %"055.0" = zext i1 %0 to i64
+  %"070.0" = select i1 %1, i64 2, i64 0
+  %"085.0" = select i1 %2, i64 4, i64 0
+  %"0100.0" = select i1 %3, i64 8, i64 0
+  %4 = or disjoint i64 %"070.0", %"055.0"
+  %5 = or disjoint i64 %4, %"085.0"
+  %6 = or disjoint i64 %5, %"0100.0"
+  tail call void @__quantum__rt__bool_record_output(i1 %3, ptr nonnull @0)
+  tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @1)
+  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @2)
+  tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @3)
   tail call void @__quantum__rt__int_record_output(i64 %6, ptr nonnull @4)
   tail call void @__quantum__rt__int_record_output(i64 10, ptr nonnull @5)
   ret void
