@@ -20,6 +20,29 @@ def large_constant_power() -> None:
     output("q", measure(qubit()).read())
 
 
+@guppy
+@no_type_check
+def equivalent_powers_with_dead_measurement() -> None:
+    value = get_current_shot()
+    if value**2 != value * value:
+        _ = measure(qubit()).read()
+    output("q", measure(qubit()).read())
+
+
+@pytest.mark.parametrize("opt_level", opt_level_choices())
+def test_power_identity_does_not_inflate_resource_metadata(opt_level: str) -> None:
+    qir = hugr_to_qir(
+        equivalent_powers_with_dead_measurement.compile(),
+        opt_level=opt_level,
+        validate_qir=True,
+        output_format=OutputFormat.LLVM_IR,
+    )
+
+    assert isinstance(qir, str)
+    assert '"required_num_qubits"="1"' in qir
+    assert '"required_num_results"="1"' in qir
+
+
 @pytest.mark.parametrize("target", compile_target_choices())
 @pytest.mark.parametrize("opt_level", opt_level_choices())
 @pytest.mark.parametrize("exponent_kind", ["runtime", "large-constant"])

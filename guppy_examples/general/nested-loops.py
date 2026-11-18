@@ -1,7 +1,5 @@
 """Ten nested loops with bounds that depend on the enclosing loop indices."""
 
-import sys
-
 from guppylang import guppy
 from guppylang.std.builtins import output
 from guppylang.std.quantum import measure, qubit, x
@@ -26,7 +24,3 @@ def main() -> None:
 
     output("iterations", iterations)
     output("q", measure(q).read())
-
-
-if __name__ == "__main__":
-    sys.stdout.buffer.write(main.compile().to_bytes())

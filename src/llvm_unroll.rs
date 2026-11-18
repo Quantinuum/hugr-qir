@@ -69,12 +69,12 @@ fn specialize_and_unroll(
     lower_constant_int_powers(module)?;
     for _ in 0..max_rounds {
         unroll_static_loops_once(module, target, max_loop_unroll)?;
-        if lower_constant_int_powers(module)? > 0 {
+        while lower_constant_int_powers(module)? > 0 {
             // Remove branches made constant by specialization before resource
             // IDs are assigned, even when there are no loops left to unroll.
             module
                 .run_passes(
-                    "function(instcombine<max-iterations=2>,simplifycfg)",
+                    "function(instcombine<max-iterations=2>,early-cse,simplifycfg)",
                     target,
                     PassBuilderOptions::create(),
                 )
@@ -104,7 +104,7 @@ fn unroll_static_loops_once(
 ) -> Result<()> {
     configure_forced_unrolling();
     let loop_cleanup = format!(
-        "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={max_loop_unroll}>,sroa<modify-cfg>,instcombine<max-iterations=2>,simplifycfg)"
+        "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={max_loop_unroll}>,sroa<modify-cfg>,instcombine<max-iterations=2>,early-cse,simplifycfg)"
     );
     module
         .run_passes(&loop_cleanup, target, PassBuilderOptions::create())
@@ -334,6 +334,76 @@ mod tests {
     }
 
     #[test]
+    fn specialized_power_identities_remove_dead_resource_allocations() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let target = native_target_machine();
+        for exponent in ["2", "%exponent"] {
+            let ir = format!(
+                r#"
+                declare i64 @__hugr_qir_ipow_i64(i64, i64) "hugr-qir.ipow"=""
+                declare ptr @__quantum__rt__qubit_allocate()
+                declare ptr @__QIR__CONV_Qubit_TO_Result(ptr)
+                define void @main(i64 %x) {{
+                entry:
+                    %exponent = add i64 1, 1
+                    %square = mul i64 %x, %x
+                    %power = call i64 @__hugr_qir_ipow_i64(i64 %x, i64 {exponent})
+                    %wrong = icmp ne i64 %square, %power
+                    br i1 %wrong, label %bad, label %exit
+                bad:
+                    %q = call ptr @__quantum__rt__qubit_allocate()
+                    %r = call ptr @__QIR__CONV_Qubit_TO_Result(ptr %q)
+                    br label %exit
+                exit:
+                    ret void
+                }}
+                "#
+            );
+            let module = load_module_from_ir(&context, "power_identity", &ir).unwrap();
+
+            lower_powers_and_unroll_loops(&module, &target, 1).unwrap();
+
+            for resource in [
+                "__quantum__rt__qubit_allocate",
+                "__QIR__CONV_Qubit_TO_Result",
+            ] {
+                assert_eq!(
+                    crate::replace_int_opque_pointer(&module, resource).unwrap(),
+                    0
+                );
+            }
+            module.verify().unwrap();
+        }
+    }
+
+    #[test]
+    fn specializes_chained_powers_before_runtime_expansion() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let context = Context::create();
+        let target = native_target_machine();
+        let ir = r#"
+            declare i64 @__hugr_qir_ipow_i64(i64, i64) "hugr-qir.ipow"=""
+            define i64 @main(i64 %x) {
+            entry:
+                %exponent = add i64 1, 1
+                %first = call i64 @__hugr_qir_ipow_i64(i64 2, i64 %exponent)
+                %next = add i64 %first, 1
+                %second = call i64 @__hugr_qir_ipow_i64(i64 2, i64 %next)
+                %last = add i64 %second, 1
+                %third = call i64 @__hugr_qir_ipow_i64(i64 %x, i64 %last)
+                ret i64 %third
+            }
+        "#;
+        let module = load_module_from_ir(&context, "chained_powers", ir).unwrap();
+
+        specialize_and_unroll(&module, &target, 1, 1, "test").unwrap();
+
+        assert_eq!(main_calls(&module), 0);
+        module.verify().unwrap();
+    }
+
+    #[test]
     fn runtime_power_bounds_still_require_static_loop_counts() {
         let _guard = LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
@@ -373,6 +443,7 @@ mod tests {
 
     #[test]
     fn rejects_natural_loop_without_array_storage() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = context.create_module("loop_unroll_metadata");
         let builder = context.create_builder();
@@ -399,6 +470,7 @@ mod tests {
 
     #[test]
     fn accepts_acyclic_control_flow() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
         let context = Context::create();
         let module = context.create_module("no_array_loop");
         let builder = context.create_builder();
