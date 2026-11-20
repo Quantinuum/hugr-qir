@@ -856,9 +856,9 @@ version = "0.30.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12cda643566bf325b7ed21e9a762bc6cf80c03216de61060ec0514f61c254b34"
 dependencies = [
- "hugr-core",
- "hugr-llvm",
- "hugr-model",
+ "hugr-core 0.30.3",
+ "hugr-llvm 0.30.3",
+ "hugr-model 0.30.3",
 ]
 
 [[package]]
@@ -896,7 +896,7 @@ dependencies = [
  "downcast-rs",
  "enum_dispatch",
  "html-escape",
- "hugr-model",
+ "hugr-model 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "ordered-float",
@@ -922,6 +922,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "hugr-core"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5fe0c64ed3e244b7da948ac862aae309ed9aa0b04be999d4fe87a6ccd89482c"
+dependencies = [
+ "base64 0.23.1",
+ "delegate",
+ "derive_more 2.1.1",
+ "downcast-rs",
+ "enum_dispatch",
+ "html-escape",
+ "hugr-model 0.31.0",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
+ "ordered-float",
+ "pastey",
+ "petgraph",
+ "portgraph",
+ "regex",
+ "rustc-hash",
+ "schemars 1.2.2",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "smallvec",
+ "smol_str",
+ "static_assertions",
+ "strum",
+ "thiserror 2.0.20",
+ "tracing",
+ "typetag",
+]
+
+[[package]]
 name = "hugr-llvm"
 version = "0.30.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -931,7 +966,24 @@ dependencies = [
  "cc",
  "delegate",
  "derive_more 2.1.1",
- "hugr-core",
+ "hugr-core 0.30.3",
+ "inkwell",
+ "itertools 0.15.0",
+ "petgraph",
+ "strum",
+]
+
+[[package]]
+name = "hugr-llvm"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57961ca4c2dcf4f2981afc1c661dc9cb8bfe4effafbf541d26ccb47c0281116d"
+dependencies = [
+ "anyhow",
+ "cc",
+ "delegate",
+ "derive_more 2.1.1",
+ "hugr-core 0.31.0",
  "inkwell",
  "insta",
  "itertools 0.15.0",
@@ -965,6 +1017,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "hugr-model"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87cec9261948f29ae6c517175088a2ad1e06f317282de1350f4cffdd9fe3002f"
+dependencies = [
+ "base64 0.23.1",
+ "bumpalo",
+ "capnp",
+ "derive_more 2.1.1",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
+ "ordered-float",
+ "pest",
+ "pest_derive",
+ "pretty",
+ "rustc-hash",
+ "semver",
+ "smol_str",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "hugr-qir"
 version = "0.4.0"
 dependencies = [
@@ -974,8 +1048,8 @@ dependencies = [
  "clio",
  "hugr",
  "hugr-cli",
- "hugr-core",
- "hugr-llvm",
+ "hugr-core 0.30.3",
+ "hugr-llvm 0.31.0",
  "insta",
  "itertools 0.15.0",
  "lazy_static",
@@ -2244,7 +2318,7 @@ dependencies = [
  "derive_more 2.1.1",
  "fxhash",
  "hugr",
- "hugr-core",
+ "hugr-core 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "lazy_static",
@@ -2293,7 +2367,7 @@ dependencies = [
  "derive_more 2.1.1",
  "hugr",
  "hugr-cli",
- "hugr-core",
+ "hugr-core 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "lazy_static",
