@@ -35,12 +35,12 @@ alloca_block:
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr null)
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__qis__mz__body(ptr null, ptr null)
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 1 to ptr))
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
+  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @0)
+  tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @1)
   ret void
 }
 

@@ -19,10 +19,10 @@ alloca_block:
   tail call void @__quantum__qis__barrier4__body(ptr null, ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 2 to ptr), ptr nonnull inttoptr (i64 3 to ptr))
   tail call void @__quantum__qis__mz__body(ptr null, ptr null)
   %0 = tail call i1 @__quantum__rt__read_result(ptr null)
-  br i1 %0, label %cond_exit_163, label %bb
+  br i1 %0, label %cond_exit_165, label %bb
 
-__barray_check_bounds.exit917:                    ; preds = %cond_exit_163, %bb
-  %"1.0" = phi i1 [ %1, %bb ], [ false, %cond_exit_163 ]
+__barray_check_bounds.exit917:                    ; preds = %cond_exit_165, %bb
+  %"1.0" = phi i1 [ %1, %bb ], [ false, %cond_exit_165 ]
   tail call void @__quantum__rt__bool_record_output(i1 %0, ptr nonnull @0)
   tail call void @__quantum__rt__bool_record_output(i1 %"1.0", ptr nonnull @1)
   ret void
@@ -32,7 +32,7 @@ bb:                                               ; preds = %alloca_block
   %1 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
   br label %__barray_check_bounds.exit917
 
-cond_exit_163:                                    ; preds = %alloca_block
+cond_exit_165:                                    ; preds = %alloca_block
   tail call void @__quantum__qis__phasedx__body(double 0x3FF921FB54442D18, double 0xBFF921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__rz__body(double 0x400921FB54442D18, ptr nonnull inttoptr (i64 1 to ptr))
   tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 2 to ptr))

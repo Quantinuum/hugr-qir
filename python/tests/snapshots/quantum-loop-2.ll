@@ -107,12 +107,12 @@ bb7:                                              ; preds = %cond_exit_47.8
   br label %cond_exit_47.9
 
 cond_exit_47.9:                                   ; preds = %bb7, %cond_exit_47.8
-  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 10 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 10 to ptr))
   %10 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 10 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %10, ptr nonnull @0)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 11 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 11 to ptr))
   %11 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 11 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %11, ptr nonnull @1)
+  tail call void @__quantum__rt__bool_record_output(i1 %11, ptr nonnull @0)
+  tail call void @__quantum__rt__bool_record_output(i1 %10, ptr nonnull @1)
   ret void
 
 bb8:                                              ; preds = %alloca_block

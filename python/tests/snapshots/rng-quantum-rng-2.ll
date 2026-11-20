@@ -17,12 +17,12 @@ alloca_block:
   br i1 %0, label %bb0, label %bb
 
 bb:                                               ; preds = %alloca_block, %bb0
-  tail call void @__quantum__qis__mz__body(ptr null, ptr null)
+  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr null)
   %1 = tail call i1 @__quantum__rt__read_result(ptr null)
-  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @0)
-  tail call void @__quantum__qis__mz__body(ptr nonnull inttoptr (i64 1 to ptr), ptr nonnull inttoptr (i64 1 to ptr))
+  tail call void @__quantum__qis__mz__body(ptr null, ptr nonnull inttoptr (i64 1 to ptr))
   %2 = tail call i1 @__quantum__rt__read_result(ptr nonnull inttoptr (i64 1 to ptr))
-  tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @1)
+  tail call void @__quantum__rt__bool_record_output(i1 %2, ptr nonnull @0)
+  tail call void @__quantum__rt__bool_record_output(i1 %1, ptr nonnull @1)
   ret void
 
 bb0:                                              ; preds = %alloca_block
