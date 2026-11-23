@@ -5,8 +5,8 @@
 //! allocations, so use temporary stack storage instead. LLVM's loop unrolling,
 //! SROA, and mem2reg passes can then scalarize statically-addressed arrays.
 
-use anyhow::{Result, anyhow};
-use hugr::{HugrView, Node};
+use anyhow::{Result, anyhow, ensure};
+use hugr::{HugrView, Node, std_extensions::collections::static_array::StaticArrayValue};
 use hugr_llvm::{
     emit::EmitFuncContext,
     extension::PreludeCodegen,
@@ -15,16 +15,43 @@ use hugr_llvm::{
         borrow_array::{
             BorrowArrayCodegen, build_none_borrowed_check, decompose_barray_fat_pointer,
         },
+        static_array::{DefaultStaticArrayCodegen, StaticArrayCodegen},
     },
     inkwell::{
+        llvm_sys::core::LLVMIsAGlobalVariable,
+        module::Linkage,
         types::BasicTypeEnum,
-        values::{BasicValue, BasicValueEnum, IntValue, PointerValue},
+        values::{AsValueRef, BasicValue, BasicValueEnum, GlobalValue, IntValue, PointerValue},
     },
 };
 
 /// Maximum ABI alignment required by the scalar element types supported in QIR
 /// arrays (pointers, 64-bit integers, and doubles).
 const ARRAY_STORAGE_ALIGNMENT: u32 = 8;
+
+/// Emits static-array constants as private storage owned by the QIR module.
+#[derive(Clone, Debug, Default)]
+pub struct QirStaticArrayCodegen;
+
+impl StaticArrayCodegen for QirStaticArrayCodegen {
+    fn static_array_value<'c, H: HugrView<Node = Node>>(
+        &self,
+        context: &mut EmitFuncContext<'c, '_, H>,
+        value: &StaticArrayValue,
+    ) -> Result<BasicValueEnum<'c>> {
+        let array = DefaultStaticArrayCodegen.static_array_value(context, value)?;
+        // SAFETY: `LLVMIsAGlobalVariable` returns either null or its argument,
+        // which is a valid value reference owned by the current module.
+        let global = unsafe { LLVMIsAGlobalVariable(array.as_value_ref()) };
+        ensure!(
+            !global.is_null(),
+            "Static-array constant did not produce a global"
+        );
+        // SAFETY: The value was checked to be a global variable above.
+        unsafe { GlobalValue::new(global) }.set_linkage(Linkage::Private);
+        Ok(array)
+    }
+}
 
 fn allocate_array_storage<'c, H: HugrView<Node = Node>>(
     ctx: &mut EmitFuncContext<'c, '_, H>,
@@ -153,5 +180,82 @@ impl BorrowArrayCodegen for QirBorrowArrayCodegen {
         _ptr: PointerValue<'c>,
     ) -> Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::inkwell::context::Context;
+    use crate::test::{LLVM_TEST_LOCK, native_target_machine};
+    use hugr::builder::{Dataflow, DataflowHugr};
+    use hugr::extension::prelude::{ConstUsize, usize_t};
+    use hugr::llvm::{
+        emit::{EmitDebugInfo, EmitHugr, Namer, test::SimpleHugrConfig},
+        utils::fat::FatExt,
+    };
+    use hugr::ops::constant::CustomConst;
+
+    #[test]
+    fn static_array_storage_is_private_and_preserved_while_live() {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let value = StaticArrayValue::try_new(
+            "values",
+            usize_t(),
+            [3, 5, 8].map(|x| ConstUsize::new(x).into()),
+        )
+        .unwrap();
+        let hugr = SimpleHugrConfig::new()
+            .with_outs([value.get_type()])
+            .finish(|mut builder| {
+                let array = builder.add_load_value(value);
+                builder.finish_hugr_with_outputs([array]).unwrap()
+            });
+        let context = Context::create();
+        let module = EmitHugr::new(
+            &context,
+            context.create_module("static_array_storage"),
+            std::rc::Rc::new(Namer::default()),
+            crate::CompileArgs::default().codegen_extensions().into(),
+        )
+        .emit_module(hugr.fat_root().unwrap(), EmitDebugInfo::Exclude)
+        .unwrap()
+        .finish()
+        .0;
+        let function = module
+            .get_functions()
+            .find(|function| function.count_basic_blocks() > 0)
+            .unwrap();
+        function.set_linkage(Linkage::External);
+        let globals = module.get_globals().collect::<Vec<_>>();
+        assert_eq!(globals.len(), 1);
+        let global = globals[0];
+        assert_eq!(global.get_linkage(), Linkage::Private);
+        let name = global.get_name().to_str().unwrap().to_owned();
+        let i64_type = context.i64_type();
+        let expected = context.const_struct(
+            &[
+                i64_type.const_int(3, false).into(),
+                i64_type
+                    .const_array(&[3, 5, 8].map(|x| i64_type.const_int(x, false)))
+                    .into(),
+            ],
+            false,
+        );
+        assert_eq!(global.get_initializer(), Some(expected.into()));
+        let target = native_target_machine();
+
+        crate::cleanup_module_llvm(&module, &target).unwrap();
+
+        assert_eq!(
+            module.get_global(&name).unwrap().get_initializer(),
+            Some(expected.into())
+        );
+        module.verify().unwrap();
+
+        function.set_linkage(Linkage::Private);
+        crate::cleanup_module_llvm(&module, &target).unwrap();
+        assert!(module.get_global(&name).is_none());
+        module.verify().unwrap();
     }
 }

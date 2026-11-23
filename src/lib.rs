@@ -37,6 +37,7 @@ mod control_flow;
 pub mod devirtualize;
 pub mod known_nonnegative;
 mod llvm_unroll;
+mod lower_int_pow;
 pub mod lower_integer_division;
 pub mod lower_ssa_vars;
 pub mod qir;
@@ -47,7 +48,7 @@ pub mod validate_panic;
 use crate::cli::CliOptimizationLevel;
 use crate::devirtualize::DevirtualizeDirectCallsPass;
 use crate::known_nonnegative::RemoveKnownNonNegativeChecksPass;
-use crate::llvm_unroll::{configure_forced_unrolling, ensure_no_loops};
+use crate::llvm_unroll::{ensure_no_loops, lower_powers_and_unroll_loops};
 use crate::lower_integer_division::{
     lower_integer_division, validate_integer_division, validate_no_zero_divisors,
 };
@@ -55,7 +56,8 @@ use crate::lower_ssa_vars::{
     ensure_static_qubit_operands, lower_float_selects_and_phis, lower_qubit_selects_and_phis,
     normalize_block_names,
 };
-use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
+use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen, QirStaticArrayCodegen};
+use crate::qir::int_ext::IntOpOverrideCodegenExtension;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -118,10 +120,12 @@ impl CompileArgs {
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
             .add_default_int_extensions()
+            // Override ipow after registering the default integer handlers.
+            .add_extension(IntOpOverrideCodegenExtension)
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
-            .add_default_static_array_extensions()
+            .add_static_array_extensions(QirStaticArrayCodegen)
             .add_array_extensions(QirArrayCodegen)
             .add_borrow_array_extensions(QirBorrowArrayCodegen)
             .add_extension(RotationCodegenExtension::new(QirPreludeCodegen))
@@ -258,14 +262,7 @@ impl CompileArgs {
             .run_passes(opt_str, &ctm, default_pass_options)
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
 
-        configure_forced_unrolling();
-        let loop_cleanup = format!(
-            "function(loop-unroll<O3;no-runtime;no-partial;full-unroll-max={}>,sroa<modify-cfg>,instcombine,simplifycfg)",
-            self.max_loop_unroll
-        );
-        module
-            .run_passes(&loop_cleanup, &ctm, PassBuilderOptions::create())
-            .map_err(|e| anyhow!("Failed to fully unroll static loops: {e}"))?;
+        lower_powers_and_unroll_loops(module, &ctm, self.max_loop_unroll)?;
         module
             .run_passes("lower-switch", &ctm, PassBuilderOptions::create())
             .map_err(|e| anyhow!("Failed to run LLVM passes: {e}"))?;
@@ -339,9 +336,9 @@ impl CompileArgs {
         ensure_static_qubit_operands(&module)?;
         operations.validate_required()?;
         normalize_block_names(&module);
+        cleanup_module_llvm(&module, &target)?;
         add_generator_metadata(&module, GENERATOR_NAME_KEY, env!("CARGO_PKG_NAME"));
         add_generator_metadata(&module, GENERATOR_VERSION_KEY, &generator_version());
-        cleanup_module_llvm(&module, &target)?;
         Ok(module)
     }
 }
@@ -349,7 +346,7 @@ impl CompileArgs {
 fn cleanup_module_llvm(module: &Module, target: &TargetMachine) -> Result<()> {
     module
         .run_passes(
-            "function(dce),strip-dead-prototypes",
+            "function(dce),globaldce,strip-dead-prototypes",
             target,
             PassBuilderOptions::create(),
         )
