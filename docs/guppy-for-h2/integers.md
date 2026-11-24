@@ -4,6 +4,18 @@ Most integer arithmetic is supported for both Guppy's signed `int` type and
 unsigned `nat` type. There are, however, restrictions on division
 and modulo operations for these types.
 
+## Exponentiation
+
+Integer exponentiation (`**`) uses binary exponentiation for constant and
+runtime exponents. The compiler interprets the exponent as unsigned and
+multiplication wraps at the integer width. Raising any base to zero returns
+one, including `0**0`.
+
+For a runtime exponent, the compiler can emit arithmetic and selection
+instructions for each bit of the exponent, so wider exponents can increase
+the instruction count. When the exponent is known during lowering, the
+compiler emits a multiplication chain specialized to its value.
+
 ## Division and modulo
 
 Integer division (`//`) and modulo (`%`) require a divisor

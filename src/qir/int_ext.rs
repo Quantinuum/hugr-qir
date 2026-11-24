@@ -1,7 +1,12 @@
 //! LLVM lowering for integer powers.
 
-use anyhow::{Result, ensure};
-use hugr::{HugrView, Node, ops::ExtensionOp, std_extensions::arithmetic::int_ops};
+use anyhow::{Result, anyhow, bail, ensure};
+use hugr::{
+    HugrView, Node,
+    extension::simple_op::MakeOpDef,
+    ops::ExtensionOp,
+    std_extensions::arithmetic::int_ops::{EXTENSION_ID, IntOpDef},
+};
 use hugr_llvm::{
     CodegenExtension, CodegenExtsBuilder,
     emit::{EmitOpArgs, func::EmitFuncContext},
@@ -21,7 +26,7 @@ impl CodegenExtension for IntPowCodegenExtension {
     where
         Self: 'a,
     {
-        builder.extension_op(int_ops::EXTENSION_ID, "ipow".into(), emit_int_pow)
+        builder.extension_op(EXTENSION_ID, IntOpDef::ipow.opdef_id(), emit_int_pow)
     }
 }
 
@@ -29,8 +34,13 @@ fn emit_int_pow<'c, H: HugrView<Node = Node>>(
     context: &mut EmitFuncContext<'c, '_, H>,
     args: EmitOpArgs<'c, '_, ExtensionOp, H>,
 ) -> Result<()> {
-    let base = args.inputs[0].into_int_value();
-    let exponent = args.inputs[1].into_int_value();
+    let [base, exponent] = args.inputs.as_slice() else {
+        bail!("Integer power requires two operands");
+    };
+    let base =
+        IntValue::try_from(*base).map_err(|_| anyhow!("Integer power base must be an integer"))?;
+    let exponent = IntValue::try_from(*exponent)
+        .map_err(|_| anyhow!("Integer power exponent must be an integer"))?;
     let ty = base.get_type();
     ensure!(
         ty == exponent.get_type(),
@@ -96,12 +106,13 @@ fn build_runtime_int_pow<'c>(
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU32;
     use std::rc::Rc;
 
     use hugr::extension::simple_op::MakeRegisteredOp;
     use hugr::llvm::emit::{EmitDebugInfo, EmitHugr, Namer};
     use hugr::llvm::utils::fat::FatExt;
-    use hugr::std_extensions::arithmetic::int_ops::IntOpDef;
+    use rstest::rstest;
 
     use crate::{
         CompileArgs,
@@ -110,6 +121,61 @@ mod tests {
         target::CompileTarget,
         test::{LLVM_TEST_LOCK, single_op_hugr},
     };
+
+    use super::{IntOpDef, build_constant_int_pow};
+
+    #[rstest]
+    #[case::zero_exponent(64, 0, 0, 1)]
+    #[case::one_exponent(64, u64::MAX, 1, u64::MAX)]
+    #[case::square_wraps(64, u64::MAX, 2, 1)]
+    #[case::multiple_set_bits(64, 3, 13, 3_u64.pow(13))]
+    #[case::max_exponent_odd_base(64, 3, u64::MAX, 0xaaaa_aaaa_aaaa_aaab)]
+    #[case::max_exponent_even_base(64, 2, u64::MAX, 0)]
+    #[case::one_bit(1, 0, 0, 1)]
+    #[case::eight_bits(8, 3, 13, 3_u64.pow(13) & 0xff)]
+    #[case::thirty_two_bits(32, u32::MAX.into(), 2, 1)]
+    fn constant_integer_power_wraps(
+        #[case] width: u32,
+        #[case] base: u64,
+        #[case] exponent: u64,
+        #[case] expected: u64,
+    ) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        CompileTarget::Native.initialise();
+        let context = Context::create();
+        let module = context.create_module("constant_integer_power");
+        let builder = context.create_builder();
+        let abi_type = context.i64_type();
+        let int_type = context
+            .custom_width_int_type(NonZeroU32::new(width).unwrap())
+            .unwrap();
+        let function =
+            module.add_function("power", abi_type.fn_type(&[abi_type.into()], false), None);
+        builder.position_at_end(context.append_basic_block(function, "entry"));
+        let runtime_base = builder
+            .build_int_truncate_or_bit_cast(
+                function.get_nth_param(0).unwrap().into_int_value(),
+                int_type,
+                "base",
+            )
+            .unwrap();
+        let result = build_constant_int_pow(&builder, runtime_base, exponent).unwrap();
+        let result = builder
+            .build_int_z_extend_or_bit_cast(result, abi_type, "result")
+            .unwrap();
+        builder.build_return(Some(&result)).unwrap();
+        module.verify().unwrap();
+
+        let engine = module
+            .create_jit_execution_engine(OptimizationLevel::None)
+            .unwrap();
+        let power = unsafe {
+            engine
+                .get_function::<unsafe extern "C" fn(u64) -> u64>("power")
+                .unwrap()
+        };
+        assert_eq!(unsafe { power.call(base) }, expected);
+    }
 
     #[test]
     fn runtime_integer_power_is_loop_free_and_wraps() {
