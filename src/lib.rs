@@ -56,6 +56,7 @@ use crate::lower_ssa_vars::{
     normalize_block_names,
 };
 use crate::qir::array_codegen::{QirArrayCodegen, QirBorrowArrayCodegen};
+use crate::qir::int_ext::IntPowCodegenExtension;
 use crate::qir::random_ext::RandomCodegenExtension;
 use crate::qir::utils_ext::UtilsCodegenExtension;
 use crate::qir::wasm_ext::WasmCodegen;
@@ -118,6 +119,7 @@ impl CompileArgs {
         CodegenExtsBuilder::default()
             .add_prelude_extensions(pcg.clone())
             .add_default_int_extensions()
+            .add_extension(IntPowCodegenExtension)
             .add_float_extensions()
             .add_conversion_extensions()
             .add_logic_extensions()
