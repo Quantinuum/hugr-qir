@@ -18,8 +18,9 @@ devenv.local.nix
 # qir snapshots
 *.snap.new
 
-# jetbrains ide
+# Editors
 .idea
+/.zed/
 
 # macOS
 .DS_Store
@@ -39,3 +40,7 @@ python/hqs_compiler_tests
 
 # ai
 .agents
+
+# Local tooling
+/.helpers/
+/.benchmarks/
