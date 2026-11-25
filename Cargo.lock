@@ -856,9 +856,19 @@ version = "0.30.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12cda643566bf325b7ed21e9a762bc6cf80c03216de61060ec0514f61c254b34"
 dependencies = [
- "hugr-core",
+ "hugr-core 0.30.3",
  "hugr-llvm",
- "hugr-model",
+ "hugr-model 0.30.3",
+]
+
+[[package]]
+name = "hugr"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b19e573e2309a65442c576a80c66abb2592871ba378960c764597d308b4898c"
+dependencies = [
+ "hugr-core 0.31.0",
+ "hugr-model 0.31.0",
 ]
 
 [[package]]
@@ -872,11 +882,33 @@ dependencies = [
  "clap-verbosity-flag",
  "clio",
  "derive_more 2.1.1",
- "hugr",
+ "hugr 0.30.2",
  "schemars 1.2.2",
  "serde",
  "serde_json",
- "tabled",
+ "tabled 0.21.0",
+ "thiserror 2.0.20",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
+]
+
+[[package]]
+name = "hugr-cli"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcf73b145645956ca228e77ca8e157f5ec4029275a5f57c7fe65703278655137"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap-verbosity-flag",
+ "clio",
+ "derive_more 2.1.1",
+ "hugr 0.31.0",
+ "schemars 1.2.2",
+ "serde",
+ "serde_json",
+ "tabled 0.22.0",
  "thiserror 2.0.20",
  "tracing",
  "tracing-subscriber",
@@ -896,7 +928,7 @@ dependencies = [
  "downcast-rs",
  "enum_dispatch",
  "html-escape",
- "hugr-model",
+ "hugr-model 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "ordered-float",
@@ -905,6 +937,42 @@ dependencies = [
  "portgraph",
  "regex",
  "relrc",
+ "rustc-hash",
+ "schemars 1.2.2",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "smallvec",
+ "smol_str",
+ "static_assertions",
+ "strum",
+ "thiserror 2.0.20",
+ "tracing",
+ "typetag",
+ "zstd 0.14.3",
+]
+
+[[package]]
+name = "hugr-core"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f5fe0c64ed3e244b7da948ac862aae309ed9aa0b04be999d4fe87a6ccd89482c"
+dependencies = [
+ "base64 0.23.1",
+ "delegate",
+ "derive_more 2.1.1",
+ "downcast-rs",
+ "enum_dispatch",
+ "html-escape",
+ "hugr-model 0.31.0",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
+ "ordered-float",
+ "pastey",
+ "petgraph",
+ "portgraph",
+ "regex",
  "rustc-hash",
  "schemars 1.2.2",
  "semver",
@@ -931,7 +999,7 @@ dependencies = [
  "cc",
  "delegate",
  "derive_more 2.1.1",
- "hugr-core",
+ "hugr-core 0.30.3",
  "inkwell",
  "insta",
  "itertools 0.15.0",
@@ -965,6 +1033,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "hugr-model"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87cec9261948f29ae6c517175088a2ad1e06f317282de1350f4cffdd9fe3002f"
+dependencies = [
+ "base64 0.23.1",
+ "bumpalo",
+ "capnp",
+ "derive_more 2.1.1",
+ "indexmap 2.14.0",
+ "itertools 0.15.0",
+ "ordered-float",
+ "pest",
+ "pest_derive",
+ "pretty",
+ "rustc-hash",
+ "semver",
+ "smol_str",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "hugr-qir"
 version = "0.4.0"
 dependencies = [
@@ -972,9 +1062,9 @@ dependencies = [
  "clap",
  "clap-verbosity-flag",
  "clio",
- "hugr",
- "hugr-cli",
- "hugr-core",
+ "hugr 0.30.2",
+ "hugr-cli 0.31.0",
+ "hugr-core 0.30.3",
  "hugr-llvm",
  "insta",
  "itertools 0.15.0",
@@ -2083,7 +2173,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5dc662e6da844ad6e428ad16b57967c9d33c82e16bb1c258326c0c078605dff"
 dependencies = [
  "papergrid",
- "tabled_derive",
+ "tabled_derive 0.11.0",
+ "testing_table",
+]
+
+[[package]]
+name = "tabled"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d2596a104db1900b943f97d793a6c99addca918c4525c999f751a0f17d472eb"
+dependencies = [
+ "papergrid",
+ "tabled_derive 0.12.0",
  "testing_table",
 ]
 
@@ -2095,6 +2196,18 @@ checksum = "0ea5d1b13ca6cff1f9231ffd62f15eefd72543dab5e468735f1a456728a02846"
 dependencies = [
  "heck",
  "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "tabled_derive"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7dca1937322a1e892b1a65f6a6736183bb0a29d3b4234d1d53bc436dff9beb76"
+dependencies = [
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -2243,8 +2356,8 @@ dependencies = [
  "delegate",
  "derive_more 2.1.1",
  "fxhash",
- "hugr",
- "hugr-core",
+ "hugr 0.30.2",
+ "hugr-core 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "lazy_static",
@@ -2291,9 +2404,9 @@ dependencies = [
  "clap",
  "delegate",
  "derive_more 2.1.1",
- "hugr",
- "hugr-cli",
- "hugr-core",
+ "hugr 0.30.2",
+ "hugr-cli 0.30.2",
+ "hugr-core 0.30.3",
  "indexmap 2.14.0",
  "itertools 0.15.0",
  "lazy_static",
