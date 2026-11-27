@@ -253,7 +253,14 @@ mod tests {
         .unwrap();
         module.verify().unwrap();
         let opcodes = opcodes();
-        assert!(opcodes.contains(&InstructionOpcode::Mul));
+        let multiplications = opcodes
+            .iter()
+            .filter(|&&opcode| opcode == InstructionOpcode::Mul)
+            .count();
+        assert!(
+            (1..=5).contains(&multiplications),
+            "expected a short multiplication chain for exponent 13, got {multiplications} multiplications"
+        );
         assert!(!opcodes.contains(&InstructionOpcode::Select));
     }
 }
