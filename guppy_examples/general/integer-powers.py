@@ -6,7 +6,8 @@ from guppylang.std.quantum import measure
 
 combos = [(i, j) for i in range(11) for j in range(11)]
 combos.extend([(-i, j) for i in range(1, 11) for j in range(11)])
-test_ints = [int(i**j) for i, j in combos]
+combos.extend([(3, 42), (-3, 41), (2, 63), (2, 64), (-1, 63), (-1, 64)])
+test_ints = [((i**j + (1 << 63)) % (1 << 64)) - (1 << 63) for i, j in combos]
 
 
 @guppy
