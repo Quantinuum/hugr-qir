@@ -11,9 +11,11 @@ runtime exponents that reach LLVM lowering. The compiler interprets the exponent
 as unsigned and multiplication wraps at the integer width. Raising any base to
 zero returns one, including `0**0`.
 
-**Warning:** Fully constant expressions with exponents greater than `2**32 - 1`
-can currently be folded incorrectly by HUGR before LLVM lowering. Avoid such
-expressions.
+```{warning}
+HUGR can fold powers with a constant base and a constant exponent greater than
+`2**32 - 1` incorrectly before LLVM lowering. Avoid such expressions. The issue
+is tracked in [hugr#3370](https://github.com/Quantinuum/hugr/issues/3370).
+```
 
 For a runtime exponent, the compiler can emit arithmetic and selection
 instructions for each bit of the exponent, so wider exponents can increase
