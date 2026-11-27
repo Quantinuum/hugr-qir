@@ -41,6 +41,16 @@ Source file: `guppy_examples/quantinuum-hardware-only/rng-quantum-jobid-1.py`
 :language: python
 ```
 
+## Shot-dependent integer power
+
+This example raises three to the current shot number and records the result.
+
+Source file: `guppy_examples/quantinuum-hardware-only/runtime-integer-power.py`
+
+```{literalinclude} ../../guppy_examples/quantinuum-hardware-only/runtime-integer-power.py
+:language: python
+```
+
 ## Native PCG RNG example
 
 Source file: `guppy_examples/guppy-features/supported/native-pcg-random.py`

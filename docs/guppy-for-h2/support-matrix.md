@@ -40,7 +40,7 @@ systems with `hugr-qir`.
 
 | Data type | Support | Caveats                                                                               |
 |-----------|---------|---------------------------------------------------------------------------------------|
-| int/nat   | *️⃣ | There are restrictions on division and modulo operations, see [Integers](integers.md) |
+| int/nat   | *️⃣ | [Restrictions on exponentiation, division, and modulo](integers.md) |
 | float     | *️⃣ | May be used as a constant gate parameter; calculations and output are unsupported     |
 | array     | *️⃣ | Fixed-size arrays are supported when element accesses can be made static              |
 | bool      | ✅ |                                                                                       |

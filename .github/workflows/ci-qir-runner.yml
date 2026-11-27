@@ -128,9 +128,20 @@ jobs:
       - name: Setup dependencies
         run: uv sync --no-install-project
 
+      - name: Install qir-runner with LLVM 20.1
+        env:
+          LLVM_SYS_201_PREFIX: /usr/lib/llvm-20
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-20-dev
+          "$LLVM_SYS_201_PREFIX/bin/llvm-config" --libnames --link-shared
+          cargo install --locked \
+            --git https://github.com/Quantinuum/qir-runner \
+            --rev 7cb5d2faccba59aea08019eb48b20c5d31a4ab57 \
+            --features inkwell/llvm20-1-force-dynamic runner
+
       - name: run qir-runner
         run: |
           uv run --no-sync python guppy_examples/generate_hugr guppy_examples/general/${{ matrix.guppy-file }}.py > ${{ matrix.guppy-file }}.hugr
           "${HUGR_QIR_BIN}" ./${{ matrix.guppy-file }}.hugr --target native -o ${{ matrix.guppy-file }}.ll
-          cargo install --git https://github.com/Quantinuum/qir-runner runner --features inkwell/llvm20-1-force-dynamic
           qir-runner --file ${{ matrix.guppy-file }}.ll

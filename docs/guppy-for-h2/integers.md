@@ -1,8 +1,30 @@
 # Integers
 
 Most integer arithmetic is supported for both Guppy's signed `int` type and
-unsigned `nat` type. There are, however, restrictions on division
-and modulo operations for these types.
+unsigned `nat` type. Exponentiation, division, and modulo have restrictions on H2.
+
+## Exponentiation
+
+Integer exponentiation (`**`) uses binary exponentiation for constant and
+runtime exponents that reach LLVM lowering. The compiler interprets the exponent
+as unsigned and multiplication wraps at the integer width. Raising any base to
+zero returns one, including `0**0`.
+
+Guppy checks signed `int` exponents for negativity. On H2, compilation fails
+if the compiler cannot eliminate the resulting panic path. For example,
+`3 ** (get_current_shot() - 1)` can have a negative exponent on the first shot.
+An unsigned `nat` exponent needs no negativity check.
+
+```{warning}
+HUGR can fold powers with a constant base and a constant exponent greater than
+`2**32 - 1` incorrectly before LLVM lowering. Avoid such expressions. The issue
+is tracked in [hugr#3370](https://github.com/Quantinuum/hugr/issues/3370).
+```
+
+For a runtime exponent, the compiler can emit arithmetic and selection
+instructions for each bit of the exponent, so wider exponents can increase
+the instruction count. When LLVM can determine the exponent, its optimizer
+can reduce the code to a multiplication chain specialized to that value.
 
 ## Division and modulo
 
