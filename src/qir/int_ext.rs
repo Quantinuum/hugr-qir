@@ -100,13 +100,20 @@ fn build_int_pow<'c>(
 mod tests {
     use std::rc::Rc;
 
+    use hugr::Hugr;
+    use hugr::builder::{Dataflow, DataflowSubContainer, HugrBuilder, ModuleBuilder};
+    use hugr::core::Visibility;
     use hugr::extension::simple_op::MakeRegisteredOp;
     use hugr::llvm::emit::{EmitDebugInfo, EmitHugr, Namer};
     use hugr::llvm::utils::fat::FatExt;
+    use hugr::std_extensions::arithmetic::int_types::{ConstInt, int_type};
+    use hugr::types::{PolyFuncType, Signature};
+    use rstest::rstest;
 
     use crate::{
         CompileArgs,
-        inkwell::{OptimizationLevel, context::Context},
+        cli::CliOptimizationLevel,
+        inkwell::{OptimizationLevel, context::Context, module::Module, values::InstructionOpcode},
         llvm_unroll::ensure_no_loops,
         target::CompileTarget,
         test::{LLVM_TEST_LOCK, single_op_hugr},
@@ -114,15 +121,9 @@ mod tests {
 
     use super::IntOpDef;
 
-    #[test]
-    fn runtime_integer_power_is_loop_free_and_wraps() {
-        let _guard = LLVM_TEST_LOCK.lock().unwrap();
-        CompileTarget::Native.initialise();
-        let op = IntOpDef::ipow.with_log_width(6).to_extension_op().unwrap();
-        let hugr = single_op_hugr(op.into());
-        let context = Context::create();
+    fn emit_power_module<'c>(context: &'c Context, hugr: &Hugr) -> Module<'c> {
         let emit = EmitHugr::new(
-            &context,
+            context,
             context.create_module("integer_power"),
             Rc::new(Namer::new("", false)),
             Rc::new(CompileArgs::default().codegen_extensions()),
@@ -133,24 +134,126 @@ mod tests {
             .finish();
         module.verify().unwrap();
         ensure_no_loops(&module, 1).unwrap();
+        module
+    }
+
+    #[rstest]
+    fn runtime_integer_power_is_loop_free_and_wraps(#[values(0, 1, 2, 3, 4, 5, 6)] log_width: u8) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        CompileTarget::Native.initialise();
+        let op = IntOpDef::ipow
+            .with_log_width(log_width)
+            .to_extension_op()
+            .unwrap();
+        let hugr = single_op_hugr(op.into());
+        let context = Context::create();
+        let module = emit_power_module(&context, &hugr);
+
+        // Use an i64 ABI for the JIT call at every HUGR integer width.
+        let power = module.get_function("main").unwrap();
+        let int_type = power.get_type().get_return_type().unwrap().into_int_type();
+        let i64_type = context.i64_type();
+        let wrapper = module.add_function(
+            "power",
+            i64_type.fn_type(&[i64_type.into(), i64_type.into()], false),
+            None,
+        );
+        let builder = context.create_builder();
+        builder.position_at_end(context.append_basic_block(wrapper, "entry"));
+        let inputs = [0, 1].map(|index| {
+            builder
+                .build_int_truncate_or_bit_cast(
+                    wrapper.get_nth_param(index).unwrap().into_int_value(),
+                    int_type,
+                    "",
+                )
+                .unwrap()
+                .into()
+        });
+        let result = builder
+            .build_call(power, &inputs, "")
+            .unwrap()
+            .try_as_basic_value()
+            .unwrap_basic()
+            .into_int_value();
+        let result = builder
+            .build_int_z_extend_or_bit_cast(result, i64_type, "")
+            .unwrap();
+        builder.build_return(Some(&result)).unwrap();
+        module.verify().unwrap();
 
         let engine = module
             .create_jit_execution_engine(OptimizationLevel::None)
             .unwrap();
         let power = unsafe {
             engine
-                .get_function::<unsafe extern "C" fn(u64, u64) -> u64>("main")
+                .get_function::<unsafe extern "C" fn(u64, u64) -> u64>("power")
                 .unwrap()
         };
-        for base in [0_u64, 1, 2, 3, u64::MAX - 1, u64::MAX] {
-            for exponent in [0, 1, 2, 13, 64, 1000, u32::MAX] {
+        let mask = u64::MAX >> (64 - (1_u32 << log_width));
+        for base in [0, 1, 2 & mask, 3 & mask, mask - 1, mask] {
+            for exponent in [0, 1, 2, 4, 13, 64, 1000, u32::MAX] {
+                let exponent = exponent & mask as u32;
                 assert_eq!(
                     unsafe { power.call(base, exponent.into()) },
-                    base.wrapping_pow(exponent)
+                    base.wrapping_pow(exponent) & mask,
+                    "base={base}, exponent={exponent}"
                 );
             }
         }
-        assert_eq!(unsafe { power.call(2, 1_u64 << 63) }, 0);
-        assert_eq!(unsafe { power.call(3, (1_u64 << 63) + 1) }, 3);
+        if log_width == 6 {
+            assert_eq!(unsafe { power.call(2, 1_u64 << 63) }, 0);
+            assert_eq!(unsafe { power.call(3, (1_u64 << 63) + 1) }, 3);
+            assert_eq!(unsafe { power.call(3, u64::MAX) }.wrapping_mul(3), 1);
+        }
+    }
+
+    #[rstest]
+    fn llvm_optimizes_literal_exponents(
+        #[values(CliOptimizationLevel::Default, CliOptimizationLevel::Aggressive)]
+        opt_level: CliOptimizationLevel,
+    ) {
+        let _guard = LLVM_TEST_LOCK.lock().unwrap();
+        let mut module_builder = ModuleBuilder::new();
+        let mut function = module_builder
+            .define_function_vis(
+                "main",
+                PolyFuncType::from(Signature::new_endo([int_type(6)])),
+                Visibility::Public,
+            )
+            .unwrap();
+        let [base] = function.input_wires_arr();
+        let exponent = function.add_load_value(ConstInt::new_u(6, 13).unwrap());
+        let result = function
+            .add_dataflow_op(IntOpDef::ipow.with_log_width(6), [base, exponent])
+            .unwrap()
+            .out_wire(0);
+        function.finish_with_outputs([result]).unwrap();
+        let hugr = module_builder.finish_hugr().unwrap();
+
+        let context = Context::create();
+        let module = emit_power_module(&context, &hugr);
+        let opcodes = || {
+            module
+                .get_function("main")
+                .unwrap()
+                .get_basic_blocks()
+                .into_iter()
+                .flat_map(|block| block.get_instructions())
+                .map(|instruction| instruction.get_opcode())
+                .collect::<Vec<_>>()
+        };
+        assert!(opcodes().contains(&InstructionOpcode::Select));
+        CompileArgs {
+            target: CompileTarget::Native,
+            opt_level,
+            ..CompileArgs::default()
+        }
+        .optimize_module_llvm(&module)
+        .unwrap();
+        module.verify().unwrap();
+        let opcodes = opcodes();
+        assert!(opcodes.contains(&InstructionOpcode::Mul));
+        assert!(!opcodes.contains(&InstructionOpcode::Select));
     }
 }
