@@ -1,3 +1,9 @@
+"""Check Guppy integer powers against wrapping results computed in Python.
+
+LLVM can fold the powers and eliminate the mismatch panic. The example records
+the resulting constants for inspection.
+"""
+
 from typing import no_type_check
 
 from guppylang import array, guppy, qubit
