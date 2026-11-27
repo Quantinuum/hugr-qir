@@ -17,8 +17,8 @@ expressions.
 
 For a runtime exponent, the compiler can emit arithmetic and selection
 instructions for each bit of the exponent, so wider exponents can increase
-the instruction count. When the exponent is known during lowering, the
-compiler emits a multiplication chain specialized to its value.
+the instruction count. When LLVM can determine the exponent, its optimizer
+can reduce the code to a multiplication chain specialized to that value.
 
 ## Division and modulo
 
