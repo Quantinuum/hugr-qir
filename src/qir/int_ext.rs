@@ -6,6 +6,7 @@ use hugr::{
     extension::simple_op::MakeOpDef,
     ops::ExtensionOp,
     std_extensions::arithmetic::int_ops::{EXTENSION_ID, IntOpDef},
+    types::TypeArg,
 };
 use hugr_llvm::{
     CodegenExtension, CodegenExtsBuilder,
@@ -41,20 +42,35 @@ fn emit_int_pow<'c, H: HugrView<Node = Node>>(
         IntValue::try_from(*base).map_err(|_| anyhow!("Integer power base must be an integer"))?;
     let exponent = IntValue::try_from(*exponent)
         .map_err(|_| anyhow!("Integer power exponent must be an integer"))?;
+    let [TypeArg::BoundedNat(log_width)] = args.node.args() else {
+        bail!("Integer power requires one integer width argument");
+    };
+    ensure!(
+        *log_width <= 6,
+        "Integer powers support widths up to 64 bits"
+    );
+    let logical_width = 1_u32 << log_width;
     let ty = base.get_type();
     ensure!(
         ty == exponent.get_type(),
         "Integer power operands must have matching widths"
     );
     ensure!(
-        ty.get_bit_width() <= 64,
-        "Integer powers support widths up to 64 bits"
+        logical_width <= ty.get_bit_width(),
+        "Integer power operands are narrower than the HUGR integer type"
     );
 
     let builder = context.builder();
+    let mask = u64::MAX >> (64 - logical_width);
     let result = match exponent.get_zero_extended_constant() {
-        Some(exponent) => build_constant_int_pow(builder, base, exponent)?,
-        None => build_runtime_int_pow(builder, base, exponent)?,
+        Some(exponent) => build_constant_int_pow(builder, base, exponent & mask)?,
+        None => build_runtime_int_pow(builder, base, exponent, logical_width)?,
+    };
+    // HUGR's sub-byte integers use i8 storage in LLVM.
+    let result = if logical_width < ty.get_bit_width() {
+        builder.build_and(result, ty.const_int(mask, false), "ipow.mask")?
+    } else {
+        result
     };
     args.outputs.finish(builder, [result.into()])
 }
@@ -85,11 +101,12 @@ fn build_runtime_int_pow<'c>(
     builder: &Builder<'c>,
     base: IntValue<'c>,
     exponent: IntValue<'c>,
+    logical_width: u32,
 ) -> Result<IntValue<'c>> {
     let ty = base.get_type();
     let mut result = ty.const_int(1, false);
     let mut power = base;
-    for bit in 0..ty.get_bit_width() {
+    for bit in 0..logical_width {
         let masked = builder.build_and(exponent, ty.const_int(1_u64 << bit, false), "ipow.bit")?;
         let set =
             builder.build_int_compare(IntPredicate::NE, masked, ty.const_zero(), "ipow.set")?;
@@ -97,7 +114,7 @@ fn build_runtime_int_pow<'c>(
         result = builder
             .build_select(set, product, result, "ipow.accumulator")?
             .into_int_value();
-        if bit + 1 < ty.get_bit_width() {
+        if bit + 1 < logical_width {
             power = builder.build_int_mul(power, power, "ipow.square")?;
         }
     }
